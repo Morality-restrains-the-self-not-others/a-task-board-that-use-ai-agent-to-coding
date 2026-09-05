@@ -1,0 +1,30 @@
+# TaskDetail.workbench-link-routing.playwright.test.js
+
+## 意图
+
+验证 `GET .../cloud/compute/workbench-link/?task_id=` 经 taskCloudService 原生实现，不得再返回 501 `compute action not yet ported`。
+
+## 前置
+
+- 已登录网关 Token
+- 默认 `PLAYWRIGHT_TASK_ID=task_12590983282794675865`（已有 aliyun 实例配置时可断言 200 + workbench_url）
+
+## 断言
+
+- HTTP 非 501，body 不含路由缺失文案
+- 200 时：`workbench_url` 含 `ecs-workbench.aliyun.com`，`instance_id`/`region` 非空
+- 404 时：无配置场景可接受
+
+## 运行
+
+```bash
+PLAYWRIGHT_SITE_ORIGIN=http://183.250.1.132:4000 \
+PLAYWRIGHT_GATEWAY_ORIGIN=http://183.250.1.132:18081 \
+npx playwright test tests/TaskDetail.workbench-link-routing.playwright.test.js \
+  --config=playwright.config.chromium.js
+```
+
+## 回归点
+
+- `compute_handlers.go` 须注册 `compute/workbench-link` 路由
+- 阿里云 Workbench URL 构建与 Django `get_workbench_link` 语义一致

@@ -1,0 +1,24 @@
+# TaskDetail.start-vm-auto-container-init.playwright.test.js
+
+## 意图
+
+验证 start-vm-auto 全链路中 **RunInstances UserData 运行时占位符被替换**，实例 cloud-init 能 `docker pull` 真实镜像并启动 `task2app-container`（host 网络 :8080）。
+
+## 根因回归
+
+taskEvents `CLOUD_SERVER_STARTED` handler 曾直接将含 `__TASK2APP_CONTAINER_IMAGE__` 的 userdata 送 RunInstances，导致 `invalid reference format: library/__TASK2APP_CONTAINER_IMAGE__`。
+
+## 断言
+
+- `server-runtime-status` 得到 `instance_id` 且 `runtime_status=Running`
+- `GET server-content` 200（网关经公网 IP:8080 探测容器 HTTP）
+- 可选 SSH：`init_from_task2app.sh` 不含镜像占位符，`docker ps` 中 `task2app-container` 运行中
+
+## 运行
+
+```bash
+PLAYWRIGHT_SITE_ORIGIN=http://183.250.1.132:4000 \
+PLAYWRIGHT_GATEWAY_ORIGIN=http://183.250.1.132:18081 \
+npx playwright test tests/TaskDetail.start-vm-auto-container-init.playwright.test.js \
+  --config=playwright.config.chromium.js
+```

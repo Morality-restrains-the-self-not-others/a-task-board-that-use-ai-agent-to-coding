@@ -1,0 +1,111 @@
+# OS / runtime
+.fseventsd/
+.tmp/
+tmp/
+!tmp/.gitkeep
+node_modules/
+.DS_Store
+._*
+.TemporaryItems/
+.Trashes/
+.pytest_cache/
+.venv-archimate/
+.local/
+.runall/
+.superpowers/
+data/
+logs/
+playwright/
+e2e-tests/
+
+# Secrets & local artifacts
+/conf-local/
+conf/**/config.local.yaml
+conf/**/*.local.yaml
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+cookies.txt
+runAll/bin/
+dev-commit.md
+
+# Build outputs in nested projects
+go_run_container/bin/
+go_relayToTrae/bin/
+taskCredentialService/bin/
+taskReferral/bin/
+
+# Nested git repos (ignore working trees; each has its own .git)
+# Discovery SSOT is .gitmodules only — this file is never used to infer nested repo URLs
+relayToTrae/
+
+# git worktree 目录（自带独立 .git，绝不能被 git add -A 收成幽灵 gitlink）
+*-wt/
+
+# Root scripts that belong to nested repos or local tooling
+# v13 起 SSOT 关键件入库（git-hooks 模板/分发器/nightly/ramsync），其余本地工具保持忽略
+scripts/*
+!scripts/hooks/
+!scripts/hooks/templates/
+!scripts/hooks/templates/lib/
+!scripts/deploy_repo_random_precommit.sh
+!scripts/nightly_test_sweep.py
+!scripts/nightly-test-sweep.sh
+!scripts/nightly-opt-runner.sh
+!scripts/prompts/
+!scripts/prompts/nightly-opt-task.md
+!scripts/ramsync.sh
+!scripts/register-precise-restart.sh
+!scripts/repair_users_without_company.py
+!scripts/test_repair_users_without_company.py
+!scripts/test_nightly_test_sweep_repo_clean.py
+!scripts/sync_commercial_email.py
+!scripts/test_sync_commercial_email.py
+!scripts/lib/
+!scripts/lib/random_test_runner.sh
+!scripts/seed-daydaymoney-deploy.sh
+!scripts/publish-deploy-artifacts.sh
+!scripts/collect-deploy-binaries.sh
+!scripts/collect-deploy-binaries.sh.ai.md
+!scripts/precise-compile.sh
+!scripts/precise-compile.sh.ai.md
+
+
+# Unified service logs (runAll tee output → Promtail → Loki)
+logs/
+
+# Debug artifacts & temp files (prevent root pollution)
+*.log
+*.tgz
+all_requests.json
+/authz_*.html
+/cookies.txt
+/curl_response
+/diagnose_*.mjs
+/login_test.*
+/playwright_login.*
+/test_*/
+/test-*.txt
+/test-results/
+/test-venv/
+/**/playwright/test-results/
+/.*_test
+
+# Archived experiments
+.runall/tests/
+*.pyc
+commitResult/
+.trajectories/
+# codegraph index (symlink to real disk on this machine)
+/.codegraph
+
+# 构建产物
+bin/
+
+# ADR-0052 P1 seed output (must not be committed)
+.daydaymoney-deploy-seed/
+
+# Hand-copy Release payloads (ELFs + tarballs). Never commit.
+/deploy-binaries/

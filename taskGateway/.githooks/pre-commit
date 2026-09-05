@@ -1,0 +1,25 @@
+#!/bin/bash
+# 无测例仓库占位 pre-commit：提示无测试资产，允许提交。
+# 若后续添加测例，请用 scripts/deploy_repo_random_precommit.sh 替换为对应类型模板。
+
+set -u
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+# Session Hub 提交锁校验（v1.1.0，可选 — 二进制缺失时放行）
+SES_LIB="$(cd "$(dirname "$0")" && pwd)/lib/session_lock_check.sh"
+if [ -f "$SES_LIB" ]; then source "$SES_LIB"; session_hub_lock_check; fi
+
+# OPT-20260820-033: routes.yaml / 生成脚本变更时，强制 apisix.yaml 与 gatewaycors
+# 生成物同步（routes.yaml 已登记但未 routes-apply 会让公网落入 spa-catch-all 502）。
+if git diff --cached --name-only | grep -qE '^(routes/routes\.yaml|scripts/routes-to-apisix\.py|scripts/cors_allow_headers\.py)$'; then
+  export TASK_GATEWAY_APISIX_IN_DOCKER="${TASK_GATEWAY_APISIX_IN_DOCKER:-1}"
+  if ! python3 scripts/routes-to-apisix.py --check >/dev/null 2>&1; then
+    echo "ERROR: apisix.yaml / gatewaycors 生成物已过期，请先执行: bash taskGateway/run.sh routes-apply" >&2
+    exit 1
+  fi
+  echo "Pre-commit: routes-to-apisix --check 通过（apisix.yaml 与 routes.yaml 同步）"
+fi
+
+echo "Pre-commit: $(basename "$(pwd)") 当前无自动化单元测例，跳过随机单测门禁。"
+echo "Commit can proceed."

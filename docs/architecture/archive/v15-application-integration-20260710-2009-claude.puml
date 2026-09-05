@@ -1,0 +1,46 @@
+' @title: Application Integration — relay 启动所选镜像
+' @view: application-integration
+' @status: target
+' @version: v15
+' @author: claude
+' @based_on: v14-application-integration-20260710-1910-claude
+' @updated: 2026-07-10 20:09
+' @description: relayToTrae 启动解析 TenantInstalledImage 并 docker pull/run
+' @iteration: relay-start-selected-image
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v15 — relay 启动所选镜像
+
+' Business
+Business_Service(bs_start, "任务详情直接启动")
+
+' Application
+Application_Component(vue, "Vue ServerConfig")
+Application_Component(cgw, "taskContainerGateway")
+Application_Component(cloud, "taskCloudService")
+Application_Component(relay, "go_relayToTrae")
+Application_Component(cred, "taskCredentialService")
+
+' Technology
+Technology_Node(docker, "Docker Engine")
+Technology_Artifact(img, "TenantInstalledImage ref")
+
+Rel_Flow(bs_start, vue, "选镜像+启动")
+Rel_Flow(vue, cgw, "POST start + installed_image_id")
+Rel_Flow(cgw, cred, "token-init")
+Rel_Flow(cgw, cloud, "resolve-image")
+Rel_Flow(cloud, cgw, "image ref")
+Rel_Flow(cgw, relay, "POST /v1/start + image")
+Rel_Flow(relay, docker, "docker pull + run")
+Rel_Serving(img, cloud, "已安装镜像")
+Rel_Serving(docker, relay, "容器运行时")
+
+legend right
+  |= 标记 |= 含义 |
+  | 🟢 | 新增数据流：resolve-image → docker |
+  | 🟡 | 修改：relay start 消费所选镜像 |
+endlegend
+
+@enduml

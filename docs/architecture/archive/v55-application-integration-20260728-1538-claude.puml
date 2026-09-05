@@ -1,0 +1,188 @@
+' @title: Gateway-Controlled Frontend Routing — Application Integration
+' @view: application-integration
+' @status: target
+' @version: 55
+' @iteration: gateway-controlled-frontend-routing
+' @author: claude
+' @based_on: v54 (v54-application-integration-20260723-1705-claude.puml)
+' @updated: 2026-07-28 15:38
+' @description: taskGateway 统管所有路径；Nginx location / → APISIX；新增 taskFE upstream + SPA catch-all；移除 Django SPA shell 渲染职责
+
+@startuml
+!include <archimate/Archimate>
+
+title v55 Application Integration — Gateway-Controlled Frontend Routing (Target, 2026-07-28 15:38)
+
+' ═══════════════════════════════════════
+' Change Legend — v55 变更图例
+' ═══════════════════════════════════════
+legend right
+  |<#LightGreen>  </>| 🟢 [NEW] v55 — 本次新增 |
+  |<#LightYellow> </>| 🟡 [MODIFIED] v55 — 本次修改 |
+  |<#LightPink>   </>| 🔴 [DEPRECATED] v55 — 本次废弃 |
+  |<#White>       </>| 无标记 — 已有组件，本次未变 |
+endlegend
+
+' ═══════════════════════════════════════
+' Plateau v54 (current) — Before
+' ═══════════════════════════════════════
+rectangle "Plateau v54 (current)" as P54 #LightGray {
+  Technology_Node(nginx54, "Nginx (:443)")
+  Technology_Node(apisix54, "APISIX (:18081)")
+  Technology_Node(django54, "Django (:8001)")
+  Application_Component(djangoSpa54, "Django SPA Shell\n(_serve_spa_shell)")
+
+  note right of nginx54
+    location /api/ → APISIX
+    location /     → Django
+  end note
+}
+
+' ═══════════════════════════════════════
+' Gap
+' ═══════════════════════════════════════
+Motivation_Gap(GapRouting, "Gap: TaskGateway 不掌握非 API 路由；\nDjango 承担 SPA 渲染职责")
+
+' ═══════════════════════════════════════
+' Plateau v55 (target) — After
+' ═══════════════════════════════════════
+rectangle "Plateau v55 (target)" as P55 #LightGreen {
+
+  ' --- External ---
+  Application_Component(browser, "Browser\n(www.daydaymoney.com)")
+
+  ' --- Nginx (modified) ---
+  Technology_Node(nginxNode, "Nginx (:443)")
+  note right of nginxNode
+    [MODIFIED v55]
+    location / → APISIX (:18081)
+  end note
+
+  ' --- APISIX Gateway ---
+  rectangle "taskGateway (APISIX :18081)" as APISIX_RECT {
+    Application_Component(gateway, "APISIX Gateway")
+
+    ' API routes (unchanged)
+    Application_Interface(apiRoutes, "/api/* Routes")
+    note right of apiRoutes
+      850: /api/auth/ → taskAuth
+      864: /api/tenant/*/projects → taskProjectService
+      860: /api/cloud/* → taskCloudService
+      ... (all existing API routes)
+    end note
+
+    ' NEW: SPA catch-all
+    Application_Interface(spaCatchAll, "SPA catch-all\npriority 10\n/* [GET,HEAD]")
+    note right of spaCatchAll
+      [NEW v55]
+      auth_mode: none
+      upstream: taskFE
+    end note
+
+    ' Special non-API routes (unchanged)
+    Application_Interface(oidcDiscovery, ".well-known\n/openid-configuration\n→ taskAuth")
+  }
+
+  ' --- Backend Services (unchanged) ---
+  Application_Component(taskAuth, "taskAuth\n(:8003)")
+  Application_Component(taskProjectSvc, "taskProjectService\n(:8016)")
+  Application_Component(taskCloudSvc, "taskCloudService\n(:8018)")
+  Application_Component(taskBillSvc, "taskBill\n(:8004)")
+  Application_Component(django, "Django\n(:8001)")
+
+  note right of django
+    [MODIFIED v55]
+    仅处理 /api/* 路径
+    移除 SPA shell 渲染
+  end note
+
+  ' --- taskFE (NEW) ---
+  Application_Component(taskFE, "taskFE SPA Server\n(:3000)")
+  Application_DataObject(spaAssets, "taskFE/static/\nindex.html + JS/CSS")
+  note right of taskFE
+    [NEW v55]
+    Dev: Vite dev server
+    Prod: Nginx static container
+    SPA fallback: try_files → index.html
+  end note
+
+  ' --- Vue SPA ---
+  Application_Component(vueRouter, "Vue Router\n(Client-Side)")
+  Application_Component(loginPage, "Login.vue\n(/auth/login/)")
+  Application_Component(projectsPage, "Projects.vue\n(/projects/)")
+}
+
+' ═══════════════════════════════════════
+' WorkPackage
+' ═══════════════════════════════════════
+Motivation_WorkPackage(WP55, "WP: v55 Gateway-Controlled Frontend Routing")
+note right of WP55
+  1. Nginx location / → APISIX
+  2. APISIX: +taskFE upstream, +spa-catch-all
+  3. APISIX: -auth-login-page, -django-default
+  4. Django: -_serve_spa_shell()
+  5. Production: +taskFE Nginx container
+end note
+
+' ═══════════════════════════════════════
+' Relationships — Plateau transitions
+' ═══════════════════════════════════════
+Rel_Triggering(P54, GapRouting)
+Rel_Realization(WP55, GapRouting)
+Rel_Realization(WP55, P55)
+
+' ═══════════════════════════════════════
+' Relationships — v55 Target Flows
+' ═══════════════════════════════════════
+
+' Browser → Nginx → APISIX
+Rel_Flow(browser, nginxNode, "HTTPS :443")
+Rel_Flow(nginxNode, gateway, "proxy_pass /")
+
+' API routing (unchanged)
+Rel_Serving(gateway, apiRoutes, "routes /api/*")
+Rel_Flow(apiRoutes, taskAuth, "/api/auth/*")
+Rel_Flow(apiRoutes, taskProjectSvc, "/api/tenant/*/projects/*")
+Rel_Flow(apiRoutes, taskCloudSvc, "/api/cloud/*")
+Rel_Flow(apiRoutes, taskBillSvc, "/api/billing/*")
+Rel_Flow(apiRoutes, django, "/api/accounts/*")
+
+' OIDC discovery (unchanged)
+Rel_Serving(gateway, oidcDiscovery, ".well-known/openid-configuration")
+
+' NEW: SPA catch-all
+Rel_Serving(gateway, spaCatchAll, "catch-all [GET,HEAD]")
+Rel_Flow(spaCatchAll, taskFE, "/* → :3000")
+
+' taskFE serves SPA assets
+Rel_Access_r(taskFE, spaAssets, "serves")
+Rel_Serving(taskFE, browser, "index.html + JS/CSS")
+
+' Vue Router client-side routing
+Rel_Flow(taskFE, vueRouter, "SPA bootstrap")
+Rel_Flow(vueRouter, loginPage, "/auth/login/")
+Rel_Flow(vueRouter, projectsPage, "/projects/")
+
+' Vue Router → API (via APISIX)
+Rel_Flow(vueRouter, gateway, "apiFetch(/api/*)")
+
+' ═══════════════════════════════════════
+' DEPRECATED components
+' ═══════════════════════════════════════
+Application_Component(oldSpaRoute, "auth-login-page route")
+Application_Component(oldDefault, "django-default catch-all")
+note right of oldSpaRoute
+  [DEPRECATED v55]
+  移除：/auth/login GET → Django
+  被 spa-catch-all 替代
+end note
+note right of oldDefault
+  [DEPRECATED v55]
+  移除：/* → Django
+  被 spa-catch-all 替代
+end note
+
+Rel_Association(oldSpaRoute, gateway)
+Rel_Association(oldDefault, gateway)
+
+@enduml

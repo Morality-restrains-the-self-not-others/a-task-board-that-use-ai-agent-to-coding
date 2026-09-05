@@ -1,0 +1,62 @@
+' @title: 安全响应头 + HTTP→HTTPS 强制跳转（应用集成）
+' @view: application-integration
+' @status: target
+' @version: 106
+' @iteration: security-headers-hsts-https-redirect
+' @author: claude
+' @based_on: v104 (v104-application-integration-20260823-1400-cursor.puml)
+' @updated: 2026-08-24 08:54
+' @description: 公网边缘 nginx 统一加安全响应头（HSTS/CSP/XFO/nosniff/Referrer-Policy）+ :80→:443 308 跳转；内网面 out of scope
+
+@startuml
+!include <archimate/Archimate>
+
+title v106 — 安全头 + HTTP→HTTPS 跳转 2026-08-24 08:54
+
+' ═══════════════════════════════════════
+' Change Legend — v106 变更图例
+' ═══════════════════════════════════════
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v106 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v106 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(edge, "边缘 nginx (Host :443)")
+note right of edge
+  [MODIFIED v106] 统一加安全响应头：
+  - HSTS max-age 300→86400→31536000（无 includeSubDomains/preload）
+  - CSP Report-Only 灰度 → enforce（前置：内联脚本外置）
+  - X-Frame-Options: SAMEORIGIN
+  - X-Content-Type-Options: nosniff
+  - Referrer-Policy: strict-origin-when-cross-origin
+  - :80 → 308 → :443 强制跳转
+  @author: claude @2026-08-24 08:54
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(taskFE, "taskFE SPA")
+Application_Component(cloud, "taskCloudService")
+Application_Component(django, "saas-backend (Django legacy)")
+
+Motivation_Constraint(cHSTS, "HSTS 阶梯灰度 + 证书续签监控 🟢")
+Motivation_Constraint(cCSP, "CSP Report-Only 灰度后 enforce 🟢")
+Motivation_Constraint(cRef, "Referrer-Policy 保留 Origin（febFromRequest 回跳解析）🟢")
+
+Rel_Flow(edge, gw, "HTTPS /api/* + /* 🟡")
+Rel_Flow(gw, taskFE, "SPA catch-all")
+Rel_Flow(gw, cloud, "forward")
+Rel_Flow(gw, django, "forward legacy")
+Rel_Influence(cHSTS, edge)
+Rel_Influence(cCSP, edge)
+Rel_Influence(cRef, edge)
+
+Implementation_Plateau(plateauV104, "Plateau v104")
+Implementation_Plateau(plateauV106, "Plateau v106 安全头+HTTPS 跳转")
+Implementation_Gap(gapSec, "Gap: 公网响应无安全头、无强制 HTTPS")
+Implementation_WorkPackage(wpSec, "WP-security-headers-hsts")
+Rel_Triggering(plateauV104, gapSec, "identifies")
+Rel_Realization(wpSec, gapSec, "closes")
+Rel_Realization(wpSec, plateauV106, "delivers")
+
+@enduml

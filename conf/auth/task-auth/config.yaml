@@ -1,0 +1,113 @@
+allowedHost: ${scheme}://${subdomains.auth}
+host: 0.0.0.0
+port: 8003
+enabled: true
+# 系统初始化时写入 auth_login_method.identifier 的超级管理员登录邮箱。
+# 022 种子 SQL 用占位符；apply_datamigrate / taskAuth migrate 按本键（含 conf-local）渲染。
+# 本机覆盖：conf-local/auth/task-auth/config.yaml
+bootstrapAdmin:
+  email: author@example.com
+logging:
+  log_file: logs/task-auth/task-auth.log
+# internalSecret 留空：开发环境 APISIX forward-auth 插件无法透传自定义 header
+# 留空时 taskAuth.requireInternalSecret 和 Django._check_internal_secret 均跳过校验
+internalSecret: ""
+# 邀请邮件退订 HMAC；留空则回退 SSOJwtSecret（域分隔 email-unsub-v1|）
+unsubscribeHmacSecret: ""
+# 必须直连 Django loopback，禁止走公网 ${subdomains.api}：
+# APISIX deny-internal 会拦截 /api/internal/*，导致登录 enrich-login 返回 403 {"detail":"forbidden"}
+
+# Gateway public base = ${scheme}://api.${baseDomain} (same as ${subdomains.gateway})
+# Read from self instead of cross-reading task-gateway config (OPT-20260722-059).
+gatewayPublicBase: ${subdomains.gateway}
+# Frontend public base for user-facing links (invite emails etc.) — human-friendly domain.
+frontendBase: ${scheme}://${subdomains.www}
+# AI Provider public base for SSO bridge redirect (OPT-20260731-xxx).
+# The AI provider serves on its own subdomain, bypassing APISIX — the SSO
+# bridge must redirect the browser directly to provider, not through the gateway.
+aiProviderPublicBase: ${scheme}://${subdomains.provider}
+# Kafka bootstrap servers — resolved via base.yaml ${subdomains.kafka} which chains
+# through ${infraHost} → ${INFRA_HOST:-10.2.150.68} (see conf/base.yaml).
+# 参见 .ai/01_project_constraints/39_network_topology_aware_config.md
+kafkaBootstrapServers: ${subdomains.kafka}:9093
+
+# 同节点调用 taskReferral 绑推荐边；拆分时改 ${subdomains.xxx}
+referralServiceUrl: http://127.0.0.1:8025
+# 同节点调用 taskGitOauth 内部连接查询（Path A base_url），拆分时改 ${subdomains.xxx}
+gitOauthServiceUrl: http://127.0.0.1:8002
+
+accountDeletion:
+  cooldownDays: 15
+
+# 个人信息导出（PIPL「导出权」）：快照有效天数，过期后需重新生成
+personalDataExport:
+  retentionDays: 7
+
+# OIDC Provider configuration (for gitService SSO)
+oidc:
+  signingKeyPath: ""              # 留空自动生成临时 RSA 密钥
+  accessTokenTTL: ''
+  idTokenTTL: ''
+  refreshTokenTTL: ''
+  # 公网 issuer：浏览器 SSO 与 id_token.iss 使用 ${subdomains.gateway}
+  issuer: ${subdomains.gateway}
+  # EndSession post_logout_redirect 额外允许的入口 Origin（与 vue.publicEntryOrigins 对齐）
+  postLogoutRedirectOrigins:
+    - ${scheme}://${subdomains.www}
+    - ${scheme}://${baseDomain}
+    - http://127.0.0.1:4000
+    - http://localhost:4000
+  bootstrapClients:
+    - clientId: "gitlab-git-service"
+      clientSecret: ""
+      # 公网入口：${scheme}://${subdomains.gitlab}（无端口，边缘终止 TLS）
+      redirectUri: "${scheme}://${subdomains.gitlab}/users/auth/openid_connect/callback"
+    - clientId: "gitlab-git-service-tencent-sh-1"
+      clientSecret: ""
+      redirectUri: "${scheme}://${subdomains.gitlabTencentSh1}/users/auth/openid_connect/callback"
+    - clientId: "ai-provider"
+      clientSecret: ""
+      redirectUri: "${scheme}://${subdomains.provider}/api/auth/oidc/callback/"
+    - clientId: "chrome-extension"
+      clientSecret: ""
+      # 2026-08-24 更换扩展签名密钥（extension-dev.pem → conf-local/taskChromePlugin/key_pkcs8.pem）后
+      # 扩展 ID 由 cmkahnnaofomeaodefegkgljniiphbhj 变更为 knfffehmbkgkgablkedpniahimobgkgn。
+      # 本行为 admin 托管（031 迁移语义，DB 为准）：DB 中同时保留新旧两个 ID 的白名单；
+      # 此处的 redirectUri 仅作为新装环境 bootstrap 种子。
+      redirectUri: "chrome-extension://knfffehmbkgkgablkedpniahimobgkgn/oauth-callback.html"
+  gitServicePublicBase: ${scheme}://${subdomains.gitlab}
+
+# 微信开放平台登录 (WeChat OAuth, v64 多应用)
+# 未配置时，微信登录功能自动关闭（前端按钮仍显示，但后端返回 503）
+# 获取方式：https://open.weixin.qq.com — 创建网站应用/绑定公众号后获得
+# 应用类型:
+#   type=qr        → 开放平台网站应用扫码 (qrconnect, snsapi_login) — PC 网页
+#   type=web_oauth → 公众号网页授权 (oauth2/authorize, snsapi_userinfo) — 微信内置浏览器
+# 旧顶层 appId/appSecret/redirectUri 自动映射为 apps.web（向后兼容）
+wechat:
+  # ADR-0059: 服务号 cgi-bin 出站经 Host sh wechat-mp-egress（固定出口 IP）。
+  # 生产在 conf-local 填写 baseUrl + internalSecret；空 baseUrl = 直连（开发/单测）。
+  mpEgress:
+    baseUrl: ""
+    internalSecret: ""
+  apps:
+    web:
+      appId: "wx625802b55b33608f"
+      appSecret: ""
+      redirectUri: "${scheme}://${subdomains.base}/api/auth/wechat/callback/"
+      type: qr
+    mp:
+      # 微信支付商户绑定的服务号 AppID（与 conf/billing/wechatPay appid 一致）。
+      # Token / AppSecret / EncodingAESKey 用本目录 config.local.yaml 或环境变量
+      # WECHAT_MP_TOKEN / WECHAT_MP_APP_SECRET / WECHAT_MP_ENCODING_AES_KEY，勿提交密钥。
+      appId: "wx31273ca77c89dffe"
+      appSecret: ""
+      redirectUri: ""
+      type: mp
+      token: ""
+      encodingAESKey: ""
+    # inapp:  # 公众号网页授权（微信内置浏览器一键登录）— 申请公众号并绑定开放平台账号后启用
+    #   appId: "wx..."
+    #   appSecret: "..."
+    #   redirectUri: "${scheme}://${subdomains.base}/api/auth/wechat/inapp/callback/"
+    #   type: web_oauth

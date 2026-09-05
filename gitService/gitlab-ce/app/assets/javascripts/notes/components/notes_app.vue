@@ -1,0 +1,440 @@
+<script>
+import { mapState, mapActions } from 'pinia';
+import { v4 as uuidv4 } from 'uuid';
+import DuoCodeReviewSystemNote from 'ee_component/vue_shared/components/notes/duo_code_review_system_note.vue';
+import { createAlert } from '~/alert';
+import { __ } from '~/locale';
+import { InternalEvents } from '~/tracking';
+import { convertToGraphQLId, getIdFromGraphQLId } from '~/graphql_shared/utils';
+import { TYPENAME_NOTE } from '~/graphql_shared/constants';
+import * as Sentry from '~/sentry/sentry_browser_wrapper';
+import { getDraft, getAutoSaveKeyFromDiscussion } from '~/lib/utils/autosave';
+import highlightCurrentUser from '~/behaviors/markdown/highlight_current_user';
+import { scrollToTargetOnResize } from '~/lib/utils/resize_observer';
+import TimelineEntryItem from '~/vue_shared/components/notes/timeline_entry_item.vue';
+import DraftNote from '~/batch_comments/components/draft_note.vue';
+import { getLocationHash } from '~/lib/utils/url_utility';
+import PlaceholderNote from '~/vue_shared/components/notes/placeholder_note.vue';
+import PlaceholderSystemNote from '~/vue_shared/components/notes/placeholder_system_note.vue';
+import SkeletonLoadingContainer from '~/vue_shared/components/notes/skeleton_note.vue';
+import SystemNote from '~/vue_shared/components/notes/system_note.vue';
+import { Mousetrap } from '~/lib/mousetrap';
+import { ISSUABLE_COMMENT_OR_REPLY, keysFor } from '~/behaviors/shortcuts/keybindings';
+import { CopyAsGFM } from '~/behaviors/markdown/copy_as_gfm';
+import { useNotes } from '~/notes/store/legacy_notes';
+import { querySelectionClosest } from '~/lib/utils/selection';
+import * as constants from '../constants';
+import eventHub from '../event_hub';
+import noteQuery from '../graphql/note.query.graphql';
+import CommentForm from './comment_form.vue';
+import DiscussionFilterNote from './discussion_filter_note.vue';
+import NoteableDiscussion from './noteable_discussion.vue';
+import NoteableNote from './noteable_note.vue';
+import OrderedLayout from './ordered_layout.vue';
+import SidebarSubscription from './sidebar_subscription.vue';
+import NotesActivityHeader from './notes_activity_header.vue';
+
+export default {
+  name: 'NotesApp',
+  components: {
+    NotesActivityHeader,
+    NoteableNote,
+    NoteableDiscussion,
+    SystemNote,
+    CommentForm,
+    PlaceholderNote,
+    PlaceholderSystemNote,
+    SkeletonLoadingContainer,
+    DiscussionFilterNote,
+    OrderedLayout,
+    SidebarSubscription,
+    DraftNote,
+    TimelineEntryItem,
+    AiSummary: () => import('ee_component/notes/components/ai_summary.vue'),
+    DuoCodeReviewSystemNote,
+  },
+  mixins: [InternalEvents.mixin()],
+  provide() {
+    return {
+      summarizeClientSubscriptionId: uuidv4(),
+    };
+  },
+  props: {
+    noteableData: {
+      type: Object,
+      required: true,
+    },
+    notesData: {
+      type: Object,
+      required: true,
+    },
+    notesFilters: {
+      type: Array,
+      required: true,
+    },
+    notesFilterValue: {
+      type: Number,
+      default: undefined,
+      required: false,
+    },
+    shouldShow: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
+    helpPagePath: {
+      type: String,
+      required: false,
+      default: '',
+    },
+  },
+  data() {
+    return {
+      renderSkeleton: !this.shouldShow,
+      aiLoading: null,
+      previewNote: null,
+    };
+  },
+  apollo: {
+    previewNote: {
+      skip() {
+        const notCommentId = Boolean(this.previewNoteId?.match(/([a-f0-9]{40})/));
+        return !this.previewNoteId || notCommentId;
+      },
+      query: noteQuery,
+      variables() {
+        return {
+          id: convertToGraphQLId(TYPENAME_NOTE, this.previewNoteId),
+        };
+      },
+      update(data) {
+        if (
+          data?.note?.noteableType !== this.noteableData.noteableType ||
+          data?.note?.noteableId !== this.noteableData.id
+        ) {
+          return null;
+        }
+
+        if (!data?.note?.discussion) return null;
+        return {
+          id: `${getIdFromGraphQLId(data.note.discussion.id)}`,
+          expanded: true,
+          notes: data.note.discussion.notes.nodes.map((note) => ({
+            ...note,
+            id: `${getIdFromGraphQLId(note.id)}`,
+            author: {
+              ...note.author,
+              id: getIdFromGraphQLId(note.author.id),
+            },
+            award_emoji: note.award_emoji.nodes.map((emoji) => ({
+              ...emoji,
+              id: getIdFromGraphQLId(emoji.id),
+              user: {
+                ...emoji.user,
+                id: getIdFromGraphQLId(emoji.user.id),
+              },
+            })),
+            current_user: {
+              can_award_emoji: note.userPermissions.awardEmoji,
+              can_edit: note.userPermissions.adminNote,
+              can_resolve_discussions: data.note.discussion.userPermissions.resolveNote,
+            },
+            last_edited_by: {
+              ...note.last_edited_by,
+              id: getIdFromGraphQLId(note.last_edited_by?.id),
+            },
+            toggle_award_path: '',
+          })),
+        };
+      },
+      error(error) {
+        Sentry.captureException(error);
+      },
+    },
+  },
+  computed: {
+    ...mapState(useNotes, [
+      'isNotesFetched',
+      'convertedDisscussionIds',
+      'isLoading',
+      'isFetching',
+      'commentsDisabled',
+      'userCanReply',
+      'sortDirection',
+      'timelineEnabled',
+      'targetNoteHash',
+    ]),
+    ...mapState(useNotes, { discussions: 'filteredDiscussions' }),
+    sortDirDesc() {
+      return this.sortDirection === constants.DESC;
+    },
+    noteableType() {
+      if (this.noteableData.type?.toUpperCase() === constants.INCIDENT_NOTEABLE_TYPE) {
+        return (
+          this.noteableData.type.charAt(0).toUpperCase() +
+          this.noteableData.type.slice(1).toLowerCase()
+        );
+      }
+      return this.noteableData.noteableType;
+    },
+    previewNoteId() {
+      if (!this.isLoading || !this.targetNoteHash?.startsWith('note_')) return null;
+      return this.targetNoteHash.replace('note_', '');
+    },
+    allDiscussions() {
+      let skeletonNotes = [];
+
+      if (this.renderSkeleton || this.isLoading) {
+        const prerenderedNotesCount = parseInt(this.notesData.prerenderedNotesCount, 10) || 0;
+
+        skeletonNotes = new Array(prerenderedNotesCount).fill({
+          isSkeletonNote: true,
+        });
+
+        if (
+          this.previewNote &&
+          !this.discussions.find((d) => d.notes[0].id === this.previewNoteId)
+        ) {
+          skeletonNotes.splice(prerenderedNotesCount / 2, 0, this.previewNote);
+        }
+      }
+      if (this.sortDirDesc) {
+        return skeletonNotes.concat(this.discussions);
+      }
+
+      return this.discussions.concat(skeletonNotes);
+    },
+    canReply() {
+      return this.userCanReply && !this.commentsDisabled && !this.timelineEnabled;
+    },
+    slotKeys() {
+      return this.sortDirDesc ? ['form', 'comments'] : ['comments', 'form'];
+    },
+    isAppReady() {
+      return !this.isLoading && !this.renderSkeleton && this.shouldShow;
+    },
+  },
+  watch: {
+    async isFetching() {
+      if (!this.isFetching) {
+        await this.$nextTick();
+        await this.startTaskList();
+        await this.checkLocationHash();
+      }
+    },
+    shouldShow() {
+      if (!this.isNotesFetched) {
+        this.fetchNotes().catch((error) => {
+          createAlert({
+            message: __('Something went wrong while fetching comments. Please try again.'),
+            captureError: true,
+            error,
+          });
+        });
+      }
+
+      setTimeout(() => {
+        this.renderSkeleton = !this.shouldShow;
+      });
+    },
+    isAppReady: {
+      handler(isReady) {
+        if (!isReady) return;
+        this.$nextTick(() => {
+          window.mrTabs?.eventHub.$emit('NotesAppReady');
+          this.cleanup?.();
+        });
+      },
+      immediate: true,
+    },
+  },
+  mounted() {
+    const { parentElement } = this.$el;
+    if (parentElement && parentElement.classList.contains('js-vue-notes-event')) {
+      parentElement.addEventListener('toggleAward', this.handleAward);
+    }
+
+    eventHub.$on('noteFormAddToReview', this.handleReviewTracking);
+    eventHub.$on('noteFormStartReview', this.handleReviewTracking);
+
+    window.addEventListener('hashchange', this.handleHashChanged);
+
+    if (this.targetNoteHash && this.targetNoteHash.startsWith('note_')) {
+      this.cleanup = scrollToTargetOnResize();
+    }
+
+    eventHub.$on('notesApp.updateIssuableConfidentiality', this.setConfidentiality);
+    Mousetrap.bind(keysFor(ISSUABLE_COMMENT_OR_REPLY), this.quoteReply);
+  },
+  updated() {
+    this.$nextTick(() => {
+      highlightCurrentUser(this.$el.querySelectorAll('.gfm-project_member'));
+    });
+  },
+  beforeDestroy() {
+    window.removeEventListener('hashchange', this.handleHashChanged);
+    eventHub.$off('notesApp.updateIssuableConfidentiality', this.setConfidentiality);
+    eventHub.$off('noteFormStartReview', this.handleReviewTracking);
+    eventHub.$off('noteFormAddToReview', this.handleReviewTracking);
+    Mousetrap.unbind(keysFor(ISSUABLE_COMMENT_OR_REPLY));
+    const { parentElement } = this.$el;
+    if (parentElement && parentElement.classList.contains('js-vue-notes-event')) {
+      parentElement.removeEventListener('toggleAward', this.handleAward);
+    }
+  },
+  methods: {
+    ...mapActions(useNotes, [
+      'toggleAward',
+      'setTargetNoteHash',
+      'expandDiscussion',
+      'startTaskList',
+      'convertToDiscussion',
+      'setConfidentiality',
+      'fetchNotes',
+    ]),
+    handleAward(event) {
+      const { awardName, noteId } = event.detail;
+      this.toggleAward({ awardName, noteId });
+    },
+    async quoteReply() {
+      if (!this.shouldShow) return;
+
+      const discussionEl = querySelectionClosest('.js-discussion-container');
+
+      if (!discussionEl) {
+        const text = await CopyAsGFM.selectionToGfm();
+        this.replyInMainEditor(text);
+      } else {
+        discussionEl.dispatchEvent(new CustomEvent('quoteReply'));
+      }
+    },
+    replyInMainEditor(text) {
+      this.$refs.commentForm.append(text);
+    },
+    discussionIsIndividualNoteAndNotConverted(discussion) {
+      return (
+        discussion.individual_note &&
+        !this.convertedDisscussionIds.includes(discussion.id) &&
+        !this.hasDraft(discussion)
+      );
+    },
+    handleHashChanged() {
+      const noteId = this.checkLocationHash();
+
+      if (noteId) {
+        this.setTargetNoteHash(getLocationHash());
+      }
+    },
+    checkLocationHash() {
+      const hash = getLocationHash();
+      const noteId = (hash && hash.startsWith('note_') && hash.replace(/^note_/, '')) ?? null;
+
+      if (noteId) {
+        const discussion = this.discussions.find((d) => d.notes?.some(({ id }) => id === noteId));
+
+        if (discussion) {
+          this.expandDiscussion({ discussionId: discussion.id });
+        }
+      }
+
+      return noteId;
+    },
+    async startReplying(discussionId) {
+      this.convertToDiscussion(discussionId);
+      await this.$nextTick();
+      eventHub.$emit('start-replying', discussionId);
+    },
+    setAiLoading(loading) {
+      this.aiLoading = loading;
+    },
+    handleReviewTracking(event) {
+      const types = {
+        noteFormStartReview: 'merge_request_click_start_review_on_overview_tab',
+        noteFormAddToReview: 'merge_request_click_add_to_review_on_overview_tab',
+      };
+
+      if (this.shouldShow && window.mrTabs && types[event.name]) {
+        this.trackEvent(types[event.name]);
+      }
+    },
+    hasDraft(discussion) {
+      const autoSaveKey = getAutoSaveKeyFromDiscussion(discussion);
+      return Boolean(getDraft(autoSaveKey));
+    },
+    isDuoCodeReviewBotAuthor(discussion) {
+      return discussion.notes[0].author?.user_type === 'duo_code_review_bot';
+    },
+  },
+  systemNote: constants.SYSTEM_NOTE,
+};
+</script>
+
+<template>
+  <div v-show="shouldShow" id="notes">
+    <sidebar-subscription :iid="noteableData.iid" :noteable-data="noteableData" />
+    <notes-activity-header
+      :notes-filters="notesFilters"
+      :notes-filter-value="notesFilterValue"
+      :noteable-type="noteableType"
+    />
+    <ai-summary v-if="aiLoading !== null" :ai-loading="aiLoading" @set-ai-loading="setAiLoading" />
+    <ordered-layout :slot-keys="slotKeys">
+      <template #form>
+        <comment-form
+          v-if="!(commentsDisabled || timelineEnabled)"
+          ref="commentForm"
+          class="js-comment-form"
+          :noteable-type="noteableType"
+        />
+      </template>
+      <template #comments>
+        <ul id="notes-list" class="notes main-notes-list timeline">
+          <template v-for="discussion in allDiscussions">
+            <skeleton-loading-container
+              v-if="discussion.isSkeletonNote"
+              :key="discussion.id"
+              class="note-skeleton"
+            />
+            <timeline-entry-item v-else-if="discussion.isDraft" :key="discussion.id">
+              <draft-note :draft="discussion" />
+            </timeline-entry-item>
+            <template v-else-if="discussion.isPlaceholderNote">
+              <placeholder-system-note
+                v-if="discussion.placeholderType === $options.systemNote"
+                :key="discussion.id"
+                :note="discussion.notes[0]"
+              />
+              <placeholder-note v-else :key="discussion.id" :note="discussion.notes[0]" />
+            </template>
+            <template v-else-if="discussionIsIndividualNoteAndNotConverted(discussion)">
+              <template v-if="discussion.notes[0].system">
+                <duo-code-review-system-note
+                  v-if="isDuoCodeReviewBotAuthor(discussion)"
+                  :key="discussion.id"
+                  :note="discussion.notes[0]"
+                />
+                <system-note v-else :key="discussion.id" :note="discussion.notes[0]" />
+              </template>
+              <noteable-note
+                v-else
+                :key="discussion.id"
+                :note="discussion.notes[0]"
+                :show-reply-button="canReply"
+                @start-replying="startReplying(discussion.id)"
+              />
+            </template>
+            <noteable-discussion
+              v-else
+              :key="discussion.id"
+              :discussion="discussion"
+              :render-diff-file="true"
+              is-overview-tab
+              :help-page-path="helpPagePath"
+            />
+          </template>
+          <discussion-filter-note v-if="commentsDisabled" />
+        </ul>
+      </template>
+    </ordered-layout>
+  </div>
+</template>

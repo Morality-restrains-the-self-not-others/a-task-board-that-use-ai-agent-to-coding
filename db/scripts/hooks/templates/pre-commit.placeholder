@@ -1,0 +1,10 @@
+#!/bin/bash
+# 无测例仓库占位 pre-commit：提示无测试资产，允许提交。
+# 若后续添加测例，请用 scripts/deploy_repo_random_precommit.sh 替换为对应类型模板。
+
+set -u
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+echo "Pre-commit: $(basename "$(pwd)") 当前无自动化单元测例，跳过随机单测门禁。"
+echo "Commit can proceed."

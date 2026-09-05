@@ -1,0 +1,7 @@
+intents:
+  1_process_workspace_creation:
+    host: 0.0.0.0
+    port: 18030
+    groupId: task-events-workspace-created-1-process-workspace-creation
+    events:
+    - WORKSPACE_CREATED

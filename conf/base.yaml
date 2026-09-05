@@ -1,0 +1,51 @@
+# Global address Single Source of Truth (domain addressing only).
+# Every service config references ${scheme}, ${baseDomain}, or ${subdomains.xxx}
+# instead of hardcoding a specific protocol or domain.
+#
+# Override protocol:      PUBLIC_SCHEME=http
+# Override root domain:   BASE_DOMAIN=daydaymoney.com
+#   → ${scheme}                      → https
+#   → ${subdomains.api}              → api.daydaymoney.com
+#   → ${subdomains.gateway}          → https://api.daydaymoney.com
+#   → ${scheme}://${subdomains.www}  → https://www.daydaymoney.com
+#   → ${subdomains.auth}             → auth_api.daydaymoney.com  (not auth.api.*)
+#
+# Infrastructure host:    INFRA_HOST=<ip>
+#   → ${INFRA_HOST}:6379             → Redis 连接地址（内网 IP）
+#   → ${INFRA_HOST}:9093             → Kafka bootstrap 地址
+
+scheme: ${PUBLIC_SCHEME:-https}
+baseDomain: ${BASE_DOMAIN:-daydaymoney.com}
+
+# 基础设施宿主机 LAN/WAN IP。内网中间件（Redis/Kafka/MySQL 等）绑定此地址。
+# 默认 127.0.0.1（开发环境单机）；生产/多节点部署须通过环境变量 INFRA_HOST 覆盖。
+infraHost: ${INFRA_HOST:-10.2.150.68}
+
+subdomains:
+  api:              api.${baseDomain}
+  auth:             auth_api.${baseDomain}
+  gitoauth:         gitoauth_api.${baseDomain}
+  provider:         provider.${baseDomain}
+  gitlab:           gitlab.${baseDomain}
+  gitlabTencentSh1: gitlab-tencent-sh-1.${baseDomain}
+  www:              www.${baseDomain}
+  base:             ${baseDomain}
+  aiendpoint:       aiendpoint.${baseDomain}
+  credential:       credential_api.${baseDomain}
+  agentsupport:     agentsupport_api.${baseDomain}
+  cloud:            cloud_api.${baseDomain}
+  relaytotrae:      relay.${baseDomain}
+  mockruncontainer: mockruncontainer.${baseDomain}
+  businessapi:      businessapi.${baseDomain}
+  # Public API / OIDC issuer origin (includes scheme).
+  gateway:          ${scheme}://api.${baseDomain}
+
+  # ── 基础设施内网子域（面向未来多节点拆分）────────────────────────────
+  # 当前所有 infra 服务与业务服务同机部署，指向 ${infraHost}。
+  # 拆分到独立节点时仅需修改以下条目或设置 INFRA_HOST 环境变量。
+  # 参见 .ai/01_project_constraints/39_network_topology_aware_config.md
+  kafka:            ${infraHost}       # Kafka broker（base_yaml_loader 强制要求）
+  kafkaInternal:    ${infraHost}       # Kafka broker 内网直连地址
+  redisInternal:    ${infraHost}       # Redis 内网地址
+  mysqlInternal:    ${infraHost}       # MySQL 内网地址
+  infra:            ${infraHost}       # 基础设施统一入口（Grafana/Loki 等）

@@ -1,0 +1,98 @@
+' @title: 二进制部署与独立配置仓（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 122
+' @iteration: binary-deploy-config-repo
+' @author: cursor
+' @based_on: v121 (v121-enterprise-landscape-20260830-0922-cursor.puml)
+' @updated: 2026-08-30 15:31
+' @description: 部署机无源码；运行时 conf 迁入 GitHub 私有仓 daydaymoney-deploy；产物走 GitHub Packages
+
+@startuml
+!include <archimate/Archimate>
+
+title 二进制部署 + 配置仓隔离 — v122 Target Architecture (2026-08-30 15:31)
+
+' ═══════════════════════════════════════
+' Change Legend — v122 变更图例
+' ═══════════════════════════════════════
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v122 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v122 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v122 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+rectangle "Business" {
+  Business_Actor(dev, "研发")
+  Business_Actor(ops, "平台运维")
+  note right of ops
+    [NEW v122] 改运行时参数只提交配置仓
+    @author: cursor @2026-08-30 15:31
+  end note
+  Business_Process(publish, "发布产物")
+  Business_Process(deploy, "钉版本并部署")
+  note right of deploy
+    [NEW v122] 部署机无源码 clone
+  end note
+}
+
+rectangle "Application" {
+  Application_Component(runAll, "runAll :9999")
+  note top of runAll
+    [MODIFIED v122] --config CONF_ROOT/runAll.yaml
+    部署模式无 build_command；download-then-swap
+    @author: cursor @2026-08-30 15:31
+  end note
+  Application_Component(bins, "Go 二进制 + taskEvents + taskFE dist")
+  note right of bins
+    [NEW v122] last-good ELF / nginx html symlink
+  end note
+}
+
+rectangle "Technology" {
+  Technology_Artifact(srcRepo, "源码仓 GitHub")
+  note right of srcRepo
+    代码 / tests / dataMigrate SQL / conf.example
+  end note
+  Technology_Artifact(cfgRepo, "daydaymoney-deploy")
+  note right of cfgRepo
+    [NEW v122] 私有 GitHub 配置仓
+    整棵运行时 conf + Docker 配方 + releases.yaml
+    @author: cursor @2026-08-30 15:31
+  end note
+  Technology_Artifact(pkg, "GitHub Packages")
+  note right of pkg
+    [NEW v122] ELF / dist / dataMigrate tarball
+  end note
+  Technology_Node(host, "部署机 DEPLOY_ROOT")
+  note right of host
+    [NEW v122] 无 .gitmodules / 无业务 *.go
+    CONF_ROOT + bin/ + dockerInfra + volumes
+  end note
+  Technology_Artifact(oldConf, "源码仓 conf 运行时 SSOT")
+  note bottom of oldConf
+    [DEPRECATED v122] P3 后仅 conf.example
+    @author: cursor @2026-08-30 15:31
+  end note
+}
+
+Rel_Assignment(dev, publish)
+Rel_Assignment(ops, deploy)
+Rel_Flow(srcRepo, pkg, "CI publish 🟢")
+Rel_Flow(cfgRepo, host, "git pull conf/配方 🟢")
+Rel_Flow(pkg, host, "deploy-sync 按钉拉取 🟢")
+Rel_Serving(host, runAll, "exec last-good 🟢")
+Rel_Serving(runAll, bins, "start_command 🟡")
+Rel_Access_r(runAll, cfgRepo, "CONF_ROOT 🟡")
+Rel_Association(oldConf, srcRepo, "曾同树 🔴")
+
+Implementation_Plateau(p121, "Plateau v121")
+Implementation_Plateau(p122, "Plateau v122 二进制+配置仓")
+Implementation_Gap(g, "Gap: 源码与运行时 conf 同树")
+Implementation_WorkPackage(wp, "WP-binary-deploy-config-repo")
+Rel_Triggering(p121, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p122, "delivers")
+
+@enduml

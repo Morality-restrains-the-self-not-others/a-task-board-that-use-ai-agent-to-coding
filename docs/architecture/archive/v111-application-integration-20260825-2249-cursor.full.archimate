@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v111 全量 (post-change)" id="id-v111aifull01">
+  <folder name="Application" id="id-v111aif-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v111f-app-fe" name="taskFE SPA [MODIFIED v111]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v111f-app-gw" name="taskGateway / APISIX [MODIFIED v111]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v111f-app-auth" name="taskAuth [MODIFIED v111]"/>
+    <element xsi:type="archimate:DataObject" id="id-v111f-data-hist" name="auth_login_history [NEW v111]"/>
+    <element xsi:type="archimate:DataObject" id="id-v111f-data-user" name="auth_user"/>
+  </folder>
+  <folder name="Business" id="id-v111aif-biz" type="business">
+    <element xsi:type="archimate:BusinessEvent" id="id-v111f-ev-login" name="USER_LOGGED_IN [MODIFIED v111]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v111aif-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v111f-pl-v110" name="Plateau v110"/>
+    <element xsi:type="archimate:Plateau" id="id-v111f-pl-v111" name="Plateau v111 登录历史"/>
+    <element xsi:type="archimate:Gap" id="id-v111f-gap" name="Gap: 仅 last_login，无 IP/入口历史"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v111f-wp" name="WP-login-history"/>
+  </folder>
+  <folder name="Relations" id="id-v111aif-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v111f-rel-fe-gw" source="id-v111f-app-fe" target="id-v111f-app-gw" name="查看登录历史"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v111f-rel-gw-auth" source="id-v111f-app-gw" target="id-v111f-app-auth" name="login-history GET"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v111f-rel-auth-hist" source="id-v111f-app-auth" target="id-v111f-data-hist" name="write on login / read on list"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v111f-rel-auth-user" source="id-v111f-app-auth" target="id-v111f-data-user" name="touch last_login"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v111f-rel-auth-ev" source="id-v111f-app-auth" target="id-v111f-ev-login" name="发布"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v111f-rel-pl110-gap" source="id-v111f-pl-v110" target="id-v111f-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v111f-rel-wp-gap" source="id-v111f-wp" target="id-v111f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v111f-rel-wp-pl111" source="id-v111f-wp" target="id-v111f-pl-v111"/>
+  </folder>
+  <folder name="Views" id="id-v111aif-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v111f-view-mig" name="架构变迁 v110→v111 — login-history">
+      <child xsi:type="archimate:DiagramObject" id="id-v111f-do-pl110" archimateElement="id-v111f-pl-v110">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v111f-c-pl110-gap" source="id-v111f-do-pl110" target="id-v111f-do-gap" archimateRelationship="id-v111f-rel-pl110-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v111f-do-gap" targetConnections="id-v111f-c-pl110-gap id-v111f-c-wp-gap" archimateElement="id-v111f-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v111f-do-wp" archimateElement="id-v111f-wp">
+        <bounds x="240" y="160" width="400" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v111f-c-wp-gap" source="id-v111f-do-wp" target="id-v111f-do-gap" archimateRelationship="id-v111f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v111f-c-wp-pl111" source="id-v111f-do-wp" target="id-v111f-do-pl111" archimateRelationship="id-v111f-rel-wp-pl111"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v111f-do-pl111" targetConnections="id-v111f-c-wp-pl111" archimateElement="id-v111f-pl-v111">
+        <bounds x="680" y="160" width="280" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v111f-view-topo" name="v111 全量拓扑 — 登录历史">
+      <child xsi:type="archimate:DiagramObject" id="id-v111f-do-fe" archimateElement="id-v111f-app-fe">
+        <bounds x="48" y="96" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v111f-c-fe-gw" source="id-v111f-do-fe" target="id-v111f-do-gw" archimateRelationship="id-v111f-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v111f-do-gw" targetConnections="id-v111f-c-fe-gw" archimateElement="id-v111f-app-gw">
+        <bounds x="280" y="96" width="180" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v111f-c-gw-auth" source="id-v111f-do-gw" target="id-v111f-do-auth" archimateRelationship="id-v111f-rel-gw-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v111f-do-auth" targetConnections="id-v111f-c-gw-auth" archimateElement="id-v111f-app-auth">
+        <bounds x="520" y="96" width="160" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v111f-c-auth-hist" source="id-v111f-do-auth" target="id-v111f-do-hist" archimateRelationship="id-v111f-rel-auth-hist"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v111f-c-auth-user" source="id-v111f-do-auth" target="id-v111f-do-user" archimateRelationship="id-v111f-rel-auth-user"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v111f-c-auth-ev" source="id-v111f-do-auth" target="id-v111f-do-ev" archimateRelationship="id-v111f-rel-auth-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v111f-do-hist" targetConnections="id-v111f-c-auth-hist" archimateElement="id-v111f-data-hist">
+        <bounds x="740" y="16" width="220" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v111f-do-user" targetConnections="id-v111f-c-auth-user" archimateElement="id-v111f-data-user">
+        <bounds x="740" y="96" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v111f-do-ev" targetConnections="id-v111f-c-auth-ev" archimateElement="id-v111f-ev-login">
+        <bounds x="740" y="176" width="220" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

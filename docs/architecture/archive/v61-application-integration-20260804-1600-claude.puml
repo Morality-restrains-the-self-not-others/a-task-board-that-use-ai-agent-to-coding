@@ -1,0 +1,163 @@
+' @title: RBAC 角色权限体系 — Application Integration
+' @view: application-integration
+' @status: target
+' @version: 61
+' @iteration: rbac-identity-role-permission-system
+' @author: claude
+' @based_on: v57 (v57-application-integration-20260730-0229-claude.puml)
+' @updated: 2026-08-04 16:00
+' @description: 新增 RBAC 两级四角色权限体系。taskAuth +4 RBAC 表 + PDP。taskTenant +2 RBAC 表。shareLib/authz 薄客户端。APISIX forward-auth 增强。旧 is_admin/is_superuser 鉴权废弃。
+
+@startuml
+!include <archimate/Archimate>
+
+title v61 — RBAC 角色权限体系 (Target, 2026-08-04 16:00)
+
+legend right
+  |<#LightGreen>  </>| 🟢 [NEW v61] |
+  |<#LightYellow> </>| 🟡 [MODIFIED v61] |
+  |<#LightPink>   </>| 🔴 [DEPRECATED v61] |
+  |<#White>       </>| 未变 |
+endlegend
+
+' ═══ Services ═══
+
+Application_Component(taskAuth, "taskAuth (:8003)")
+note right of taskAuth
+  🟡 [MODIFIED v61]
+  + auth_role / auth_permission
+  + auth_role_permission / auth_user_role
+  + /api/auth/roles/
+  + /api/auth/user-roles/
+  + /api/auth/employees/
+  + /api/internal/auth/permission-check/
+  forward-auth 注入 X-User-Roles
+end note
+
+Application_Component(taskTenant, "taskTenantService (:8020)")
+note right of taskTenant
+  🟡 [MODIFIED v61]
+  + tenant_member_role
+  + tenant_group_role
+  + /api/tenant/member-role/
+  + /api/tenant/group-role/
+  替换 policy.go 鉴权
+end note
+
+Application_Component(taskProject, "taskProjectService (:8016)")
+Application_Component(taskTask, "taskTaskService (:8021)")
+Application_Component(taskAIComment, "taskAIComment (:8022)")
+
+Application_Component(taskCloud, "taskCloudService (:8018)")
+note right of taskCloud
+  🟡 hand-rolled → authz.RequireRole()
+end note
+
+Application_Component(taskBill, "taskBill (:8004)")
+note right of taskBill
+  🟡 hand-rolled → authz.RequireRole()
+end note
+
+Application_Component(taskEvents, "taskEvents (:8023)")
+note right of taskEvents
+  🟡 + RoleChanged consumer (缓存失效)
+  + CompanyCreated→creator role
+end note
+
+Application_Component(shareLibAuthz, "shareLib/authz\n(薄客户端)")
+note right of shareLibAuthz
+  🟢 [NEW v61]
+  permissions.go (PermCode const)
+  roles.go (SystemRoles)
+  context.go (AuthContext)
+  middleware.go (RequireRole/RequireTenantRole)
+end note
+
+Application_Component(kafkaConsumers, "Kafka Consumers")
+Application_Component(gateway, "APISIX Gateway (:18081)")
+note right of gateway
+  🟡 forward-auth → taskAuth
+  注入: X-User-Roles
+        X-Tenant-Memberships
+end note
+
+' ═══ Data ═══
+Application_DataObject(kafkaBroker, "Kafka")
+Application_DataObject(taskAuthDB, "taskAuth DB")
+note bottom of taskAuthDB
+  🟡 +4 RBAC 表
+  auth_role, auth_permission
+  auth_role_permission, auth_user_role
+end note
+
+Application_DataObject(taskTenantDB, "taskTenant DB")
+note bottom of taskTenantDB
+  🟡 +2 RBAC 表
+  tenant_member_role, tenant_group_role
+end note
+
+Application_DataObject(taskProjectDB, "taskProject DB")
+Application_DataObject(taskTaskDB, "taskTask DB")
+Application_DataObject(taskCloudDB, "taskCloud DB")
+Application_DataObject(taskBillDB, "taskBill DB")
+
+' ═══ Events ═══
+Application_Event(evtRoleAssigned, "PlatformRoleAssigned")
+Application_Event(evtRoleRevoked, "PlatformRoleRevoked")
+Application_Event(evtTenantRole, "TenantMemberRoleChanged")
+Application_Event(evtGroupRole, "TenantGroupRoleChanged")
+Application_Event(evtCompanyCreated, "CompanyCreated (已有)")
+
+' ═══ Deprecated ═══
+Application_Component(oldIsAdmin, "is_admin 直接鉴权 [DEPRECATED]")
+Application_Component(oldIsSuperuser, "is_superuser 直接鉴权 [DEPRECATED]")
+
+' ═══ Relationships ═══
+
+' Gateway → PDP
+Rel_Flow(gateway, taskAuth, "forward-auth\n→ /api/internal/auth/permission-check/\n← X-User-Roles, X-Tenant-Memberships")
+
+' Gateway → Services
+Rel_Flow(gateway, taskTenant, "/api/tenant/...")
+Rel_Flow(gateway, taskProject, "/api/projects/...")
+Rel_Flow(gateway, taskTask, "/api/tasks/...")
+Rel_Flow(gateway, taskAIComment, "/api/ai-comments/...")
+Rel_Flow(gateway, taskCloud, "/api/cloud/..., /api/system-admin/...")
+Rel_Flow(gateway, taskBill, "/api/billing/..., /api/system-admin/...")
+
+' authz thin client
+Rel_Serving(shareLibAuthz, taskAuth, "RequireRole()")
+Rel_Serving(shareLibAuthz, taskTenant, "RequireTenantRole/Member")
+Rel_Serving(shareLibAuthz, taskCloud, "RequireRole()")
+Rel_Serving(shareLibAuthz, taskBill, "RequireRole()")
+Rel_Serving(shareLibAuthz, taskProject, "RequireTenantRole()")
+Rel_Serving(shareLibAuthz, taskTask, "RequireTenantRole()")
+
+' Kafka
+Rel_Flow(kafkaBroker, kafkaConsumers, "consume")
+Rel_Flow(kafkaConsumers, taskTenant, "🟡 +CompanyCreated→role")
+Rel_Flow(kafkaConsumers, taskAuth, "user profile events")
+Rel_Flow(kafkaConsumers, taskProject, "workspace events")
+Rel_Flow(kafkaConsumers, taskCloud, "cloud events")
+Rel_Flow(kafkaConsumers, taskEvents, "🟡 +RoleChanged→cache invalidate")
+
+' Data ownership
+Rel_Access_w(taskAuth, taskAuthDB, "users, roles, permissions")
+Rel_Access_w(taskTenant, taskTenantDB, "companies, members, groups, roles")
+Rel_Access_w(taskProject, taskProjectDB, "projects, ACL")
+Rel_Access_w(taskTask, taskTaskDB, "todos")
+Rel_Access_w(taskCloud, taskCloudDB, "cloud resources")
+Rel_Access_w(taskBill, taskBillDB, "billing")
+
+' Events
+Rel_Flow(taskAuth, evtRoleAssigned, "publish")
+Rel_Flow(taskAuth, evtRoleRevoked, "publish")
+Rel_Flow(taskTenant, evtTenantRole, "publish")
+Rel_Flow(taskTenant, evtGroupRole, "publish")
+Rel_Flow(evtRoleAssigned, kafkaBroker, "→")
+Rel_Flow(evtRoleRevoked, kafkaBroker, "→")
+Rel_Flow(evtTenantRole, kafkaBroker, "→")
+Rel_Flow(evtGroupRole, kafkaBroker, "→")
+Rel_Flow(evtCompanyCreated, kafkaBroker, "(已有) 🟡 新增 consumer")
+
+@enduml

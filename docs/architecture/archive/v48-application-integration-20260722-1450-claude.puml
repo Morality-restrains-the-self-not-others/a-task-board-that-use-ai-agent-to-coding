@@ -1,0 +1,42 @@
+' @title: Application Integration — 超管充值消费情况总览
+' @view: application-integration
+' @status: archived
+' @version: 48
+' @author: claude
+' @based_on: v41 current
+' @updated: 2026-07-22 15:00
+' @description: 价格管理「充值消费情况」只读聚合；taskBill 汇总 + Django 薄代理 + Vue tabs
+' @iteration: admin-recharge-consumption-overview
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v48 — Admin Recharge Consumption Overview (2026-07-22 15:00)
+
+rectangle "Motivation" {
+  Motivation_Constraint(goFirst, "Constraint\n聚合落Go taskBill")
+  Motivation_Principle(referralBase, "Principle\n可分成=已消费")
+}
+
+rectangle "Application" {
+  Application_Component(vuePrice, "Vue PriceManagement\ntabs 充值消费情况")
+  Application_Component(vueReferral, "Vue UserReferral\n仅已消费可分成")
+  Application_Component(django, "Django system-admin\n薄代理+用户enrich")
+  Application_Component(taskBill, "taskBill\nuser-recharge-consumption")
+  Application_DataObject(txn, "billing_transaction")
+  Application_DataObject(ledger, "billing_payment_ledger")
+}
+
+rectangle "Technology" {
+  Technology_Node(billdb, "billing.db")
+}
+
+Rel_Flow(vuePrice, django, "GET summaries")
+Rel_Flow(django, taskBill, "internal aggregate")
+Rel_Access_R(taskBill, txn, "R")
+Rel_Access_R(taskBill, ledger, "R")
+Rel_Access_R(taskBill, billdb, "R")
+Rel_Influence(goFirst, taskBill, "落点")
+Rel_Influence(referralBase, vueReferral, "文案")
+
+@enduml

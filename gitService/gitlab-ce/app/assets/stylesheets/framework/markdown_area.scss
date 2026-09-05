@@ -1,0 +1,131 @@
+.div-dropzone-wrapper {
+  .div-dropzone {
+    position: relative;
+
+    .div-dropzone-hover {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      margin-top: -11.5px;
+      margin-left: -15px;
+      opacity: 0;
+      font-size: 30px;
+      transition: opacity 200ms ease-in-out;
+      pointer-events: none;
+    }
+
+    .div-dropzone-icon {
+      display: block;
+      text-align: center;
+      font-size: inherit;
+    }
+
+    .dz-preview {
+      display: none;
+    }
+  }
+}
+
+.nav-links {
+  li.md-header-toolbar {
+    margin-left: auto;
+    visibility: hidden;
+
+    &.active {
+      visibility: visible;
+
+      @include gl-container-width-down(sm, panel) {
+        flex: none;
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        flex-wrap: wrap;
+        margin-top: $gl-padding-8;
+      }
+    }
+  }
+}
+
+.referenced-users {
+  @apply gl-text-default;
+  padding: 0 $gl-padding $gl-padding-8;
+}
+
+.referenced-commands {
+  background: $blue-50;
+  padding: $gl-padding-8 $gl-padding;
+  border-radius: 0 0 $gl-border-radius-base-inner $gl-border-radius-base-inner;
+
+  p {
+    margin: 0;
+  }
+}
+
+.md-preview-holder {
+  min-height: 177px;
+  padding: 10px 0;
+  overflow-x: auto;
+}
+
+.markdown-area {
+  border-radius: 0;
+  min-height: 140px;
+  max-height: 500px;
+  padding: 5px;
+  box-shadow: none;
+  width: 100%;
+  resize: none !important;
+  @apply gl-bg-transparent;
+  @apply gl-border;
+  @apply gl-border-subtle;
+  @apply gl-transition-box-shadow;
+}
+
+.md-suggestion-diff {
+  display: table !important;
+  @apply gl-border #{!important};
+  @apply gl-border-section #{!important};
+
+  td {
+    border: 0 !important;
+  }
+
+  tr.old {
+    td {
+      border-radius: 0 !important;
+    }
+  }
+}
+
+.suggestions.md > .markdown-code-block {
+  position: relative;
+}
+
+.md-suggestion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  @apply gl-bg-section;
+  @apply gl-border;
+  @apply gl-border-section;
+  border-radius: $gl-border-radius-base $gl-border-radius-base 0 0;
+}
+
+/* these two styles are important to prevent certain LaTeX from
+   hijacking a page: https://gitlab.com/gitlab-org/gitlab/-/issues/394770
+*/
+.math-content-inline {
+  overflow: hidden;
+  display: inline-flex;
+}
+
+.math-content-display {
+  overflow: auto;
+  display: block;
+}
+
+@include gl-container-width-down(sm, panel) {
+  .referenced-users {
+    margin-right: 0;
+  }
+}

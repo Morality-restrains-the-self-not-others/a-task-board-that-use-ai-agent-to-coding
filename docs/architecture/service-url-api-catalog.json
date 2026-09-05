@@ -1,0 +1,4291 @@
+{
+  "title": "Service URL / API catalog",
+  "decision": "grafana-is-view-not-ssot",
+  "grafana_url": "http://10.2.150.68:3000/d/service-url-api-catalog/service-url-api-catalog",
+  "generated_from": [
+    "taskGateway/routes/routes.yaml",
+    "db/api_route_ownership.yaml",
+    "taskFE/app/src/router/{public,tenant,admin}Routes.js"
+  ],
+  "summary": {
+    "api_routes": 312,
+    "fe_pages": 111,
+    "core_api": 195,
+    "supporting_api": 92,
+    "ops_api": 2,
+    "internal_api": 21,
+    "orphaned_api": 2,
+    "core_fe": 34,
+    "services": 13
+  },
+  "by_service": {
+    "(none)": {
+      "orphaned": 1
+    },
+    "gitOauth": {
+      "core": 4,
+      "supporting": 1
+    },
+    "null-upstream": {
+      "orphaned": 1
+    },
+    "taskAIComment": {
+      "supporting": 1
+    },
+    "taskAgentSupport": {
+      "internal": 6
+    },
+    "taskAiProvider": {
+      "supporting": 6
+    },
+    "taskAuth": {
+      "core": 73,
+      "supporting": 43,
+      "ops": 2
+    },
+    "taskBill": {
+      "internal": 14,
+      "core": 68,
+      "supporting": 10
+    },
+    "taskCloudService": {
+      "core": 18,
+      "supporting": 1,
+      "internal": 1
+    },
+    "taskFE": {
+      "supporting": 1
+    },
+    "taskProjectService": {
+      "core": 7,
+      "supporting": 12
+    },
+    "taskReferral": {
+      "core": 16
+    },
+    "taskSse": {
+      "core": 1
+    },
+    "taskTaskService": {
+      "core": 7,
+      "supporting": 5
+    },
+    "taskTenantService": {
+      "supporting": 12,
+      "core": 1
+    }
+  },
+  "api_routes": [
+    {
+      "id": "deny-internal",
+      "uri": "/api/internal/*",
+      "upstream": null,
+      "auth_mode": "deny",
+      "priority": 1000,
+      "owner": "git-oauth",
+      "owner_status": "go",
+      "role": "orphaned",
+      "value_stream": null
+    },
+    {
+      "id": "task-workspace-settings",
+      "uri": "/api/workspace/settings",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 867,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "id": "task-workspace-settings",
+      "uri": "/api/workspace/settings/",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 867,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "id": "task-workspace-settings",
+      "uri": "/api/workspace/settings/*",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 867,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "id": "task-workspace-settings",
+      "uri": "/api/workspace/info",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 867,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "id": "task-workspace-settings",
+      "uri": "/api/workspace/info/",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 867,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "id": "task-workspace-settings",
+      "uri": "/api/workspace/info/*",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 867,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "id": "task-sse",
+      "uri": "/api/sse/*",
+      "upstream": "taskSse",
+      "auth_mode": "token",
+      "priority": 872,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "task"
+    },
+    {
+      "id": "git-oauth-callbacks",
+      "uri": "/api/git-oauth/github-callback/*",
+      "upstream": "gitOauth",
+      "auth_mode": "public",
+      "priority": 879,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "git-oauth"
+    },
+    {
+      "id": "git-oauth-callbacks",
+      "uri": "/api/git-oauth/gitlab-callback/*",
+      "upstream": "gitOauth",
+      "auth_mode": "public",
+      "priority": 879,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "git-oauth"
+    },
+    {
+      "id": "git-oauth-token",
+      "uri": "/api/git-oauth/*",
+      "upstream": "gitOauth",
+      "auth_mode": "token",
+      "priority": 875,
+      "owner": "git-oauth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "git-oauth"
+    },
+    {
+      "id": "git-oauth-redirect-callbacks",
+      "uri": "/redirect/gitsite/*",
+      "upstream": "gitOauth",
+      "auth_mode": "public",
+      "priority": 878,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "git-oauth-accounts-callbacks",
+      "uri": "/api/accounts/*/oauth/callback/",
+      "upstream": "gitOauth",
+      "auth_mode": "public",
+      "priority": 830,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "ai-provider-public",
+      "uri": "/api/ai-provider/public-*",
+      "upstream": "taskAiProvider",
+      "auth_mode": "public",
+      "priority": 878,
+      "owner": "ai-provider",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "ai-provider-public",
+      "uri": "/api/ai-provider/sso-exchange/*",
+      "upstream": "taskAiProvider",
+      "auth_mode": "public",
+      "priority": 878,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "ai-provider-public",
+      "uri": "/api/ai-provider/oidc-authorize/*",
+      "upstream": "taskAiProvider",
+      "auth_mode": "public",
+      "priority": 878,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "ai-provider-public",
+      "uri": "/api/ai-provider/oidc-callback/*",
+      "upstream": "taskAiProvider",
+      "auth_mode": "public",
+      "priority": 878,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "ai-provider-public",
+      "uri": "/api/public/image-groups/*",
+      "upstream": "taskAiProvider",
+      "auth_mode": "public",
+      "priority": 878,
+      "owner": "ai-provider",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "ai-provider-auth",
+      "uri": "/api/ai-provider/*",
+      "upstream": "taskAiProvider",
+      "auth_mode": "token",
+      "priority": 876,
+      "owner": "ai-provider",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-logout",
+      "uri": "/api/accounts/users/logout/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 851,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-logout",
+      "uri": "/api/accounts/users/logout/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 851,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-users-bind-login-methods",
+      "uri": "/api/accounts/users/bind_phone/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 848,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-users-bind-login-methods",
+      "uri": "/api/accounts/users/bind_phone/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 848,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-users-bind-login-methods",
+      "uri": "/api/accounts/users/bind_email/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 848,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-users-bind-login-methods",
+      "uri": "/api/accounts/users/bind_email/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 848,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-accounts-sso",
+      "uri": "/api/accounts/sso",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 847,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-accounts-sso",
+      "uri": "/api/accounts/sso/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 847,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-accounts-sso",
+      "uri": "/api/accounts/sso/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 847,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-rbac-admin",
+      "uri": "/api/auth/user-roles/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-rbac-admin",
+      "uri": "/api/auth/user-roles",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-rbac-admin",
+      "uri": "/api/auth/user-roles/user_id/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-rbac-admin",
+      "uri": "/api/auth/user-permissions/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-rbac-admin",
+      "uri": "/api/auth/user-permissions",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-rbac-admin",
+      "uri": "/api/auth/role-users/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-rbac-admin",
+      "uri": "/api/auth/roles/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-rbac-admin",
+      "uri": "/api/auth/resource-groups/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-rbac-admin",
+      "uri": "/api/auth/resource-groups/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-verify",
+      "uri": "/api/auth/verify",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-wechat-mp-callback",
+      "uri": "/api/auth/wechat/mp/callback/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 860,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-wechat-mp-callback",
+      "uri": "/api/auth/wechat/mp/callback",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 860,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-wechat-mp-callback",
+      "uri": "/api/auth/wechat/mp/callback/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 860,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-wechat-mp-follow-status",
+      "uri": "/api/auth/wechat/mp/follow-status/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-wechat-mp-follow-status",
+      "uri": "/api/auth/wechat/mp/follow-status",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-wechat-mp-follow-status",
+      "uri": "/api/auth/wechat/mp/follow-status/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-wechat-mp-follow-qr",
+      "uri": "/api/auth/wechat/mp/follow-qr/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-wechat-mp-follow-qr",
+      "uri": "/api/auth/wechat/mp/follow-qr",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-wechat-mp-follow-qr",
+      "uri": "/api/auth/wechat/mp/follow-qr/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-impersonation",
+      "uri": "/api/auth/impersonation/stop/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 853,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-impersonation",
+      "uri": "/api/auth/impersonation/status/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 853,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-impersonation",
+      "uri": "/api/auth/inbox/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 853,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-impersonation",
+      "uri": "/api/auth/inbox/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 853,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-impersonation",
+      "uri": "/api/auth/login-history/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 853,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-impersonation",
+      "uri": "/api/auth/login-history/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 853,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-login",
+      "uri": "/api/auth/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 850,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-login",
+      "uri": "/api/auth/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 850,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-login",
+      "uri": "/api/accounts/users/login/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 850,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-login",
+      "uri": "/api/accounts/users/email_register/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 850,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-login",
+      "uri": "/api/accounts/users/phone_register/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 850,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-login",
+      "uri": "/api/accounts/users/resend_activation_email/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 850,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-login",
+      "uri": "/api/accounts/users/send_password_reset_link/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 850,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-login",
+      "uri": "/api/accounts/users/send_password_reset_code/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 850,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-login",
+      "uri": "/api/accounts/users/reset_password_with_code/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 850,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-login",
+      "uri": "/api/accounts/users/send_verification_code/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 850,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-login",
+      "uri": "/api/accounts/users/login-with-access-token/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 850,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-activate-session",
+      "uri": "/api/accounts/users/activate-session/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 851,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-activate-session",
+      "uri": "/api/accounts/users/activate-session/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 851,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-access-tokens",
+      "uri": "/api/accounts/users/access-tokens/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 851,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-access-tokens",
+      "uri": "/api/accounts/users/access-tokens/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 851,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-account-deletion",
+      "uri": "/api/accounts/users/me/account-deletion/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 851,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-account-deletion",
+      "uri": "/api/accounts/users/me/account-deletion/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 851,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-personal-data-export",
+      "uri": "/api/accounts/users/me/personal-data-export/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 851,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-personal-data-export",
+      "uri": "/api/accounts/users/me/personal-data-export/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 851,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-client-ip",
+      "uri": "/api/accounts/users/client-ip/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 851,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-client-ip",
+      "uri": "/api/accounts/users/client-ip/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 851,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-activation-reset-prefix",
+      "uri": "/api/accounts/users/confirm_activation/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 849,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-activation-reset-prefix",
+      "uri": "/api/accounts/users/reset-password-with-link/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 849,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-activation-reset-prefix",
+      "uri": "/api/accounts/users/get-reset-user-info/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 849,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-user-accounts-users-me-legacy",
+      "uri": "/api/user/*/accounts/users/me",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 848,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-user-accounts-users-me-legacy",
+      "uri": "/api/user/*/accounts/users/me/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 848,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-user-accounts-users-me-legacy",
+      "uri": "/api/user/*/accounts/users/me/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 848,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskservice-user-legacy",
+      "uri": "/api/user/*",
+      "upstream": "taskTaskService",
+      "auth_mode": "token",
+      "priority": 847,
+      "owner": "task-task-service",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskservice-user-legacy",
+      "uri": "/api/user/*/profile/git-identities",
+      "upstream": "taskTaskService",
+      "auth_mode": "token",
+      "priority": 847,
+      "owner": "task-task-service",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskservice-user-legacy",
+      "uri": "/api/user/*/profile/git-identities/",
+      "upstream": "taskTaskService",
+      "auth_mode": "token",
+      "priority": 847,
+      "owner": "task-task-service",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskservice-user-legacy",
+      "uri": "/api/user/*/profile/git-identities/*",
+      "upstream": "taskTaskService",
+      "auth_mode": "token",
+      "priority": 847,
+      "owner": "task-task-service",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-users-profile",
+      "uri": "/api/accounts/users/profile/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 848,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-get-user",
+      "uri": "/api/accounts/users/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 840,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "billing-webhook",
+      "uri": "/api/billing/*/webhook/*",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 830,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-webhook",
+      "uri": "/api/billing/*/webhook",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 830,
+      "owner": "",
+      "owner_status": "",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-wechat-notify",
+      "uri": "/api/billing/wechat/notify/",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 831,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-wechat-notify",
+      "uri": "/api/billing/wechat/notify",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 831,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-wechat-notify",
+      "uri": "/api/billing/wechat/notify/*",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 831,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-wechat-fapiao-notify",
+      "uri": "/api/billing/wechat/fapiao/notify/",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 832,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-wechat-fapiao-notify",
+      "uri": "/api/billing/wechat/fapiao/notify",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 832,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-wechat-fapiao-notify",
+      "uri": "/api/billing/wechat/fapiao/notify/*",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 832,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-profitsharing-notify",
+      "uri": "/api/billing/profitsharing/notify/",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 830,
+      "owner": "",
+      "owner_status": "",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-profitsharing-notify",
+      "uri": "/api/billing/profitsharing/notify",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 830,
+      "owner": "",
+      "owner_status": "",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-profitsharing-notify",
+      "uri": "/api/billing/profitsharing/notify/*",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 830,
+      "owner": "",
+      "owner_status": "",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-profitsharing-notify",
+      "uri": "/api/billing/profitsharing/change-notify/",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 830,
+      "owner": "",
+      "owner_status": "",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-profitsharing-notify",
+      "uri": "/api/billing/profitsharing/change-notify",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 830,
+      "owner": "",
+      "owner_status": "",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-profitsharing-notify",
+      "uri": "/api/billing/profitsharing/change-notify/*",
+      "upstream": "taskBill",
+      "auth_mode": "machine",
+      "priority": 830,
+      "owner": "",
+      "owner_status": "",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "billing-convention",
+      "uri": "/api/billing/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 868,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "billing-tenant-direct",
+      "uri": "/api/tenant/*/billing/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 868,
+      "owner": "task-sse",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "tenant-gitlab-oidc-sso",
+      "uri": "/api/tenant/*/gitlab-oidc-sso",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 868,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "tenant-gitlab-oidc-sso",
+      "uri": "/api/tenant/*/gitlab-oidc-sso/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 868,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "tenant-gitlab-oidc-sso",
+      "uri": "/api/tenant/*/gitlab-oidc-sso/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 868,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "workspace-queue-schedule-direct",
+      "uri": "/api/tenant/*/workspace/*/queue-schedule",
+      "upstream": "taskTaskService",
+      "auth_mode": "token",
+      "priority": 868,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "id": "workspace-queue-schedule-direct",
+      "uri": "/api/tenant/*/workspace/*/queue-schedule/*",
+      "upstream": "taskTaskService",
+      "auth_mode": "token",
+      "priority": 868,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "id": "task-todos-tenant-direct",
+      "uri": "/api/tenant/*/workspace/*/todos",
+      "upstream": "taskTaskService",
+      "auth_mode": "token",
+      "priority": 868,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "id": "task-todos-tenant-direct",
+      "uri": "/api/tenant/*/workspace/*/todos/",
+      "upstream": "taskTaskService",
+      "auth_mode": "token",
+      "priority": 868,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "id": "task-todos-tenant-direct",
+      "uri": "/api/tenant/*/workspace/*/todos/*",
+      "upstream": "taskTaskService",
+      "auth_mode": "token",
+      "priority": 868,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "id": "api-privacy-policy-public",
+      "uri": "/api/privacy-policy/public/*",
+      "upstream": "taskBill",
+      "auth_mode": "public",
+      "priority": 815,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-privacy-policy-consent",
+      "uri": "/api/privacy-policy/consent/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 816,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-dashboard",
+      "uri": "/api/system-admin/dashboard/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 855,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-dashboard",
+      "uri": "/api/system-admin/dashboard",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 855,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-users",
+      "uri": "/api/system-admin/users/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 854,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-users",
+      "uri": "/api/system-admin/users",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 854,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-oidc-extension",
+      "uri": "/api/system-admin/oidc-extension/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 853,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-oidc-extension",
+      "uri": "/api/system-admin/oidc-extension",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 853,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-tenant-memberships",
+      "uri": "/api/auth/tenant-memberships",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 860,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-tenant-memberships",
+      "uri": "/api/auth/tenant-memberships/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 860,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-tenant-memberships",
+      "uri": "/api/auth/tenant-memberships/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 860,
+      "owner": "task-auth",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "api-system-admin-cloud",
+      "uri": "/api/system-admin/cloud/*",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 860,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-system-admin-sub-token-providers",
+      "uri": "/api/system-admin/sub-token-providers",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-system-admin-sub-token-providers",
+      "uri": "/api/system-admin/sub-token-providers/",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-system-admin-sub-token-providers",
+      "uri": "/api/system-admin/sub-token-providers/*",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-sub-token-providers",
+      "uri": "/api/sub-token-providers",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 820,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-sub-token-providers",
+      "uri": "/api/sub-token-providers/",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 820,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-sub-token-providers",
+      "uri": "/api/sub-token-providers/*",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 820,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-system-admin-recommended-llm-providers",
+      "uri": "/api/system-admin/recommended-llm-providers",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-system-admin-recommended-llm-providers",
+      "uri": "/api/system-admin/recommended-llm-providers/",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-system-admin-recommended-llm-providers",
+      "uri": "/api/system-admin/recommended-llm-providers/*",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-system-admin-step-full-cos",
+      "uri": "/api/system-admin/step-full-cos",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "taskCloudService",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-system-admin-step-full-cos",
+      "uri": "/api/system-admin/step-full-cos/",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "taskCloudService",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-system-admin-step-full-cos",
+      "uri": "/api/system-admin/step-full-cos/*",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "taskCloudService",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-recommended-llm-providers",
+      "uri": "/api/recommended-llm-providers",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 820,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-recommended-llm-providers",
+      "uri": "/api/recommended-llm-providers/",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 820,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-recommended-llm-providers",
+      "uri": "/api/recommended-llm-providers/*",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 820,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "api-personal-feature-params",
+      "uri": "/api/personal/*",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 820,
+      "owner": "task-cloud-service",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-privacy-policy",
+      "uri": "/api/system_admin/privacy-policy/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 860,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-privacy-policy",
+      "uri": "/api/system-admin/privacy-policy/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 860,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-license-agreement",
+      "uri": "/api/system_admin/license-agreement/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-license-agreement",
+      "uri": "/api/system-admin/license-agreement/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-orders",
+      "uri": "/api/system_admin/orders/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-orders",
+      "uri": "/api/system_admin/orders",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-orders",
+      "uri": "/api/system_admin/orders/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-orders",
+      "uri": "/api/system-admin/orders/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-orders",
+      "uri": "/api/system-admin/orders",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-orders",
+      "uri": "/api/system-admin/orders/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-profit-sharing",
+      "uri": "/api/system_admin/profit-sharing/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-profit-sharing",
+      "uri": "/api/system_admin/profit-sharing",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-profit-sharing",
+      "uri": "/api/system_admin/profit-sharing/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-profit-sharing",
+      "uri": "/api/system-admin/profit-sharing/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-profit-sharing",
+      "uri": "/api/system-admin/profit-sharing",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-profit-sharing",
+      "uri": "/api/system-admin/profit-sharing/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-gitlab-regions",
+      "uri": "/api/system_admin/gitlab-regions/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-gitlab-regions",
+      "uri": "/api/system_admin/gitlab-regions",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-gitlab-regions",
+      "uri": "/api/system_admin/gitlab-regions/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-gitlab-regions",
+      "uri": "/api/system-admin/gitlab-regions/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-gitlab-regions",
+      "uri": "/api/system-admin/gitlab-regions",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-gitlab-regions",
+      "uri": "/api/system-admin/gitlab-regions/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-order-number-parse",
+      "uri": "/api/system-admin/order-number/parse",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-order-number-parse",
+      "uri": "/api/system-admin/order-number/parse/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-order-number-parse",
+      "uri": "/api/system-admin/order-number/parse/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-idempotency-records",
+      "uri": "/api/system-admin/idempotency-records",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-idempotency-records",
+      "uri": "/api/system-admin/idempotency-records/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-idempotency-records",
+      "uri": "/api/system-admin/idempotency-records/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-idempotency-records",
+      "uri": "/api/system_admin/idempotency-records",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-idempotency-records",
+      "uri": "/api/system_admin/idempotency-records/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-idempotency-records",
+      "uri": "/api/system_admin/idempotency-records/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-tenant-options",
+      "uri": "/api/system_admin/accounts/admin/tenant-options",
+      "upstream": "taskTenantService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenant-options",
+      "uri": "/api/system_admin/accounts/admin/tenant-options/",
+      "upstream": "taskTenantService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenant-options",
+      "uri": "/api/system_admin/accounts/admin/tenant-options/*",
+      "upstream": "taskTenantService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenant-options",
+      "uri": "/api/system-admin/accounts/admin/tenant-options",
+      "upstream": "taskTenantService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenant-options",
+      "uri": "/api/system-admin/accounts/admin/tenant-options/",
+      "upstream": "taskTenantService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenant-options",
+      "uri": "/api/system-admin/accounts/admin/tenant-options/*",
+      "upstream": "taskTenantService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenants",
+      "uri": "/api/system_admin/accounts/admin/tenants",
+      "upstream": "taskTenantService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenants",
+      "uri": "/api/system_admin/accounts/admin/tenants/",
+      "upstream": "taskTenantService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenants",
+      "uri": "/api/system_admin/accounts/admin/tenants/*",
+      "upstream": "taskTenantService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenants",
+      "uri": "/api/system-admin/accounts/admin/tenants",
+      "upstream": "taskTenantService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenants",
+      "uri": "/api/system-admin/accounts/admin/tenants/",
+      "upstream": "taskTenantService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenants",
+      "uri": "/api/system-admin/accounts/admin/tenants/*",
+      "upstream": "taskTenantService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenant-quotas",
+      "uri": "/api/system-admin/tenant-quotas",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-tenant-quotas",
+      "uri": "/api/system-admin/tenant-quotas/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-tenant-quotas",
+      "uri": "/api/system-admin/tenant-quotas/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-tenant-quotas",
+      "uri": "/api/system_admin/tenant-quotas",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-tenant-quotas",
+      "uri": "/api/system_admin/tenant-quotas/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-tenant-quotas",
+      "uri": "/api/system_admin/tenant-quotas/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-tenant-workspaces",
+      "uri": "/api/system-admin/tenant-workspaces",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "task-project-service",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenant-workspaces",
+      "uri": "/api/system-admin/tenant-workspaces/",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "task-project-service",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenant-workspaces",
+      "uri": "/api/system-admin/tenant-workspaces/*",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "task-project-service",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenant-workspaces",
+      "uri": "/api/system_admin/tenant-workspaces",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenant-workspaces",
+      "uri": "/api/system_admin/tenant-workspaces/",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-tenant-workspaces",
+      "uri": "/api/system_admin/tenant-workspaces/*",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-user-recharges",
+      "uri": "/api/system_admin/users/*/recharges",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-user-recharges",
+      "uri": "/api/system_admin/users/*/recharges/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-user-recharges",
+      "uri": "/api/system_admin/users/*/recharges/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-user-recharges",
+      "uri": "/api/system-admin/users/*/recharges",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-user-recharges",
+      "uri": "/api/system-admin/users/*/recharges/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-user-recharges",
+      "uri": "/api/system-admin/users/*/recharges/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 856,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-public-product-pricing",
+      "uri": "/api/public/product-pricing",
+      "upstream": "taskBill",
+      "auth_mode": "public",
+      "priority": 819,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-public-product-pricing",
+      "uri": "/api/public/product-pricing/",
+      "upstream": "taskBill",
+      "auth_mode": "public",
+      "priority": 819,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-public-product-pricing",
+      "uri": "/api/public/product-pricing/*",
+      "upstream": "taskBill",
+      "auth_mode": "public",
+      "priority": 819,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-public-resource-pricing",
+      "uri": "/api/public/resource-pricing",
+      "upstream": "taskBill",
+      "auth_mode": "public",
+      "priority": 818,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-public-resource-pricing",
+      "uri": "/api/public/resource-pricing/",
+      "upstream": "taskBill",
+      "auth_mode": "public",
+      "priority": 818,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-public-resource-pricing",
+      "uri": "/api/public/resource-pricing/*",
+      "upstream": "taskBill",
+      "auth_mode": "public",
+      "priority": 818,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-resource-pricing",
+      "uri": "/api/system-admin/resource-pricing",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-resource-pricing",
+      "uri": "/api/system-admin/resource-pricing/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-resource-pricing",
+      "uri": "/api/system-admin/resource-pricing/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-user-recharge-consumption",
+      "uri": "/api/system-admin/user-recharge-consumption",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-user-recharge-consumption",
+      "uri": "/api/system-admin/user-recharge-consumption/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-user-recharge-consumption",
+      "uri": "/api/system-admin/user-recharge-consumption/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-refund-applications",
+      "uri": "/api/system-admin/refund-applications",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "task-bill",
+      "owner_status": "python-exception",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-refund-applications",
+      "uri": "/api/system-admin/refund-applications/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "task-bill",
+      "owner_status": "python-exception",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-refund-applications",
+      "uri": "/api/system-admin/refund-applications/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "task-bill",
+      "owner_status": "python-exception",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-invoice-applications",
+      "uri": "/api/system-admin/invoice-applications",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-invoice-applications",
+      "uri": "/api/system-admin/invoice-applications/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-invoice-applications",
+      "uri": "/api/system-admin/invoice-applications/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-feedback-link-groups",
+      "uri": "/api/system-admin/feedback-link-groups",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-feedback-link-groups",
+      "uri": "/api/system-admin/feedback-link-groups/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-feedback-link-groups",
+      "uri": "/api/system-admin/feedback-link-groups/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-feedback-resource-kinds",
+      "uri": "/api/system-admin/feedback-resource-kinds",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-feedback-resource-kinds",
+      "uri": "/api/system-admin/feedback-resource-kinds/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-feedback-resource-kinds",
+      "uri": "/api/system-admin/feedback-resource-kinds/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-refund-policy",
+      "uri": "/api/system-admin/refund-policy",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "task-bill",
+      "owner_status": "migrated",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-refund-policy",
+      "uri": "/api/system-admin/refund-policy/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "task-bill",
+      "owner_status": "migrated",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-system-admin-refund-policy",
+      "uri": "/api/system-admin/refund-policy/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "task-bill",
+      "owner_status": "migrated",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "api-license-agreement-public",
+      "uri": "/api/license-agreement/public/*",
+      "upstream": "taskBill",
+      "auth_mode": "public",
+      "priority": 814,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-license-agreement-consent",
+      "uri": "/api/license-agreement/consent/",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 817,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-license-agreement-consent",
+      "uri": "/api/license-agreement/consent",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 817,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-license-agreement-consent",
+      "uri": "/api/license-agreement/consent/*",
+      "upstream": "taskBill",
+      "auth_mode": "token",
+      "priority": 817,
+      "owner": "task-bill",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-public-system-feature-policy",
+      "uri": "/api/public/system-feature-policy",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 813,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-public-system-feature-policy",
+      "uri": "/api/public/system-feature-policy/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 813,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-public-system-feature-policy",
+      "uri": "/api/public/system-feature-policy/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 813,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-system-feature-policy",
+      "uri": "/api/system-admin/system-feature-policy",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-system-feature-policy",
+      "uri": "/api/system-admin/system-feature-policy/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "api-system-admin-system-feature-policy",
+      "uri": "/api/system-admin/system-feature-policy/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-registration-invite-public",
+      "uri": "/api/public/registration-invite-policy/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 814,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-registration-invite-public",
+      "uri": "/api/public/registration-invite-policy",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 814,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-registration-invite-public",
+      "uri": "/api/public/registration-invite-policy/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 814,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-registration-invite-admin",
+      "uri": "/api/system-admin/registration-invite-policy/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 860,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-registration-invite-admin",
+      "uri": "/api/system-admin/registration-invite-policy/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 860,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-registration-invite-admin",
+      "uri": "/api/system-admin/registration-invite-relations/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 860,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-registration-invite-admin",
+      "uri": "/api/system-admin/registration-invite-relations/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 860,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-email-invitations",
+      "uri": "/api/system-admin/email-invitations/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 860,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-email-invitations",
+      "uri": "/api/system-admin/email-invitations",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 860,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-email-invitations",
+      "uri": "/api/system-admin/email-invitations/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 860,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-email-invitation-public",
+      "uri": "/api/public/email-invitation/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 814,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-email-invitation-public",
+      "uri": "/api/public/email-invitation",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 814,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-email-invitation-public",
+      "uri": "/api/public/email-invitation/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 814,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-email-unsubscribe-public",
+      "uri": "/api/public/email-unsubscribe/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 815,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-email-unsubscribe-public",
+      "uri": "/api/public/email-unsubscribe",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 815,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-email-unsubscribe-public",
+      "uri": "/api/public/email-unsubscribe/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 815,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-email-resubscribe-public",
+      "uri": "/api/public/email-resubscribe/",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 815,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-email-resubscribe-public",
+      "uri": "/api/public/email-resubscribe",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 815,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-email-resubscribe-public",
+      "uri": "/api/public/email-resubscribe/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 815,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "taskauth-registration-invite-user",
+      "uri": "/api/accounts/users/registration-invite-codes/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-registration-invite-user",
+      "uri": "/api/accounts/users/registration-invite-codes/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 852,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-referral-user",
+      "uri": "/api/accounts/users/referral-codes/",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 851,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-referral-user",
+      "uri": "/api/accounts/users/referral-codes/*",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 851,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "id": "taskauth-referral-admin",
+      "uri": "/api/system-admin/referral/applications/",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 861,
+      "owner": "task-referral",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskauth-referral-admin",
+      "uri": "/api/system-admin/referral/applications/*",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 861,
+      "owner": "task-referral",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskauth-referral-admin",
+      "uri": "/api/system-admin/referral/share-code/lookup/",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 861,
+      "owner": "task-referral",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskauth-referral-admin",
+      "uri": "/api/system-admin/referral/policy/",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 861,
+      "owner": "task-referral",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskauth-referral-admin",
+      "uri": "/api/system-admin/referral/policy/*",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 861,
+      "owner": "task-referral",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskauth-referral-admin",
+      "uri": "/api/system-admin/referral/config/",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 861,
+      "owner": "task-referral",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskauth-referral-admin",
+      "uri": "/api/system-admin/referral/config/*",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 861,
+      "owner": "task-referral",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskauth-referral-performance",
+      "uri": "/api/system-admin/users/*/referral-performance/",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 862,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskauth-referral-performance",
+      "uri": "/api/system-admin/users/*/referral-performance",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 862,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskauth-referral-performance",
+      "uri": "/api/system-admin/users/*/referral-performance/*",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 862,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskauth-referral-stats-legacy",
+      "uri": "/api/user/*/profile/referral-stats",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskauth-referral-stats-legacy",
+      "uri": "/api/user/*/profile/referral-stats/",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskauth-referral-stats-legacy",
+      "uri": "/api/user/*/profile/referral-stats/*",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 857,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "taskauth-referral",
+      "uri": "/api/referral/*",
+      "upstream": "taskReferral",
+      "auth_mode": "token",
+      "priority": 843,
+      "owner": "task-referral",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "id": "api-health",
+      "uri": "/api/health/*",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 820,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "id": "oidc-health",
+      "uri": "/api/health/oidc",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 822,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "id": "oidc-discovery",
+      "uri": "/.well-known/openid-configuration",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 810,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "oidc-tenant-authorize",
+      "uri": "/api/oidc/*/authorize",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 809,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "oidc-tenant-token",
+      "uri": "/api/oidc/*/token",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 809,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "oidc-tenant-userinfo",
+      "uri": "/api/oidc/*/userinfo",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 809,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "oidc-tenant-jwks",
+      "uri": "/api/oidc/*/jwks",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 809,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "oidc-jwks",
+      "uri": "/api/oidc/jwks",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 808,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "oidc-authorize",
+      "uri": "/api/oidc/authorize",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 806,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "oidc-token",
+      "uri": "/api/oidc/token",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 804,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "oidc-endsession",
+      "uri": "/api/oidc/endsession",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 803,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "oidc-userinfo",
+      "uri": "/api/oidc/userinfo",
+      "upstream": "taskAuth",
+      "auth_mode": "public",
+      "priority": 802,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "task-project-service",
+      "uri": "/api/projects/*",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 864,
+      "owner": "task-project-service",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "id": "task-project-service",
+      "uri": "/api/system-admin/progress-systems/*",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 864,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "task-project-service",
+      "uri": "/api/system-admin/deliverable-systems/*",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 864,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "task-project-service",
+      "uri": "/api/system/progress-systems/*",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 864,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "task-project-service",
+      "uri": "/api/switch-workspace/*",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 864,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "task-project-service",
+      "uri": "/api/v1/tenants/*/projects/*",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 864,
+      "owner": "task-project-service",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "task-project-service",
+      "uri": "/api/system-admin/projects/*",
+      "upstream": "taskProjectService",
+      "auth_mode": "token",
+      "priority": 864,
+      "owner": "task-project-service",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "kyc-admin",
+      "uri": "/api/kyc/admin/users/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 859,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "kyc"
+    },
+    {
+      "id": "kyc-me",
+      "uri": "/api/kyc/me/",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "kyc"
+    },
+    {
+      "id": "kyc-me",
+      "uri": "/api/kyc/me",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "kyc"
+    },
+    {
+      "id": "kyc-me",
+      "uri": "/api/kyc/me/*",
+      "upstream": "taskAuth",
+      "auth_mode": "token",
+      "priority": 858,
+      "owner": "task-auth",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "kyc"
+    },
+    {
+      "id": "task-tenant-service",
+      "uri": "/api/tenant/*",
+      "upstream": "taskTenantService",
+      "auth_mode": "token",
+      "priority": 863,
+      "owner": "task-cloud-service",
+      "owner_status": "go",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "id": "container-inbound-token",
+      "uri": "/api/tenant/*/workspace/*/task/*/comment/*/cloud/server-container-token/*",
+      "upstream": "taskAgentSupport",
+      "auth_mode": "machine",
+      "priority": 895,
+      "owner": "task-credential-service",
+      "owner_status": "go",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "container-inbound-token",
+      "uri": "/api/tenant/*/workspace/*/task/*/comment/*/cloud/server-container-token",
+      "upstream": "taskAgentSupport",
+      "auth_mode": "machine",
+      "priority": 895,
+      "owner": "task-credential-service",
+      "owner_status": "go",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "container-inbound-token",
+      "uri": "/api/tenant/*/workspace/*/task/*/comment/*/cloud/model-budget-usage*",
+      "upstream": "taskAgentSupport",
+      "auth_mode": "machine",
+      "priority": 895,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "container-inbound-token",
+      "uri": "/api/tenant/*/workspace/*/task/*/comment/*/cloud/model-budget-usage",
+      "upstream": "taskAgentSupport",
+      "auth_mode": "machine",
+      "priority": 895,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "container-inbound-token",
+      "uri": "/api/tenant/*/workspace/*/task/*/comment/*/cloud/relay-to-trae/status-push*",
+      "upstream": "taskAgentSupport",
+      "auth_mode": "machine",
+      "priority": 895,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "container-inbound-token",
+      "uri": "/api/tenant/*/workspace/*/task/*/comment/*/cloud/relay-to-trae/status-push",
+      "upstream": "taskAgentSupport",
+      "auth_mode": "machine",
+      "priority": 895,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "task-task-service",
+      "uri": "/api/tasks/*",
+      "upstream": "taskTaskService",
+      "auth_mode": "token",
+      "priority": 862,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "core",
+      "value_stream": "task"
+    },
+    {
+      "id": "task-task-service",
+      "uri": "/api/git-identities/*",
+      "upstream": "taskTaskService",
+      "auth_mode": "token",
+      "priority": 862,
+      "owner": "task-task-service",
+      "owner_status": "go",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "task-task-service",
+      "uri": "/api/tenant_id/*/workspaceId/*/tasks/*/comments/*",
+      "upstream": "taskTaskService",
+      "auth_mode": "token",
+      "priority": 862,
+      "owner": "saas-backend",
+      "owner_status": "django-legacy",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "task-ai-comment",
+      "uri": "/api/ai-comment/*",
+      "upstream": "taskAIComment",
+      "auth_mode": "token",
+      "priority": 861,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "id": "task-cloud-service",
+      "uri": "/api/cloud/*",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 868,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "task-cloud-service",
+      "uri": "/callback/cloudplatform/oauth2.0/aliyun",
+      "upstream": "taskCloudService",
+      "auth_mode": "token",
+      "priority": 868,
+      "owner": "",
+      "owner_status": "",
+      "role": "core",
+      "value_stream": "compute"
+    },
+    {
+      "id": "server-userdata-verify",
+      "uri": "/api/cloud/server-userdata-verify/*",
+      "upstream": "taskCloudService",
+      "auth_mode": "machine",
+      "priority": 894,
+      "owner": "",
+      "owner_status": "",
+      "role": "internal",
+      "value_stream": null
+    },
+    {
+      "id": "api-orphaned-not-found",
+      "uri": "/api/*",
+      "upstream": "null-upstream",
+      "auth_mode": "public",
+      "priority": 15,
+      "owner": "task-cloud-service",
+      "owner_status": "go",
+      "role": "orphaned",
+      "value_stream": null
+    },
+    {
+      "id": "spa-catch-all",
+      "uri": "/*",
+      "upstream": "taskFE",
+      "auth_mode": "public",
+      "priority": 10,
+      "owner": "",
+      "owner_status": "",
+      "role": "supporting",
+      "value_stream": null
+    }
+  ],
+  "fe_pages": [
+    {
+      "path": "/onboarding/",
+      "name": "onboarding",
+      "source": "publicRoutes.js",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "path": "/",
+      "name": "home",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/pricing/",
+      "name": "pricing",
+      "source": "publicRoutes.js",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "path": "/acknowledgments/",
+      "name": "acknowledgments",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/faq/",
+      "name": "faq",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/login/",
+      "name": "login",
+      "source": "publicRoutes.js",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "path": "/auth/login/",
+      "name": "auth_login",
+      "source": "publicRoutes.js",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "path": "/auth/admin-login/",
+      "name": "auth_admin_login",
+      "source": "publicRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/register/",
+      "name": "register",
+      "source": "publicRoutes.js",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "path": "/projects/",
+      "name": "projects_root",
+      "source": "publicRoutes.js",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "path": "/auth/register/",
+      "name": "auth_register",
+      "source": "publicRoutes.js",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "path": "/auth/reset-password-request/",
+      "name": "reset_password_request",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/auth/reset-password/",
+      "name": "reset_password",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/auth/reset-password/:token/",
+      "name": "reset_password_alt",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/auth/reset-password/",
+      "name": "reset_password_alt",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/reset-password/",
+      "name": "reset_password_alt",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/reset-password/:token/",
+      "name": "github_app_callback_continue",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/reset-password/",
+      "name": "github_app_callback_continue",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/oauth/github-app/callback/",
+      "name": "github_app_callback_continue",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/redirect/gitsite/:gitsite/oauth/callback/",
+      "name": "git_site_oauth_callback_landing",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/activate/:token",
+      "name": "activate",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/activate/:token/",
+      "name": "activate",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/auth/activate/:token",
+      "name": "auth_activate",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/auth/activate/:token/",
+      "name": "auth_activate",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/auth/unsubscribe/",
+      "name": "auth_unsubscribe",
+      "source": "publicRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/projects/",
+      "name": "projects",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "path": "/tenant/:tenant/projects/:id/",
+      "name": "project_detail",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "path": "/tenant/:tenant/projects/:id/edit/",
+      "name": "project_edit",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "path": "/tenant/:tenant/create-project/",
+      "name": "create_project",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "path": "/tenant/:tenant/create-workspace/",
+      "name": "create_workspace",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "path": "/tenant/:tenant/people/invite/",
+      "name": "people_invite",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/people/join/",
+      "name": "people_join",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/people/manage/",
+      "name": "people_manage",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/people/groups/",
+      "name": "people_groups",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/people/access/",
+      "name": "people_access",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/people/roles/",
+      "name": "people_roles",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/user-console/",
+      "name": "user_console",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/profile/",
+      "name": "tenant_user_profile",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/profile/access-tokens/",
+      "name": "tenant_user_access_tokens",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/profile/inbox/",
+      "name": "tenant_user_inbox",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/profile/login-history/",
+      "name": "tenant_user_login_history",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "path": "/tenant/:tenant/profile/referral/",
+      "name": "tenant_user_referral",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "path": "/tenant/:tenant/profile/git-identities/",
+      "name": "tenant_user_git_identities",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/profile/git-site-oauth/",
+      "name": "tenant_user_git_site_oauth",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/profile/",
+      "name": "user_profile",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/profile/referral/",
+      "name": "user_referral",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "path": "/profile/git-identities/",
+      "name": "user_git_identities",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/profile/git-site-oauth/",
+      "name": "user_git_site_oauth",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/user/:id/profile/",
+      "name": "user_profile_with_id",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/user/:id/profile/referral/",
+      "name": "user_referral_with_id",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "referral"
+    },
+    {
+      "path": "/user/:id/profile/git-identities/",
+      "name": "user_git_identities_with_id",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/user/:id/profile/git-site-oauth/",
+      "name": "user_git_site_oauth_with_id",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/user/:id/profile/access-tokens/",
+      "name": "user_access_tokens_with_id",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/user/:id/profile/inbox/",
+      "name": "user_inbox_with_id",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/user/:id/profile/login-history/",
+      "name": "user_login_history_with_id",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "path": "/user/:id/profile/feature-params/",
+      "name": "user_feature_params_with_id",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/profile/access-tokens/",
+      "name": "user_access_tokens",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/profile/inbox/",
+      "name": "user_inbox",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/profile/login-history/",
+      "name": "user_login_history",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "user-auth"
+    },
+    {
+      "path": "/profile/feature-params/",
+      "name": "user_feature_params",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/profile/company-settings/",
+      "name": "user_company_settings",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/user/:id/profile/company-settings/",
+      "name": "user_company_settings_with_id",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/profile/company-settings/",
+      "name": "tenant_user_company_settings",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/settings/",
+      "name": "tenant_settings",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/settings/status/",
+      "name": "tenant_settings_status",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/billing/gitlab-resources/",
+      "name": "",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "path": "/tenant/:tenant/settings/members/",
+      "name": "",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/workspace/:workspaceId/task/:taskId/",
+      "name": "billing_dashboard",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "path": "/tenant/:tenant/billing/",
+      "name": "billing_dashboard",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "path": "/tenant/:tenant/billing/orders/",
+      "name": "billing_orders",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "path": "/tenant/:tenant/billing/orders/create/",
+      "name": "order_create",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "path": "/tenant/:tenant/billing/orders/:orderId/",
+      "name": "billing_order_detail",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "path": "/tenant/:tenant/billing/transactions/",
+      "name": "billing_transactions",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "path": "/tenant/:tenant/billing/usage/",
+      "name": "billing_usage",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "billing"
+    },
+    {
+      "path": "/tenant/:tenant/settings/cloud-platform/",
+      "name": "tenant_settings_cloud_platform",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/settings/gitlab-connection/",
+      "name": "tenant_settings_gitlab_connection",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/settings/task-panel/",
+      "name": "tenant_settings_task_panel",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "task"
+    },
+    {
+      "path": "/tenant/:tenant/settings/feature-params/",
+      "name": "tenant_settings_feature_params",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/settings/workspace/:workspace/feature-params/",
+      "name": "workspace_feature_params_settings",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "path": "/tenant/:tenant/settings/llm-budget/",
+      "name": "tenant_settings_company",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/settings/company/",
+      "name": "tenant_settings_company",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/deliverable-systems/",
+      "name": "tenant_deliverable_systems",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/workspace/:id/settings/",
+      "name": "workspace_settings",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "path": "/tenant/:tenant/workspace/:id/settings/cloud-platform/",
+      "name": "workspace_settings_cloud_platform",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "path": "/tenant/:tenant/workspace/:id/settings/status/",
+      "name": "workspace_settings_status",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "path": "/tenant/:tenant/work-panel/",
+      "name": "work_panel",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "task"
+    },
+    {
+      "path": "/tenant/:tenant/queue-schedule/",
+      "name": "workspace_queue_schedule",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "path": "/tenant/:tenant/image-market/",
+      "name": "image_market",
+      "source": "tenantRoutes.js",
+      "role": "supporting",
+      "value_stream": null
+    },
+    {
+      "path": "/tenant/:tenant/workspace/:workspaceId/task-detail/:taskId/",
+      "name": "task_detail",
+      "source": "tenantRoutes.js",
+      "role": "core",
+      "value_stream": "project"
+    },
+    {
+      "path": "/system-admin/",
+      "name": "system_admin",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/users/",
+      "name": "system_admin_users",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/users/:userId/login-history/",
+      "name": "system_admin_user_login_history",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/tenants/:tenantId/",
+      "name": "system_admin_tenant_detail",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/oidc-extension/",
+      "name": "system_admin_oidc_extension",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/grant-points/",
+      "name": "system_admin_grant_points",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/order-records/",
+      "name": "system_admin_order_records",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/refund-applications/",
+      "name": "system_admin_refund_applications",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/order-records/",
+      "name": "system_admin_referral_management",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/referral-management/",
+      "name": "system_admin_referral_management",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/deliverable-system/",
+      "name": "system_admin_deliverable_system",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/default-column-management/",
+      "name": "system_admin_default_column_management",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/price-management/",
+      "name": "system_admin_price_management",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/feedback-links/",
+      "name": "system_admin_feedback_links",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/gitlab-resources/",
+      "name": "system_admin_gitlab_resources",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/recommended-llm-providers/",
+      "name": "system_admin_recommended_llm_providers",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/sub-token-providers/",
+      "name": "system_admin_sub_token_providers",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/privacy-policy/",
+      "name": "system_admin_privacy_policy",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/license-agreement/",
+      "name": "system_admin_license_agreement",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/login-payment-policy/",
+      "name": "system_admin_login_payment_policy",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/container-images/",
+      "name": "system_admin_container_images",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    },
+    {
+      "path": "/system-admin/step-full-cos/",
+      "name": "system_admin_step_full_cos",
+      "source": "adminRoutes.js",
+      "role": "ops",
+      "value_stream": null
+    }
+  ]
+}

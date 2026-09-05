@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v91 全量 (post-change)" id="id-v91elfull01">
+  <folder name="Business" id="id-v91elf-biz" type="business">
+    <element xsi:type="archimate:BusinessService" id="id-v91ef-biz-bill" name="租户账单 [MODIFIED v91]"/>
+  </folder>
+  <folder name="Application" id="id-v91elf-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v91ef-app-fe" name="taskFE [MODIFIED v91]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v91ef-app-bill" name="taskBill [MODIFIED v91]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v91elf-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v91ef-pl-v88" name="Plateau v88"/>
+    <element xsi:type="archimate:Plateau" id="id-v91ef-pl-v91" name="Plateau v91"/>
+    <element xsi:type="archimate:Gap" id="id-v91ef-gap" name="Gap: 配额来源与消耗归属不可见"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v91ef-wp" name="WP-task-post-quota-source"/>
+  </folder>
+  <folder name="Relations" id="id-v91elf-rel" type="relations">
+    <element xsi:type="archimate:ServingRelationship" id="id-v91ef-rel-fe-bs" source="id-v91ef-app-fe" target="id-v91ef-biz-bill" name="SPA"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v91ef-rel-bill-fe" source="id-v91ef-app-bill" target="id-v91ef-app-fe" name="quotas/orders API"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v91ef-rel-pl88-gap" source="id-v91ef-pl-v88" target="id-v91ef-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v91ef-rel-wp-gap" source="id-v91ef-wp" target="id-v91ef-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v91ef-rel-wp-pl91" source="id-v91ef-wp" target="id-v91ef-pl-v91"/>
+  </folder>
+  <folder name="Views" id="id-v91elf-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v91ef-view-topo" name="v91 全量拓扑 — 租户账单配额来源">
+      <child xsi:type="archimate:DiagramObject" id="id-v91ef-d-bs" targetConnections="id-v91ef-c-fe-bs" archimateElement="id-v91ef-biz-bill">
+        <bounds x="48" y="48" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91ef-d-fe" targetConnections="id-v91ef-c-bill-fe" archimateElement="id-v91ef-app-fe">
+        <bounds x="48" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91ef-c-fe-bs" source="id-v91ef-d-fe" target="id-v91ef-d-bs" archimateRelationship="id-v91ef-rel-fe-bs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91ef-d-bill" archimateElement="id-v91ef-app-bill">
+        <bounds x="280" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91ef-c-bill-fe" source="id-v91ef-d-bill" target="id-v91ef-d-fe" archimateRelationship="id-v91ef-rel-bill-fe"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v91ef-view-mig" name="架构变迁 v88→v91 — 配额来源可见性">
+      <child xsi:type="archimate:DiagramObject" id="id-v91ef-do-pl88" archimateElement="id-v91ef-pl-v88">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91ef-c-pl88-gap" source="id-v91ef-do-pl88" target="id-v91ef-do-gap" archimateRelationship="id-v91ef-rel-pl88-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91ef-do-gap" targetConnections="id-v91ef-c-pl88-gap id-v91ef-c-wp-gap" archimateElement="id-v91ef-gap">
+        <bounds x="240" y="48" width="380" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91ef-do-wp" archimateElement="id-v91ef-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91ef-c-wp-gap" source="id-v91ef-do-wp" target="id-v91ef-do-gap" archimateRelationship="id-v91ef-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91ef-c-wp-pl91" source="id-v91ef-do-wp" target="id-v91ef-do-pl91" archimateRelationship="id-v91ef-rel-wp-pl91"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91ef-do-pl91" targetConnections="id-v91ef-c-wp-pl91" archimateElement="id-v91ef-pl-v91">
+        <bounds x="560" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

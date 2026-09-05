@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v123 变迁 (v122→v123)" id="id-v123aidiff01">
+  <folder name="Application" id="id-v123ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v123-app-confload" name="confload / conf_loader"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v123-app-svc" name="Go 服务 / taskEvents / taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v123-app-ci" name="check_conf_local_secrets.py"/>
+    <element xsi:type="archimate:DataObject" id="id-v123-data-skel" name="conf/rel 骨架"/>
+    <element xsi:type="archimate:DataObject" id="id-v123-data-conflocal" name="conf-local/rel"/>
+    <element xsi:type="archimate:DataObject" id="id-v123-data-localov" name="config.local.yaml / *.local.yaml [DEPRECATED]"/>
+    <element xsi:type="archimate:DataObject" id="id-v123-data-pwdmd" name="gitLabRootPwd.md"/>
+  </folder>
+  <folder name="Motivation" id="id-v123ai-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" id="id-v123-mot-empty" name="加载器不读 *.local.yaml"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v123ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v123-pl-v122" name="Plateau v122 二进制+配置仓"/>
+    <element xsi:type="archimate:Plateau" id="id-v123-pl-v123" name="Plateau v123 conf-local 唯一 overlay"/>
+    <element xsi:type="archimate:Gap" id="id-v123-gap" name="Gap: 加载器仍 merge *.local.yaml"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v123-wp" name="WP-conf-local-secrets-completion"/>
+  </folder>
+  <folder name="Relations" id="id-v123ai-rel" type="relations">
+    <element xsi:type="archimate:AccessRelationship" id="id-v123-rel-cl-skel" source="id-v123-app-confload" target="id-v123-data-skel" name="读"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v123-rel-cl-ov" source="id-v123-data-localov" target="id-v123-app-confload" name="不再 merge"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v123-rel-cl-loc" source="id-v123-app-confload" target="id-v123-data-conflocal" name="2 合并"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v123-rel-cl-svc" source="id-v123-app-confload" target="id-v123-app-svc" name="注入配置"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v123-rel-ci-skel" source="id-v123-app-ci" target="id-v123-data-skel" name="扫描已跟踪"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v123-rel-pwd-ci" source="id-v123-data-pwdmd" target="id-v123-app-ci" name="须失败"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v123-rel-empty-cl" source="id-v123-mot-empty" target="id-v123-app-confload" name="约束"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v123-rel-pl-gap" source="id-v123-pl-v122" target="id-v123-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v123-rel-wp-gap" source="id-v123-wp" target="id-v123-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v123-rel-wp-pl" source="id-v123-wp" target="id-v123-pl-v123"/>
+  </folder>
+  <folder name="Views" id="id-v123ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v123-view-mig" name="架构变迁 v122→v123 — conf-local-secrets-completion">
+      <child xsi:type="archimate:DiagramObject" id="id-v123-do-pl122" archimateElement="id-v123-pl-v122">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123-c-pl-gap" source="id-v123-do-pl122" target="id-v123-do-gap" archimateRelationship="id-v123-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123-do-gap" targetConnections="id-v123-c-pl-gap id-v123-c-wp-gap" archimateElement="id-v123-gap">
+        <bounds x="340" y="48" width="420" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123-do-wp" archimateElement="id-v123-wp">
+        <bounds x="340" y="140" width="420" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123-c-wp-gap" source="id-v123-do-wp" target="id-v123-do-gap" archimateRelationship="id-v123-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123-c-wp-pl" source="id-v123-do-wp" target="id-v123-do-pl123" archimateRelationship="id-v123-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123-do-pl123" targetConnections="id-v123-c-wp-pl" archimateElement="id-v123-pl-v123">
+        <bounds x="800" y="140" width="280" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v123-view-topo" name="v123 Target — conf-local 加载链">
+      <child xsi:type="archimate:DiagramObject" id="id-v123-do-skel" targetConnections="id-v123-c-cl-skel id-v123-c-ci-skel" archimateElement="id-v123-data-skel">
+        <bounds x="48" y="80" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123-do-ov" archimateElement="id-v123-data-localov">
+        <bounds x="240" y="80" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123-c-cl-ov" source="id-v123-do-ov" target="id-v123-do-cl" archimateRelationship="id-v123-rel-cl-ov"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123-do-loc" targetConnections="id-v123-c-cl-loc" archimateElement="id-v123-data-conflocal">
+        <bounds x="500" y="80" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123-do-cl" targetConnections="id-v123-c-empty-cl id-v123-c-cl-ov" archimateElement="id-v123-app-confload">
+        <bounds x="240" y="180" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123-c-cl-skel" source="id-v123-do-cl" target="id-v123-do-skel" archimateRelationship="id-v123-rel-cl-skel"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123-c-cl-loc" source="id-v123-do-cl" target="id-v123-do-loc" archimateRelationship="id-v123-rel-cl-loc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123-c-cl-svc" source="id-v123-do-cl" target="id-v123-do-svc" archimateRelationship="id-v123-rel-cl-svc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123-do-svc" targetConnections="id-v123-c-cl-svc" archimateElement="id-v123-app-svc">
+        <bounds x="500" y="180" width="220" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123-do-ci" targetConnections="id-v123-c-pwd-ci" archimateElement="id-v123-app-ci">
+        <bounds x="240" y="280" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123-c-ci-skel" source="id-v123-do-ci" target="id-v123-do-skel" archimateRelationship="id-v123-rel-ci-skel"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123-do-pwd" archimateElement="id-v123-data-pwdmd">
+        <bounds x="48" y="280" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123-c-pwd-ci" source="id-v123-do-pwd" target="id-v123-do-ci" archimateRelationship="id-v123-rel-pwd-ci"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123-do-empty" archimateElement="id-v123-mot-empty">
+        <bounds x="500" y="280" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123-c-empty-cl" source="id-v123-do-empty" target="id-v123-do-cl" archimateRelationship="id-v123-rel-empty-cl"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

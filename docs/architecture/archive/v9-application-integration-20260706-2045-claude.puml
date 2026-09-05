@@ -1,0 +1,198 @@
+' @title: AI Dev Platform — Application Component Architecture
+' @view: application-integration
+' @status: target
+' @version: 9
+' @iteration: Cloud 域 Go 真源 + Instruct Worker 下沉
+' @author: claude
+' @based_on: v6 (v6-application-integration-20260706-1543-claude.puml)
+' @updated: 2026-07-06 17:10
+' @description: v6 Phase 1 交付 — taskProjectService SQLite 真源；Django projects 路由/表已删；BE_PROJ 已移除
+
+@startuml
+title AI Dev Platform — Application Component Architecture v9 Target (2026-07-06 20:45)
+
+legend right
+  |<#LightGreen>  </> | 🟢 [NEW v7] 本次新增 |
+  |<#LightYellow> </> | 🟡 [MODIFIED v7] 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED v7] 已删除/废弃 |
+  |<#White>       </> | 无标记 — v6 及更早 |
+endlegend
+
+' ── Groups (logical layers) ──
+component "Frontend Layer" as FL #LightYellow
+component "Gateway Layer" as GL #LightBlue
+component "Platform Services" as PS #LightGreen
+component "New Go Services (v6)" as NGS #LightGreen
+component "Container Stack" as CS #LightCoral
+component "Domain Events" as DE #LightPink
+component "Dev Tools" as DT #LightGray
+
+' ── Frontend ──
+component "Vue Frontend\n(:4000)" as VUE #Yellow
+
+' ── Gateway ──
+component "task-gateway\nAPISIX (:18081)" as GW #Blue
+
+' ── Platform (已有，未变) ──
+component "saas-backend\nDjango (:8001)\n[accounts + company\n+ internal + AI comment]" as BE #Green
+component "task-auth\nGo (:8003)" as AUTH #Green
+component "git-oauth\nDjango (:8002)" as GOAUTH #Green
+component "task-bill\nGo (:8009)" as BILL #Green
+component "task-sse\nNode.js (:8007)" as SSE #Green
+component "task-agent-support\nGo (:8011)" as AGT #Green
+component "task-ai-endpoint\nGo (:8013)" as AIEP #Green
+
+' ── New Go Services (v6) ──
+component "task-project-service\nGo (:8016)\n[SQLite 真源\n无 Django fallback]" as TPS #Green
+component "task-task-service\nGo (:8017)\n[Task/Comment\nAI Comment/FeatureParams]" as TTS #Green
+component "task-cloud-service\nGo (:8018)\n[CloudServerConfig SSOT\ncontainer-target/validate\ncompute read paths]" as TCS #Green
+component "taskAIComment\nGo (:8019)\n[AI comments + instruct_worker]" as TAI #Green
+
+' ── Container Stack ──
+component "task-container-gateway\nGo (:8014)" as CGW #Coral
+component "task-credential-service\nGo (:8015)" as CRED #Coral
+component "go-relay\nGo (:8797)" as RELAY #Coral
+component "go-run-container\nGo" as RUN #Coral
+
+' ── Domain Events ──
+component "Registration Chain\n(:18025-30)" as DE_REG #Pink
+component "Billing + SSE\n(:18020-21)" as DE_BILL #Pink
+component "Notifications\n(:18022-26)" as DE_NOTIF #Pink
+component "Company Fan-out\n(:18027-29)" as DE_COMP #Pink
+component "Cloud + AI Reply\n(:18030-37)" as DE_CLOUD #Pink
+
+' ── Dev Tools ──
+component "valueStream\nGo (:9998)" as VS #Gray
+component "claude-agent\nGo CLI (sidecar)" as CA #Gray
+
+' ── External ──
+component "onlineServiceJS\n(:8765)" as OSJS #White
+component "Upstream LLM\n(DeepSeek / OpenAI)" as LLM #White
+component "Claude Code CLI\n(Node.js)" as CCLI #White
+component "Aliyun ECS API" as ALI #White
+
+component "SQLite\ntask_project.db" as SQLITE #White
+
+' ── Deprecated v7 (已删除，保留注释供 diff) ──
+' component "Django projects/views" as BE_PROJ — REMOVED migration 0051
+component "Django cloud/views\n(25 files)" as BE_CLOUD #LightPink
+component "Django cloud/providers\n(aliyun/ 13 files)" as BE_ALI #LightPink
+
+' ── Composition ──
+FL --> VUE
+GL --> GW
+PS --> BE
+PS --> AUTH
+PS --> GOAUTH
+PS --> BILL
+PS --> SSE
+PS --> AGT
+PS --> AIEP
+NGS --> TPS
+NGS --> TTS
+NGS --> TCS
+CS --> CGW
+CS --> CRED
+CS --> RELAY
+CS --> RUN
+DE --> DE_REG
+DE --> DE_BILL
+DE --> DE_NOTIF
+DE --> DE_COMP
+DE --> DE_CLOUD
+DT --> VS
+DT --> CA
+
+' ── v6 新增数据流 ──
+VUE -[#Green]-> GW : "[NEW v6] /api/tenant/*/projects/\n/api/tenant/*/workspaces/\n/api/tenant/*/cloud/"
+GW -[#Green]-> TPS : "[NEW v6] 项目/工作空间路由"
+GW -[#Green]-> TTS : "[NEW v6] 任务/评论路由"
+GW -[#Green]-> TCS : "[NEW v6] 云平台路由"
+
+TPS -[#Green]-> AUTH : "[NEW v6] JWT 验证"
+TTS -[#Green]-> AUTH : "[NEW v6] JWT 验证"
+TCS -[#Green]-> AUTH : "[NEW v6] JWT 验证"
+
+TPS -[#Green]-> SQLITE : "[NEW v7] 项目域读写真源"
+TPS -[#Yellow]-> BE : "[MODIFIED v7] company 校验 only\n(无 project fallback)"
+TTS -[#Green]-> BE : "[NEW v6] internal\ncompany 存在性校验"
+TCS -[#Green]-> BE : "[NEW v6] internal\ncompany 存在性校验"
+
+TTS -[#Green]-> TPS : "[NEW v6] workspace/project\n存在性校验"
+TCS -[#Green]-> TPS : "[NEW v6] workspace\n云平台默认配置"
+TCS -[#Green]-> TTS : "[NEW v6] 实例状态\n→ task 回调"
+
+TCS -[#Green]-> ALI : "[NEW v6] ECS/VPC API\n(aliyun-sdk-go)"
+
+' ── 已有数据流（v1-v5，保持不变） ──
+CGW -[#White]-> OSJS : "outbound HTTP proxy"
+CGW -[#White]-> BE : "internal session/target"
+OSJS -[#White]-> AGT : "inbound token/heartbeat"
+OSJS -[#White]-> CRED : "exchange-refresh/refresh-access"
+AGT -[#White]-> BE : "internal 快照"
+AGT -[#White]-> GOAUTH : "repo-clone OAuth"
+AGT -[#White]-> SSE : "heartbeat → SSE"
+RELAY -[#White]-> OSJS : "subprocess lifecycle"
+AIEP -[#White]-> BE : "internal API"
+AIEP -[#White]-> CRED : "validate proxy token"
+AIEP -[#White]-> LLM : "Chat Completions SSE"
+CA -[#White]-> CCLI : "subprocess"
+
+' ── v6 变更注释 ──
+note top of BE
+  🟡 [MODIFIED v8] saas-backend 任务域已下线
+  删除: Todo/Comment ORM, todos 公网路由
+  保留: accounts, company internal,
+  AITaskComment (待迁 taskAIComment)
+  @author: claude @2026-07-06 18:34
+end note
+
+note top of TTS
+  🟡 [MODIFIED v8] taskTaskService (:8017) live
+  SQLite task_task.db 真源
+  Task CRUD, Comment, FeatureParams
+  @author: claude @2026-07-06 18:34
+end note
+
+note top of TPS
+  🟡 [MODIFIED v7] taskProjectService (:8016)
+  SQLite data/task_project.db 唯一真源
+  无 proxyToDjango / Strangler fallback
+  Phase 1b: switch-workspace, gitlab-sync
+  @author: claude @2026-07-06 17:10
+end note
+
+note top of TTS
+  🟢 [NEW v6] taskTaskService (:8017)
+  Task (Todo) CRUD, Comment,
+  AI Task Comment, FeatureParams,
+  FeatureParamsSnapshot
+  (LLM Budget → taskAIEndPoint)
+  @author: claude @2026-07-06 15:43
+end note
+
+note top of TCS
+  🟢 [NEW v6] taskCloudService (:8018)
+  CloudPlatformAuthorization (AK+OAuth),
+  CloudServerConfig, Instance LCM,
+  VPC/VSwitch/SecurityGroup,
+  Image/Region, UserData Template,
+  AI Model Authorization
+  @author: claude @2026-07-06 15:43
+end note
+
+note top of BE_CLOUD
+  🔴 [DEPRECATED v6] Django cloud/views/
+  迁移至 taskCloudService
+  交付后删除
+  @author: claude @2026-07-06 15:43
+end note
+
+note top of BE_ALI
+  🔴 [DEPRECATED v6] Django cloud/providers/aliyun/
+  迁移至 taskCloudService (aliyun-sdk-go)
+  交付后删除
+  @author: claude @2026-07-06 15:43
+end note
+
+@enduml

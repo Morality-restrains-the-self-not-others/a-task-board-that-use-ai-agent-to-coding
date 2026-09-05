@@ -1,0 +1,21 @@
+/taskCloudService
+/data/
+/bin/
+*.db
+*.db-wal
+*.db-shm
+
+# Misnamed go build output when cwd is src/ (use bin/ instead)
+/src/src
+# macOS Finder
+.DS_Store
+._.DS_Store
+._*
+# runtime logs (see meta .gitignore logs/)
+logs/
+# Secret env files (meta gitignore parity — OPT-20260827-017)
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template

@@ -1,0 +1,13 @@
+# UserReferral.accessCode.test.js — Test Intent
+
+## Purpose
+回归「无推荐资格时推荐链接仍须带 accessCode」：资格只控制分成，不控制发码。
+
+## What is tested
+1. 状态接口 `has_active_code=false` 且返回 `access_code` 时，分享链接含 `accessCode=u{userId}`
+2. 状态接口未返回 `access_code` 时，回退 `getStoredUserId`（HttpOnly cookie 场景）
+3. cookie / localStorage 皆空时，回退 `resolveAuthenticatedUserId`
+
+## What is NOT tested
+- 推荐资格申请/审批流程
+- 注册页如何消费 accessCode

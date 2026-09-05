@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="v77-member-joined-auto-git-identity-full" id="id-v77full01">
+  <folder name="Application" id="id-v77full-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v77f-app-tenant" name="taskTenantService [MOD v77]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v77f-app-events" name="taskEvents"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v77f-app-consumer" name="1_create_default_git_identity [NEW v77]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v77f-app-task" name="taskTaskService [MOD v77]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v77f-app-fe" name="taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v77f-app-people" name="taskFE PeopleManage [MOD v77]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v77f-app-gw" name="taskGateway APISIX"/>
+    <element xsi:type="archimate:DataObject" id="id-v77f-do-tgi" name="task_git_identities"/>
+    <element xsi:type="archimate:DataObject" id="id-v77f-do-member" name="tenant_company_member"/>
+  </folder>
+  <folder name="Technology" id="id-v77full-tech" type="technology">
+    <element xsi:type="archimate:TechnologyEvent" id="id-v77f-ev-mj" name="MEMBER_JOINED [MOD v77]"/>
+    <element xsi:type="archimate:Node" id="id-v77f-node-kafka" name="Kafka"/>
+    <element xsi:type="archimate:Node" id="id-v77f-node-mysql-task" name="MySQL task_task"/>
+    <element xsi:type="archimate:Node" id="id-v77f-node-mysql-tenant" name="MySQL task_tenant"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v77full-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v77f-pl-v76" name="Plateau v76"/>
+    <element xsi:type="archimate:Plateau" id="id-v77f-pl-v77" name="Plateau v77"/>
+    <element xsi:type="archimate:Gap" id="id-v77f-gap" name="Gap: auto git identity on MEMBER_JOINED"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v77f-wp" name="WP: member-joined-auto-git-identity"/>
+  </folder>
+  <folder name="Relations" id="id-v77full-rel" type="relations">
+    <element xsi:type="archimate:CompositionRelationship" id="id-v77f-rel-fe-people" source="id-v77f-app-fe" target="id-v77f-app-people"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v77f-rel-events-cons" source="id-v77f-app-events" target="id-v77f-app-consumer"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v77f-rel-tenant-member" source="id-v77f-app-tenant" target="id-v77f-do-member" name="R/W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v77f-rel-pub" source="id-v77f-app-tenant" target="id-v77f-ev-mj" name="publish"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v77f-rel-ev-kafka" source="id-v77f-ev-mj" target="id-v77f-node-kafka"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v77f-rel-consume" source="id-v77f-ev-mj" target="id-v77f-app-consumer" name="consume"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v77f-rel-ensure" source="id-v77f-app-consumer" target="id-v77f-app-task" name="POST ensure-default"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v77f-rel-tgi" source="id-v77f-app-task" target="id-v77f-do-tgi" name="R/W"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v77f-rel-tgi-mysql" source="id-v77f-do-tgi" target="id-v77f-node-mysql-task"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v77f-rel-member-mysql" source="id-v77f-do-member" target="id-v77f-node-mysql-tenant"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v77f-rel-people-gw" source="id-v77f-app-people" target="id-v77f-app-gw" name="HTTP"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v77f-rel-gw-task" source="id-v77f-app-gw" target="id-v77f-app-task" name="forward"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v77f-rel-pl76-gap" source="id-v77f-pl-v76" target="id-v77f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v77f-rel-wp-gap" source="id-v77f-wp" target="id-v77f-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v77f-rel-wp-pl77" source="id-v77f-wp" target="id-v77f-pl-v77"/>
+  </folder>
+  <folder name="Views" id="id-v77full-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v77f-view-topo" name="v77 Full — member joined auto git identity topology">
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-d-tenant" archimateElement="id-v77f-app-tenant">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-c-tenant-member" source="id-v77f-d-tenant" target="id-v77f-d-member" archimateRelationship="id-v77f-rel-tenant-member"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-c-pub" source="id-v77f-d-tenant" target="id-v77f-d-ev" archimateRelationship="id-v77f-rel-pub"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-d-member" targetConnections="id-v77f-c-tenant-member" archimateElement="id-v77f-do-member">
+        <bounds x="48" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-c-member-mysql" source="id-v77f-d-member" target="id-v77f-d-mysql-tenant" archimateRelationship="id-v77f-rel-member-mysql"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-d-mysql-tenant" targetConnections="id-v77f-c-member-mysql" archimateElement="id-v77f-node-mysql-tenant">
+        <bounds x="48" y="230" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-d-ev" targetConnections="id-v77f-c-pub" archimateElement="id-v77f-ev-mj">
+        <bounds x="260" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-c-ev-kafka" source="id-v77f-d-ev" target="id-v77f-d-kafka" archimateRelationship="id-v77f-rel-ev-kafka"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-c-consume" source="id-v77f-d-ev" target="id-v77f-d-cons" archimateRelationship="id-v77f-rel-consume"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-d-kafka" targetConnections="id-v77f-c-ev-kafka" archimateElement="id-v77f-node-kafka">
+        <bounds x="260" y="140" width="100" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-d-events" archimateElement="id-v77f-app-events">
+        <bounds x="480" y="140" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-c-events-cons" source="id-v77f-d-events" target="id-v77f-d-cons" archimateRelationship="id-v77f-rel-events-cons"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-d-cons" targetConnections="id-v77f-c-consume id-v77f-c-events-cons" archimateElement="id-v77f-app-consumer">
+        <bounds x="480" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-c-ensure" source="id-v77f-d-cons" target="id-v77f-d-task" archimateRelationship="id-v77f-rel-ensure"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-d-task" targetConnections="id-v77f-c-ensure id-v77f-c-gw-task" archimateElement="id-v77f-app-task">
+        <bounds x="740" y="48" width="150" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-c-tgi" source="id-v77f-d-task" target="id-v77f-d-tgi" archimateRelationship="id-v77f-rel-tgi"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-d-tgi" targetConnections="id-v77f-c-tgi" archimateElement="id-v77f-do-tgi">
+        <bounds x="740" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-c-tgi-mysql" source="id-v77f-d-tgi" target="id-v77f-d-mysql-task" archimateRelationship="id-v77f-rel-tgi-mysql"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-d-mysql-task" targetConnections="id-v77f-c-tgi-mysql" archimateElement="id-v77f-node-mysql-task">
+        <bounds x="740" y="230" width="150" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-d-fe" archimateElement="id-v77f-app-fe">
+        <bounds x="260" y="300" width="100" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-c-fe-people" source="id-v77f-d-fe" target="id-v77f-d-people" archimateRelationship="id-v77f-rel-fe-people"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-d-people" targetConnections="id-v77f-c-fe-people" archimateElement="id-v77f-app-people">
+        <bounds x="420" y="300" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-c-people-gw" source="id-v77f-d-people" target="id-v77f-d-gw" archimateRelationship="id-v77f-rel-people-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-d-gw" targetConnections="id-v77f-c-people-gw" archimateElement="id-v77f-app-gw">
+        <bounds x="660" y="300" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-c-gw-task" source="id-v77f-d-gw" target="id-v77f-d-task" archimateRelationship="id-v77f-rel-gw-task"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v77f-view-mig" name="架构变迁 v76→v77 — member-joined-auto-git-identity">
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-do-pl76" archimateElement="id-v77f-pl-v76">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-conn-pl76-gap" source="id-v77f-do-pl76" target="id-v77f-do-gap" archimateRelationship="id-v77f-rel-pl76-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-do-gap" targetConnections="id-v77f-conn-pl76-gap id-v77f-conn-wp-gap" archimateElement="id-v77f-gap">
+        <bounds x="240" y="48" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-do-wp" archimateElement="id-v77f-wp">
+        <bounds x="240" y="160" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-conn-wp-gap" source="id-v77f-do-wp" target="id-v77f-do-gap" archimateRelationship="id-v77f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v77f-conn-wp-pl77" source="id-v77f-do-wp" target="id-v77f-do-pl77" archimateRelationship="id-v77f-rel-wp-pl77"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v77f-do-pl77" targetConnections="id-v77f-conn-wp-pl77" archimateElement="id-v77f-pl-v77">
+        <bounds x="540" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

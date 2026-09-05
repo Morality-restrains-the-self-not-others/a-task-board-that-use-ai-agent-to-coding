@@ -1,0 +1,37 @@
+' @title: 超管微信分账单号/手工分账 + 动账通知（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 108
+' @iteration: admin-profit-sharing-wechat-ids-change-notify
+' @author: cursor
+' @based_on: v107 (v107-enterprise-landscape-20260824-1515-claude.puml)
+' @updated: 2026-08-25 18:00
+' @description: 业务层：平台员工对推荐佣金分账台账对账与补发起；微信动账通知入账
+
+@startuml
+!include <archimate/Archimate>
+
+title v108 — 企业景观 超管分账与动账通知 2026-08-25 18:00
+
+Business_Actor(staff, "平台员工 / 超管")
+Business_Actor(wxMch, "微信支付商户后台")
+Business_Process(recon, "分账对账与补分账 🟡")
+Business_Process(notifyCfg, "配置动账通知 URL 🟢")
+Application_Component(bill, "taskBill 🟡")
+Application_Component(fe, "taskFE 系统管理 🟡")
+
+Rel_Assignment(staff, recon)
+Rel_Flow(staff, fe, "查看单号 / 填缘由分账 🟡")
+Rel_Flow(fe, bill, "admin profit-sharing APIs 🟡")
+Rel_Assignment(wxMch, notifyCfg)
+Rel_Flow(wxMch, bill, "HTTPS 动账通知 🟢")
+
+Implementation_Plateau(p107, "Plateau v107")
+Implementation_Plateau(p108, "Plateau v108")
+Implementation_Gap(g, "Gap: 超管无法对照微信单号并带审计补分账")
+Implementation_WorkPackage(wp, "WP-admin-profit-sharing-change-notify")
+Rel_Triggering(p107, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p108, "delivers")
+
+@enduml

@@ -1,0 +1,12 @@
+version: "1"
+fragments:
+  - from: ../../frontend/vue/config.yaml
+    to: vue.yaml
+    pick:
+      - publicBaseUrl
+  - from: ../../gateway/task-gateway/config.yaml
+    to: task-gateway.yaml
+    pick:
+      - publicBase
+      - host
+      - tlsPort

@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 紫曜律动主题色配置 */
+@layer base {
+  /* 避免页面因出现/消失纵向滚动条导致视口宽度变化，进而引起整页（含左侧栏）横向抖动 */
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  :root {
+    --color-primary: #7241F2;
+    --color-primary-dark: #5C2DC7;
+    --color-primary-light: #E6E0FF;
+    --color-secondary: #F1F2F6;
+    --color-accent: #FF324D;
+    --color-text: #1A1A1A;
+  --color-text-light: #4B5563;
+    --color-background: #F7F9FC;
+  }
+}
+
+/* 自定义颜色扩展 */
+@layer utilities {
+  .bg-primary {
+    background-color: var(--color-primary);
+  }
+  
+  .bg-secondary {
+    background-color: var(--color-secondary);
+  }
+  
+  .bg-accent {
+    background-color: var(--color-accent);
+  }
+  
+  .text-text {
+    color: var(--color-text);
+  }
+  
+  .text-text-light {
+    color: var(--color-text-light);
+  }
+  
+  .border-primary {
+    border-color: var(--color-primary);
+  }
+  
+  .ring-primary {
+    --tw-ring-color: var(--color-primary);
+  }
+}
+
+/* 自定义组件 */
+@layer components {
+  /**
+   * 租户控制台左侧栏：固定宽度 + 禁止 flex 收缩 + 裁切横向溢出。
+   * 与 App.vue 中 flex 主内容区 min-w-0 配合，避免子菜单/长文案撑宽侧栏或滚动条导致视觉抖动。
+   */
+  .tenant-console-sidebar {
+    @apply w-[200px] min-w-[200px] max-w-[200px] shrink-0 overflow-x-hidden transition-[width] duration-200 ease-in-out;
+  }
+
+  /**
+   * 缩窄态：仅图标宽度（w-16 = 64px）。
+   * 点击"控制台导航"标题切换，状态经 useTenantConsoleSidebarCollapse 持久化到 localStorage；
+   * 缩窄时菜单名靠 title 悬停提示展示。
+   */
+  .tenant-console-sidebar-collapsed {
+    @apply w-16 min-w-[64px] max-w-[64px];
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors duration-300 font-medium;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-text px-4 py-2 rounded-md hover:bg-gray-200 transition-colors duration-300 font-medium;
+  }
+  
+  .btn-accent {
+    @apply bg-accent text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors duration-300 font-medium;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300;
+  }
+  
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-300;
+  }
+  
+  .nav-link {
+    @apply text-text-light hover:text-purple-600 transition-colors duration-300 font-medium;
+  }
+  
+  .nav-link-active {
+    @apply text-purple-600 border-b-2 border-purple-600 font-medium;
+  }
+}

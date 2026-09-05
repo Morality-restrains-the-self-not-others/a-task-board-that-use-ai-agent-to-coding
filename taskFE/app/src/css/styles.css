@@ -1,0 +1,624 @@
+/* 基础样式重置 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 导航栏实际高度（Navbar.logic.vue 实测，py-4 + 内容行高 = 74px）——
+   各页滚动容器以 calc(100dvh - var(--app-navbar-h)) 计算高度上限。
+   修改导航栏高度时同步维护本变量（单一事实源，OPT-20260809-023）。 */
+:root {
+  --app-navbar-h: 74px;
+}
+
+/* 允许页面正常滚动 */
+body {
+  overflow: auto;
+}
+
+/* 允许main元素正常滚动 */
+main {
+  overflow: auto;
+}
+
+/* 针对main元素的强制样式重置，确保没有默认margin */
+main {
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: #f7fafc;
+}
+
+/* 全局内容对齐和边距 */
+main {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 2rem 1rem;
+}
+
+@media (min-width: 640px) {
+  main {
+    padding: 2.5rem 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  main {
+    padding: 3rem 2rem;
+  }
+}
+
+/*
+ * 勿对裸 section 设大 padding/margin。
+ * 全局规则会误伤看板分区（DeliverableBoardSection）与后台表单等应用内 section；
+ * 落地页间距由各页 utility（如 Home 的 py-24）自行控制。
+ */
+
+/* 卡片样式优化 */
+.card {
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* 表单元素对齐 */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* 按钮组默认垂直居中。必须用 :where() 把特异性降为 0，
+   否则会盖过 Tailwind items-start，把评论头像等左侧图标垂直居中到整卡中部。 */
+:where(.flex.gap-3, .flex.space-x-3) {
+  align-items: center;
+}
+
+/* 文本对齐 */
+h1, h2, h3, h4, h5, h6 {
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
+/* 表格样式 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+table th, table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+table th {
+  font-weight: 600;
+  background-color: #f8fafc;
+}
+
+/* 列表样式 */
+ul, ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
+}
+
+/* 图片样式 */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 响应式设计优化 */
+@media (max-width: 640px) {
+  .flex {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 确保所有页面都有一致的底部边距 */
+footer {
+  margin-top: auto;
+}
+
+/* 导航栏样式 */
+nav {
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* 卡片样式 */
+.card {
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 1.5rem;
+}
+
+/* 按钮样式 */
+.btn-primary {
+  background-color: #3b82f6;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #2563eb;
+}
+
+.btn-secondary {
+  background-color: #64748b;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: #475569;
+}
+
+/* 输入框样式 */
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* 布局类 */
+.container {
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 2rem;
+  }
+}
+
+/* 网格布局 */
+.grid {
+  display: grid;
+}
+
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  
+  .md\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* 间距 */
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
+/* 文本样式 */
+.text-center {
+  text-align: center;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.text-primary {
+  color: #3b82f6;
+}
+
+.text-gray-500 {
+  color: #6b7280;
+}
+
+.text-gray-900 {
+  color: #111827;
+}
+
+/* 背景颜色 */
+.bg-white {
+  background-color: #ffffff;
+}
+
+.bg-gray-50 {
+  background-color: #f9fafb;
+}
+
+.bg-gray-100 {
+  background-color: #f3f4f6;
+}
+
+.bg-gray-800 {
+  background-color: #1f2937;
+}
+
+
+
+/* 颜色渐变 */
+.bg-gradient-to-r {
+  background-image: linear-gradient(to right, var(--tw-gradient-stops));
+}
+
+.from-primary {
+  --tw-gradient-from: #3b82f6;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(59, 130, 246, 0));
+}
+
+.to-blue-600 {
+  --tw-gradient-to: #2563eb;
+}
+
+/* 弹性布局 */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.space-x-4 > * + * {
+  margin-left: 1rem;
+}
+
+.space-y-2 > * + * {
+  margin-top: 0.5rem;
+}
+
+.space-y-4 > * + * {
+  margin-top: 1rem;
+}
+
+.space-y-8 > * + * {
+  margin-top: 2rem;
+}
+
+/* 响应式显示 */
+.hidden {
+  display: none !important;
+}
+
+/* 确保.hidden类能覆盖固定定位元素的显示 */
+.app-modal-overlay.hidden,
+.fixed.inset-0.hidden {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .md\:flex {
+    display: flex;
+  }
+  
+  .md\:hidden {
+    display: none;
+  }
+}
+
+/* 页脚样式 */
+footer {
+  background-color: #1f2937;
+  color: #ffffff;
+  padding: 3rem 0;
+}
+
+footer a {
+  color: #9ca3af;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+footer a:hover {
+  color: #ffffff;
+}
+
+/* 英雄区域 */
+.hero {
+  padding: 4rem 0;
+  background-color: #3b82f6;
+  color: #ffffff;
+}
+
+/* 特性卡片 */
+.feature-card {
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* API文档区域 */
+.api-section {
+  background-color: #f3f4f6;
+  padding: 4rem 0;
+}
+
+/* 模态框样式 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  overflow-y: auto;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 60;
+  max-width: 90%;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.modal-close:hover {
+  background-color: #f3f4f6;
+}
+
+.modal-close svg {
+  width: 20px;
+  height: 20px;
+  color: #6b7280;
+  display: block;
+}
+
+.modal-close:hover svg {
+  color: #374151;
+}
+
+/* 模态遮罩根节点（显式类，替代裸 .fixed.inset-0 的全局模态样式）。
+   仅居中模态使用本类；右侧抽屉 / 底部弹层 / 下拉透明遮罩保留各自的定位类。 */
+.app-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 裸 .fixed.inset-0 收窄为纯定位：不再注入灰罩 / z-9999 / 居中，避免非模态
+   fixed 遮罩（抽屉 / 下拉等）误继承模态样式。 */
+.fixed.inset-0 {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* 下拉「点击外部关闭」遮罩：独立类自带铺满视口 + 透明背景，无灰罩 */
+.dropdown-click-outside-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent;
+  display: block;
+  z-index: 40;
+}
+
+.app-modal-overlay > div {
+  position: relative;
+  z-index: 10000;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 90%;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* 含原生 <select> 的模态框须允许下拉层溢出，避免选项列表被裁剪 */
+.app-modal-overlay > div.modal-select-overflow-visible {
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 表单主体可滚动，外层保持 overflow:visible 以便 <select> 下拉不被裁剪 */
+.app-modal-overlay > div.modal-select-overflow-visible .modal-select-scroll-body {
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* 确保模态框内容始终在最上层 */
+.modal {
+  position: fixed !important;
+  z-index: 9999 !important;
+}
+
+.modal-content {
+  position: relative !important;
+  z-index: 10000 !important;
+}
+
+/* 修复关闭按钮显示问题 */
+button.text-gray-500.hover\:text-gray-700 {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
+}
+
+button.text-gray-500.hover\:text-gray-700:hover {
+  background-color: #f3f4f6;
+}
+
+button.text-gray-500.hover\:text-gray-700 svg {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* 模态框打开时阻止页面滚动 */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* 访问管理「打开页面 / 定位」深链高亮（rgDeepLink.js，OPT-20260811-042）：
+   定位到 data-rg-key 区块后短暂描边 + 淡出脉冲。 */
+.rg-deep-link-highlight {
+  outline: 2px solid var(--color-primary, #7241F2);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+  animation: rg-deep-link-pulse 1.5s ease-out;
+}
+
+@keyframes rg-deep-link-pulse {
+  0% {
+    box-shadow: 0 0 0 4px rgba(114, 65, 242, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(114, 65, 242, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rg-deep-link-highlight {
+    animation: none;
+    outline: 2px solid var(--color-primary, #7241F2);
+  }
+}

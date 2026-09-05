@@ -1,0 +1,16 @@
+# 0.0.0.0：供边缘 nginx（LAN IP:8015）反代容器回调；同机 Django/TCG 仍走 loopback
+host: 0.0.0.0
+port: 8015
+gitoauth_base: http://127.0.0.1:8002
+gitoauth_timeout_seconds: 5
+access_token_expiry_seconds: ''
+# 业务只读聚合：经 owner HTTP，不再直连 task_task / task_project / saas sqlite
+task_task_service_base: http://127.0.0.1:8017
+task_project_service_base: http://127.0.0.1:8016
+# 同节点调用 taskCloudService 读 workspace 闲置策略；拆分时改 ${subdomains.xxx}
+task_cloud_service_base: http://127.0.0.1:8018
+saas_internal_api_base: http://127.0.0.1:8001
+internal_secret: ""
+# Git OAuth 换票桥接密钥：SSOT 同源 conf/core/sso/config.yaml ssoJwtSecret（OPT-20260807-071）。
+# 优先级 env GITOAUTH_BRIDGE_JWT_SECRET → env TASK2APP_SSO_JWT_SECRET → 此处 conf → dev 兜底。
+gitoauth_bridge_secret: ""

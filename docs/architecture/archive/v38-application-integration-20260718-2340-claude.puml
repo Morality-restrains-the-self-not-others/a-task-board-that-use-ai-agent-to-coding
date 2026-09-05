@@ -1,0 +1,57 @@
+' @title: Application Integration — daydaymoney.yaml 元信息全链路
+' @view: application-integration
+' @status: archived
+' @version: 38
+' @author: claude
+' @based_on: v37 current (v37-application-integration-20260718-1810-claude.puml)
+' @updated: 2026-07-19 01:10
+' @description: 仓库 daydaymoney.yaml → 项目 tags / HTML meta / Chrome resolve / 日志字段 → Grafana 精确匹配
+' @iteration: daydaymoney-yaml-metadata
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v38 — daydaymoney.yaml Metadata (2026-07-18 23:40)
+
+rectangle "Motivation" {
+  Motivation_Constraint(noHardIds, "Constraint\nYAML 禁止固化\nws/project/tenant id")
+  Motivation_Principle(multiMatch, "Principle\n同一 service_id\n可映射多 WS/项目")
+}
+
+rectangle "Application" {
+  Application_DataObject(yamlFile, "🟢 daydaymoney.yaml\n(service_id+tags) [NEW v38]")
+  Application_Component(vueProj, "🟡 Vue ProjectPage\n同步 tags [MODIFIED v38]")
+  Application_Component(vueHead, "🟡 Vue/SPA head\ndaydaymoney-* meta [MODIFIED v38]")
+  Application_Component(chrome, "🟡 taskChromePlugin\nresolve+autofill [MODIFIED v38]")
+  Application_Component(grafana, "🟡 DaydaymoneyGrafana\nmeta match [MODIFIED v38]")
+  Application_Component(gw, "task-gateway\nJWT + tenant")
+  Application_Component(tps, "🟡 taskProjectService\ndaydaymoney/resolve [MODIFIED v38]")
+  Application_Component(tracelog, "🟡 shareLib/tracelog\naidev fields [MODIFIED v38]")
+  Application_DataObject(projTags, "projects.tags\n+ project_workspaces")
+}
+
+rectangle "Technology" {
+  Technology_Node(loki, "Loki\nJSON logs")
+}
+
+note top of yamlFile
+  Identity only:
+  service_id + tags
+  (svc:<id> required)
+end note
+
+Rel_Flow(yamlFile, vueHead, "build/CI inject meta")
+Rel_Flow(yamlFile, vueProj, "fetch/parse sync tags")
+Rel_Flow(yamlFile, tracelog, "startup load")
+Rel_Flow(vueHead, chrome, "read meta /daydaymoney.yaml")
+Rel_Flow(vueProj, gw, "PATCH tags\nPOST parse-yaml")
+Rel_Flow(chrome, gw, "GET daydaymoney/resolve")
+Rel_Flow(grafana, gw, "list projects\n(+ resolve)")
+Rel_Flow(gw, tps, "tenant auth")
+Rel_Access_W(tps, projTags, "R/W tags\nR resolve")
+Rel_Flow(tracelog, loki, "daydaymoney_service_id\naidev_tags")
+Rel_Flow(loki, grafana, "match via meta")
+Rel_Influence(noHardIds, yamlFile, "schema")
+Rel_Influence(multiMatch, tps, "multi-row matches")
+
+@enduml

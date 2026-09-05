@@ -1,0 +1,135 @@
+---
+description: 文件修改后格式验证元规则 — 修改任何文件后必须使用对应工具验证格式有效性，缺工具则安装
+globs: "**/*"
+alwaysApply: true
+---
+
+# 文件修改后格式验证（元规则）
+
+适用于整个 monorepo 的所有文件修改操作。本规则是**元规则**，优先级高于各语言局部惯例。违反此规则的修改视为不完整。
+
+## 核心原则
+
+**当修改任何文件后，必须在提交前使用对应的格式验证工具确认文件格式有效。若缺乏验证工具，必须先安装再验证。**
+
+## 文件类型 → 验证工具对照表
+
+每次修改文件后，根据文件类型执行以下验证。工具缺失时按「安装命令」列安装。
+
+| 文件类型 | 格式化验证 | 静态分析/Lint | 安装命令（缺工具时） |
+|---------|-----------|---------------|-------------------|
+| `.go` | `gofmt -d <file>` | `go vet ./...` | go 自带，无需安装 |
+| `.py` | `python3 -m py_compile <file>` | `ruff check <file>` | `pip install ruff --break-system-packages` |
+| `.js` `.ts` `.tsx` `.jsx` | `eslint --fix-dry-run <file>` | `eslint <file>` | `npm install -g eslint` |
+| `.vue` | `eslint --fix-dry-run <file>` | `eslint <file>` | `npm install -g eslint eslint-plugin-vue` |
+| `.yaml` `.yml` | `python3 -c "import yaml; yaml.safe_load(open('<file>'))"` | `yamllint <file>` | `pip install yamllint --break-system-packages` |
+| `.json` | `jq . <file> > /dev/null` | `jq . <file> > /dev/null` | jq 系统已安装 |
+| `.sh` `.bash` | `bash -n <file>` | `shellcheck <file>` | `apt install shellcheck` 或 `snap install shellcheck` |
+| `Dockerfile*` | `hadolint <file>` | `hadolint <file>` | `docker pull hadolint/hadolint && docker run --rm -i hadolint/hadolint < <file>` |
+| `.md` | `markdownlint <file>` | `markdownlint <file>` | `npm install -g markdownlint-cli` |
+| `.sql` | `sqlfluff lint <file>` | `sqlfluff lint <file>` | `pip install sqlfluff --break-system-packages` |
+| `.html` `.css` | `prettier --check <file>` | `prettier --check <file>` | `npm install -g prettier` |
+
+## 执行规范
+
+### 必须验证的场景
+
+1. **新建文件**：创建后立即验证格式有效性
+2. **修改文件**：修改后立即验证格式未被破坏
+3. **批量修改**：每批修改完成后，对所有修改文件逐一验证
+
+### 验证执行顺序
+
+1. **格式化检查**（第一优先级）：确保语法正确、格式合法
+2. **静态分析/Lint**（第二优先级）：确保代码质量、风格一致
+3. 格式化检查通过后，方可执行静态分析；格式化检查失败时，先修复格式问题再继续
+
+### 缺工具时的处理
+
+- **禁止跳过**：不得因「工具未安装」而跳过格式验证
+- **立即安装**：执行上表「安装命令」列对应的安装命令
+- **网络不可用**：若因网络限制无法安装，使用该语言的内建机制替代：
+  - Python: `python3 -m py_compile <file>`（语法检查）
+  - Shell: `bash -n <file>`（语法检查）
+  - Go: `gofmt -d <file>` + `go vet <file>`
+  - JSON: `python3 -m json.tool <file> > /dev/null`
+  - YAML: `python3 -c "import yaml; yaml.safe_load(open('<file>'))"`
+  - JavaScript: `node --check <file>`（语法检查）
+- **Fallback 记录**：网络不可用导致使用内建机制时，须在 commit message 中注明：`Validate: built-in syntax check (network unavailable for <tool>)`
+
+### 多文件修改时的批量验证
+
+修改 N 个文件时，推荐使用以下批量模式：
+
+```bash
+# Go 文件
+gofmt -d file1.go file2.go ... && go vet ./...
+
+# Python 文件
+for f in file1.py file2.py; do python3 -m py_compile "$f" || exit 1; done
+
+# JavaScript/Vue 文件
+eslint file1.js file2.vue ...
+
+# YAML 文件
+for f in file1.yaml file2.yaml; do python3 -c "import yaml; yaml.safe_load(open('$f'))" || exit 1; done
+
+# JSON 文件
+for f in file1.json file2.json; do jq . "$f" > /dev/null || exit 1; done
+
+# Shell 文件
+for f in file1.sh file2.sh; do bash -n "$f" || exit 1; done
+```
+
+## JSON 验证特殊规则
+
+项目大量使用 JSON 配置文件（`conf/port_config.json`、`.mcp.json`、`package.json`、`tsconfig.json` 等），JSON 格式错误会导致服务启动失败，必须严格验证：
+
+- `jq . <file>` 必须返回零退出码且输出合法 JSON
+- 不得使用 `echo` 或手工拼接 JSON 字符串；禁止创建语法不合规的 JSON
+- JSON 文件修改后，下一轮必须立即验证（不得累计多轮后一次性检查）
+
+## YAML 验证特殊规则
+
+YAML 配置文件（`conf/base.yaml`、`docker-compose.yml`、`.pre-commit-config.yaml`、`.github/workflows/*.yml` 等）的缩进和格式错误难以调试，必须验证：
+
+- `python3 -c "import yaml; yaml.safe_load(open('<file>'))"` 必须成功
+- 严禁 Tab 字符混入缩进（YAML 只接受空格缩进）
+- 注意 `:` 后必须有空格（`key: value` 正确，`key:value` 错误）
+
+## Commit Message 格式要求
+
+每次修改文件后的 commit message 必须包含验证结果说明：
+
+```
+feat/fix/chore: <简短描述>
+
+Validate: <文件类型> — <工具> 通过
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+若网络不可用使用了 fallback：
+```
+fix: <简短描述>
+
+Validate: Python — py_compile (network unavailable for ruff)
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+## Code Review 门禁
+
+Reviewer 第一问：「文件修改后验证过格式有效性吗？」
+
+PR description 必须包含：
+1. 修改涉及的文件类型列表
+2. 对每种文件类型使用的验证工具及版本
+3. 验证结果摘要（全部通过 / 部分失败及修复情况）
+
+## 已知失败模式（严禁重复）
+
+1. **跳步验证**：「这个文件改动很简单，不需要验证」→ 禁止，所有修改都需验证
+2. **累计验证**：「改完这批一起检查」→ 禁止，每改一个文件立即验证
+3. **缺工具跳过**：「没有装 shellcheck，先不查 shell 了」→ 禁止，必须先安装或使用 fallback
+4. **JSON 手工拼接**：用 echo/printf 构造 JSON → 必须用 jq 验证结果
+5. **YAML 缩进错误**：Tab/空格混用导致解析失败 → 必须通过 yaml.safe_load 验证
+6. **忽略验证失败**：工具报错但仍然提交 → 禁止，必须修复到验证通过

@@ -1,0 +1,70 @@
+' @title: 推荐资格服务号动态 scene 码（企业景观）
+' @view: enterprise-landscape
+' @status: current
+' @version: 113
+' @iteration: referral-mp-dynamic-qr-ticket
+' @author: cursor
+' @based_on: v112 (v112-enterprise-landscape-20260826-0950-cursor.puml)
+' @updated: 2026-08-26 16:35
+' @description: 用户扫带临时 ID 的动态码；冲突时按票提醒当前登录用户
+
+@startuml
+!include <archimate/Archimate>
+
+title v113 — 企业景观 动态 scene 码 2026-08-26 15:50
+
+legend right
+  | <#LightGreen>  </> | [NEW] v113 |
+  | <#LightYellow> </> | [MODIFIED] v113 |
+endlegend
+
+Business_Actor(user, "已登录用户")
+Business_Actor(wx, "微信服务号")
+Business_Process(issue, "签发临时 ID 动态码")
+note right of issue
+  [NEW v113]
+  @author: cursor @2026-08-26 15:50
+end note
+Business_Process(follow, "扫码关注或 SCAN")
+note right of follow
+  [MODIFIED v113] 带 scene
+  @author: cursor @2026-08-26 15:50
+end note
+Business_Process(remind, "冲突则提醒当前用户")
+note right of remind
+  [NEW v113] 不抢绑
+  @author: cursor @2026-08-26 15:50
+end note
+Business_Process(apply, "填写名称简介申请资格")
+Application_Component(fe, "taskFE 推荐页")
+Application_Component(auth, "taskAuth")
+Application_Component(ref, "taskReferral")
+Application_DataObject(ident, "wechat_identity mp")
+Application_DataObject(ticket, "auth_wechat_mp_follow_ticket")
+note right of ticket
+  [NEW v113]
+  @author: cursor @2026-08-26 15:50
+end note
+
+Rel_Assignment(user, issue)
+Rel_Assignment(user, follow)
+Rel_Assignment(user, remind)
+Rel_Assignment(user, apply)
+Rel_Flow(user, fe, "打开闸门 / 我已关注")
+Rel_Flow(fe, auth, "follow-qr / follow-status")
+Rel_Flow(auth, wx, "qrcode/create")
+Rel_Flow(user, wx, "扫动态码")
+Rel_Flow(wx, auth, "subscribe/SCAN")
+Rel_Flow(fe, ref, "apply")
+Rel_Access(auth, ident, "bind or skip")
+Rel_Access(auth, ticket, "match temp_id")
+
+Implementation_Plateau(p112, "Plateau v112")
+Implementation_Plateau(p113, "Plateau v113")
+Implementation_Gap(g, "Gap: 静态码无法对账已关注用户")
+Implementation_WorkPackage(wp, "WP-referral-mp-dynamic-qr-ticket")
+Rel_Triggering(p112, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p113, "delivers")
+
+@enduml

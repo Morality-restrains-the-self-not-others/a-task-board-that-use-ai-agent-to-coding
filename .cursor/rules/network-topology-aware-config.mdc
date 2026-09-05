@@ -1,0 +1,49 @@
+---
+description: 网络拓扑感知配置 — 禁止硬编码 127.0.0.1 / localhost 为基础设施地址；须使用 ${INFRA_HOST} 或 ${subdomains}
+alwaysApply: true
+---
+
+# 网络拓扑感知服务配置（元规则）
+
+适用于整个 monorepo **所有**服务的配置（`conf/**/*.yaml`、`config.go`、`settings.py`）。细则见 `.ai/01_project_constraints/39_network_topology_aware_config.md`；约束索引第 37 条。
+
+## 强制要求
+
+### 禁止规则
+
+- **禁止**在 `conf/infra/**` 配置中硬编码 `127.0.0.1` / `localhost` 作为 Redis / Kafka / MySQL 等服务地址
+- **禁止**在 Go 服务配置中硬编码 `kafkaBootstrapServers: localhost:9093`
+- **禁止**在 `conf/**` 任何位置新增无注释的 `127.0.0.1` 作为基础设施连接目标
+
+### 必须规则
+
+- 基础设施连接地址 **必须** 使用 `${INFRA_HOST}`（宿主机 IP）或 `${subdomains.xxx}`（DNS 子域）
+- `conf/base.yaml` 的 `subdomains` **必须** 为每类基础设施注册子域条目
+- 同节点 loopback 调用（如 `http://127.0.0.1:8001`）**必须** 附带注释说明「同节点调用，拆分时改 ${subdomains.xxx}」
+- 进程监听 host **必须** 为 `0.0.0.0`（与 `service-listen-host.mdc` 一致）
+
+### 三层网络拓扑
+
+| 层级 | 服务 | 寻址方式 |
+|------|------|----------|
+| 内网基础设施 | Redis, Kafka, MySQL | `${INFRA_HOST}` 或内网子域 |
+| 外部平台服务 | GitLab, Grafana, Portainer | `${subdomains.xxx}` |
+| 业务网关层 | taskAuth, Django, gateway | `${subdomains.xxx}` |
+
+## 触发（改这些时必须遵守）
+
+- `conf/infra/**` 任意 YAML 修改
+- `conf/base.yaml` 修改
+- 任意 Go 服务新增/修改数据库/Redis/Kafka 连接配置
+- 新增基础设施服务（如 Elasticsearch、RabbitMQ 等）
+- 涉及跨节点服务通信的架构变更
+
+## 验收
+
+```bash
+# infra 配置中不应有硬编码 127.0.0.1（监听 host=0.0.0.0 除外）
+grep -rn 'host:\s*"127.0.0.1"\|host:\s*127.0.0.1\b' conf/infra/ --include='*.yaml' | grep -v '0.0.0.0' && echo "FAIL" || echo "PASS"
+
+# 存量 loopback 须有「同节点」注释
+grep -rn '127.0.0.1' conf/ --include='*.yaml' | grep -v 'host: 0.0.0.0\|internalApi\|loopback\|同节点\|#.*拆分\|_doc\|logging' && echo "WARN: undocumented 127.0.0.1" || echo "PASS"
+```

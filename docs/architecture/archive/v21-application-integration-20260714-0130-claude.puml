@@ -1,0 +1,54 @@
+' @title: Application Integration — cloud_server_events / IAM 迁入 taskCloudService
+' @view: application-integration
+' @status: archived
+' @version: 21
+' @author: claude
+' @based_on: v20 (v20-application-integration-20260713-2005-claude.puml)
+' @updated: 2026-07-14 01:30
+' @description: 门禁1–3落地后刀A/B：事件与 IAM 关联表 SSOT 迁至 task_cloud.db；finalize/status/taskEvents 改打 Cloud
+' @iteration: cloud-events-task-cloud-migration
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v21 — cloud events/IAM → taskCloud (2026-07-14 01:30)
+
+Application_Component(vue, "Vue TaskDetail")
+Application_Component(gw, "task-gateway")
+Application_Component(cloud, "🟡 taskCloudService\n:8018 [MODIFIED v21]")
+Application_Component(cred, "taskCredentialService\n:8015")
+Application_Component(bill, "taskBill\n:8004")
+Application_Component(events, "🟡 taskEvents\n[MODIFIED v21]")
+Application_Component(sse, "taskSSE")
+Application_Component(django, "saas-backend\n[DEPRECATED persist]")
+
+Application_DataObject(ev, "🟢 cloud_server_events\n[NEW v21]")
+Application_DataObject(iam, "🟢 access_key_iam_associations\n[NEW v21]")
+Application_DataObject(cfg, "cloud_server_configs")
+
+note top of cloud
+  finalize: 本地 insertPendingStartEvent
+  + credential /v1/token/init
+  server-startup-status 读本地 events+configs
+  @author: claude @2026-07-14
+end note
+
+note bottom of django
+  persist-start-vm-auto / delete-start-vm-event 退役
+  start-server / server-startup-status → 410
+  cloud.0052 DROP saas 旧表
+end note
+
+Rel_Flow(vue, gw, "start-vm / status poll / SSE")
+Rel_Flow(gw, cloud, "compute API")
+Rel_Flow(cloud, cred, "token/init")
+Rel_Flow(cloud, bill, "charge-server-start\ncloud_event_id")
+Rel_Access_RW(cloud, ev, "RW events SSOT")
+Rel_Access_R(cloud, cfg, "R vm_info")
+Rel_Flow(cloud, events, "Kafka CLOUD_SERVER_*")
+Rel_Flow(events, cloud, "internal update-status/data\n+ IAM create")
+Rel_Access_RW(cloud, iam, "RW IAM")
+Rel_Flow(events, sse, "SSE_MESSAGE")
+Rel_Flow(django, cloud, "[DEPRECATED v21]\npersist path removed")
+
+@enduml

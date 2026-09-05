@@ -1,0 +1,1526 @@
+openapi: 3.0.3
+info:
+  title: taskCloudService API
+  description: |
+    云平台服务 (:8018) 公开与厂商 API 摘要。
+    租户 CPA / Aliyun 查询路径见 v10 设计；本文件补充 v11 厂商测试密钥端点。
+    浏览器经 ai-provider (:8010) 同源反代访问 `/api/vendor/cloud-platform-credentials/`。
+    **Phase 3i compute**：任务工作区下 `cloud/compute/*` 读写接口由 taskCloudService 原生实现，经 taskGateway (:18081) 访问。
+  version: 1.4.0
+servers:
+  - url: http://127.0.0.1:8018
+    description: taskCloudService 直连（开发）
+  - url: http://127.0.0.1:8010
+    description: ai-provider 同源反代（厂商门户推荐）
+paths:
+  /api/health/:
+    get:
+      summary: 健康检查
+      tags: [meta]
+      responses:
+        "200":
+          description: OK
+  /api/vendor/cloud-platform-credentials/:
+    get:
+      summary: 列出当前厂商云平台测试凭证（脱敏）
+      tags: [vendor-cloud-credentials]
+      security:
+        - vendorBearer: []
+      responses:
+        "200":
+          description: 凭证数组
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VendorCloudCredentialMasked"
+        "401":
+          description: Vendor JWT 无效或缺失
+    post:
+      summary: 创建厂商云平台测试凭证
+      tags: [vendor-cloud-credentials]
+      security:
+        - vendorBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorCloudCredentialCreate"
+      responses:
+        "201":
+          description: 已创建（响应脱敏）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorCloudCredentialMasked"
+        "400":
+          description: 校验失败或 platform 已存在
+        "401":
+          description: 未认证
+  /api/vendor/cloud-platform-credentials/{id}/:
+    get:
+      summary: 获取单条凭证（脱敏）
+      tags: [vendor-cloud-credentials]
+      security:
+        - vendorBearer: []
+      parameters:
+        - $ref: "#/components/parameters/CredentialId"
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: 不存在或不属于当前厂商
+    patch:
+      summary: 更新凭证（部分字段）
+      tags: [vendor-cloud-credentials]
+      security:
+        - vendorBearer: []
+      parameters:
+        - $ref: "#/components/parameters/CredentialId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorCloudCredentialUpdate"
+      responses:
+        "200":
+          description: 已更新
+        "404":
+          description: 不存在
+    delete:
+      summary: 删除凭证
+      tags: [vendor-cloud-credentials]
+      security:
+        - vendorBearer: []
+      parameters:
+        - $ref: "#/components/parameters/CredentialId"
+      responses:
+        "204":
+          description: 已删除
+        "404":
+          description: 不存在
+  /api/vendor/cloud-platform-credentials/{id}/verify-credentials/:
+    post:
+      summary: 校验 AccessKey（阿里云 STS GetCallerIdentity）
+      tags: [vendor-cloud-credentials]
+      security:
+        - vendorBearer: []
+      parameters:
+        - $ref: "#/components/parameters/CredentialId"
+      responses:
+        "200":
+          description: 校验结果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyCredentialResult"
+        "404":
+          description: 凭证不存在
+  /api/vendor/cloud-server-images/regions/:
+    get:
+      summary: 获取厂商云平台地域列表（阿里云 DescribeRegions）
+      description: |
+        使用当前厂商在「云平台测试密钥」中配置的 AccessKey 拉取地域。
+        浏览器经 ai-provider (:8010) 同源反代访问。
+      tags: [vendor-cloud-server-images]
+      security:
+        - vendorBearer: []
+      parameters:
+        - name: platform_type
+          in: query
+          required: true
+          schema:
+            type: string
+            example: aliyun
+      responses:
+        "200":
+          description: 地域列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  regions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+        "400":
+          description: 缺少参数或未配置测试密钥
+        "401":
+          description: Vendor JWT 无效或缺失
+        "500":
+          description: 云 API 调用失败
+  /api/vendor/cloud-server-images/images/:
+    get:
+      summary: 获取厂商云平台镜像列表（阿里云 DescribeImages）
+      tags: [vendor-cloud-server-images]
+      security:
+        - vendorBearer: []
+      parameters:
+        - name: platform_type
+          in: query
+          required: true
+          schema:
+            type: string
+            example: aliyun
+        - name: region_id
+          in: query
+          required: true
+          schema:
+            type: string
+            example: cn-hangzhou
+      responses:
+        "200":
+          description: 镜像列表
+        "400":
+          description: 缺少参数或未配置测试密钥
+        "401":
+          description: Vendor JWT 无效或缺失
+        "500":
+          description: 云 API 调用失败
+  /api/vendor/cloud-server-images/instance-types/:
+    get:
+      summary: 获取厂商云平台实例规格（镜像兼容 + 库存过滤）
+      tags: [vendor-cloud-server-images]
+      security:
+        - vendorBearer: []
+      parameters:
+        - name: platform_type
+          in: query
+          required: true
+          schema:
+            type: string
+            example: aliyun
+        - name: region_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: image_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: zone_id
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 实例规格列表
+        "400":
+          description: 缺少参数或未配置测试密钥
+        "401":
+          description: Vendor JWT 无效或缺失
+        "500":
+          description: 云 API 调用失败
+  /api/internal/vendor-cloud-credentials/lookup:
+    get:
+      summary: 内部 — 按 vendor_id + platform_type 查找凭证（供 ai-provider）
+      tags: [internal]
+      parameters:
+        - name: vendor_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: platform_type
+          in: query
+          required: true
+          schema:
+            type: string
+            example: aliyun
+      responses:
+        "200":
+          description: 含 secret_id/secret_key（仅 internal，禁止暴露给浏览器）
+        "404":
+          description: 未配置或 code=vendor_cloud_credential_missing
+  /api/internal/cloud/compute/instance-bindings/:
+    get:
+      summary: 内部 — 列出共享同一 instance_id 的 CSC 绑定
+      tags: [internal]
+      parameters:
+        - name: company_id
+          in: query
+          schema: { type: string }
+        - name: tenant_id
+          in: query
+          schema: { type: string }
+        - name: workspace_id
+          in: query
+          required: true
+          schema: { type: string }
+        - name: instance_id
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: bindings 数组
+        "400":
+          description: 缺少参数
+  /api/internal/cloud/compute/mark-terminal-released/:
+    post:
+      summary: 内部 — 标记任务 CSC 终态硬释放（禁止 idle reuse）
+      tags: [internal]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_id]
+              properties:
+                tenant_id: { type: string }
+                company_id: { type: string }
+                workspace_id: { type: string }
+                task_id: { type: string }
+      responses:
+        "200":
+          description: terminal_released=true
+  /api/internal/cloud/compute/migrate-container-off-instance/:
+    post:
+      summary: 内部 — 将镜像容器从共享实例迁到所属任务独占机器
+      tags: [internal]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workspace_id, owner_task_id, from_instance_id]
+              properties:
+                tenant_id: { type: string }
+                company_id: { type: string }
+                workspace_id: { type: string }
+                owner_task_id: { type: string }
+                from_instance_id: { type: string }
+                forbid_reuse_instance_id: { type: string }
+      responses:
+        "200":
+          description: |
+            新 instance_id；via=start_vm_auto|new_mock|idempotent（idle_reuse 已下线 ADR-0013）；
+            container_start_triggered 表示已触发容器重建（UserData 或 gateway start）
+        "400":
+          description: 缺少参数
+  /api/internal/extract-auto-run-steps/:
+    post:
+      summary: 内部 — 从 OCI 镜像抽取 /app/autoRunStep.md
+      description: |
+        供 Saas_Ai_Provider 在厂商保存/更新 image_url（含 DRAFT）时调用。
+        成功返回 markdown + digest；失败返回 422 与 status（not_found / auth_failed / failed）。
+      tags: [internal]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [image_url]
+              properties:
+                image_url:
+                  type: string
+                  description: 镜像仓库引用（registry/repo:tag 或 @digest）
+                path:
+                  type: string
+                  default: /app/autoRunStep.md
+      responses:
+        "200":
+          description: 抽取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  markdown:
+                    type: string
+                  digest:
+                    type: string
+                  status:
+                    type: string
+                    example: ok
+                  path:
+                    type: string
+        "422":
+          description: 未找到文件或仓库鉴权/拉取失败
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [not_found, auth_failed, failed]
+                  detail:
+                    type: string
+                  digest:
+                    type: string
+        "403":
+          description: 缺少或错误的 X-Internal-Secret
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/cloud/compute/start-vm-auto/:
+    post:
+      summary: 自动创建 VPC/交换机/安全组并启动虚拟机（异步）
+      description: |
+        Go 原生编排：校验授权与镜像架构 → taskBill 预检 → 构建 UserData/event_data →
+        发布 `CLOUD_SERVER_START_AUTO` 领域事件。Django 仅经 internal API 落库容器令牌。
+        进度通过 SSE `server_status_update` 推送；可用 `server-startup-status` 轮询兜底。
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartVmAutoRequest"
+      responses:
+        "200":
+          description: 异步启动请求已受理
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StartVmAcceptedResponse"
+        "400":
+          description: 参数/授权/镜像架构校验失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+        "401":
+          description: 未认证用户
+        "402":
+          description: 余额不足（INSUFFICIENT_BALANCE）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientBalanceResponse"
+        "502":
+          description: Django internal 或 Kafka 不可用
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/cloud/compute/start-vm/:
+    post:
+      summary: 使用已有 VPC/交换机/安全组启动虚拟机（异步）
+      description: |
+        与 start-vm-auto 类似，但要求请求体提供 `vpc_id`、`vswitch_id`、`security_group_id`，
+        发布 `CLOUD_SERVER_STARTED` 领域事件（跳过自动建网阶段）。
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartVmRequest"
+      responses:
+        "200":
+          description: 异步启动请求已受理
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StartVmAcceptedResponse"
+        "400":
+          description: 参数校验失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+        "401":
+          description: 未认证用户
+        "402":
+          description: 余额不足
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientBalanceResponse"
+        "502":
+          description: 下游不可用
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/cloud/compute/stop-vm/:
+    post:
+      summary: 停止并释放任务关联的云虚拟机（异步）
+      description: |
+        读取 `cloud_server_configs`，发布 `CLOUD_SERVER_STOPPED` 事件并由消费者调用阿里云 Stop/Release API。
+        同步通过 SSE 推送停止进度。
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StopVmRequest"
+      responses:
+        "200":
+          description: 停止请求已提交
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StopVmResponse"
+        "400":
+          description: 缺少任务或实例配置
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+        "501":
+          description: 非阿里云平台的 stop-vm 尚未实现
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/cloud/compute/workspace-runtime-indicators/:
+    get:
+      summary: 工作区任务机器/容器运行态指示（看板批量）
+      description: |
+        供工作面板看板卡片一次拉取：机器节点是否在跑（open history 或 instance_id）、
+        容器是否已注册运行（server_url 非空）。不调用云厂商 DescribeInstances。
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: 工作区内有运行态信号的任务列表
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceRuntimeIndicatorsResponse"
+        "400":
+          description: 缺少租户或工作区上下文
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+        "500":
+          description: 查询失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/cloud/compute/workspace-machine-policy/:
+    get:
+      summary: 读取工作空间机器节点策略
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: 策略（无记录时返回默认值）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMachinePolicyResponse"
+    put:
+      summary: 更新工作空间机器节点策略
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceMachinePolicyUpdate"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMachinePolicyResponse"
+        "400":
+          description: 参数校验失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/cloud/compute/workspace-machine-summary/:
+    get:
+      summary: 工作空间机器节点运行汇总
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: 启动/闲置/忙碌计数与策略摘要
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMachineSummaryResponse"
+        "400":
+          description: 缺少租户或工作区上下文
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/cloud/compute/server-runtime-status/:
+    get:
+      summary: 查询任务云实例实时运行状态
+      description: |
+        从 `cloud_server_configs` 读取 instance_id，调用阿里云 DescribeInstances
+        （含 `AutoReleaseTime` 预计释放时间；DescribeInstanceAttribute 不返回该字段）。
+        mock 实例返回模拟 Running；实例已释放时 `runtime_status=Released`。
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdQuery"
+      responses:
+        "200":
+          description: 运行状态（无配置时 runtime_status 为 null）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerRuntimeStatusResponse"
+        "400":
+          description: 缺少 task_id 或授权信息
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+        "500":
+          description: 阿里云 API 调用失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/cloud/compute/server-start-history/:
+    get:
+      summary: 获取任务服务器启动历史记录
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdQuery"
+      responses:
+        "200":
+          description: 历史记录列表
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerStartHistoryResponse"
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/cloud/compute/previous-server-config/:
+    get:
+      summary: 获取任务最近一次服务器配置快照
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdQuery"
+      responses:
+        "200":
+          description: 配置快照（无记录时 server_config 为 null）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviousServerConfigResponse"
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/cloud/compute/container-task-ui-context/:
+    get:
+      summary: 获取任务容器 UI 上下文（页面 URL / VSCode URL）
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdQuery"
+      responses:
+        "200":
+          description: 容器端点注册状态与访问 URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContainerTaskUIContextResponse"
+        "400":
+          description: 缺少 task_id 或租户/工作区上下文
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/cloud/compute/server-startup-status/:
+    get:
+      summary: 轮询服务器启动进度（SSE 断连兜底）
+      description: 代理至 Django `get_server_startup_status`，支持 `event_id` 查询参数。
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdQuery"
+        - name: event_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: start-vm(-auto) 返回的 event_id
+      responses:
+        "200":
+          description: 启动进度
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerStartupStatusResponse"
+        "502":
+          description: Django internal 不可用
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/cloud/compute/server-content/:
+    get:
+      summary: 拉取任务服务器公网页面内容（http://ip:8080）
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdQuery"
+      responses:
+        "200":
+          description: 服务器 HTTP 内容（最多 20KB）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerContentResponse"
+        "400":
+          description: 无公网 IP 或配置缺失
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+        "404":
+          description: 未找到服务器配置
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+        "502":
+          description: 拉取目标服务器失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/cloud/compute/workbench-link/:
+    get:
+      summary: 获取任务云实例的阿里云 Workbench 访问链接
+      description: |
+        根据 `cloud_server_configs` 中任务对应的实例 ID 与地域，构建
+        `https://ecs-workbench.aliyun.com/` 控制台链接。浏览器经 taskGateway 访问。
+        仅支持 platform=aliyun 且非 mock 实例。
+      tags: [compute]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - name: task_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 任务 ID
+        - name: username
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 可选，Workbench 登录用户名
+      responses:
+        "200":
+          description: 成功返回 Workbench URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkbenchLinkResponse"
+        "400":
+          description: 缺少 task_id、实例信息不完整、mock 实例或不支持的平台
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+        "404":
+          description: 未找到任务对应的服务器配置
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+        "501":
+          description: 接口尚未迁移至 taskCloudService（不应再出现）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/task/{task_id}/cloud/compute/server-runtime-status/:
+    get:
+      summary: 查询任务云实例运行状态（task 路径）
+      description: 与 workspace 级 `server-runtime-status` 等价；`task_id` 在路径中。
+      tags: [compute-task]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdPath"
+      responses:
+        "200":
+          description: 运行状态
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerRuntimeStatusResponse"
+        "400":
+          description: 缺少授权或参数无效
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComputeErrorResponse"
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/task/{task_id}/cloud/compute/github-credential-status/:
+    get:
+      summary: 任务 GitHub 凭据与仓库绑定状态
+      description: |
+        经 taskCloudService 代理至 Django `github_credential_status`。
+        返回用户 GitHub App 连接状态、任务内批准状态及各仓库已选账号。
+      tags: [compute-task]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdPath"
+        - name: repo_url
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 可选，按仓库 URL 解析 OAuth provider
+      responses:
+        "200":
+          description: 凭据与绑定状态
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GithubCredentialStatusResponse"
+        "403":
+          description: 无权访问任务
+        "404":
+          description: 任务不存在
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/task/{task_id}/cloud/compute/github-credential-approve/:
+    post:
+      summary: 批准任务内使用 GitHub 凭据并绑定仓库账号
+      description: 经 taskCloudService 代理至 Django；为指定 `repo_slug` 选择 `github_user_id`。
+      tags: [compute-task]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GithubCredentialApproveRequest"
+      responses:
+        "200":
+          description: 已批准并保存仓库绑定
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GithubCredentialApproveResponse"
+        "400":
+          description: 参数无效或仓库不在任务列表
+        "403":
+          description: 无权访问
+        "404":
+          description: 任务不存在
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/task/{task_id}/cloud/compute/container-layer-command/:
+    post:
+      summary: 转发容器叠层指令（代理 taskContainerGateway）
+      description: 将 zTree 选中节点指令转发至容器 `POST /api/jobs`。
+      tags: [compute-task-container-proxy]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: 容器响应（透传）
+        "502":
+          description: taskContainerGateway 未配置或不可达
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/task/{task_id}/cloud/compute/container-layer-graph/:
+    get:
+      summary: 获取容器层级图快照（代理 taskContainerGateway）
+      description: 合并容器 `GET /api/layers` 与 `GET /api/jobs`，与 SSE `container_layer_graph` 一致。
+      tags: [compute-task-container-proxy]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdPath"
+      responses:
+        "200":
+          description: 层级图 JSON（透传）
+        "502":
+          description: 网关代理失败
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/task/{task_id}/cloud/compute/container-git-identity-sync/:
+    post:
+      summary: 同步 Git 身份到容器（代理 taskContainerGateway）
+      tags: [compute-task-container-proxy]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdPath"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: 同步成功（透传）
+        "502":
+          description: 网关代理失败
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/task/{task_id}/cloud/server-container-token/boot-progress/:
+    post:
+      summary: UserData 主机初始化逐步进度（SSE 转发）
+      description: |
+        云主机 UserData 脚本在每完成一个主要步骤后上报进度；
+        taskCloudService 鉴权后经 SSE（server_status_update, phase=userdata_boot）推送到任务详情前端。
+        progress 上限 99，禁止以 success 冒充启动完成。
+      tags: [container-inbound]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [access_token]
+              properties:
+                access_token:
+                  type: string
+                progress:
+                  type: integer
+                  minimum: 0
+                  maximum: 99
+                message:
+                  type: string
+                  maxLength: 500
+                status:
+                  type: string
+                  default: processing
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  task_id: { type: string }
+                  progress: { type: integer }
+        "400":
+          description: 缺参
+        "401":
+          description: access_token 无效
+        "403":
+          description: 路径与令牌归属不一致
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/task/{task_id}/cloud/server-container-token/request-machine-release/:
+    post:
+      summary: 容器终态收尾后请求释放机器节点
+      description: |
+        容器完成 interrupt/layer-graph 后调用。SoleContainerGate：同 instance 仅本容器或无 busy
+        时发布 CLOUD_SERVER_STOPPED；否则仅解绑本任务 CSC。
+      tags: [container-inbound]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/TaskIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [access_token]
+              properties:
+                access_token:
+                  type: string
+                terminal_kind:
+                  type: string
+                  enum: [completed, cancelled]
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  status: { type: string }
+                  released: { type: boolean }
+                  destroyed_node: { type: boolean }
+                  busy_bindings: { type: integer }
+        "400":
+          description: 缺参
+        "401":
+          description: access_token 无效
+        "403":
+          description: 路径与令牌归属不一致
+components:
+  securitySchemes:
+    vendorBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: iss=saas-ai-provider, typ=vendor
+  parameters:
+    CredentialId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    TenantId:
+      name: tenant_id
+      in: path
+      required: true
+      schema:
+        type: string
+    WorkspaceId:
+      name: workspace_id
+      in: path
+      required: true
+      schema:
+        type: string
+    TaskIdQuery:
+      name: task_id
+      in: query
+      required: true
+      schema:
+        type: string
+      description: 任务 ID
+    TaskIdPath:
+      name: task_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 任务 ID（路径参数）
+  schemas:
+    VendorCloudCredentialCreate:
+      type: object
+      required: [platform_type, secret_id, secret_key]
+      properties:
+        platform_type:
+          type: string
+          enum: [aliyun]
+        secret_id:
+          type: string
+        secret_key:
+          type: string
+          writeOnly: true
+        remark:
+          type: string
+    VendorCloudCredentialUpdate:
+      type: object
+      properties:
+        secret_id:
+          type: string
+        secret_key:
+          type: string
+          writeOnly: true
+        remark:
+          type: string
+        is_active:
+          type: boolean
+    VendorCloudCredentialMasked:
+      type: object
+      properties:
+        id:
+          type: string
+        vendor_id:
+          type: string
+        platform_type:
+          type: string
+        secret_id:
+          type: string
+          description: 脱敏展示
+        secret_key:
+          type: string
+          description: 恒为脱敏占位
+        remark:
+          type: string
+        last_verified_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+    VerifyCredentialResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        detail:
+          type: string
+        caller_identity:
+          type: object
+          additionalProperties:
+            type: string
+    WorkbenchLinkResponse:
+      type: object
+      required: [status, workbench_url, platform, instance_id, region]
+      properties:
+        status:
+          type: string
+          enum: [success]
+        workbench_url:
+          type: string
+          format: uri
+          example: "https://ecs-workbench.aliyun.com/?from=ecs.console&type=ecs&regionId=cn-hongkong&instanceId=i-xxx"
+        platform:
+          type: string
+          example: aliyun
+        instance_id:
+          type: string
+        region:
+          type: string
+          example: cn-hongkong
+    ComputeErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+        message:
+          type: string
+        mock:
+          type: boolean
+          description: mock 实例拒绝时附带
+        instance_id:
+          type: string
+    StartVmHardwareConfig:
+      type: object
+      properties:
+        cpu_cores:
+          type: string
+        memory_gb:
+          type: string
+        storage_gb:
+          type: string
+        instance_type:
+          type: string
+        spot_strategy:
+          type: string
+        spot_duration:
+          type: integer
+        instance_charge_type:
+          type: string
+        system_disk_category:
+          type: string
+        internet_max_bandwidth_out:
+          type: integer
+    StartVmAutoRequest:
+      type: object
+      required: [task_id, region_id, authorization_id]
+      properties:
+        task_id:
+          type: string
+        container_image_id:
+          type: string
+        cloud_server_image_id:
+          type: string
+        hardware_config:
+          $ref: "#/components/schemas/StartVmHardwareConfig"
+        region_id:
+          type: string
+        zone_id:
+          type: string
+        vpc_id:
+          type: string
+          nullable: true
+        vswitch_id:
+          type: string
+          nullable: true
+        auto_create_vswitch:
+          type: boolean
+        cloud_platform_id:
+          type: string
+        authorization_id:
+          type: string
+        filter_options:
+          type: object
+          additionalProperties: true
+        selected_instance:
+          type: string
+        security_group_id:
+          type: string
+          nullable: true
+        auto_create_security_group:
+          type: boolean
+          description: 为 true 时自动创建入网白名单安全组（仅用户公网 IP + 服务器公网 IP）
+        client_public_ip:
+          type: string
+          description: 可选；用户公网 IP。缺省时由服务端从 X-Forwarded-For（跳过 RFC1918）/ X-Real-IP / RemoteAddr 解析；前端创建自动 SG 时会强制查询并传入
+        extra_ingress_cidrs:
+          type: array
+          items:
+            type: string
+          description: 可选；额外允许的入站 CIDR（平台探测等）。也可由环境变量 TASK2APP_SG_EXTRA_INGRESS_CIDRS 提供
+        bandwidth:
+          type: integer
+        bandwidth_charging_mode:
+          type: string
+        auto_release_enabled:
+          type: boolean
+        auto_release_minutes:
+          type: integer
+    StartVmRequest:
+      allOf:
+        - $ref: "#/components/schemas/StartVmAutoRequest"
+        - type: object
+          required: [vpc_id, vswitch_id, security_group_id]
+          properties:
+            vpc_id:
+              type: string
+            vswitch_id:
+              type: string
+            security_group_id:
+              type: string
+            auto_create_vswitch:
+              type: boolean
+              default: false
+            auto_create_security_group:
+              type: boolean
+              default: false
+    StopVmRequest:
+      type: object
+      required: [task_id]
+      properties:
+        task_id:
+          type: string
+    StartVmAcceptedResponse:
+      type: object
+      required: [status, message, event_id]
+      properties:
+        status:
+          type: string
+          enum: [success]
+        message:
+          type: string
+        event_id:
+          type: string
+    StopVmResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+        message:
+          type: string
+        vm_info:
+          type: object
+          properties:
+            instance_id:
+              type: string
+            region:
+              type: string
+    InsufficientBalanceResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+        message:
+          type: string
+        code:
+          type: string
+          enum: [INSUFFICIENT_BALANCE]
+        balance_points:
+          type: number
+        required_points:
+          type: number
+    WorkspaceRuntimeIndicatorsResponse:
+      type: object
+      required: [status, indicators, count]
+      properties:
+        status:
+          type: string
+          enum: [success]
+        count:
+          type: integer
+        indicators:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceRuntimeIndicatorItem"
+    WorkspaceRuntimeIndicatorItem:
+      type: object
+      required: [task_id, machine_running, container_running]
+      properties:
+        task_id:
+          type: string
+        machine_running:
+          type: boolean
+          description: 机器真正运行中（last_runtime_status=Running 或 mock-* 实例）
+        machine_starting:
+          type: boolean
+          description: 机器启动中（Starting/Pending/Initializing）；不计入已启动过滤
+        container_running:
+          type: boolean
+          description: 机器已启动且容器已 register-reachability（server_url 非空）；停机/释放后残留 server_url 不计为运行中
+    WorkspaceMachinePolicyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+        idle_recycle_minutes:
+          type: integer
+          minimum: 0
+          default: 5
+          description: 无策略行时默认 5 分钟；0 表示关闭自动回收
+        enabled_authorization_ids:
+          type: array
+          items:
+            type: string
+    WorkspaceMachinePolicyUpdate:
+      type: object
+      properties:
+        idle_recycle_minutes:
+          type: integer
+          minimum: 0
+        enabled_authorization_ids:
+          type: array
+          items:
+            type: string
+    WorkspaceMachineSummaryResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+        started_count:
+          type: integer
+          description: 真正 Running（或 mock）的机器节点数（按 instance_id 去重）
+        starting_count:
+          type: integer
+          description: Starting/Pending/Initializing 过渡态机器数（不计入 started）
+        idle_count:
+          type: integer
+        busy_count:
+          type: integer
+        idle_recycle_minutes:
+          type: integer
+    ServerRuntimeStatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+        runtime_status:
+          type: string
+          nullable: true
+          description: Running / Stopped / Released 等
+        instance_id:
+          type: string
+          nullable: true
+        platform:
+          type: string
+        region:
+          type: string
+        mock:
+          type: boolean
+        released:
+          type: boolean
+        message:
+          type: string
+        server_started_at:
+          type: string
+          format: date-time
+        auto_release_time:
+          type: string
+          format: date-time
+          description: |
+            按量实例预计自动释放时间（UTC ISO8601，来自阿里云 DescribeInstances.AutoReleaseTime）。
+            未配置自动释放时省略该字段。
+        container_running:
+          type: boolean
+          description: 当前任务 CSC 的 server_url 非空时为 true（镜像容器已登记可达）
+        machine_owner_task_ids:
+          type: array
+          items:
+            type: string
+          description: |
+            同 instance_id 上未 terminal_released 的绑定任务 ID 列表（机器节点所属任务）。
+        machine_bound_tasks:
+          type: array
+          items:
+            type: object
+            properties:
+              task_id:
+                type: string
+              has_container:
+                type: boolean
+              terminal_released:
+                type: boolean
+          description: 同实例全部 CSC 绑定明细（含已终态释放标记）
+        instance_attribute:
+          type: object
+          additionalProperties: true
+          description: |
+            body 内含 DescribeInstances 映射字段，含 AutoReleaseTime（若已设置）。
+    ServerStartHistoryResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+        message:
+          type: string
+        total:
+          type: integer
+        records:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    PreviousServerConfigResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+        message:
+          type: string
+        server_config:
+          type: object
+          nullable: true
+          additionalProperties: true
+    ContainerTaskUIContextResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+        has_server_config:
+          type: boolean
+        container_endpoint_registered:
+          type: boolean
+        container_page_url:
+          type: string
+        container_vscode_url:
+          type: string
+    ServerStartupStatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        progress:
+          type: integer
+        event_id:
+          type: string
+    ServerContentResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+        target_url:
+          type: string
+        http_status:
+          type: integer
+        content_type:
+          type: string
+        content:
+          type: string
+        truncated:
+          type: boolean
+    GithubCredentialStatusResponse:
+      type: object
+      properties:
+        approved_for_task:
+          type: boolean
+        github_app_connected:
+          type: boolean
+        github_login:
+          type: string
+        github_connections:
+          type: array
+          items:
+            type: object
+            properties:
+              connected:
+                type: boolean
+              github_user_id:
+                type: string
+                nullable: true
+              github_login:
+                type: string
+                nullable: true
+              scope:
+                type: string
+                nullable: true
+        repo_bindings:
+          type: array
+          items:
+            type: object
+            properties:
+              repo_url:
+                type: string
+              repo_slug:
+                type: string
+              selected_github_user_id:
+                type: string
+                nullable: true
+              selected_github_login:
+                type: string
+        all_repo_bound:
+          type: boolean
+    GithubCredentialApproveRequest:
+      type: object
+      required: [github_user_id]
+      properties:
+        repo_url:
+          type: string
+        repo_slug:
+          type: string
+        github_user_id:
+          type: string
+    GithubCredentialApproveResponse:
+      type: object
+      properties:
+        approved:
+          type: boolean
+        repo_slug:
+          type: string
+        github_user_id:
+          type: string
+        github_login:
+          type: string

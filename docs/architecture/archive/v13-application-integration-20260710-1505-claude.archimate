@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v13-ai-20260710-1505">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v13 Target</name>
+  <purpose>Container Exec Hot-Path Zero-Django — tcg auth/resolve via taskAuth + taskCloudService</purpose>
+
+  <folder name="Application" id="f-app" type="application"/>
+  <folder name="Relations" id="f-rel" type="relations"/>
+  <folder name="Implementation" id="f-impl" type="implementation_migration"/>
+
+  <element xsi:type="archimate:ApplicationComponent" name="Vue Frontend (:4000)" id="VUE"/>
+  <element xsi:type="archimate:ApplicationComponent" name="task-gateway APISIX (:18081)" id="GW"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 taskContainerGateway (:8014) [MODIFIED v13]" id="TCG"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 taskAuth (:8003) validate-session [MODIFIED v13]" id="AUTH"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 taskCloudService (:8018) container-target [MODIFIED v13]" id="TCS"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskCredentialService (:8015)" id="CRED"/>
+  <element xsi:type="archimate:ApplicationComponent" name="onlineServiceJS (:8765)" id="OSJS"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🔴 [DEPRECATED v13] Django tcg validate/resolve" id="DJINT"/>
+
+  <element xsi:type="archimate:FlowRelationship" id="ra1" source="VUE" target="GW"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra2" source="GW" target="TCG"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra3" source="TCG" target="AUTH"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra4" source="TCG" target="TCS"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra5" source="TCS" target="CRED"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra6" source="TCG" target="OSJS"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra7" source="TCG" target="DJINT"/>
+
+  <element xsi:type="archimate:Plateau" name="Plateau v12 — relay clear-logs path scope" id="platV12"/>
+  <element xsi:type="archimate:Plateau" name="🎯 Plateau v13 — Container Exec Hot-Path Zero-Django" id="platV13"/>
+  <element xsi:type="archimate:Gap" name="Gap: tcg hot-path still calls Django internal" id="gapDjangoHot"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-v13-container-exec-zero-django" id="wpV13"/>
+  <element xsi:type="archimate:AssociationRelationship" id="ra8" source="platV12" target="gapDjangoHot"/>
+  <element xsi:type="archimate:RealizationRelationship" id="ra9" source="wpV13" target="gapDjangoHot"/>
+  <element xsi:type="archimate:RealizationRelationship" id="ra10" source="wpV13" target="platV13"/>
+  <element xsi:type="archimate:CompositionRelationship" id="ra11" source="platV13" target="TCG"/>
+  <element xsi:type="archimate:CompositionRelationship" id="ra12" source="platV13" target="AUTH"/>
+  <element xsi:type="archimate:CompositionRelationship" id="ra13" source="platV13" target="TCS"/>
+
+  <folder name="Views" id="f-views" type="diagrams">
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v13 Target — Container Exec Hot Path Zero Django" id="view-topo">
+      <child xsi:type="archimate:DiagramObject" id="do-VUE" archimateElement="VUE">
+        <bounds x="48" y="200" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-vue-gw" source="do-VUE" target="do-GW" archimateRelationship="ra1"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-GW" archimateElement="GW" targetConnections="conn-vue-gw">
+        <bounds x="200" y="200" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-tcg" source="do-GW" target="do-TCG" archimateRelationship="ra2"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-TCG" archimateElement="TCG" targetConnections="conn-gw-tcg">
+        <bounds x="380" y="200" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tcg-auth" source="do-TCG" target="do-AUTH" archimateRelationship="ra3"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tcg-tcs" source="do-TCG" target="do-TCS" archimateRelationship="ra4"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tcg-osjs" source="do-TCG" target="do-OSJS" archimateRelationship="ra6"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tcg-dj" source="do-TCG" target="do-DJINT" archimateRelationship="ra7"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-AUTH" archimateElement="AUTH" targetConnections="conn-tcg-auth">
+        <bounds x="380" y="48" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-TCS" archimateElement="TCS" targetConnections="conn-tcg-tcs">
+        <bounds x="600" y="120" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tcs-cred" source="do-TCS" target="do-CRED" archimateRelationship="ra5"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-CRED" archimateElement="CRED" targetConnections="conn-tcs-cred">
+        <bounds x="840" y="120" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-OSJS" archimateElement="OSJS" targetConnections="conn-tcg-osjs">
+        <bounds x="600" y="280" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-DJINT" archimateElement="DJINT" targetConnections="conn-tcg-dj">
+        <bounds x="380" y="360" width="220" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v12→v13 — Container Exec Zero Django" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-platV12" archimateElement="platV12">
+        <bounds x="48" y="120" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v12-gap" source="do-platV12" target="do-gap" archimateRelationship="ra8"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap" archimateElement="gapDjangoHot" targetConnections="conn-v12-gap conn-wp-gap">
+        <bounds x="300" y="120" width="260" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wpV13" archimateElement="wpV13">
+        <bounds x="600" y="80" width="240" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wpV13" target="do-gap" archimateRelationship="ra9"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-v13" source="do-wpV13" target="do-platV13" archimateRelationship="ra10"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-platV13" archimateElement="platV13" targetConnections="conn-wp-v13 conn-v13-tcg conn-v13-auth conn-v13-tcs">
+        <bounds x="600" y="180" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v13-tcg" source="do-platV13" target="do-TCG-m" archimateRelationship="ra11"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v13-auth" source="do-platV13" target="do-AUTH-m" archimateRelationship="ra12"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v13-tcs" source="do-platV13" target="do-TCS-m" archimateRelationship="ra13"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-TCG-m" archimateElement="TCG" targetConnections="conn-v13-tcg">
+        <bounds x="520" y="280" width="160" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-AUTH-m" archimateElement="AUTH" targetConnections="conn-v13-auth">
+        <bounds x="700" y="280" width="160" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-TCS-m" archimateElement="TCS" targetConnections="conn-v13-tcs">
+        <bounds x="880" y="280" width="160" height="45"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v110 变迁 (v109→v110)" id="id-v110eldiff01">
+  <folder name="Business" id="id-v110el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v110-biz-admin" name="租户管理员"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v110-biz-member" name="租户成员"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v110-biz-issue" name="签发平台 OIDC SSO [NEW v110]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v110-biz-login" name="用平台账号登录自建 GitLab [NEW v110]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v110-biz-omni" name="在自建 GitLab 配置 OmniAuth [NEW v110]"/>
+  </folder>
+  <folder name="Application" id="id-v110el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v110-app-fe" name="taskFE gitlab-connection [MODIFIED v110]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v110-app-auth" name="taskAuth [MODIFIED v110]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v110-app-selfgl" name="租户自建 GitLab [NEW v110]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v110el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v110-pl-v108" name="Plateau v109"/>
+    <element xsi:type="archimate:Plateau" id="id-v110-pl-v109" name="Plateau v110"/>
+    <element xsi:type="archimate:Gap" id="id-v110-gap" name="Gap: 自建 GitLab 仅有 OAuth App，无平台 Web SSO"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v110-wp" name="WP-tenant-selfhosted-gitlab-oidc-sso"/>
+  </folder>
+  <folder name="Relations" id="id-v110el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v110-rel-admin-issue" source="id-v110-biz-admin" target="id-v110-biz-issue"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v110-rel-admin-omni" source="id-v110-biz-admin" target="id-v110-biz-omni"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v110-rel-member-login" source="id-v110-biz-member" target="id-v110-biz-login"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v110-rel-admin-fe" source="id-v110-biz-admin" target="id-v110-app-fe" name="启用 SSO"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v110-rel-fe-auth" source="id-v110-app-fe" target="id-v110-app-auth" name="gitlab-oidc-sso"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v110-rel-member-selfgl" source="id-v110-biz-member" target="id-v110-app-selfgl" name="点击 Daydaymoney SSO"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v110-rel-selfgl-auth" source="id-v110-app-selfgl" target="id-v110-app-auth" name="OIDC authorize/token"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v110-rel-admin-selfgl" source="id-v110-biz-admin" target="id-v110-app-selfgl" name="粘贴 OmniAuth 片段"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v110-rel-pl108-gap" source="id-v110-pl-v108" target="id-v110-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v110-rel-wp-gap" source="id-v110-wp" target="id-v110-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v110-rel-wp-pl109" source="id-v110-wp" target="id-v110-pl-v109"/>
+  </folder>
+  <folder name="Views" id="id-v110el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v110-el-view-mig" name="架构变迁 v109→v110 — tenant-selfhosted-gitlab-oidc-sso">
+      <child xsi:type="archimate:DiagramObject" id="id-v110-el-do-pl108" archimateElement="id-v110-pl-v108">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v110-el-c-pl108-gap" source="id-v110-el-do-pl108" target="id-v110-el-do-gap" archimateRelationship="id-v110-rel-pl108-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v110-el-do-gap" targetConnections="id-v110-el-c-pl108-gap id-v110-el-c-wp-gap" archimateElement="id-v110-gap">
+        <bounds x="240" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v110-el-do-wp" archimateElement="id-v110-wp">
+        <bounds x="240" y="160" width="420" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v110-el-c-wp-gap" source="id-v110-el-do-wp" target="id-v110-el-do-gap" archimateRelationship="id-v110-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v110-el-c-wp-pl109" source="id-v110-el-do-wp" target="id-v110-el-do-pl109" archimateRelationship="id-v110-rel-wp-pl109"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v110-el-do-pl109" targetConnections="id-v110-el-c-wp-pl109" archimateElement="id-v110-pl-v109">
+        <bounds x="700" y="160" width="160" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v110-el-view-topo" name="v110 Target — 租户自建 GitLab OIDC 企业景观">
+      <child xsi:type="archimate:DiagramObject" id="id-v110-el-do-admin" archimateElement="id-v110-biz-admin">
+        <bounds x="48" y="48" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v110-el-c-admin-issue" source="id-v110-el-do-admin" target="id-v110-el-do-issue" archimateRelationship="id-v110-rel-admin-issue"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v110-el-c-admin-omni" source="id-v110-el-do-admin" target="id-v110-el-do-omni" archimateRelationship="id-v110-rel-admin-omni"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v110-el-c-admin-fe" source="id-v110-el-do-admin" target="id-v110-el-do-fe" archimateRelationship="id-v110-rel-admin-fe"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v110-el-c-admin-selfgl" source="id-v110-el-do-admin" target="id-v110-el-do-selfgl" archimateRelationship="id-v110-rel-admin-selfgl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v110-el-do-member" archimateElement="id-v110-biz-member">
+        <bounds x="48" y="220" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v110-el-c-member-login" source="id-v110-el-do-member" target="id-v110-el-do-login" archimateRelationship="id-v110-rel-member-login"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v110-el-c-member-selfgl" source="id-v110-el-do-member" target="id-v110-el-do-selfgl" archimateRelationship="id-v110-rel-member-selfgl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v110-el-do-issue" targetConnections="id-v110-el-c-admin-issue" archimateElement="id-v110-biz-issue">
+        <bounds x="240" y="16" width="200" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v110-el-do-omni" targetConnections="id-v110-el-c-admin-omni" archimateElement="id-v110-biz-omni">
+        <bounds x="240" y="72" width="220" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v110-el-do-login" targetConnections="id-v110-el-c-member-login" archimateElement="id-v110-biz-login">
+        <bounds x="240" y="220" width="220" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v110-el-do-fe" targetConnections="id-v110-el-c-admin-fe" archimateElement="id-v110-app-fe">
+        <bounds x="500" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v110-el-c-fe-auth" source="id-v110-el-do-fe" target="id-v110-el-do-auth" archimateRelationship="id-v110-rel-fe-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v110-el-do-selfgl" targetConnections="id-v110-el-c-admin-selfgl id-v110-el-c-member-selfgl" archimateElement="id-v110-app-selfgl">
+        <bounds x="500" y="160" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v110-el-c-selfgl-auth" source="id-v110-el-do-selfgl" target="id-v110-el-do-auth" archimateRelationship="id-v110-rel-selfgl-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v110-el-do-auth" targetConnections="id-v110-el-c-fe-auth id-v110-el-c-selfgl-auth" archimateElement="id-v110-app-auth">
+        <bounds x="760" y="96" width="140" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

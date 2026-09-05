@@ -1,0 +1,55 @@
+' @title: 微信服务号 API 出站经 Host sh egress
+' @view: application-integration
+' @status: target
+' @version: 132
+' @iteration: wechat-mp-egress-host-sh
+' @author: cursor
+' @based_on: v131 (v131-application-integration-20260904-1815-cursor.puml)
+' @updated: 2026-09-04 19:20
+' @description: taskAuth 微信 cgi-bin 出站经 Host sh wechat-mp-egress，固定出口 IP
+
+@startuml
+!include <archimate/Archimate>
+
+title 微信 MP API egress → Host sh — v132 Target (2026-09-04 19:20)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v132 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v132 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(fe, "taskFE ReferralGate")
+Application_Component(gw, "taskGateway APISIX")
+Application_Component(auth, "taskAuth")
+note top of auth
+  [MODIFIED v132] follow-qr /
+  cgi-bin 出站改走 mpEgress
+  @author: cursor @2026-09-04 19:20
+end note
+
+Application_Component(egress, "wechat-mp-egress")
+note right of egress
+  [NEW v132] Host sh :8030
+  allowlist api.weixin.qq.com
+  X-Internal-Secret
+end note
+
+Technology_Node(sh, "Host sh 1.117.67.121")
+Technology_Service(wx, "api.weixin.qq.com")
+
+Rel_Flow(fe, gw, "POST follow-qr")
+Rel_Flow(gw, auth, "token route")
+Rel_Flow(auth, egress, "🟢 internal forward")
+Rel_Serving(sh, egress, "runs on")
+Rel_Flow(egress, wx, "🟢 cgi-bin/* egress")
+
+Implementation_Plateau(p131, "Plateau v131")
+Implementation_Plateau(p132, "Plateau v132")
+Implementation_Gap(gap, "Gap: INFRA dynamic IP 40164")
+Implementation_WorkPackage(wp, "WP-wechat-mp-egress-host-sh")
+Rel_Triggering(p131, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p132, "delivers")
+
+@enduml

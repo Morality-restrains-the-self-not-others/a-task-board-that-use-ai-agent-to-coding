@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v105 全量" id="id-v105elfull01">
+  <folder name="Business" id="id-v105elf-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v105f-biz-admin" name="平台管理员"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v105f-biz-tester" name="测试角色账号"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v105f-biz-tenant" name="普通租户"/>
+    <element xsi:type="archimate:BusinessService" id="id-v105f-biz-setrole" name="设置测试角色"/>
+    <element xsi:type="archimate:BusinessService" id="id-v105f-biz-setmode" name="设置区域开发/发布模式"/>
+    <element xsi:type="archimate:BusinessService" id="id-v105f-biz-usedev" name="使用开发模式 GitLab 区域"/>
+    <element xsi:type="archimate:BusinessService" id="id-v105f-biz-userel" name="使用发布模式 GitLab 区域"/>
+  </folder>
+  <folder name="Application" id="id-v105elf-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v105lf-fe" name="taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v105lf-auth" name="taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v105lf-bill" name="taskBill"/>
+  </folder>
+  <folder name="Relations" id="id-v105elf-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v105lf-rel-admin-role" source="id-v105f-biz-admin" target="id-v105f-biz-setrole"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v105lf-rel-admin-mode" source="id-v105f-biz-admin" target="id-v105f-biz-setmode"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v105lf-rel-tester-dev" source="id-v105f-biz-tester" target="id-v105f-biz-usedev"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v105lf-rel-tester-rel" source="id-v105f-biz-tester" target="id-v105f-biz-userel"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v105lf-rel-tenant-rel" source="id-v105f-biz-tenant" target="id-v105f-biz-userel"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v105lf-rel-fe-role" source="id-v105lf-fe" target="id-v105f-biz-setrole"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v105lf-rel-bill-dev" source="id-v105lf-bill" target="id-v105f-biz-usedev"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v105lf-rel-bill-rel" source="id-v105lf-bill" target="id-v105f-biz-userel"/>
+  </folder>
+  <folder name="Views" id="id-v105elf-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v105lf-view" name="v105 Full landscape — tester + region mode">
+      <child xsi:type="archimate:DiagramObject" id="id-v105lf-d-admin" archimateElement="id-v105f-biz-admin">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105lf-c-admin-role" source="id-v105lf-d-admin" target="id-v105lf-d-setrole" archimateRelationship="id-v105lf-rel-admin-role"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105lf-c-admin-mode" source="id-v105lf-d-admin" target="id-v105lf-d-setmode" archimateRelationship="id-v105lf-rel-admin-mode"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105lf-d-tester" archimateElement="id-v105f-biz-tester">
+        <bounds x="48" y="160" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105lf-c-tester-dev" source="id-v105lf-d-tester" target="id-v105lf-d-usedev" archimateRelationship="id-v105lf-rel-tester-dev"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105lf-c-tester-rel" source="id-v105lf-d-tester" target="id-v105lf-d-userel" archimateRelationship="id-v105lf-rel-tester-rel"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105lf-d-tenant" archimateElement="id-v105f-biz-tenant">
+        <bounds x="48" y="240" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105lf-c-tenant-rel" source="id-v105lf-d-tenant" target="id-v105lf-d-userel" archimateRelationship="id-v105lf-rel-tenant-rel"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105lf-d-setrole" targetConnections="id-v105lf-c-admin-role id-v105lf-c-fe-role" archimateElement="id-v105f-biz-setrole">
+        <bounds x="240" y="16" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105lf-d-setmode" targetConnections="id-v105lf-c-admin-mode" archimateElement="id-v105f-biz-setmode">
+        <bounds x="240" y="80" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105lf-d-usedev" targetConnections="id-v105lf-c-tester-dev id-v105lf-c-bill-dev" archimateElement="id-v105f-biz-usedev">
+        <bounds x="240" y="160" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105lf-d-userel" targetConnections="id-v105lf-c-tester-rel id-v105lf-c-tenant-rel id-v105lf-c-bill-rel" archimateElement="id-v105f-biz-userel">
+        <bounds x="240" y="240" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105lf-d-fe" archimateElement="id-v105lf-fe">
+        <bounds x="520" y="16" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105lf-c-fe-role" source="id-v105lf-d-fe" target="id-v105lf-d-setrole" archimateRelationship="id-v105lf-rel-fe-role"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105lf-d-bill" archimateElement="id-v105lf-bill">
+        <bounds x="520" y="200" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105lf-c-bill-dev" source="id-v105lf-d-bill" target="id-v105lf-d-usedev" archimateRelationship="id-v105lf-rel-bill-dev"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105lf-c-bill-rel" source="id-v105lf-d-bill" target="id-v105lf-d-userel" archimateRelationship="id-v105lf-rel-bill-rel"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

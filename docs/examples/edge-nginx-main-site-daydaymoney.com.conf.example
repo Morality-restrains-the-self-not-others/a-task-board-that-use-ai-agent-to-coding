@@ -1,0 +1,80 @@
+# 边缘 nginx：主站 www.daydaymoney.com / daydaymoney.com / api.daydaymoney.com
+# v106 安全加固（2026-08-24 设计：docs/superpowers/specs/2026-08-24-security-headers-hsts-risk-analysis-design.md）
+#
+# ⚠️ 本文件为「目标态」示例（全部 Phase 落地后）。线上 /etc/nginx/conf.d/ 在 repo 外，
+#    按 runbook 分阶段 apply：docs/runbooks/security-headers-hsts-apply-runbook.md。
+#    每段头旁标注对应 Phase；Phase 3/4 未到时**不要**超前落地 HSTS 长 max-age 与 308。
+#
+# 拓扑：公网 :443（letsencrypt wildcard *.daydaymoney.com）→ 本机 APISIX :18081
+# 证书：/etc/letsencrypt/live/daydaymoney.com/fullchain.pem（wildcard + apex）
+# 子域：www / api 走本文件 APISIX :18081；provider.daydaymoney.com 在 20-https.conf
+# 独立 server → 127.0.0.1:8010（ensure-edge-tunnels 反向隧道）。勿把 provider
+# 并进下面的 server_name，否则会落到 taskFE SPA，SSO 换票路径不对。
+# 参考（gitlab 子域已有落地）：gitService/docs/edge-nginx-gitlab-tencent-sh-1.conf.example
+
+# map 须在 http 上下文声明（conf.d/*.conf 整体 include 进 http 块，顶层即 http 上下文）。
+# 按上游 content-type 区分是否 HTML：XFO/CSP 仅对 HTML 文档下发（API JSON 下发
+# SAMEORIGIN 无意义且可能干扰工具方 iframe 引用）。需 nginx >= 1.11 的 $upstream_http_content_type。
+map $upstream_http_content_type $html_doc {
+    default     "";
+    ~*text/html "SAMEORIGIN";
+}
+
+# --- :80 强制 HTTPS（Phase 4；先 302 过渡 ≥1 周确认无 http 客户端断裂，再切 308）---
+server {
+    listen 80;
+    listen [::]:80;
+    server_name www.daydaymoney.com daydaymoney.com api.daydaymoney.com;
+    return 308 https://$host$request_uri;
+}
+
+# --- :443 主站（头 + 代理 APISIX）---
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name www.daydaymoney.com daydaymoney.com api.daydaymoney.com;
+
+    ssl_certificate     /etc/letsencrypt/live/daydaymoney.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/daydaymoney.com/privkey.pem;
+
+    server_tokens off;
+
+    # --- 安全响应头 ---
+    # Phase 1（立即生效）：
+    # X-Content-Type-Options 防 MIME sniffing；Referrer-Policy 收紧跨源引荐来源
+    # （strict-origin-when-cross-origin 是 taskGitOauth febFromRequest 兼容的上限收紧，
+    #  禁止 no-referrer/同源级收紧，见设计 §3 风险表）。
+    # X-Frame-Options 仅对 HTML 文档下发（API JSON 下发 SAMEORIGIN 无意义且可能干扰
+    #  工具方 iframe 引用）；$html_doc 由文件顶部的 map 按上游 content-type 判定。
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    # nginx 限制：add_header 在同一层级会整体覆盖继承，故 XFO/CSP 用 $html_doc 变量下发
+    add_header X-Frame-Options $html_doc always;
+
+    # Phase 1：HSTS 仅 :443，max-age=300 起步（Phase 3 阶梯：≥1 周 → 86400 → 31536000；
+    # 暂不加 includeSubDomains/preload —— 2026-08-24 盘点子域全被 wildcard 覆盖，但
+    # 证书为单点（10-17 过期），须等证书续期自动化确认后再评估）。
+    add_header Strict-Transport-Security "max-age=300" always;
+
+    # Phase 2（灰度期）：先 Content-Security-Policy-Report-Only 收集违规，再 enforce。
+    # 前置：taskFE 内联脚本已外置为 /static/assets/api-base.js（v106 Phase 0a），
+    # 严格 script-src 'self' 不再拦内联脚本。策略骨架（以 audit 结果为准）：
+    # add_header Content-Security-Policy $html_doc always;  # 仅 HTML
+    # 骨架值（report-only 版替换为同值 + ;report-uri /__csp_report__）：
+    # default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
+    # connect-src 'self'; frame-src 'self'; img-src 'self'; object-src 'none';
+    # base-uri 'self'; form-action 'self'
+
+    # --- 代理到 APISIX ---
+    location / {
+        proxy_pass http://127.0.0.1:18081;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Trace-Id $http_x_trace_id;
+        proxy_read_timeout 300s;
+    }
+}

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v28-nested-git-20260715-1135">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v28 Target (nested git repos)</name>
+  <purpose>Project detail read-only discovery of nested git repos via OAuth raw file fetch; no project_repos writes</purpose>
+
+  <folder name="Motivation" id="id-v28-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="🟢 只读发现不写 project_repos [NEW v28]" id="id-v28-constraint"/>
+  </folder>
+  <folder name="Application" id="id-v28-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue ProjectDetail GitReposSection [MODIFIED v28]" id="id-v28-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway JWT tenant" id="id-v28-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟢 taskProjectService nested-git-repos [NEW v28]" id="id-v28-project"/>
+    <element xsi:type="archimate:ApplicationComponent" name="gitoauth fetchGitAccessToken" id="id-v28-gitoauth"/>
+    <element xsi:type="archimate:DataObject" name="project_repos 只读引用" id="id-v28-project-repos"/>
+  </folder>
+  <folder name="Technology" id="id-v28-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="GitLab raw .gitmodules only" id="id-v28-gitlab"/>
+    <element xsi:type="archimate:Node" name="GitHub raw contents" id="id-v28-github"/>
+  </folder>
+  <folder name="Relations" id="id-v28-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v28-flow-vue-gw" source="id-v28-vue" target="id-v28-gw" name="GET nested-git-repos"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v28-flow-gw-project" source="id-v28-gw" target="id-v28-project" name="tenant + user auth"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v28-acc-project-repos" source="id-v28-project" target="id-v28-project-repos" name="R"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v28-flow-project-gitoauth" source="id-v28-project" target="id-v28-gitoauth" name="当前用户 token"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v28-flow-project-gitlab" source="id-v28-project" target="id-v28-gitlab" name="raw files"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v28-flow-project-github" source="id-v28-project" target="id-v28-github" name="raw files"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v28-inf-c-project" source="id-v28-constraint" target="id-v28-project" name="只读发现"/>
+  </folder>
+  <folder name="Implementation" id="id-v28-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v27 — terminal-hard-release (current)" id="id-v28-plat-v27"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v28 — project-nested-git-repos" id="id-v28-plat-v28"/>
+    <element xsi:type="archimate:Gap" name="Gap: 详情页仅单一父仓 URL，无法发现嵌套子 Git 仓库" id="id-v28-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v28-project-nested-git-repos" id="id-v28-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v28-rel-plat27-gap" source="id-v28-plat-v27" target="id-v28-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v28-rel-wp-gap" source="id-v28-wp" target="id-v28-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v28-rel-wp-plat28" source="id-v28-wp" target="id-v28-plat-v28"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v28-rel-plat28-project" source="id-v28-plat-v28" target="id-v28-project"/>
+  </folder>
+  <folder name="Views" id="id-v28-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v27→v28 — project-nested-git-repos" id="id-v28-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-plat27" archimateElement="id-v28-plat-v27">
+        <bounds x="48" y="100" width="300" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-plat27-gap"
+          source="id-v28-do-plat27" target="id-v28-do-gap"
+          archimateRelationship="id-v28-rel-plat27-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-gap" archimateElement="id-v28-gap"
+        targetConnections="id-v28-conn-plat27-gap id-v28-conn-wp-gap">
+        <bounds x="400" y="100" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-wp" archimateElement="id-v28-wp">
+        <bounds x="860" y="60" width="340" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-wp-gap"
+          source="id-v28-do-wp" target="id-v28-do-gap"
+          archimateRelationship="id-v28-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-wp-plat28"
+          source="id-v28-do-wp" target="id-v28-do-plat28"
+          archimateRelationship="id-v28-rel-wp-plat28"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-plat28" archimateElement="id-v28-plat-v28"
+        targetConnections="id-v28-conn-wp-plat28">
+        <bounds x="860" y="160" width="340" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-plat28-project"
+          source="id-v28-do-plat28" target="id-v28-do-project-m"
+          archimateRelationship="id-v28-rel-plat28-project"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-project-m" archimateElement="id-v28-project"
+        targetConnections="id-v28-conn-plat28-project">
+        <bounds x="860" y="250" width="340" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v28 Target — 项目详情 nested git repos 发现" id="id-v28-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-vue" archimateElement="id-v28-vue">
+        <bounds x="40" y="80" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-vue-gw"
+          source="id-v28-do-vue" target="id-v28-do-gw"
+          archimateRelationship="id-v28-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-gw" archimateElement="id-v28-gw"
+        targetConnections="id-v28-conn-vue-gw">
+        <bounds x="260" y="80" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-gw-project"
+          source="id-v28-do-gw" target="id-v28-do-project"
+          archimateRelationship="id-v28-flow-gw-project"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-project" archimateElement="id-v28-project"
+        targetConnections="id-v28-conn-gw-project id-v28-conn-c-project">
+        <bounds x="440" y="80" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-project-repos"
+          source="id-v28-do-project" target="id-v28-do-repos"
+          archimateRelationship="id-v28-acc-project-repos"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-project-gitoauth"
+          source="id-v28-do-project" target="id-v28-do-gitoauth"
+          archimateRelationship="id-v28-flow-project-gitoauth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-project-gitlab"
+          source="id-v28-do-project" target="id-v28-do-gitlab"
+          archimateRelationship="id-v28-flow-project-gitlab"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-project-github"
+          source="id-v28-do-project" target="id-v28-do-github"
+          archimateRelationship="id-v28-flow-project-github"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-repos" archimateElement="id-v28-project-repos"
+        targetConnections="id-v28-conn-project-repos">
+        <bounds x="440" y="180" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-gitoauth" archimateElement="id-v28-gitoauth"
+        targetConnections="id-v28-conn-project-gitoauth">
+        <bounds x="700" y="40" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-gitlab" archimateElement="id-v28-gitlab"
+        targetConnections="id-v28-conn-project-gitlab">
+        <bounds x="700" y="120" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-github" archimateElement="id-v28-github"
+        targetConnections="id-v28-conn-project-github">
+        <bounds x="700" y="200" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-c" archimateElement="id-v28-constraint">
+        <bounds x="40" y="200" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-c-project"
+          source="id-v28-do-c" target="id-v28-do-project"
+          archimateRelationship="id-v28-inf-c-project"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

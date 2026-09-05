@@ -1,0 +1,121 @@
+---
+description: SSO 登录提示词 - 从主站登录后通过镜像市场页面 SSO 到 localhost:8010
+globs: "**/playwright*.js,**/playwright*.mjs,**/tests/**/*sso*,**/tests/**/*login*"
+alwaysApply: false
+---
+
+# SSO 登录提示词
+
+## 完整 SSO 登录流程
+
+### 1. 主站登录（localhost:4000）
+
+#### 登录地址
+- **URL**: `http://localhost:4000/auth/login/`
+
+#### 测试账号凭证
+- **邮箱**: `process.env.PLAYWRIGHT_TEST_EMAIL`（缺省测试身份见 `task2app/测试.ai.md`）
+- **密码**: **只**读 `process.env.PLAYWRIGHT_TEST_PASSWORD`；禁止把口令写进规则、源码或 `env || '明文'` 默认值（元规则第 57 条）
+
+### 2. SSO 跳转页面
+
+#### 租户镜像市场入口
+- **URL**: `http://localhost:4000/tenant/827923618468040704/image-market`
+- **功能**: 从该页面点击「厂商门户（SSO）」按钮触发 SSO 重定向
+
+### 3. 目标地址（镜像市场）
+- **URL**: `http://localhost:8010`
+
+## Playwright SSO 登录复用方法
+
+### 完整代码示例
+```javascript
+import { playwrightLoginWithLegalAccept } from './playwrightLogin.js';
+
+/**
+ * SSO 登录到镜像市场（localhost:8010）
+ * @param {import('@playwright/test').Page} page
+ */
+export async function playwrightSsoLoginToAiProvider(page) {
+  const mainSaasOrigin = 'http://localhost:4000';
+  const tenantImageMarketUrl = `${mainSaasOrigin}/tenant/827923618468040704/image-market`;
+  const password = process.env.PLAYWRIGHT_TEST_PASSWORD;
+  if (!password) {
+    throw new Error('PLAYWRIGHT_TEST_PASSWORD is required');
+  }
+
+  await page.goto(`${mainSaasOrigin}/auth/login/`);
+  await playwrightLoginWithLegalAccept(page, {
+    email: process.env.PLAYWRIGHT_TEST_EMAIL || 'contact@daydaymoney.com',
+    password,
+  });
+
+  await page.goto(tenantImageMarketUrl);
+  await page.waitForLoadState('domcontentloaded');
+
+  const ssoButton = page.getByRole('button', { name: /厂商门户|SSO/i });
+  await ssoButton.waitFor({ state: 'visible', timeout: 30000 });
+  await ssoButton.click();
+
+  await page.waitForURL('http://localhost:8010/**', { timeout: 60000 });
+  await page.waitForLoadState('domcontentloaded');
+}
+```
+
+### 分步说明
+
+#### 步骤 1：主站登录
+```javascript
+const password = process.env.PLAYWRIGHT_TEST_PASSWORD;
+if (!password) {
+  throw new Error('PLAYWRIGHT_TEST_PASSWORD is required');
+}
+await page.goto('http://localhost:4000/auth/login/');
+await playwrightLoginWithLegalAccept(page, {
+  email: process.env.PLAYWRIGHT_TEST_EMAIL || 'contact@daydaymoney.com',
+  password,
+});
+```
+
+#### 步骤 2：导航到租户镜像市场页面
+```javascript
+await page.goto('http://localhost:4000/tenant/827923618468040704/image-market');
+await page.waitForLoadState('domcontentloaded');
+```
+
+#### 步骤 3：点击 SSO 按钮
+```javascript
+const ssoButton = page.getByRole('button', { name: /厂商门户|SSO/i });
+await ssoButton.waitFor({ state: 'visible', timeout: 30000 });
+await ssoButton.click();
+```
+
+#### 步骤 4：等待跳转到镜像市场
+```javascript
+await page.waitForURL('http://localhost:8010/**', { timeout: 60000 });
+await page.waitForLoadState('domcontentloaded');
+```
+
+## SSO 机制说明
+
+### 架构要点
+- **主站**: `http://localhost:4000`（Vue + Django）
+- **镜像市场**: `http://localhost:8010`（taskAiProvider Go）
+- **机制**: 主站签发短期 bridge JWT → URL fragment 携带 → 镜像市场换票
+
+### 关键依赖
+- 主站与镜像市场需使用 **共享 HMAC 密钥**（`task2appSsoJwtSecret`）
+- 主站登录后需建立 **Session Cookie**（`sessionid`）
+- 用户须具备 **邮箱类型 LoginMethod**
+
+### 常见问题排查
+| 现象 | 可能原因 |
+|------|----------|
+| SSO 跳转后仍显示登录页 | 密钥不一致或未正确配置 |
+| 点击 SSO 跳回主站登录 | 主站无 Session Cookie |
+| 厂商 SSO 403 | 无邮箱登录方式或 Vendor 不存在 |
+
+## 使用注意事项
+- 确保主站（4000）与镜像市场（8010）服务均已启动
+- 使用相对路径或同源 URL，避免跨域 Cookie 问题
+- SSO bridge 有效期默认为 300 秒，操作需在有效期内完成

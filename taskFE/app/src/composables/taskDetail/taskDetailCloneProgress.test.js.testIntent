@@ -1,0 +1,17 @@
+# taskDetailCloneProgress.test.js — Test Intent
+
+## Purpose
+为从 `useTaskDetail.js` 提取的 `taskDetailCloneProgress.js` 模块提供特征测试覆盖，验证提取后行为完全保持一致。
+
+## What is tested
+1. **常量** — `CONTAINER_CLONE_PROGRESS_GLOBAL_KEY` 和 `BOOTSTRAP_CLONE_LOG_INDICATES_DONE_RE` 的正则匹配
+2. **状态工厂** — `createCloneProgressState()` 正确初始化所有响应式状态和计时器
+3. **日志更新** — `onBootstrapCloneLogUpdate()` 处理对象（含分段）、字符串和空载荷
+4. **计算属性** — `createCloneProgressComputeds()` 正确派生进度条目、进度条宽度类、日志文本
+5. **计时器** — `rescheduleContainerCloneProgressClearTimer()` 设置并清理超时
+6. **完成收束** — `applyBootstrapCloneLogDoneToCloneProgress()` 在引导日志指示完成时将进度标记为 100%
+
+## What is NOT tested
+- 与 `taskRepoRows` 的集成（排序行为）— 需要真实的仓库行数据
+- SSE 事件处理集成 — 属于 useTaskDetail 集成测试范围
+- `cloneProgressRowLogText` 的完整分段匹配 — 需要真实的引导日志内容

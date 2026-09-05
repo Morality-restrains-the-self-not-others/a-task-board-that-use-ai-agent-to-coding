@@ -1,0 +1,31 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Python virtual environment
+.venv/
+venv/
+env/
+# pytest
+.pytest_cache/
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+# OS
+.DS_Store
+Thumbs.db
+# Secrets & local config
+.env
+.env.local
+*.local.yaml
+# 构建产物（watchdog/本地 build 生成）
+bin/
+# Secret env files (meta gitignore parity — OPT-20260827-017)
+.env.*
+!.env.example
+!.env.sample
+!.env.template

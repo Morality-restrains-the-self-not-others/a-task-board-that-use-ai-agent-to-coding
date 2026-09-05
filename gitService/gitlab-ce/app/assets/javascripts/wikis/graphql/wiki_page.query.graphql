@@ -1,0 +1,38 @@
+#import "../wiki_notes/graphql/wiki_page_note.fragment.graphql"
+
+query wikiPageQuery(
+  $slug: String
+  $projectId: ProjectID
+  $namespaceId: NamespaceID
+  $skipDiscussions: Boolean = false
+) {
+  wikiPage(slug: $slug, projectId: $projectId, namespaceId: $namespaceId) {
+    id
+    title
+    subscribed
+    userPermissions {
+      markNoteAsInternal
+    }
+    discussions @skip(if: $skipDiscussions) {
+      nodes {
+        id
+        replyId
+        resolvable
+        resolved
+        resolvedAt
+        resolvedBy {
+          id
+          name
+        }
+        userPermissions {
+          resolveNote
+        }
+        notes {
+          nodes {
+            ...WikiPageNote
+          }
+        }
+      }
+    }
+  }
+}

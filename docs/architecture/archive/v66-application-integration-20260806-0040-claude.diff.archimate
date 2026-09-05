@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v66-ai-20260806-0040">
+
+  <name xml:lang="en">v66 多智能体会话互知与冲突防护</name>
+  <purpose>在 v65 夜间巡检自愈基础上接入 Session Hub — claude-agent 无头 run 内建注册+目标仓加锁(字典序)+冲突升级(等待→死锁检测→暂停→shadow)；夜间巡检查活跃会话跳过冲突仓；子仓 pre-commit v1.1.0 提交锁校验；覆盖交互式/无头/巡检/CI 四类会话</purpose>
+
+  <folder name="Business" id="f-biz" type="business"/>
+  <folder name="Application" id="f-app" type="application"/>
+  <folder name="Technology" id="f-tech" type="technology"/>
+  <folder name="Implementation" id="f-impl" type="implementation_migration"/>
+  <folder name="Relations" id="f-rel" type="relations"/>
+
+  <!-- Application Layer -->
+  <element xsi:type="archimate:ApplicationComponent" name="claude-agent (无头修复执行器) [MODIFIED v66: run 内建注册+加锁+冲突升级]" id="claudeAgent"/>
+  <element xsi:type="archimate:ApplicationComponent" name="Session Hub (logs/sessions/ — 注册表/锁/心跳/audit) [NEW v66]" id="sessionHub"/>
+  <element xsi:type="archimate:ApplicationComponent" name="claude-agent session CLI (Go + sessionctl.sh) [NEW v66]" id="sessionCLI"/>
+  <element xsi:type="archimate:ApplicationComponent" name="40+ 子模块仓库 (16 Go 服务 + taskFE + 基建仓) [MODIFIED v66: 仓库级锁 + pre-commit v1.1.0]" id="devRepos"/>
+  <element xsi:type="archimate:ApplicationDataObject" name=".learnings/UNIT_TEST_DEBT.md (债台账)" id="debtLedger"/>
+  <element xsi:type="archimate:ApplicationDataObject" name="logs/nightly-test-sweep-report-*.md (每日报告)" id="sweepReport"/>
+
+  <!-- Technology Layer -->
+  <element xsi:type="archimate:TechnologyNode" name="宿主机 cron (00:20 每日)" id="cronHost"/>
+  <element xsi:type="archimate:TechnologyProcess" name="Nightly Test Sweep (00:00–08:00 / flock 互斥) [MODIFIED v66: 活跃会话仓跳过]" id="nightlySweep"/>
+  <element xsi:type="archimate:Artifact" name="scripts/lib/random_test_runner.sh (共享抽测库 SSOT)" id="sharedRunner"/>
+
+  <!-- Implementation & Migration -->
+  <element xsi:type="archimate:Plateau" name="Plateau v65 — 夜间巡检自愈 (2026-08-05)" id="plateauV65"/>
+  <element xsi:type="archimate:Plateau" name="Plateau v66 — 多会话互知 (2026-08-06)" id="plateauV66"/>
+  <element xsi:type="archimate:Gap" name="Gap: 多会话并发编辑无互知、无锁/租约；冲突只能事后 git 处理" id="gapSession"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-session-coordination (P0 CLI/注册表/锁 → P1 hooks 分发 → P2 sweep/CI → P3 pause/shadow → P4 交付)" id="wpSession"/>
+
+  <!-- Relationships -->
+  <element xsi:type="archimate:TriggeringRelationship" id="rel-cron-sweep" source="cronHost" target="nightlySweep"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-sweep-repos" source="nightlySweep" target="devRepos"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-sweep-agent" source="nightlySweep" target="claudeAgent"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-agent-repos" source="claudeAgent" target="devRepos"/>
+  <element xsi:type="archimate:AccessRelationship" id="rel-sweep-debt" source="nightlySweep" target="debtLedger" accessType="write"/>
+  <element xsi:type="archimate:AccessRelationship" id="rel-sweep-report" source="nightlySweep" target="sweepReport" accessType="write"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel-runner-sweep" source="sharedRunner" target="nightlySweep"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-agent-cli" source="claudeAgent" target="sessionCLI"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-sweep-cli" source="nightlySweep" target="sessionCLI"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel-cli-hub" source="sessionCLI" target="sessionHub"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-hub-repos" source="sessionHub" target="devRepos"/>
+  <element xsi:type="archimate:AssociationRelationship" id="rel-cli-shadow" source="sessionCLI" target="devRepos"/>
+  <element xsi:type="archimate:TriggeringRelationship" id="rel-trigger" source="plateauV65" target="gapSession"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wpSession" target="gapSession"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-plat" source="wpSession" target="plateauV66"/>
+
+  <folder name="Views" id="f-views" type="diagrams">
+    <!-- 视图 1: 架构变迁 v65→v66 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v65→v66 — 多会话互知" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV65" archimateElement="plateauV65">
+        <bounds x="48" y="120" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v65-gap" source="do-plateauV65" target="do-gapSession" archimateRelationship="rel-trigger"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gapSession" archimateElement="gapSession" targetConnections="conn-v65-gap conn-wp-gap">
+        <bounds x="300" y="120" width="300" height="60"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wpSession" archimateElement="wpSession">
+        <bounds x="640" y="80" width="300" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wpSession" target="do-gapSession" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-v66" source="do-wpSession" target="do-plateauV66" archimateRelationship="rel-wp-plat"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV66" archimateElement="plateauV66" targetConnections="conn-wp-v66">
+        <bounds x="640" y="180" width="300" height="50"/>
+      </child>
+    </element>
+
+    <!-- 视图 2: 目标拓扑 v66 — Session Hub 接入流 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="目标拓扑 v66 — Session Hub 接入流" id="view-topology">
+      <child xsi:type="archimate:DiagramObject" id="do-cronHost" archimateElement="cronHost">
+        <bounds x="40" y="60" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cron-sweep" source="do-cronHost" target="do-nightlySweep" archimateRelationship="rel-cron-sweep"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-nightlySweep" archimateElement="nightlySweep" targetConnections="conn-cron-sweep">
+        <bounds x="40" y="150" width="220" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-sweep-repos" source="do-nightlySweep" target="do-devRepos" archimateRelationship="rel-sweep-repos"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-sweep-agent" source="do-nightlySweep" target="do-claudeAgent" archimateRelationship="rel-sweep-agent"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-sweep-cli" source="do-nightlySweep" target="do-sessionCLI" archimateRelationship="rel-sweep-cli"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-claudeAgent" archimateElement="claudeAgent" targetConnections="conn-sweep-agent">
+        <bounds x="330" y="60" width="240" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-agent-repos" source="do-claudeAgent" target="do-devRepos" archimateRelationship="rel-agent-repos"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-agent-cli" source="do-claudeAgent" target="do-sessionCLI" archimateRelationship="rel-agent-cli"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-sessionCLI" archimateElement="sessionCLI" targetConnections="conn-sweep-cli conn-agent-cli">
+        <bounds x="330" y="160" width="240" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cli-hub" source="do-sessionCLI" target="do-sessionHub" archimateRelationship="rel-cli-hub"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cli-shadow" source="do-sessionCLI" target="do-devRepos" archimateRelationship="rel-cli-shadow"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-sessionHub" archimateElement="sessionHub" targetConnections="conn-cli-hub">
+        <bounds x="330" y="260" width="240" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-hub-repos" source="do-sessionHub" target="do-devRepos" archimateRelationship="rel-hub-repos"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-devRepos" archimateElement="devRepos" targetConnections="conn-sweep-repos conn-agent-repos conn-cli-shadow conn-hub-repos">
+        <bounds x="40" y="260" width="220" height="60"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

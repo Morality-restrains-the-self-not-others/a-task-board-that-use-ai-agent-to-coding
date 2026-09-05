@@ -1,0 +1,12 @@
+-# Required when rendering under /epics/ to remove padding on the right side and center the work item view
+- @right_sidebar = false
+- if @work_item.present?
+  = render 'shared/work_item_metadata', work_item: @work_item
+- add_page_specific_style 'page_bundles/issues_show'
+- add_page_specific_style 'page_bundles/issuable_list'
+- add_work_items_stylesheet
+- add_page_specific_style 'page_bundles/design_management'
+- @gfm_form = true
+- @noteable_type = 'WorkItem'
+
+#js-work-items{ data: work_item_views_only_data(@group) }

@@ -1,0 +1,1680 @@
+@startuml value-stream-test-integration
+title 价值流测试集成总览（索引）
+
+note as N1
+  **SSOT 测试注册表**：``conf/value-stream.yaml``
+  （本文件为规则提及的 docs/flows 索引图；可执行步骤与测试文件以 YAML 为准。）
+end note
+
+rectangle "任务协作 · task-management" as TM {
+  (创建任务 CRUD) as CRUD
+  (创建任务结构化可选字段) as CSF
+  (创建任务 auto_run 后端启动) as AR
+  (auto_run 首指令) as AFI
+  (auto_run 交付 commit/push/PR) as ADL
+  CSF --> CRUD : compose→description
+  CRUD --> AR : auto_run=true
+  AR --> AFI : bootstrap 完成
+  AFI --> ADL : job completed
+}
+
+note bottom of CRUD
+  意图：frontend/create_task_oauth_bind
+  测试：createTaskOauthGate.test.js
+        CreateTaskModal.oauth-gate.test.js
+        commentLayerZtreeUiState.test.js
+        TaskDetail.relay-oauth-start-blocked.playwright.test.js
+  TP：T1 无 OAuth 仓不拦截
+      T2 未绑定禁用创建 + 真实绑定链接
+      T3 已绑定可创建
+      T4 检查失败 data-traceId
+      T5 克隆失败文案指向创建/编辑任务（不含添加评论）
+      T6 composer 补救：@镜像未绑 OAuth 拦截提交并运行；纯评论不拦截
+      T7 relay 直接启动未绑定引导指向创建/编辑任务
+      T8 引导克隆失败错误节点 data-traceId
+      T9 auto_run 门禁看本会话 grant_ticket，不看项目 L2 / 不仅看 L1 connected
+      T10 grantTicketSession 回流写入；POST 带 grant_ticket
+
+  意图：frontend/create_task_auto_run_git_identity
+  测试：createTaskGitIdentityGate.test.js
+        CreateTaskModal.git-identity-gate.test.js
+        create-task-git-identity.test.js
+        comment_repo_identities_test.go
+        auto_run_test.go
+  TP：T1 未勾选 auto_run 不展示/不拦截身份
+      T2 勾选未选身份拦截「Git 提交身份」
+      T3 选齐后 payload 含 repo_identities
+      T4 无 git 仓不拦截
+      T5 服务端 auto_run 缺身份 400 repo_identities_required
+      T6 未勾选 auto_run 服务端不校验身份
+      T7 【自动运行】评论 repo_identities_json
+      T8 插件三入口未勾选不渲染身份编辑器
+      T9 身份选择器在自动运行下方
+end note
+
+note right of CSF
+  意图：frontend/create_task_structured_fields
+  设计：2026-07-17-create-task-structured-fields-design
+  测试：createTaskDescriptionCompose.unit.test.js
+        CreateTaskModal.test.js structured fields
+  TP：T1-T7 compose/parse/UI
+  任务类型：frontend/create_task_kind_options
+  API：GET/PUT .../task-kind-options/
+  字段：task_kind（默认 bug-fix/feature，工作区可配）
+end note
+
+rectangle "云启动 · taskCloudService" as CLOUD {
+  (start-vm / start-vm-auto) as SVM
+  (traceId = task_id) as TID
+  (自动SG入网白名单 client+server IP) as SGW
+  (终态硬释放+容器迁移) as THR
+  (failed binding 随启动成功恢复) as CBR
+  (instruction idle recycle) as IIR
+  SVM --> TID
+  SVM --> SGW : auto_create_security_group
+  SVM --> CBR : comment-scoped success
+}
+
+note right of SVM
+  ADR-0013：不跨任务闲置复用；仅同评论 inflight 附着
+  TP：403 白名单 / 闲置机不 reuse / inflight 200 带独立 trace_id
+end note
+
+note right of SGW
+  意图：engineering/cloud/006
+  设计：2026-07-14-auto-sg-ingress-whitelist-design
+  测试：taskEvents aliyun network_*_test / client_ip_test
+end note
+
+note right of THR
+  意图：frontend/task_detail/023
+  设计：2026-07-15-terminal-hard-release-container-migrate
+  测试：terminal_release_migrate_test + taskstatuschanged migrate
+  TP：独占释放 / 兄弟先迁后释（冷启动） / terminal_released 标记
+end note
+
+note right of CBR
+  意图：backend/comment_binding_recover_after_start_success
+  测试：comment_container_binding_server_log_test.go
+        comment_csc_ensure_test.go
+        comment_csc_bootstrap_test.go
+        comment_container_binding_start_trace_test.go
+        mention_start_gate_test.go
+        comment_binding_start_vm_gate_test.go
+        comment_start_vm_inflight_test.go
+        bindCommentRuntimePanel.test.js
+        aliyun_run_instances_test.go
+        orphan_instance_reconcile_test.go
+        instance_name_test.go
+        bindingServerStartupLogs.test.js
+        TaskDetailServerStartStatusPanel.test.js T13
+        ccb_log_cos_test.go COS 双写/hydrate
+  TP：T1 评论级 success 恢复 failed
+      T2 任务级 success 不扇出 failed
+      T3 CSC 升级恢复
+      T4 前端去红条
+      T5 成功后再失败仍红条
+      T6 mock 首轮保持 starting
+      T7 评论级 start-vm error 才 failed
+      T8 sibling start 载荷可启动第二条评论
+      T9 heal/list 补写独立 start_trace_id
+      T10 @镜像 wait_previous 有前序不 StartVM
+      T11 waiting_previous 覆盖 stray CSC Running
+      T12 评论级 ECS InstanceName；查找不回退任务级名
+      T13 independent @镜像 mention+bootstrap 只建一次机
+end note
+
+note right of IIR
+  意图：backend/cloud/instruction_idle_auto_recycle
+  测试：instruction_idle_test.go
+        instruction_idle_created_at_test.go
+        instructionIdle.test.mjs
+  TP：T12 BOOTSTRAP_COMPLETE 写 instruction_idle_since
+      T13 无指令+userdata 过期回收
+      T14 running job 不回收
+      T15 容器引导完成启动倒计时
+      T16 userdata 空+created_at 过期回收
+      T17 created_at CST 墙钟过期回收
+      T18 created_at 窗口内不回收
+end note
+
+
+rectangle "容器 · onlineServiceJS" as OSJS {
+  (task-detail auto_run+identities) as TD
+  (createJob title+detail) as CJ
+  (job-stream-push → Kafka SSE) as JSP
+  (oauth-refresh-push) as ORP
+}
+
+note right of JSP
+  意图 backend/container_job_stream_kafka_persist
+  Cloud 只发 Kafka SSE_MESSAGE；1_send_sse → 前端
+  2_persist_job_execution_event → cloud_job_execution_event
+  GET container-job-execution-log 读库 hydrate；禁后台轮询
+  TP：T1-T10 inbound/persist/store/poller/watchers
+  层图快照（v89 / B-057）：layer-graph-push UPSERT cloud_layer_graph_snapshot
+  GET container-layer-graph Cloud hydrate；不存 clone-log
+  测试：layer_graph_snapshot_handlers_test.go
+        taskDetailContainerFns.commentId.test.js
+  TP：T1 缺数组 400；T2/T3 UPSERT 覆盖；T4 关容器 200；
+      T5 缺键 400；T6 FE 无 endpoint 仍拉树；T8 事件投递
+end note
+
+note right of TD
+  Fork 确认 auto_run：
+  意图 docs/intents/frontend/task_detail_fork_auto_run_confirm
+  测试 taskDetailEditing.test.js / ForkAutoRunConfirmModal.test.js /
+        TaskDetailPageHeader.test.js
+  Fork → 确认模态（单选仅派生|自动运行 + 智能体资源/模型多选 +
+        Git 身份 + OAuth）→ 仅派生 1 次 POST；自动运行按模型 POST × N
+        （每份 agent_models，不用 fork_count）
+  TP：T6 未选身份禁用自动运行确认；T7 POST 带当前用户 git_identity_id
+  TP：T9 无数量框；T10 仅派生 1 POST；T11 废止；T14–T20 模型复制 / 502 退避重试
+  身份写入【自动运行】评论 repo_identities_json
+  Fork 后进度第一列：
+  意图 frontend/task_detail/041_fork_first_progress_column
+  测试 taskDetailEditing.test.js / TaskDetail.fork-popup.playwright.test.js
+  POST todos.progress_column_id = progressStatusOptions[0].id
+  TP：T1 源任务非首列 → 新任务首列；T2 选项空 → 不复制源列
+  派生自链接文案 #后六位+名称：
+  意图 frontend/task_detail/038_fork_from_link_number_title
+  测试 TaskDetailTaskIdentityPanel.fork-from.test.js
+  关联仓库 URL 可跳转：
+  意图 frontend/task_detail_linked_repo_url_link
+  测试 TaskDetailLinkedProjectsViewMode.test.js /
+        TaskDetailLinkedProjectsEditMode.test.js
+  TP：T1 https 外链 / T2 非 http 纯文本 / T3 编辑态外链
+  评论执行细节 ztree 独立 Tab：
+  意图 frontend/task_detail/035_comment_ztree_independent_tab
+  测试 TaskDetailCommentExecutionDetails.ztree-tab.test.js
+  TP：T1-T6 任务关联 Tab 最左默认 / 切换 / 元信息共享 / 无 Tab 回退
+  项目文件树与变动列表 Tab：
+  意图 frontend/task_detail_file_tree_changes_tab
+  测试 TaskDetailLayerFilesTabs.test.js /
+        TaskDetailTaskLayerAssociationPanel.layer-files-tabs.test.js
+  TP：T1 默认文件变动 / T2 切文件树 v-show / T3 切回 /
+      T4 计数徽章 / T5 切层复位变动 Tab / T6 无 layerId 无 Tab /
+      T7 变动刷新仍拉文件树 / T8 默认可见文件变动
+  可写层摘要最近指令完成时间：
+  意图 frontend/layer_graph_latest_instruction_finished
+  测试 commentLayerPanelBind.test.js /
+        jobsRuntime.finishedAt.test.mjs /
+        jobsRuntimeRunJob.closeDelivery.test.mjs
+  TP：T1 running/pending→pending / T2 finished_at 本地时间 /
+      T3 排除 clone / T4 无指令不追加 / T5 不覆盖已有 finished_at /
+      T6 close 写入 ISO
+  评论级服务器内容 Tab：
+  意图 frontend/comment_server_content
+  测试 TaskDetailCommentExecutionDetails.server-content-tab.test.js /
+        commentContentSnapshotStore.test.js /
+        bindCommentServerContentPanel.test.js /
+        commentExecutionPanelPolicy.test.js
+  TP：T1-T9 评论 Tab / 按 comment_id 拉取 / 任务级迁出提示 / 无 ID 不请求
+  ztree 选中失焦不隐藏关联面板：
+  意图 frontend/task_detail/040_ztree_selection_persist_on_blur
+  测试 TaskDetailTaskLayerAssociationPanel.click-outside.test.js
+  TP：T1-T4 点面板外不 emit null / 指令面板仍在 / 模型下拉仍关闭
+  等待前序可查看前序及状态：
+  意图 frontend/comment_execution_details T16
+  测试 useCommentExecutionContext.test.js /
+        TaskDetailCommentPredecessorList.test.js /
+        TaskDetailCommentExecutionDetails.test.js
+  TP：T16 Tab「前序评论」默认不展开列表 / 点 Tab 或等待前序徽章后可见状态 / 无轮询
+  执行细节摘要展示发评 Git 身份：
+  意图 frontend/comment_execution_details T19
+  测试 commentExecutionGitIdentity.test.js /
+        TaskDetailCommentExecutionDetails.test.js /
+        TaskDetailCommentsSection.git-identity-summary.test.js
+  TP：T19 summary 徽章=评论 repo_identities 标签 / 无身份不展示 / 目录未加载仍显示 Git 身份
+  启服中隐藏平台预创建容器 Agent 空气泡：
+  意图 frontend/hide_pending_container_agent_placeholder
+  测试 decorateAgentRepliesWithLayerPr.test.js /
+        TaskDetailCommentsSection.test.js
+  TP：T1 pending echo 无 PR 不出现 / T2 有 PR 仍展示 /
+      T3 assistant_response 保留 / T4 streaming 或 live SSE 保留 /
+      T5 容器自建非 echo 正文保留
+  共用用户级 Git OAuth 不并存已绑定与去绑定：
+  意图 frontend/task_detail/034_comment_level_repo_identity T21
+  测试 commentExecutionGitOauth.test.js /
+        CommentGitPrReply.test.js
+  TP：T21 芯片已绑定则无 comment-git-pr-oauth-bind / 无「授权已失效」内联文案
+  非内网 GitLab OAuth 探测不可达：
+  意图 frontend/task_detail/034_comment_level_repo_identity T18c T18d
+  测试 domain/gitlab_reachability_test.go /
+        user_app_connection_probe_test.go /
+        commentExecutionGitOauth.test.js /
+        CommentExecutionGitOauthBadge.test.js
+  TP：T18c network_status=unreachable → 芯片「网络不可达」 /
+      T18d skipped_intranet → 保持已绑定
+  AccessToken 探测超时以内联徽标展示：
+  意图 frontend/comment_git_oauth_probe_inline_status
+  测试 commentExecutionGitOauth.test.js /
+        probeCommentGitOauthAccessTokensOnce.test.js /
+        CommentExecutionGitOauthBadge.test.js /
+        useCommentGitOauthAccessTokenProbe.test.js
+  TP：T1 超时不弹窗 / T2 芯片检查超时且 data-traceId / T3 非超时检查失败 /
+      T4 未绑定优先 / T5 按仓捕获不抛
+  评论级克隆失败手动重试：
+  意图 frontend/comment_clone_progress_under_trace T18-T29
+  测试 TaskDetailCommentExecutionDetails.test.js /
+        taskDetailFetchFns.repoCloneIdentity.test.js /
+        applyContainerGitCloneProgress.test.js /
+        commentCloneProgressFromLogs.test.js /
+        commentCloneProgressRepoCatalog.test.js /
+        TaskDetailCommentCloneProgress.test.js /
+        bootstrap.cloneFailureFooter.test.mjs
+  TP：T18 emit 带 comment_id / T19 path+body / T20 缺 ID 不请求 /
+      T21 不写全局摘要重复行 / T22 只保留分仓行 / T23 全失败不含「其余已就绪」 /
+      T24 冷打开失败 ram-work 补 URL 后出现手动重试 / T25 1/1 唯一仓回填 /
+      T26 子仓带 parent/alias / T27 同名不猜 / T28 文案内嵌 URL /
+      T29 有 comment_id 时不因任务级 endpoint 短路「容器未启动」 /
+      T30 完成后迟到 9% 日志不回退 / T31 live 9% 不盖日志完成 /
+      T32 SSE 9% 不覆盖 100% / T33 git overall=max(recv,unpack) /
+      T34 子阶段只升不降 / T35 引导日志克隆完成盖过 9% /
+      T36 引导克隆全失败推迟 Agent kickoff / reclone 成功后恢复首指令
+      意图 container/011_reclone_resumes_agent_kickoff
+      测试 postBootstrapAgentKickoff.test.mjs
+end note
+
+AR --> SVM : POST compute\nX-Trace-Id=task_id
+SVM --> TD : 容器 bootstrap
+TD --> CJ
+CJ --> JSP
+CJ --> ORP
+
+note right of AR
+  测试：taskTaskService/src/auto_run_test.go
+  测试：taskTaskService/src/auto_run_comment_id_test.go
+  前端提示：autoRunGateHints.js
+  价值流步骤：create-task-auto-run-backend-start
+  意图：docs/intents/backend/auto_run_comment_before_start_vm
+  门禁：无 CloudURL / 无运行模版 → 400
+  评论级：先 ensureAutoRunAtComment，start-vm 必须带 comment_id
+  测例 T1-T4：带 ID 启机；建评失败/空 ID 不启机；排队同路径
+  软跳过：Git/子 Git 不可达（nested-git-repos error）→
+    保存 auto_run=true 但不 schedule start-vm
+    测例 T-skip-auth / T-force-skip / T15 OAuth 已绑定隐藏 skip 横幅绑定链
+    意图 backend/autorun_skip_on_git_inaccessible
+  更新：false→true 补启；force_auto_run 强制重跑
+  终态进度（已完成/已取消）跳过 auto_run 门禁与 start-vm
+    测例 T1-T3：taskTaskService/src/auto_run_test.go
+    意图：docs/intents/backend/task_terminal_progress_skip_auto_run
+  透传：client_public_ip（body/XFF）→ start-vm-auto 自动 SG 白名单
+  前端：workPanelAutoRunClientIp.test.js T14
+end note
+
+note right of AFI
+  测试：onlineServiceJS autoRunOrchestration.test.mjs
+  意图：engineering/cloud/006 T3-T5 T8
+  taskCredentialService task_detail_test.go T1-T2
+  执行日志逐步推送：jobStepEvents.test.mjs +
+  activeJobExecLogPoller / updateServerStatus phase=step
+  意图：frontend/exec_log_per_step_push
+  代理步骤命令折叠外可见：
+  意图 frontend/task_detail/042_agent_step_command_outside_fold
+  测试：TaskDetailAgentStepCard.commandOutsideFold.test.js
+  TP：T1 折叠 summary 可见命令
+      T2 命令不重复
+      T3 富文本仍在体内
+      T4 tool_results 仍折叠
+      T5 无「工具调用」预览条
+end note
+
+note right of ADL
+  测试：autoRunOrchestration.test.mjs + jobsRuntime.autoRunDelivery.test.mjs
+        layerFsGitLastPushError.test.mjs + autoRunDeliveryHooks.test.mjs
+        layerZtreePushError.test.js / layerZtreeNodes.test.js
+        LayerGraphZtreeNode.pushError.test.js
+  意图：006 T6-T8；frontend/ztree_push_and_create_pr
+  TP：交付失败写入 last_push_error；zTree 显示「push 失败」或权限拒绝时「push 无权限」或 BINDING_MISSING 时「未绑定 Git 授权」；芯片旁「复制」写入完整失败原因；执行细节 OAuth 芯片 overlay「无写权限」+换账号授权；GitLab 评论站点级 L2 须换票成功（043 T1-T5）
+end note
+
+note right of TID
+  测试：taskCloudService compute_start_vm_test.go
+  意图：engineering/cloud/004
+end note
+
+rectangle "工作面板 · WorkPanel 过滤持久化" as WPF {
+  (打开面板 GET filters) as GPF
+  (增删改栏 debounce PUT) as PPF
+  (切换 workspace 加载偏好) as SPF
+  GPF --> PPF
+  PPF --> SPF
+}
+
+note right of GPF
+  Go：taskProjectService work_panel_filters_test.go
+  前端：workPanelFilterPersistence.test.js
+  意图：frontend/work_panel/006
+  API：GET/PUT .../workspaces/{id}/work-panel-filters/
+end note
+
+rectangle "工作面板 · 详情编辑后按过滤重分区" as WPR {
+  (详情编辑保存) as SES
+  (emit task-updated) as ETU
+  (fetchTodos 重算分区) as FTR
+  SES --> ETU
+  ETU --> FTR
+}
+
+note right of SES
+  前端：taskDetailEditing.test.js（onTaskUpdated）
+  意图：frontend/work_panel/008
+  链路：saveEdit → TaskDetail → TaskDetailContent → WorkPanel.fetchTodos
+  测试点：VS-WP-08-01 保存成功回调 / VS-WP-08-02 失败不回调
+end note
+
+rectangle "工作面板 · 任务状态 SSE 推送" as WPSSE {
+  (初载 GET todos) as WPS1
+  (订阅 work-panel-events-sse) as WPS2
+  (他端 PATCH 进度) as WPS3
+  (TASK_STATUS_CHANGED fanout) as WPS4
+  (卡片列位增量更新) as WPS5
+  WPS1 --> WPS2
+  WPS2 --> WPS3
+  WPS3 --> WPS4
+  WPS4 --> WPS5
+}
+
+rectangle "工作面板 · 分区标题按列计数" as WPCC {
+  (分区 todos 子集) as WPCC1
+  (countTodosByKanbanColumns) as WPCC2
+  (标题色点+各列数量) as WPCC3
+  WPCC1 --> WPCC2
+  WPCC2 --> WPCC3
+}
+
+note right of WPCC1
+  前端：workPanelKanbanUtils.test.js
+  意图：frontend/work_panel/013
+  组件：DeliverableBoardSection columnCounts
+  测试点：VS-WP-13-01 分列计数 / VS-WP-13-02 空进度列
+end note
+
+rectangle "工作面板 · 过滤栏下拉任务编号" as WPFN {
+  (todos.workspace_seq) as WPFN1
+  (deliverableContentOptionLabel) as WPFN2
+  (select option #N 标题) as WPFN3
+  WPFN1 --> WPFN2
+  WPFN2 --> WPFN3
+}
+
+note right of WPFN1
+  前端：workPanelDeliverableContent.test.js / DeliverableBreadcrumb.test.js
+  意图：frontend/work_panel/016
+  组件：deliverable-content-select
+  测试点：VS-WP-16-01 有序号 / VS-WP-16-02 无序号 / VS-WP-16-03 同标题可区分
+end note
+
+rectangle "工作面板 · 任务卡元信息布局" as WPCARD {
+  (编号+进度+优先级同行) as WPCARD1
+  (标题单独一行) as WPCARD2
+  (操作员1+负责人1+协作者N) as WPCARD3
+  WPCARD1 --> WPCARD2
+  WPCARD2 --> WPCARD3
+}
+
+note right of WPCARD1
+  前端：TaskDetail.card-ux.test.js / taskCardPeopleDisplay.test.js
+  Go：taskTaskService operator_id
+  意图：frontend/work_panel/014
+  组件：cmp-task-detail-card
+  测试点：VS-WP-14-01 元信息行 / VS-WP-14-02 无进度label / VS-WP-14-03 人员角色基数
+end note
+
+note right of WPS1
+  意图：frontend/backend work_panel_task_status_sse
+  API：GET .../work-panel-events-sse/ → taskSSE
+  Go：workpanelfanout handler_test
+  前端：useWorkPanelTaskStatusSse.test / workPanelTaskStatusSseApply.test
+  测试点：VS-WP-SSE-01 初载拉取 / VS-WP-SSE-02 推送 patch / VS-WP-SSE-03 心跳忽略
+end note
+
+rectangle "任务详情 · 镜像区机器所属任务" as MOH {
+  (容器已运行) as MOH1
+  (展示机器节点所属任务) as MOH2
+  (跳转他任务详情) as MOH3
+  MOH1 --> MOH2
+  MOH2 --> MOH3
+}
+
+note right of MOH2
+  前端：ServerConfigMachineOwnerHint.test.js + machineOwnerHint.test.js
+  Go：machine_owner_hint_test.go
+  意图：frontend/task_detail/025
+  API：server-runtime-status.machine_owner_task_ids
+  测试点：VS-MOH-01 未运行隐藏 / VS-MOH-02 本任务 / VS-MOH-03 共享列出 / VS-MOH-04 链接
+end note
+
+rectangle "任务详情 · 评论运行态实例详情" as RSD {
+  (打开执行细节服务器运行状态) as RSD1
+  (展示实例详情网格) as RSD2
+  (含流量带宽) as RSD3
+  RSD1 --> RSD2
+  RSD2 --> RSD3
+}
+
+note right of RSD3
+  前端：serverRuntimeStatusDetails.test.js
+  Go：TestMapDescribeInstancesInstanceIncludesInternetBandwidth
+  意图：frontend/comment_runtime_server_tabs T11
+  API：server-runtime-status.instance_attribute.body
+  测试点：VS-RSD-01 按流量计费+出/入带宽 / VS-RSD-02 EIP 回退（含出带宽为 0） / VS-RSD-03 缺失则省略
+  测试点：VS-RSD-04 运行态 Released 时执行细节徽章为「服务器已释放」（非「容器 运行中」）
+  测试点：VS-RSD-05 徽章为已释放时隐藏指令/文件树 Tab/发送给AI（即使层图快照 zTree 仍保留只读；已选节点仍展示 COS 步骤日志）
+  测试点：VS-RSD-06 已释放时 refreshZTreeExecutionLog 仍拉 SaaS job-execution-log（跳过 clone-log）；watcher 仍刷新、跳过层变动 prefetch
+end note
+
+rectangle "交付物详情 · 上层交付物对齐" as TPD {
+  (打开交付物详情) as OPD
+  (身份区展示上层交付物) as SPD
+  (跳转上层任务详情) as JPD
+  OPD --> SPD
+  SPD --> JPD
+}
+
+note right of SPD
+  前端：TaskDetailTaskIdentityPanel.auto-run.test.js
+  fetch：taskDetailFetchFns.parentDeliverable.test.js
+  意图：frontend/task_detail/024
+  字段：parent_task + GET todos/{parentId}/ title
+  测试点：VS-PD-01 顶层隐藏 / VS-PD-02 展示标题 / VS-PD-03 跳转
+end note
+
+rectangle "交付物详情 · 下级状态与终态门禁" as TST {
+  (打开任务详情) as OST
+  (展示子/孙状态摘要) as SST
+  (尝试标记完成或取消) as CST
+  (DescendantTerminalGate) as GST
+  (409 提示未关闭后代) as EST
+  (全部 settled 后写库) as WST
+  OST --> SST
+  SST --> CST
+  CST --> GST
+  GST --> EST
+  GST --> WST
+}
+
+note right of SST
+  Go：taskTaskService subtree_gate_test.go
+  前端：TaskDetailSubtreeStatusPanel.test.js
+  fetch：taskDetailSubtreeFetch.test.js
+  意图：frontend/task_detail/034 + backend/task_subtree_terminal_gate
+  测试点：T1 subtree / T2 409 / T3 通过 / T4 无子树 / T5 data-traceId
+end note
+
+rectangle "交付物详情 · 排队调度设置模态" as QSM {
+  (入口按钮) as QOPEN
+  (模态内节奏/入队按钮) as QMOD
+  (队列列表与前方等待) as QLIST
+  (关闭模态) as QCLS
+  QOPEN --> QMOD
+  QMOD --> QLIST
+  QLIST --> QCLS
+}
+
+note right of QMOD
+  前端：TaskDetailQueuedSchedulePanel.test.js
+  意图：frontend/task_detail/035_queued_schedule_settings_modal
+  意图：frontend/task_detail/039_schedule_rhythm_auto_close
+  价值流步骤：top-deliverable-queued-auto-run-schedule / schedule-rhythm-auto-close
+  测试点：E1 默认无表单 / E2 打开模态与入队按钮 / E3 前方等待 / E4 关闭 / E5 保存节奏反馈 / E6 入队后列表可见 / E7 auto_close 勾选 PATCH
+  后端 TP-AC-1…4：warn T-5min / 窗外释放 / 未勾选不释放（queued_schedule_auto_close_test.go）
+end note
+
+rectangle "任务详情 · 加入队列前校验自动调度" as JQGATE {
+  (点加入自动执行队列) as JQCLICK
+  (GET queue-schedule enabled) as JQGET
+  (未启用确认弹窗) as JQMODAL
+  (已启用 PATCH 入队) as JQPATCH
+  JQCLICK --> JQGET
+  JQGET --> JQMODAL
+  JQGET --> JQPATCH
+}
+
+note right of JQGET
+  前端：TaskDetailQueuedScheduleToggle.test.js
+  前端：workspaceAutoScheduleEnabled.test.js
+  意图：frontend/join_queue_requires_workspace_schedule
+  价值流步骤：join-queue-requires-workspace-schedule-enabled
+  测试点：TP-JQ-1 已启用 GET+PATCH
+          TP-JQ-2 未启用取消无 PATCH
+          TP-JQ-3 未启用确认跳转 queue-schedule
+          TP-JQ-4 GET 失败 data-traceId
+end note
+
+rectangle "创建任务 · 自动运行可选入队" as CTQAR {
+  (勾选是否自动运行) as CTQARUN
+  (GET queue-schedule enabled) as CTQGET
+  (显示加入自动调度队列) as CTQSHOW
+  (提交 queued_auto_run) as CTQPOST
+  CTQARUN --> CTQGET
+  CTQGET --> CTQSHOW
+  CTQSHOW --> CTQPOST
+}
+
+note right of CTQSHOW
+  前端：createTaskQueuedAutoRun.test.js
+  前端：CreateTaskAutoRunSection.test.js
+  后端：auto_run_test.go TestCreateTaskAutoRunQueuedDefersStart
+  意图：frontend/create_task_queued_auto_run
+  价值流步骤：create-task-queued-auto-run
+  测试点：TP-CTQ-1 已启用显示勾选默认未勾
+          TP-CTQ-2 未启用不显示
+          TP-CTQ-3 勾选入队且无立即 start-vm
+          TP-CTQ-4 不勾选立即 start-vm
+          TP-CTQ-5 GET 失败 data-traceId
+end note
+
+rectangle "自动调度安排 · 排队任务标题链接" as WQSTL {
+  (打开 queue-schedule) as WQSOPEN
+  (标题为真实 a[href]) as WQSLINK
+  (进入任务详情) as WQSDETAIL
+  WQSOPEN --> WQSLINK
+  WQSLINK --> WQSDETAIL
+}
+
+note right of WQSLINK
+  前端：WorkspaceQueueSchedule.test.js
+  意图：frontend/queue_schedule_task_title_link
+  价值流步骤：workspace-queue-schedule-task-title-link
+  测试点：TP-1 标题 a[href] 指向 task-detail
+          TP-2 空标题「（无标题）」仍可点
+          TP-3 无 task_id 为 span 无 href="#"
+end note
+
+rectangle "自动调度安排 · 排队任务卡管理" as WQSMG {
+  (搜索本空间任务) as WQSSEARCH
+  (加入队列 PATCH) as WQSJOIN
+  (离开队列确认) as WQSLEAVE
+  WQSSEARCH --> WQSJOIN
+  WQSJOIN --> WQSLEAVE
+}
+
+note right of WQSJOIN
+  前端：QueueMembersCard.test.js
+        useWorkspaceQueueSchedule.test.js
+  意图：frontend/queue_schedule_members_manage
+  价值流步骤：workspace-queue-schedule-members-manage
+  测试点：TP-1 未启用不 PATCH
+          TP-2 已启用 PATCH true + Idempotency-Key
+          TP-3 已入队不出现在搜索
+          TP-4/5 离开确认/取消
+          TP-6 失败 data-traceId
+          TP-7 刷新 GET
+end note
+
+rectangle "自动调度安排 · 调度历史" as WQSHIST {
+  (打开 queue-schedule) as WQSHOPEN
+  (状态栏下历史卡) as WQSHCARD
+  (加载更多分页) as WQSHMORE
+  WQSHOPEN --> WQSHCARD
+  WQSHCARD --> WQSHMORE
+}
+
+note right of WQSHCARD
+  前端：ScheduleHistoryCard.test.js
+        WorkspaceQueueSchedule.test.js
+        useWorkspaceQueueSchedule.test.js
+  后端：queued_schedule_history_test.go
+  意图：frontend/queue_schedule_history
+        backend/queue_schedule_history
+  价值流步骤：workspace-queue-schedule-history
+  测试点：TP-1 快照 recent_history 渲染
+          TP-2 空态文案
+          TP-3 加载更多 cursor
+          TP-4 失败 data-traceId
+          TP-5 入队/保存时段写历史
+          TP-6 窗口翻转只写一次
+end note
+
+rectangle "Chrome 插件 · 点选请求写入请求体" as TCPBODY {
+  (HAR 省略 postData) as HARMISS
+  (onBeforeRequest 缓存 body) as WBC
+  (点选填入任务描述) as FILLBODY
+  HARMISS --> WBC
+  WBC --> FILLBODY
+}
+
+note right of FILLBODY
+  测试：taskChromePlugin/test/single-request-task-desc.test.js
+  测试：taskChromePlugin/test/request-body-cache.test.js
+  测试：taskChromePlugin/test/service-worker-request-body.test.js
+  测试：taskChromePlugin/test/devtools-request-body.test.js
+  测试：taskChromePlugin/test/har-request.test.js
+  意图：frontend/task_chrome_plugin_request_body_in_task_desc
+  测试点：T1-T11 HAR/描述格式化/webRequest 解码匹配/SW lookup/使用说明/点选写入 #singleTaskDesc
+end note
+
+rectangle "Chrome 插件 · DevTools 请求过滤排序" as TCPFILTER {
+  (捕获 recentRequests) as CAPREQ
+  (搜索/方法/状态/类型过滤) as FILTREQ
+  (列头排序后点选) as SORTREQ
+  CAPREQ --> FILTREQ
+  FILTREQ --> SORTREQ
+}
+
+note right of SORTREQ
+  测试：taskChromePlugin/test/request-list-query.test.js
+  测试：taskChromePlugin/test/user-guide.test.js
+  意图：frontend/task_chrome_plugin_devtools_request_filter_sort
+  价值流步骤：devtools-request-list-filter-sort
+  测试点：T1-T14 搜索/canceled/方法/4xx/canceled状态/xhr类型/时间倒序/耗时/方法字典序/canceled排序/同列翻转/新列默认方向/limit100/使用说明
+end note
+
+rectangle "Chrome 插件 · 5xx 示数" as TCP {
+  (webRequest 完成) as WR
+  (角标仅 5xx) as BD
+  (批量建任务仅 5xx) as BT
+  WR --> BD
+  WR --> BT
+}
+
+note right of BD
+  测试：taskChromePlugin/test/capture-status.test.js
+  意图：frontend/task_chrome_plugin_badge_5xx_only
+  测试点：T1-T3 isHttp5xx / filterBadgeCountableRequests
+end note
+
+rectangle "Chrome 插件 · 浮窗工作空间" as TCPWS {
+  (已登录打开浮窗) as FL
+  (GET 约定路径工作空间列表) as GWS
+  (下拉渲染可选项) as SEL
+  FL --> GWS
+  GWS --> SEL
+}
+
+note right of GWS
+  测试：taskChromePlugin/test/api-endpoints.test.js
+  意图：frontend/task_chrome_plugin_workspace_list_convention_path
+  测试点：T1-T5 默认端点 / getWorkspaces URL / getMembers company_members
+end note
+
+note right of SEL
+  测试：taskChromePlugin/test/workspace-list.test.js + api-endpoints.test.js T6-T7
+  意图：frontend/task_chrome_plugin_workspace_list_dedupe
+  测试点：T1-T5 公司/工作空间去重与同名「名称 · 公司名」；T6-T7 getWorkspaces 聚合
+end note
+
+rectangle "Chrome 插件 · 项目自动运行标注" as TCPAR {
+  (选择工作空间) as ARWS
+  (GET 项目列表) as ARGP
+  (名称旁可/不可自动运行) as ARLBL
+  ARWS --> ARGP
+  ARGP --> ARLBL
+}
+
+note right of ARLBL
+  测试：taskChromePlugin/test/project-auto-run-label.test.js
+  意图：frontend/task_chrome_plugin_project_auto_run_label
+  测试点：T1-T9 default_auto_run 徽章 / HTML 转义 / 注入顺序
+end note
+
+rectangle "Chrome 插件 · 项目单选与自动运行联动" as TCPSAR {
+  (单选一个项目) as SARSEL
+  (自动运行随项目能力启用或禁用) as SARAR
+  ARLBL --> SARSEL
+  SARSEL --> SARAR
+}
+
+note right of SARAR
+  测试：taskChromePlugin/test/project-auto-run-label.test.js
+  意图：frontend/task_chrome_plugin_project_single_select_auto_run
+  测试点：T10-T17 无项目/不允许则禁用；允许则默认可勾选
+end note
+
+rectangle "Chrome 插件 · 自动运行与镜像挂钩" as TCPIMG {
+  (项目允许自动运行) as IMGPRJ
+  (未选镜像则禁用自动运行) as IMGDOT
+  (选已安装镜像后可勾选) as IMGSEL
+  SARAR --> IMGPRJ
+  IMGPRJ --> IMGDOT
+  IMGDOT --> IMGSEL
+}
+
+note right of IMGSEL
+  测试：taskChromePlugin/test/project-auto-run-label.test.js
+        taskChromePlugin/test/create-task-payload.test.js
+  意图：frontend/task_chrome_plugin_auto_run_image_gate
+  测试点：无镜像禁用勾选；提交 auto_run 无镜像拦截；不自动运行镜像可选
+end note
+
+rectangle "Chrome 插件 · 描述按页隔离" as TCPDESC {
+  (标签页 A 填写描述) as DA
+  (标签页 B 描述不变) as DB
+  DA --> DB : 无跨页广播
+}
+
+note right of DA
+  测试：taskChromePlugin/test/sync-description-removed.test.js
+  意图：frontend/task_chrome_plugin_no_cross_page_desc_sync
+  测试点：T1-T6 Storage/Popup/源码/SW 未知 action/UserGuide/E2E
+end note
+
+rectangle "Chrome 插件 · 登录快捷键不跨 tab" as TCPNB {
+  (写 chrome.storage) as STW
+  (本页 onChanged 刷新) as STO
+  STW --> STO : 无 tabs.query 扇出
+}
+
+note right of STW
+  测试：taskChromePlugin/test/no-cross-tab-broadcast.test.js
+  意图：frontend/task_chrome_plugin_no_cross_tab_broadcast
+  测试点：T1-T6 SW/Popup/快捷键/登出/同 tab iframe/UserGuide
+end note
+
+rectangle "导航栏 · 多账号切换防串权" as MAC {
+  (切换账号) as SWA
+  (清除 sessionid) as CLS
+  (离开 /tenant URL) as LVT
+  (Token>Session 鉴权) as TOK
+  (WorkPanel 无权租户跳转) as WPD
+  SWA --> CLS
+  CLS --> LVT
+  LVT --> TOK
+  TOK --> WPD
+}
+
+note right of LVT
+  测试：activate_session_service.test.js T10/T12
+  意图：frontend/navbar_multi_account_switcher
+  Django：Token 优先 T13；me() path T14
+end note
+
+rectangle "导航栏 · 公网 IP 展示" as NIP {
+  (已登录昵称区) as NN
+  (GET client-ip) as CIP
+  (昵称下方显示 IP) as DIP
+  NN --> CIP
+  CIP --> DIP
+}
+
+note right of DIP
+  测试：client_ip_test.go T1-T5
+  publicClientIp.test.js T6-T7
+  AccountSwitcherDropdown.test.js T8
+  意图：frontend/navbar_public_client_ip
+end note
+
+rectangle "工作面板 · 任务搜索过滤" as NTS {
+  (标题行输入编号/标题/负责人) as NTSQ
+  (GET tasks/search) as NTSS
+  (下拉结果) as NTSR
+  (跳转工作面板) as NTSW
+  (打开指定任务) as NTST
+  NTSQ --> NTSS
+  NTSS --> NTSR
+  NTSR --> NTSW
+  NTSR --> NTST
+}
+
+note right of NTSR
+  测试：handlers_test.go SearchTasks / ByAssignee
+  WorkPanelHeader.legend.test.js（单行工具栏挂载 / Navbar 不再挂载）
+  NavbarTaskSearch.test.js / navbarTaskSearch.test.js
+  task_store_search_normalize_test.go 评论容器名 / 评论 id
+  意图：frontend/navbar_task_search_filter
+  API：GET /api/tenant/{tid}/tasks/search/?q=&assignee_ids=
+  测试点：TP-1…TP-9（含 task_*_cmt_* / cmt_*）
+end note
+
+rectangle "系统管理 · 非超管跳转工作面板" as SAR {
+  (访问 /system-admin/) as ASA
+  (校验 is_superuser) as CSA
+  (非超管 → work-panel) as RWP
+  ASA --> CSA
+  CSA --> RWP
+}
+
+note right of RWP
+  测试：system_admin_route_guard_service.test.js T1-T6
+  Playwright：non-admin-redirect T7 / superadmin-stays T8
+  账号：e2e.nonadmin…@ljytest.com / author@example.com
+  清单：task2app/测试.ai.md
+  意图：frontend/system_admin_non_admin_redirect_work_panel
+  测试点：超管放行 / 非超管跳转 / 无租户回首页 / me 失败 / E2E 对照
+end note
+
+rectangle "导航栏 · 平台角色公司切换" as PSCS {
+  (平台角色+me.companies) as PSC
+  (并列系统管理与公司下拉) as PSD
+  PSC --> PSD
+}
+
+note right of PSD
+  测试：Navbar.ui.test.js 平台角色单/多公司并列
+  设计：docs/superpowers/specs/2026-08-11-platform-staff-company-switcher-design.md
+  意图：frontend/platform_staff_company_switcher
+  测试点：无公司仅系统管理 / 单公司+工作面板 / 多公司下拉 / 普通用户回归
+  当前公司行可跳转：Navbar.ui.test.js + Navbar.companySwitcher.playwright.test.js
+  意图：frontend/navbar_current_company_work_panel_nav（TP-1~4 / NCC）
+end note
+
+rectangle "项目详情 · 子仓 OAuth 置顶" as PNG {
+  (发现 nested-git-repos) as NGR
+  (validate-git-repo 状态) as VGS
+  (未授权置顶展示) as UFT
+  NGR --> VGS
+  VGS --> UFT
+}
+
+note right of UFT
+  前端：ProjectDetailGitReposSection.nested-oauth.test.js
+  排序：gitRepoOAuthStatusUtils.sortReposByOAuthAttention
+  批量：POST validate-git-repos（Go 原生；probe_access 可选）
+  Playwright：ProjectDetail.nested-git-oauth-unauthorized-first
+  意图：frontend/project_nested_git_repos T14-T19
+  门禁：auto_clone=false 时子仓 token_error / nestedError 不阻断
+    项目「是否允许自动运行」（T15-T18 project_auto_clone_nested_repos）
+  测试：projectDetailAutoRunGitGate.test.js
+  测试：ProjectDetailGitReposSection.nested-oauth.test.js
+  L2：无 project_git_oauth_grant 显示「需要授权」（即使 L1 connected）
+      有 L2 + probe 可写为「已授权」；有 L2 但 probe 失败为「授权异常」
+      测试：git_oauth_grant_test.go / gitRepoOAuthStatusUtils.test.js
+  创建/编辑 Git URL 格式：https://、git@、ssh://；ftp:// 拒绝
+      测试：gitRepoUrlUtils.test.js / useProjectGitRepoRows.test.js
+      意图：frontend/create_project_ssh_git_url T10
+  创建项目 · OAuth pending ticket → 项目 L2
+      创建页 session 记 grant_ticket；POST 携带；consume 写 project_git_oauth_grant
+      测试：grantTicketSession.test.js / CreateProject.submitForm.test.js / git_oauth_grant_ticket_test.go
+      意图：frontend/create_project_oauth_l2_grant
+end note
+
+rectangle "项目详情 · 运行模版摘要价格" as PRS {
+  (运行模版身份摘要) as RTS
+  (硬件面板实时规格/价格) as HWS
+  (摘要拼接价格展示) as RTP
+  RTS --> RTP
+  HWS --> RTP
+}
+
+note right of RTP
+  前端：projectRunTemplateUtils.test.js
+  summarizeRunTemplateWithPrice / extractPriceLabelFromHardwareSpecSummary
+  UI：data-testid=project-run-template-summary-text
+  意图：frontend/project_run_template_summary_price
+  测试点：追加价格 / 去重 / 未设置不追加 / 从规格摘要提取
+end note
+
+rectangle "租户设置 · GitLab 资源购买与自建连接" as TGR {
+  (侧栏 GitLab) as MGL
+  (购买磁盘/流量预购) as BUY
+  (自建 OAuth 连接) as CONN
+  (平台 OIDC SSO 签发) as SSO
+  (Navbar 代码仓库按区域跳转) as NAVGIT
+  MGL --> BUY
+  MGL --> CONN
+  CONN --> SSO : Path A base_url
+  BUY --> NAVGIT : resources[]
+}
+
+note right of BUY
+  测试：gitlab_resources_test.go / gitlab_traffic_usage_test.go / useGitlabResourcePurchase.test.js / WorkspaceSettingsGitlabConnection.test.js
+  API：GET/POST .../billing/gitlab-resources/
+  意图：backend/tenant_gitlab_resource_purchase；backend/gitlab_traffic_used_metering；backend/gitlab_traffic_quota_enforcement；frontend/gitlab_connection_account_balance_label；frontend/gitlab_connection_traffic_used；frontend/gitlab_connection_traffic_quota_exceeded；frontend/gitlab_connection_region_details_below_picker；frontend/gitlab_selfhosted_same_vpc_hint
+  测试点：默认配额 / 资源订单发配额 / POST /purchase/ 409 不扣钱包 / 侧栏文案 / 双区块
+  测试点：租户侧不展示 gitlab-balance-points /「账户余额」（支付只转配额，无留存现金）
+  测试点：gitlab-traffic-used-gb 不被 disk_used_bytes 抬高；历史磁盘下限存量读取时丢弃；无预购时分母为「未预购」；gitlab-traffic-quota-blocked
+  测试点：gitlab-region-picker 常驻；gitlab-builtin-resources 在 select 之下；切换区域只更新详情不替换下拉
+  测试点：有默认机器节点时 gitlab-same-vpc-hint 提示创建专有网络/交换机（与任务机器同 VPC）；无默认配置不展示
+  意图：frontend/gitlab_selfhosted_same_vpc_hint
+  测试点：GitAccess 闸门 prepaid=0 拒绝公网 upload-pack（含任务节点+Docker NAT）；CI/同区域内网 Host 放行；磁盘刷新不抬流量水位
+  意图：backend/tenant_gitlab_oidc_sso；frontend/tenant_gitlab_oidc_sso
+  测试点：TP-sso-member-code / TP-sso-nonmember-denied / TP-sso-superuser-nonmember-denied / TP-sso-region-gate-skipped
+  测试点：TP-sso-issue-secret-once / TP-sso-get-no-secret / TP-sso-rotate / TP-sso-disable
+  测试点：TP-sso-base-url-mismatch-400 / TP-sso-http-redirect-400 / TP-sso-fe-enable-guard / TP-sso-path-a-help
+  测试点：TP-sso-fe-where-to-put — gitlab.rb identifier/issuer/secret 放置说明；签发后片段含一次性 secret
+  测试点：TP-sso-fe-www-next-resume — 登录页 next 为 www.{apex}/api/oidc/{tid}/authorize 时 sanitize 通过并回跳 GitLab
+end note
+
+rectangle "runAll · gitlab-regions 组" as RAGL {
+  (现网 git-service :8012) as RAGP
+  (上海 git-service-tencent-sh-1 :8014) as RAGS
+  RAGP --> RAGS : 同组启停
+}
+
+note right of RAGL
+  意图：platform/runall_gitlab_regions_group
+  测试：runAll TestProductionConfig_GitlabRegionsGroup
+  测试点：独立组 / 两实例 start 不同 / 探活 8012 vs 8014 / 不在 infrastructure
+end note
+
+rectangle "系统管理 · GitLab 区域 CRUD" as SAGR {
+  (区域列表与容量) as SAGL
+  (卡片部署路径启动命令) as SAGSTART
+  (删除确认仓库地址) as SAGDEL
+  (卡片带宽共享与剩余带宽) as SAGBW
+  SAGL --> SAGSTART : 展示
+  SAGL --> SAGDEL : 删除按钮
+  SAGL --> SAGBW : 展示
+}
+
+note right of SAGSTART
+  意图：frontend/system_admin_gitlab_region_deploy_start
+  测试：gitlab_region_deploy_test.go / SystemAdminGitlabRegionDeployPaths.test.js
+  测试点：现网 run.sh start / SH-1 deploy_tencent_sh_1.sh / 两实例命令不同
+end note
+
+note right of SAGDEL
+  意图：frontend/system_admin_gitlab_region_delete_confirm (F-090)
+  测试：SystemAdminGitlabRegionDeleteModal.test.js
+        SystemAdminGitlabResources.delete-confirm.test.js
+  测试点：弹窗展示 gitlab_web_url / 取消不 DELETE / 确认才停用
+end note
+
+note right of SAGBW
+  意图：frontend/system_admin_gitlab_region_bandwidth
+  测试：gitlab_region_capacity_test.go / SystemAdminGitlabRegionCapacity.test.js
+        SystemAdminGitlabResources.bandwidth.test.js
+  API：GET/PUT /api/system-admin/gitlab-regions/（bandwidth_shared / total_bandwidth_mbps / remaining_bandwidth_mbps）
+  测试点：共享分区文案 / 独立带宽文案 / 总带宽与剩余 Mbps / 未配置为 0
+end note
+
+note right of NAVGIT
+  意图：navbar-git-service-regions
+  API：GET .../billing/gitlab-resources/（无 region → resources[]；有 region → 单区）
+  测试：gitlab_convention_path_http_test.go WithoutRegion*
+       Navbar.ui.test.js 代码仓库按仓库资源跳转
+  测试点：列表含 web_url / 空列表[] / 悬停展开 / 单击展开 / ≥1 区下拉 / 无资源 ready 跳 /pricing/ / 拉取失败留当前页
+end note
+
+rectangle "系统管理 · 赠送资源与 VIP" as AGR {
+  (选择租户并核对联系方式) as ATSEL
+  (赠送配额) as AGP
+  (修改 VIP 等级) as AVIP
+  ATSEL --> AGP
+  AGP --> AVIP : 同页可选
+}
+
+note right of ATSEL
+  意图：backend/admin_tenant_options_contact + frontend/admin_tenant_options_contact
+  API：GET .../admin/tenant-options/ 含 email/phone；search 可按邮箱/手机
+  测试：admin_tenant_options_test.go / SystemAdminGrantPoints.tenant-options.unit.test.js
+  测试点：TP-TENANT-OPT-1 下拉含联系方式 / TP-TENANT-OPT-2 空值不占行
+          / TP-TENANT-OPT-3 search 按邮箱命中 / TP-TENANT-OPT-4 已选摘要
+end note
+
+note right of AVIP
+  意图：backend/admin_grant_membership_tier
+  测试：admin_grant_membership_test.go / SystemAdminGrantPoints.membership.unit.test.js
+  API：POST .../billing/accounts/admin_grant_points/ membership_tier
+  测试点：设 vip1 锁定 / 非法 tier / 仅调级无订单 / locked 不自动升级
+          / TQ-1 数量默认空 / TQ-2 仅 VIP 不带 100 帖 / TQ-3 空数量不 POST
+          / TQ-4 预览不生成赠送订单 / TQ-5 Idempotency-Key
+end note
+
+rectangle "计费 · 创建订单后独立详情页" as BOD {
+  (购买资源创建订单) as BOC
+  (订单详情展示行项) as BODP
+  (详情页支付) as BOPAY
+  BOC --> BODP
+  BODP --> BOPAY
+}
+
+note right of BOC
+  意图：frontend/order_create_gitlab_shared_region
+  测试：OrderCreate.contract.test.js
+  TP：T1 合卡含磁盘+流量 / T2 仅一个区域下拉 / T3 两行同 region
+      T4 仅流量共用下拉 / T5 未选区不 POST
+end note
+
+note right of BODP
+  意图：frontend/billing_order_detail_page
+  测试：OrderCreate.contract / OrderDetail.contract / OrderDetail.tradeNos / router.billingOrderDetail
+  测试点：创建成功跳转 / create不被orderId吞 / 行项可见 / 支付轮询可取消
+          / T12 摘要展示交易单号与商户单号（缺值 —）
+  展示号：ORD-UTC日期-tenantId-snowflakeId（ADR-0018）
+  测试：orders_number_test.go Parse/生成；IDOR 复合查询 404
+  开票：frontend/backend billing_order_wechat_fapiao
+        T15/T16 零额禁止申请与审批；F9 零额无「申请开票」按钮
+        测试：invoice_apply_test.go / invoice_approve_test.go / OrderInvoiceSection.test.js
+end note
+
+rectangle "计费 · 租户退款申请审批" as REFUND {
+  (租户申请冻结) as RAPP
+  (超管审批) as RADM
+  (原路退款核销) as RPAY
+  RAPP --> RADM
+  RADM --> RPAY : approve
+  RADM --> RAPP : reject解冻
+}
+
+note right of RPAY
+  意图：tenant-refund-application
+  设计：2026-07-22-tenant-refund-application-design
+  测试：refund_test.go / BillingRefund.apply-mock.playwright
+        / orders_focus_offset_test.go / billingOrderDeepLink.test.js
+        / SystemAdminRefundPanel.consumption.test.js
+  API：POST .../billing/refund-applications/
+        GET/POST /api/system-admin/refund-applications/
+        GET .../billing/orders/?order_id=（租户列表深链分页对齐）
+        GET .../billing/orders/?order_number=（租户列表交易单号/商户单号精确查询）
+        TP：VS-TO-1 交易单号 / VS-TO-2 商户单号 / VS-TO-3 空查询不带 order_number
+            / VS-TO-4 他租户同号 total=0
+        测试：BillingOrders.tradeNoSearch.test.js / BillingOrderNumberSearch.test.js
+              / orders_list_trade_no_test.go TestHandleListOrdersMatches*InTenant
+        GET .../billing/orders/{id}/（审批弹层 resource_consumption）
+        超管关联订单 → /system-admin/order-records/?tenant_id=&order_id=
+        超管交易单号查询 → GET /api/system-admin/orders/?order_number=
+        超管微信关联账号查询 → GET /api/system-admin/orders/?wechat_account=
+        超管/租户订单状态筛选含已退款 → status=refunded；徽章中文「已退款」
+        TP：VS-OS-1 筛选含已退款 / VS-OS-2 徽章 statusLabel(refunded)=已退款
+            / VS-OS-3 订单详情状态中文 已退款
+        超管订单详情分账 → GET /api/system-admin/orders/{id}/ profit_sharing[]
+        超管待分账队列 → GET /api/system-admin/profit-sharing/?status=open
+        TP：VS-PS-1 展开见接收方与金额 / VS-PS-2 无记录「本订单无分账记录」
+            / VS-PS-3 租户 GET 无 profit_sharing 键（ADR-0030）
+            / VS-PS-4 任意租户微信 Native 预下单 settle_info.profit_sharing=true（ADR-0040）
+            / VS-PS-5 无推荐人或支付时无资格仍打标；不落佣金行；支付成功解冻 UF{order_id}
+            / VS-PS-6 绑边无资格、支付时已获资格仍打标并可落分账行
+            / VS-PS-7 有佣金行时支付回调不解冻剩余资金
+            / VS-PS-8 支付满 25 天且未成功分账：process-pending 兜底发起（pending 未到期 / failed 同单号重试 / 缺行补标即执行）；满 30 天窗口外不发起
+              测试：wechat_profit_sharing_fallback_test.go
+            / VS-PSQ-1 Tab 待分账见 pending 行 / VS-PSQ-2 默认 open 不含 finished
+            / VS-PSQ-3 空队列「暂无待分账订单」 / VS-PSQ-4 订单号链到订单 Tab
+            / VS-PSQ-5 member GET 403 / VS-PSQ-6 JSON 含成对 app_id 与 openid（接收方对齐 wechat_identity，不含 referrer_openid 键）
+            / VS-PSQ-7 失败原因 qualification_revoked 展示「推荐资格已撤销」
+            / VS-PSQ-8 点「分账」按钮不立刻 disabled、缘由表单在表格上方；确认后才 POST share
+            / VS-PSQ-9 失败原因长文案单元格 wrap 完整可见，无 truncate / max-w-[8rem]
+              测试：profitSharingFailReasonLabel.test.js / SystemAdminProfitSharingPanel.test.js
+              / ReferralWechatProfitSharingTab.test.js / ProfitSharingShareReasonForm.test.js
+  TP：VS-R1..R4 申请冻结 / 消费不足 / 驳回解冻 / 批准FIFO原路退
+      VS-R5 批准/拒绝弹层可见订单任务帖已发放/已消耗/剩余
+      VS-R6 详情页已支付横幅申请退款 + 已消耗无法退回
+      VS-R7 本单 pending 显示退款中
+      VS-R8 确认 POST 带 Idempotency-Key
+      VS-R9 同单 Key 重放不插入第二行
+      VS-R10 超管批准失败：错误出现在弹窗内（含 data-traceId），页面横幅不作为唯一出口；响应与 UI 均不含 Wechatpay-Signature
+           测试：SystemAdminRefundPanel.action-error-modal.test.js / humanizePaymentProviderError.test.js / wechat_pay_client_error_test.go
+      VS-TN-1..6 交易单号等值查询（展示号/主键/payment_ref/空命中/空输入/403）
+      VS-TN-7 商户订单号 out_trade_no 等值命中（微信导出「商户订单号」，如 WX878981209491800064）
+      VS-TN-8 微信支付单号 wechat_transaction_id 等值命中（导出「微信支付单号」）
+      VS-TN-9 导出前导反引号 ` 剥离后再等值
+      VS-TN-10 支付入账回写 out_trade_no + wechat_transaction_id + ledger.provider_capture_id
+      VS-WA-1..7 微信关联账号查单（Tab/空输入/昵称手机openid/仅支付openid/空命中/403/交易单号回归）
+end note
+
+rectangle "系统管理 · 邮箱注册开关" as EREG {
+  (超管 system-feature-policy) as ESP
+  (保存 enable_email_register) as ESAV
+  (公开 policy / 注册页) as EPUB
+  (taskAuth email_register) as EREGAPI
+  (internal validate-email-register) as EVAL
+  ESP --> ESAV
+  ESAV --> EPUB
+  EPUB --> EREGAPI
+  EREGAPI --> EVAL
+}
+
+note right of EVAL
+  意图：platform/enable-email-register
+  设计：2026-07-23-system-admin-enable-email-register-design
+  TP-ADMIN-SAVE：superuser 保存 enable_email_register=false 成功
+  TP-ADMIN-403：非 superuser POST 403
+  TP-PUBLIC-READ：匿名可读新字段
+  TP-UI-HIDE：关闭后注册页无邮箱 Tab
+  TP-API-REJECT：关闭后 email_register 被拒绝
+  TP-DEFAULT：空表 bootstrap 默认为 true
+end note
+
+note bottom of EREGAPI
+  占用：auth_phone_occupancy_excludes_archived
+  T1 归档占用者可注册 / T2 孤儿 method 可注册
+  T3 活跃占用者仍 400 / T4 活跃页 phone=/q= 能搜到归档用户
+  T5 归档邮箱不占用 / T6 无标识检索仍排除归档
+    测试：auth_phone_register_test.go / auth_login_method_lookup_test.go / handlers_system_admin_list_filter_test.go
+  特权共享：auth_privileged_phone_multi_bind
+  T-SHARE-1 两 staff 同号 200 / T-SHARE-2 第6个 409 limit
+  T-SHARE-3 客户绑员工号 taken / T-SHARE-4 reclaim 作废全部其他
+  T-SHARE-5 不同密码登录命中 / T-SHARE-6 同密码 ambiguous
+  T-SHARE-7 共享号注册 400 / T-SHARE-8 共享号重置 ambiguous
+    测试：domain/phone_share_test.go / auth_phone_bind_test.go / auth_phone_share_login_test.go
+end note
+
+rectangle "编排 · 精准编译重启热加载 YAML" as PRR {
+  (磁盘 runAll.yaml 新增消费者) as PRY
+  (PreciseRestart 重载配置) as PRL
+  (解析登记并编译重启) as PRS
+  PRY --> PRL
+  PRL --> PRS
+}
+
+note right of PRL
+  意图：platform/runall_precise_restart_reload_yaml
+  测试：precise_restart_reload_test.go / status_test.go EnsureNames
+  TP：过期内存可解析 / 真未知名仍 unknown / 非法 YAML 保留内存 / EnsureNames 不打回 pending
+end note
+
+rectangle "编排 · 源码机精准编译写入 deploy-binaries" as PCB {
+  (读精准登记或 CLI 服务名) as PCR
+  (源码 working_dir 执行 build_command) as PCBD
+  (归集 gitignored deploy-binaries/) as PCO
+  PCR --> PCBD
+  PCBD --> PCO
+}
+
+note right of PCO
+  意图：platform/precise_compile_deploy_binaries
+  测试：test_precise_compile.py / test_collect_deploy_binaries.py skip_sha
+  TP：别名解析 / 空登记失败 / 假 build.sh 归集 ELF / 跳过 pin SHA
+end note
+
+rectangle "编排 · 全部重新编译消费精准登记" as BAC {
+  (页头全部重新编译) as BAB
+  (BuildAll 正常完成) as BAD
+  (清空登记 + consumed-at) as BACLR
+  (中断保留登记) as BAAB
+  BAB --> BAD
+  BAD --> BACLR
+  BAB --> BAAB
+}
+
+note right of BACLR
+  意图：platform/runall_build_all_clears_precise_restart
+  测试：build_all_clears_precise_restart_test.go
+  TP：helper 清空+水位线 / BuildAll 成功清空 / 中断保留登记
+  角色：系统管理员（runAll 运维页）
+end note
+
+rectangle "编排 · 9999 未 migrate 标注" as MIGB {
+  (打开 runAll Status) as MIGOPEN
+  (GET migrate-status) as MIGGET
+  (徽章 N 未 migrate) as MIGBADGE
+  (初始化全部数据库) as MIGINIT
+  MIGOPEN --> MIGGET
+  MIGGET --> MIGBADGE
+  MIGBADGE --> MIGINIT
+  MIGINIT --> MIGGET
+}
+
+note right of MIGGET
+  意图：platform/runall_pending_migrate_badge
+  测试：domain/migrate_pending_test.go / ui_migrate_pending_test.go
+  TP：missing 计 pending / stale 不计 / unreachable / GET 契约 / UI 非 2s 轮询
+  角色：系统管理员（runAll 运维页）
+end note
+
+rectangle "编排 · 9999 进度条手动清空" as PROGCLEAR {
+  (打开 runAll Status) as PROGOPEN
+  (全部重启或精准编译重启) as PROGRST
+  (进度条保持可见) as PROGKEEP
+  (点击清空) as PROGDISMISS
+  PROGOPEN --> PROGRST
+  PROGRST --> PROGKEEP
+  PROGKEEP --> PROGDISMISS
+}
+
+note right of PROGKEEP
+  意图：platform/runall_progress_panel_manual_clear
+  测试：progress_done.test.js / TestAssembledStatusPage_ProgressPanelManualClear
+  TP：完成后不自动隐藏 / idle 不关面板 / 清空按钮关闭
+  角色：系统管理员（runAll 运维页）
+end note
+
+rectangle "编排 · 金丝雀平滑重启" as CANARY {
+  (打开 runAll Status) as CANOPEN
+  (全部重启或精准编译重启) as CANRST
+  (overlap 新进程) as CANNEW
+  (SIGTERM 排空旧进程) as CANDRAIN
+  CANOPEN --> CANRST
+  CANRST --> CANNEW
+  CANNEW --> CANDRAIN
+}
+
+note right of CANDRAIN
+  意图：platform/runall_smooth_canary_restart
+  测试：listen_test.go / service_cascade_orchestration_service_test.go / runner_canary_restart_test.go
+  TP：T1 计划含 Healthy / T2 Shutdown / T3 REUSEPORT / T4 overlap start / T5 回退 / T6 不 StopAll / T7 文案
+  角色：系统管理员（runAll 运维页）
+end note
+
+rectangle "镜像市场 · 厂商门户顶栏 Demo" as PDEMO {
+  (打开 provider 门户) as POPEN
+  (点击镜像Demo) as PCLK
+  (GitHub trae-agent) as PGH
+  POPEN --> PCLK
+  PCLK --> PGH
+}
+
+rectangle "厂商门户 · 申请认证" as VAPPLY {
+  (打开 provider.daydaymoney.com) as VAOPEN
+  (主站会话 Cookie 换申请人) as VACOK
+  (提交证照+短信申请) as VASUB
+  (运营审核) as VAREV
+  VAOPEN --> VACOK
+  VACOK --> VASUB
+  VASUB --> VAREV
+}
+
+note right of PGH
+  意图：frontend/provider/image_demo_github_link
+  测试：imageDemoLink.unit.test.js
+  TP：T1 常量 href+文案 / T2 真实 a[href] target=_blank rel=noopener
+  角色：厂商（未登录也可）
+end note
+
+note right of VASUB
+  意图：frontend/provider/vendor_apply_on_provider_portal
+  测试：vendorApplyCta.unit.test.js / ImageMarket.vendorStatus.test.js
+        vendor_applicant_auth_test.go
+  TP：T1 无凭证 401 / T2 Cookie 四态 / T3-T6 门户 CTA / T7-T8 镜像市场去申请
+  角色：主站已登录用户（申请人）
+end note
+
+rectangle "平台审核 · 容器镜像操作列" as AREVIEW {
+  (打开 /admin 容器镜像审核) as ARVOPEN
+  (查看详情) as ARVDET
+  (通过或驳回或撤销上架) as ARVDEC
+  ARVOPEN --> ARVDET
+  ARVDET --> ARVDEC
+}
+
+note right of ARVDET
+  意图：frontend/provider/admin_image_review_actions
+  测试：adminImageReviewActions.unit.test.js
+  TP：T1 待审核 detail+approve+reject / T2 已上架 unpublish
+      T3 驳回草稿仅 detail / T4 reject 历史 / T5-T7 Vue 接线
+  角色：平台管理员（staff SSO）
+end note
+
+rectangle "镜像市场 · autoRunStep.md 抽取" as ARMD {
+  (厂商保存 image_url) as ARSAVE
+  (OCI 抽取 /app/autoRunStep.md) as AREXT
+  (catalog GET 回填空缓存) as ARCAT
+  (镜像市场展示说明) as ARUI
+  ARSAVE --> AREXT
+  ARCAT --> AREXT
+  AREXT --> ARUI
+}
+
+note right of AREXT
+  意图：frontend/auto_run_steps_md
+  测试：vendor_container_auto_run_test.go
+        extract_auto_run_steps_test.go
+  TP：T2 保存抽取 / T8 catalog 回填 / OCI tar 命中
+  角色：厂商（保存）/ 租户（浏览市场）
+end note
+
+rectangle "镜像市场 · imageSkills.yaml 抽取" as IMSK {
+  (厂商保存 image_url) as IMSAVE
+  (OCI 抽取 /app/imageSkills.yaml) as IMEXT
+  (catalog / 安装快照 image_skills) as IMCAT
+  (市场列表 / 描述高亮 / 评论 /skill) as IMUI
+  IMSAVE --> IMEXT
+  IMCAT --> IMEXT
+  IMEXT --> IMUI
+}
+
+note right of IMEXT
+  意图：image-container-skill-list
+  测试：parse_image_skills_test.go / extract_image_skills_test.go
+        vendor_container_image_skills_test.go
+        installed_image_skills_extract_test.go
+        imageSkills.test.js / ImageSkillsList.test.js
+        TaskDescriptionSkillField.test.js / CreateTaskMentionSync.test.js
+  TP：T1 第一项默认 / T3 上传抽取 / T5 安装再抽 / T7 描述高亮 / T8 评论 /skill
+      T10 空描述点击技能 chip 写入完整 $镜像/技能 且不解绑
+  角色：厂商（保存）/ 租户（市场、创建任务、评论）
+end note
+
+rectangle "用户中心 · 推荐分享码" as REFSHARE {
+  (打开 /profile/referral/) as REFPAGE
+  (GET referral-codes/status) as REFSTAT
+  (展示不透明 accessCode) as REFCODE
+  REFPAGE --> REFSTAT
+  REFSTAT --> REFCODE
+}
+
+note right of REFCODE
+  意图：frontend/user_referral_access_code + backend/task-referral
+  测试：UserReferral.accessCode.test.js / UserReferral.rateChangeNotice.test.js / UserReferral.mpFollowGate.test.js / ReferralServiceAccountFollowGate.test.js / referral_share_code_test.go / referral_code_test.go / referral_mp_bind_gate_test.go / auth_wechat_mp_test.go / handlers_test.go / referral_qualification_test.go / SystemAdminReferralApplicationsPanel.test.js
+  TP：T1 无资格+API 不透明 access_code / T2 接口缺码不回退 userId / T3 不用 referral_code 当分享码
+      T4 无申请记录仍有不透明码 / T5 pending|expired 仍有码
+      T9 多渠道创建独立链接 / T10 按渠道+时间段看人数与分账
+      T11 T15b 当前分账比例固定 5%（不读配置、不读微信 max_ratio 冒充政策） / T12 资格文案用 status.referral_rate_display
+      T13 有资格展示微信接收方已登记 / T14 pending_openid 提示先绑微信
+      T42–T47 资格开通与 status GET 幂等登记微信分账接收方（本地资格 ≠ 商户平台列表）
+      T50 超管取消分账资格须理由 / T51 pending 不可取消 / T52 审计记录可查
+      T53 申请列表展示固定 5% 分成比例 / T54 POST 比例字段被忽略仍返回 5% / T55 申请表表头一列分成比例
+      T56 /profile/referral 注明分成比例固定 5%
+      T57 推荐资格卡注明微信分账须在服务通知有效期内手动点击确认，逾期无法补分
+      T58 申请推荐资格须填个人名称并警示填错导致分账失败；提交 body 含 legal_name
+      T59 完成超 25 天未成功分账由 process-pending 兜底申请；未满 25 天不提前；已 finished 不重打；失败重试用同一 out_no；超 30 天窗口不再发起；无行有边则补行立即执行；15 天 due pending 不再自动打款
+      T60 推荐页按渠道聚合：渠道号+时段+订单/冻结/可分账金额；不展示订单号；可分账渠道可点分账；双击只一次 POST share-channel；GET 不含 openid/order_number
+      T61 申请前须关注服务号：未绑定只展示 QR；我已关注后才出名称/简介表；subscribe 用 unionId 锁定不建号；apply 未绑定 400 service_account_not_followed
+      T13 follow-status 用 pending temp_id 对账粉丝 qr_scene_str（回调丢失补偿）
+      T16 Encrypt XML + encodingAESKey 解密后绑定
+      T60b failed 且未满 15 天不得展示冻结、不得计入冻结金额；与管理端「失败」一致；15–30 天 failed 仍可重试
+      T62 超管用户页/待分账队列失败原因列：fail_trace_id 非空则 data-traceId 等于该值，空则省略属性（非列表 GET 的 trace）
+      T63 超管用户页/待分账队列失败原因列：微信 HTTP 400 长文案在单元格内换行完整可见，无 truncate
+      T64 超管 POST share：出站金额 floor((订单−退款)×5%)，55 分台账 3 分则调微信 2 分；全额退款 409 且不调微信
+      T65 微信 INVALID_REQUEST 分账比例超限 → HTTP 409 + 微信 message，不是 502；warn 带 trace_id
+  角色：已登录用户（有无推荐资格均可）
+end note
+
+rectangle "计费 · 任务帖配额赠送/购买拆分" as TPQSPLIT {
+  (打开租户账单页) as TPQOPEN
+  (GET billing/quotas) as TPQAPI
+  (卡片展示合计+赠送+购买) as TPQVIEW
+  TPQOPEN --> TPQAPI
+  TPQAPI --> TPQVIEW
+}
+
+note right of TPQVIEW
+  意图：frontend/backend billing_task_post_quota_gift_vs_purchase
+  测试：task_post_quota_source_test.go / BillingDashboard.quotaSplit.test.js
+  TP：T1 拆分字段 gifted/purchased / T2 消耗先扣赠送 / T3 历史购买批次回填
+end note
+
+rectangle "计费 · 交易记录资源流水账" as TXLEDGER {
+  (打开交易流水页) as TXPAGE
+  (GET transactions/list_filtered) as TXAPI
+  (变动明细 + 瞬时账目) as TXVIEW
+  TXPAGE --> TXAPI
+  TXAPI --> TXVIEW
+}
+
+note right of TXVIEW
+  意图：frontend/backend billing_transactions_resource_ledger
+  测试：transaction_change_enrich_test.go / transaction_ledger_snapshot_test.go
+        transactionChangeDisplay.test.js / BillingTransactionsTable.grantDisplay.test.js
+  TP：TP-LEDGER-1 赠送资源文案 / TP-LEDGER-2 现金 before→after 元
+      TP-LEDGER-3 配额消耗非 0 元空壳 / TP-LEDGER-4 任务帖剩余回放顺序
+end note
+
+
+rectangle "计费 · 下单施工留言" as BUYNOTE {
+  (打开购买资源页) as BNOPEN
+  (选 GitLab 磁盘) as BNDISK
+  (填写可选留言) as BNNOTE
+  (POST orders + buyer_note) as BNPOST
+  (详情/超管展开展示) as BNVIEW
+  BNOPEN --> BNDISK
+  BNDISK --> BNNOTE
+  BNNOTE --> BNPOST
+  BNPOST --> BNVIEW
+}
+
+note right of BNVIEW
+  意图：billing-order-buyer-note
+  测试：orders_buyer_note_test.go / OrderCreate.contract.test.js / OrderDetail.contract.test.js
+  TP：T1 磁盘留言落库 / T2 仅任务帖禁留言 / T3 超长 400 / T4 空留言
+      T5 磁盘 textarea+POST / T6 任务帖无框 / T7 详情展示
+  角色：租户管理员；系统管理员（施工查看）
+end note
+
+rectangle "计费 · GitLab 磁盘目录价与起购" as DISKCAT {
+  (打开价格管理/购买页) as DCOPEN
+  (目录 4.00 元/GB/月) as DCPRICE
+  (下单数量 >= 10 GB) as DCMIN
+  DCOPEN --> DCPRICE
+  DCPRICE --> DCMIN
+}
+
+note right of DCMIN
+  意图：backend/frontend gitlab_disk_catalog_price_and_min_gb
+  测试：gitlab_disk_qty_test.go / gitlab_disk_min_purchase_test.go
+        OrderCreate.contract.test.js / Pricing.membership-section.unit.test.js
+        SystemAdmin.price-management-defaults.playwright.test.js
+  TP：T1 默认 400 分 / T4 9GB 拒绝 / T5 10GB 下单 / T7 支付发放 10GB
+      F2 购买页 5GB 不 POST / F3 10GB POST / F4 定价页起购 10GB
+  角色：系统管理员；VIP1 租户用户
+end note
+
+rectangle "合规 · KYC 身份等级（超管）" as KYCADMIN {
+  (打开系统管理用户) as KYCUSER
+  (打开 KYC drawer) as KYCDRAW
+  (阅读各等级说明) as KYCHELP
+  KYCUSER --> KYCDRAW
+  KYCDRAW --> KYCHELP
+}
+
+note right of KYCHELP
+  意图：kyc-recharge-gate
+  测试：SystemAdminUserKycDrawer.tier-help.unit.test.js
+        BillingRecharge.kyc-banner.playwright.test.js（drawer 段）
+  TP：T6 标题区 kyc-tier-help 含 T0/T1/T2 说明
+  角色：系统管理员
+end note
+
+rectangle "Git OAuth · 访问审计 site" as GOAS {
+  (OAuth 回调 / token-use-report) as GOAW
+  (写入 host[:port]) as GOAH
+  GOAW --> GOAH
+}
+
+note right of GOAH
+  意图：backend/gitoauth_access_audit_site_column
+  测试：taskGitOauth access_audit_site_test.go
+        infrastructure/access_audit_site_test.go
+  TP：T1 写入 github.com
+      T2 https://github.com → github.com
+      T3 http://localhost:8012 → localhost:8012
+      T4 token-use-report 解析 provider_key
+      T5 无配置不回退写成 provider_key
+  迁移：dataMigrate/taskGitOauth/006 清空旧行
+end note
+
+rectangle "超管用户列表 · 分账资格列" as PSQCOL {
+  (打开用户列表) as PSQOPEN
+  (GET users 投影资格) as PSQGET
+  (渲染是/否/—) as PSQUI
+  PSQOPEN --> PSQGET
+  PSQGET --> PSQUI
+}
+
+note right of PSQUI
+  意图：backend/system_admin_users_profit_sharing_qualification
+        frontend/system_admin_users_profit_sharing_qualification
+  测试：referral_qualification_internal_test.go
+        handlers_system_admin_users_test.go
+        UserListRow.test.js
+        SystemAdminUsers.profit-sharing-qualification-column.test.js
+  TP：T1 活跃资格 → 是
+      T2 无/取消/过期 → 否
+      T3 下游失败 → 列表 200 且 —
+      T4 非超管 403
+      T5 表头在角色与操作之间
+end note
+
+rectangle "模拟登录审计 · 收信箱" as IMPINBOX {
+  (填写代登理由) as IMPR
+  (签发模拟会话) as IMPS
+  (写入收信箱) as IMPB
+  IMPR --> IMPS
+  IMPS --> IMPB
+}
+
+note right of IMPB
+  意图：backend/admin_user_impersonation
+        backend/user_inbox
+  测试：domain/impersonation_test.go
+        handlers_impersonation_test.go
+        tracelog_test.go
+        useImpersonateUser.test.js
+  TP：T13 无理由 400
+      T14 成功写信且幂等
+      T-log 访问日志含 impersonator
+end note
+
+rectangle "登录历史" as LOGINHIST {
+  (客户/管理员入口成功登录) as LHIN
+  (写入 auth_login_history) as LHWR
+  (账号中心 / 超管查询) as LHQ
+  LHIN --> LHWR
+  LHWR --> LHQ
+}
+
+note right of LHQ
+  意图：backend/auth_login_history
+        frontend/login_history_profile_sidebar
+  测试：login_history_handlers_test.go
+        domain/login_history_test.go
+        LoginHistoryPanel.test.js
+        UserLoginHistory.test.js
+        UserCenterSidebar.login-history.test.js
+        UserListRow.login-history.test.js
+  TP：T1 客户入口写 IP
+      T2 管理员入口 entry=admin
+      T3 失败登录不写
+      T4 本人隔离
+      T5 未登录 401
+      T6 非超管 403 / 缺失 404
+      T7 limit cap 100
+      T8 模拟登录不写目标
+end note
+
+rectangle "超管用户表列过滤" as UFCOL {
+  (表头每列过滤器) as UFUI
+  (GET 列 query AND) as UFAPI
+  (本库 SQL / 跨服务 hydration 筛) as UFFILT
+  UFUI --> UFAPI
+  UFAPI --> UFFILT
+}
+
+note right of UFFILT
+  意图：backend/auth_system_admin_user_list_column_filters
+        frontend/system_admin_user_list_column_filters
+  测试：handlers_system_admin_list_filter_test.go
+        SystemAdminUsers.columnFilters.test.js
+  TP：VS-UF-1 过滤行
+      VS-UF-2 email
+      VS-UF-3 role
+      VS-UF-8 重置
+      VS-UF-9 非超管 403
+end note
+
+rectangle "测试角色与 GitLab 区域模式" as TESTERMODE {
+  (用户列表角色=测试) as TRUI
+  (is_tester + X-User-Is-Tester) as TRAUTH
+  (区域开发/发布模式) as TRREG
+  (租户目录/下单门禁) as TRGATE
+  TRUI --> TRAUTH
+  TRAUTH --> TRGATE
+  TRREG --> TRGATE
+}
+
+rectangle "登录后手机号验证门禁" as LOGINPHONE {
+  (登录成功凭据落盘) as LPP
+  (未验证则不可跳过提示) as LPM
+  (去验证→资料绑定 / 绑定成功→原 next) as LPD
+  (业务页未验证则阻断层) as LPB
+  LPP --> LPM
+  LPM --> LPD
+  LPD --> LPB
+}
+
+note right of LPD
+  意图：frontend/login_phone_verify_prompt
+  测试：phone_verified_status.test.js
+        phoneBindingDeepLink.test.js
+        post_login_phone_verify_prompt_service.test.js
+        useLoginSubmit.test.js
+        finishWechatCallbackLogin.test.js
+        phone_verify_access_gate.test.js
+        PhoneVerifyAccessGate.test.js
+        UserProfile.ssoEmailRequired.test.js
+  TP：T1 已验证不弹窗
+      T2 未验证→/profile/#rg=profile.phone_binding
+      T3 关闭弹窗仍去验证（无稍后再说）
+      T4 管理员/手机密码/模拟登录/员工跳过
+      T5 微信回调同样门禁
+      T6 资料页 data-rg-key 可定位
+      T7 工作面板书签未验证→阻断层
+end note
+
+note right of TRGATE
+  意图：frontend/system_admin_user_tester_role
+        frontend/system_admin_gitlab_region_access_mode
+        backend/auth_user_tester_flag
+        backend/billing_gitlab_region_access_mode
+  测试：gitlab_region_access_test.go
+        auth_user_tester_test.go
+        gateway_forward_auth_test.go
+        gitlab_region_access_mode_test.go
+        SystemAdminUsers.columnFilters.test.js
+        UserListRow.test.js
+        SystemAdminGitlabRegionForm.access-mode.test.js
+        SystemAdminGitlabResources.access-mode.test.js
+  TP：VS-TR-1 CanUseGitlabRegion development 仅 tester
+      VS-TR-2 列表 role=tester / tenant 排除 tester
+      VS-TR-3 PATCH is_tester 强制 is_tenant
+      VS-TR-4 forward-auth X-User-Is-Tester 且 roles 不含 tester
+      VS-TR-5 非测试目录隐藏开发区域
+      VS-TR-6 非测试下单开发区域 403
+      VS-TR-7 区域卡片开发/发布徽章与下拉
+end note
+
+rectangle "超管用户页 · 租户 Tab" as USTENANTS {
+  (打开 /system-admin/users/) as USTOPEN
+  (点击租户 Tab / ?tab=tenants) as USTTAB
+  (GET /api/system-admin/accounts/admin/tenants/) as USTAPI
+  (表格渲染 id/name/联系方式) as USTUI
+  USTOPEN --> USTTAB
+  USTTAB --> USTAPI
+  USTAPI --> USTUI
+}
+
+note right of USTUI
+  意图：frontend/system_admin_users_tenants_tab
+        backend/system_admin_tenants_list
+  测试：admin_tenants_list_test.go
+        SystemAdminUsers.tenants-tab.test.js
+        SystemAdminTenantsPanel.test.js
+        useSystemAdminUsers.referral-tab.test.js
+  TP：TP-TN-1 Tab 含租户
+      TP-TN-2 点击挂载 panel 不拉用户列表
+      TP-TN-3 深链 ?tab=tenants
+      TP-TN-4 表格显示 name
+      TP-TN-5 空态
+      TP-TN-6 401
+      TP-TN-7 403
+      TP-TN-8 分页
+      TP-TN-9 错误 data-traceId
+end note
+
+rectangle "邮件邀请退订 · email-invite-unsubscribe" as EUNSUB {
+  (邀请邮件退订按钮) as EUBTN
+  (公开 HMAC API 写入列表) as EUAPI
+  (已退订则跳过 SMTP + 复制链接) as EUSKIP
+  EUBTN --> EUAPI
+  EUAPI --> EUSKIP
+}
+
+note right of EUSKIP
+  意图：platform/email-invite-unsubscribe
+  测试：domain/email_unsubscription_test.go
+        auth_email_unsubscription_test.go
+        invite_handlers_test.go InviteEmailUnsubscribed
+        delivery_skip_test.go
+        PeopleInvite.unsubscribe-skip.test.js
+        UnsubscribeConfirm.test.js
+  TP：T1-T10 见 docs/intents/platform/email-invite-unsubscribe.test-intent.md
+      T-expire 见 docs/intents/platform/email-invite-expiry-scan.test-intent.md
+end note
+
+rectangle "租户邀请有效期 · people-invite-expiration" as INVEXP {
+  (邀请页有效期下拉) as INVSEL
+  (POST invite / resend expiration_days) as INVAPI
+  (expires_at = now + days) as INVEXPAT
+  INVSEL --> INVAPI
+  INVAPI --> INVEXPAT
+}
+
+note right of INVEXPAT
+  意图：frontend/people_invite_expiration
+        backend/people_invite_expiration
+  测试：peopleInviteExpiration.test.js
+        InviteLinkMethodPanel.test.js
+        PendingInvitations.click-guard.test.js
+        invite_expiration_test.go
+        invite_handlers_test.go TestInviteExpirationDays*
+  TP：T1 选项含 90/180/365 默认 90
+      T2 下拉可见 365天
+      T3 重发 body 90
+      T5 HTTP 365 → 201
+      T6 HTTP 366 → 400
+end note
+
+@enduml
+' T-auto_run_at_comment_pr_backfill: ensure @ comment + mount + PR reply (2026-07-22)

@@ -1,0 +1,40 @@
+@import 'page_bundles/mixins_and_variables_and_functions';
+
+.application-theme {
+  .preview {
+    font-size: 0;
+    height: 3rem;
+    @apply gl-rounded-base;
+    @apply gl-mb-3;
+
+    &.ui-indigo {
+      @apply gl-bg-purple-500;
+      @apply dark:gl-bg-purple-600;
+    }
+
+    &.ui-blue {
+      @apply gl-bg-blue-500;
+      @apply dark:gl-bg-blue-600;
+    }
+
+    &.ui-green {
+      @apply gl-bg-green-500;
+      @apply dark:gl-bg-green-600;
+    }
+
+    &.ui-red {
+      @apply gl-bg-red-500;
+      @apply dark:gl-bg-red-600;
+    }
+
+    &.ui-gray {
+      @apply gl-bg-neutral-500;
+      @apply dark:gl-bg-neutral-300;
+    }
+
+    &.ui-neutral {
+      @apply gl-bg-subtle;
+      @apply gl-border;
+    }
+  }
+}

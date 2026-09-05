@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v42-translate-branch-title-go-native-20260720-1555">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v42 Target (translate-branch-title-go-native)</name>
+  <purpose>taskProjectService calls fanyi_agent directly; Django internal translate-branch-title deprecated</purpose>
+
+  <folder name="Motivation" id="id-v42-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="Constraint 新增接口默认 Go" id="id-v42-constraint"/>
+    <element xsi:type="archimate:Principle" name="Principle 应用禁止环境 Proxy" id="id-v42-principle"/>
+  </folder>
+  <folder name="Application" id="id-v42-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Vue CreateTaskModal" id="id-v42-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v42-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskProjectService [MODIFIED v42]" id="id-v42-tps"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🔴 saas-backend translate internal [DEPRECATED v42]" id="id-v42-django"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟢 fanyi_agent DeepSeek [NEW v42]" id="id-v42-fanyi"/>
+  </folder>
+  <folder name="Relations" id="id-v42-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v42-flow-vue-gw" source="id-v42-vue" target="id-v42-gw" name="POST translate-branch-title"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v42-flow-gw-tps" source="id-v42-gw" target="id-v42-tps" name="JWT"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v42-flow-tps-fanyi" source="id-v42-tps" target="id-v42-fanyi" name="chat/completions"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v42-flow-tps-django-removed" source="id-v42-tps" target="id-v42-django" name="REMOVED hop"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v42-inf-c" source="id-v42-constraint" target="id-v42-tps" name="落点"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v42-inf-p" source="id-v42-principle" target="id-v42-tps" name="DirectClient"/>
+  </folder>
+  <folder name="Implementation" id="id-v42-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v41 — task-subtree-terminal-gate (current)" id="id-v42-plat-v41"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v42 — translate-go-native (target)" id="id-v42-plat-v42"/>
+    <element xsi:type="archimate:Gap" name="Gap: 中文翻译仍依赖缺失的 Django internal" id="id-v42-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v42-translate-go-native" id="id-v42-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v42-rel-plat41-gap" source="id-v42-plat-v41" target="id-v42-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v42-rel-wp-gap" source="id-v42-wp" target="id-v42-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v42-rel-wp-plat42" source="id-v42-wp" target="id-v42-plat-v42"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v42-rel-plat42-tps" source="id-v42-plat-v42" target="id-v42-tps"/>
+  </folder>
+  <folder name="Views" id="id-v42-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v41→v42 — translate-go-native" id="id-v42-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v42-do-plat41" archimateElement="id-v42-plat-v41">
+        <bounds x="48" y="100" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v42-conn-plat41-gap"
+          source="id-v42-do-plat41" target="id-v42-do-gap"
+          archimateRelationship="id-v42-rel-plat41-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v42-do-gap" archimateElement="id-v42-gap"
+        targetConnections="id-v42-conn-plat41-gap id-v42-conn-wp-gap">
+        <bounds x="420" y="100" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v42-do-wp" archimateElement="id-v42-wp">
+        <bounds x="900" y="60" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v42-conn-wp-gap"
+          source="id-v42-do-wp" target="id-v42-do-gap"
+          archimateRelationship="id-v42-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v42-conn-wp-plat42"
+          source="id-v42-do-wp" target="id-v42-do-plat42"
+          archimateRelationship="id-v42-rel-wp-plat42"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v42-do-plat42" archimateElement="id-v42-plat-v42"
+        targetConnections="id-v42-conn-wp-plat42">
+        <bounds x="900" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v42-conn-plat42-tps"
+          source="id-v42-do-plat42" target="id-v42-do-tps-m"
+          archimateRelationship="id-v42-rel-plat42-tps"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v42-do-tps-m" archimateElement="id-v42-tps"
+        targetConnections="id-v42-conn-plat42-tps">
+        <bounds x="900" y="250" width="280" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v42 Target — translate-branch-title 数据流" id="id-v42-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v42-do-vue" archimateElement="id-v42-vue">
+        <bounds x="40" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v42-conn-vue-gw"
+          source="id-v42-do-vue" target="id-v42-do-gw"
+          archimateRelationship="id-v42-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v42-do-gw" archimateElement="id-v42-gw"
+        targetConnections="id-v42-conn-vue-gw">
+        <bounds x="240" y="80" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v42-conn-gw-tps"
+          source="id-v42-do-gw" target="id-v42-do-tps"
+          archimateRelationship="id-v42-flow-gw-tps"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v42-do-tps" archimateElement="id-v42-tps"
+        targetConnections="id-v42-conn-gw-tps id-v42-conn-inf-c id-v42-conn-inf-p">
+        <bounds x="420" y="80" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v42-conn-tps-fanyi"
+          source="id-v42-do-tps" target="id-v42-do-fanyi"
+          archimateRelationship="id-v42-flow-tps-fanyi"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v42-conn-tps-django"
+          source="id-v42-do-tps" target="id-v42-do-django"
+          archimateRelationship="id-v42-flow-tps-django-removed"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v42-do-fanyi" archimateElement="id-v42-fanyi"
+        targetConnections="id-v42-conn-tps-fanyi">
+        <bounds x="700" y="80" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v42-do-django" archimateElement="id-v42-django"
+        targetConnections="id-v42-conn-tps-django">
+        <bounds x="420" y="200" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v42-do-c" archimateElement="id-v42-constraint">
+        <bounds x="40" y="200" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v42-conn-inf-c"
+          source="id-v42-do-c" target="id-v42-do-tps"
+          archimateRelationship="id-v42-inf-c"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v42-do-p" archimateElement="id-v42-principle">
+        <bounds x="40" y="280" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v42-conn-inf-p"
+          source="id-v42-do-p" target="id-v42-do-tps"
+          archimateRelationship="id-v42-inf-p"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

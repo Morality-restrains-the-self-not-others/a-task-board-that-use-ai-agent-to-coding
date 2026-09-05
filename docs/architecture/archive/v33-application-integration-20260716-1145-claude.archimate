@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="v33 Current — terminal-graceful-container-shutdown" id="id-v33-model">
+  <folder name="Motivation" id="id-v33-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="Constraint 终态先通知容器收尾再回调释放" id="id-v33-c-graceful"/>
+    <element xsi:type="archimate:Constraint" name="Constraint sole/empty 才销毁节点" id="id-v33-c-sole"/>
+  </folder>
+  <folder name="Application" id="id-v33-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Vue TaskDetail progress PATCH" id="id-v33-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v33-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTaskService TASK_STATUS_CHANGED" id="id-v33-task"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskEvents notify + timeout [MODIFIED v33]" id="id-v33-events"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskCloudService request-machine-release [MODIFIED v33]" id="id-v33-cloud"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskContainerGateway L0 shutdown [MODIFIED v33]" id="id-v33-cgw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟢 onlineServiceJS task-lifecycle/shutdown [NEW v33]" id="id-v33-osjs"/>
+    <element xsi:type="archimate:DataObject" name="cloud_server_configs +graceful_shutdown_pending" id="id-v33-csc"/>
+  </folder>
+  <folder name="Technology" id="id-v33-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="Kafka" id="id-v33-kafka"/>
+    <element xsi:type="archimate:Node" name="Aliyun ECS" id="id-v33-ecs"/>
+    <element xsi:type="archimate:Node" name="镜像容器" id="id-v33-docker"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v33-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v32 — ai-provider Go baseline" id="id-v33-plat32"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v33 — terminal-graceful-container-shutdown" id="id-v33-plat33"/>
+    <element xsi:type="archimate:Gap" name="Gap: 终态硬停无容器收尾；释放非容器主动" id="id-v33-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v33-terminal-graceful-container-shutdown" id="id-v33-wp"/>
+  </folder>
+  <folder name="Relations" id="id-v33-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v33-flow-vue-gw" source="id-v33-vue" target="id-v33-gw" name="PATCH todos"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v33-flow-gw-task" source="id-v33-gw" target="id-v33-task" name="update"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v33-flow-task-kafka" source="id-v33-task" target="id-v33-kafka" name="TASK_STATUS_CHANGED"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v33-flow-kafka-events" source="id-v33-kafka" target="id-v33-events" name="consume"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v33-flow-events-cloud" source="id-v33-events" target="id-v33-cloud" name="migrate+bindings"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v33-flow-events-osjs" source="id-v33-events" target="id-v33-osjs" name="POST shutdown"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v33-flow-events-kafka-to" source="id-v33-events" target="id-v33-kafka" name="TIMEOUT"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v33-flow-osjs-cloud" source="id-v33-osjs" target="id-v33-cloud" name="request-machine-release"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v33-acc-cloud-csc" source="id-v33-cloud" target="id-v33-csc" name="W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v33-flow-cloud-kafka" source="id-v33-cloud" target="id-v33-kafka" name="CLOUD_SERVER_STOPPED"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v33-flow-cloud-ecs" source="id-v33-cloud" target="id-v33-ecs" name="DeleteInstance"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v33-flow-cgw-osjs" source="id-v33-cgw" target="id-v33-osjs" name="L0 proxy"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v33-flow-osjs-docker" source="id-v33-osjs" target="id-v33-docker" name="self stop"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v33-inf-graceful" source="id-v33-c-graceful" target="id-v33-events"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v33-inf-sole" source="id-v33-c-sole" target="id-v33-cloud"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v33-rel-plat32-gap" source="id-v33-plat32" target="id-v33-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v33-rel-wp-gap" source="id-v33-wp" target="id-v33-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v33-rel-wp-plat33" source="id-v33-wp" target="id-v33-plat33"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v33-rel-plat33-osjs" source="id-v33-plat33" target="id-v33-osjs"/>
+  </folder>
+  <folder name="Views" id="id-v33-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v32→v33 — terminal-graceful-container-shutdown" id="id-v33-view-mig">
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-plat32" archimateElement="id-v33-plat32">
+        <bounds x="40" y="100" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-plat32-gap" source="id-v33-do-plat32" target="id-v33-do-gap" archimateRelationship="id-v33-rel-plat32-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-gap" archimateElement="id-v33-gap" targetConnections="id-v33-conn-plat32-gap id-v33-conn-wp-gap">
+        <bounds x="360" y="100" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-wp" archimateElement="id-v33-wp">
+        <bounds x="780" y="60" width="360" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-wp-gap" source="id-v33-do-wp" target="id-v33-do-gap" archimateRelationship="id-v33-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-wp-plat33" source="id-v33-do-wp" target="id-v33-do-plat33" archimateRelationship="id-v33-rel-wp-plat33"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-plat33" archimateElement="id-v33-plat33" targetConnections="id-v33-conn-wp-plat33">
+        <bounds x="780" y="160" width="360" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-plat33-osjs" source="id-v33-do-plat33" target="id-v33-do-osjs-m" archimateRelationship="id-v33-rel-plat33-osjs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-osjs-m" archimateElement="id-v33-osjs" targetConnections="id-v33-conn-plat33-osjs">
+        <bounds x="780" y="240" width="360" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v33 Current — graceful shutdown dataflow" id="id-v33-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-vue" archimateElement="id-v33-vue">
+        <bounds x="40" y="40" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-vue-gw" source="id-v33-do-vue" target="id-v33-do-gw" archimateRelationship="id-v33-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-gw" archimateElement="id-v33-gw" targetConnections="id-v33-conn-vue-gw">
+        <bounds x="220" y="40" width="120" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-gw-task" source="id-v33-do-gw" target="id-v33-do-task" archimateRelationship="id-v33-flow-gw-task"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-task" archimateElement="id-v33-task" targetConnections="id-v33-conn-gw-task">
+        <bounds x="380" y="40" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-task-kafka" source="id-v33-do-task" target="id-v33-do-kafka" archimateRelationship="id-v33-flow-task-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-kafka" archimateElement="id-v33-kafka" targetConnections="id-v33-conn-task-kafka id-v33-conn-events-kafka-to id-v33-conn-cloud-kafka">
+        <bounds x="580" y="40" width="100" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-kafka-events" source="id-v33-do-kafka" target="id-v33-do-events" archimateRelationship="id-v33-flow-kafka-events"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-events" archimateElement="id-v33-events" targetConnections="id-v33-conn-kafka-events">
+        <bounds x="40" y="160" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-events-cloud" source="id-v33-do-events" target="id-v33-do-cloud" archimateRelationship="id-v33-flow-events-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-events-osjs" source="id-v33-do-events" target="id-v33-do-osjs" archimateRelationship="id-v33-flow-events-osjs"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-events-kafka-to" source="id-v33-do-events" target="id-v33-do-kafka" archimateRelationship="id-v33-flow-events-kafka-to"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-osjs" archimateElement="id-v33-osjs" targetConnections="id-v33-conn-events-osjs id-v33-conn-cgw-osjs">
+        <bounds x="280" y="160" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-osjs-cloud" source="id-v33-do-osjs" target="id-v33-do-cloud" archimateRelationship="id-v33-flow-osjs-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-osjs-docker" source="id-v33-do-osjs" target="id-v33-do-docker" archimateRelationship="id-v33-flow-osjs-docker"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-cloud" archimateElement="id-v33-cloud" targetConnections="id-v33-conn-events-cloud id-v33-conn-osjs-cloud">
+        <bounds x="520" y="160" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-cloud-csc" source="id-v33-do-cloud" target="id-v33-do-csc" archimateRelationship="id-v33-acc-cloud-csc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-cloud-kafka" source="id-v33-do-cloud" target="id-v33-do-kafka" archimateRelationship="id-v33-flow-cloud-kafka"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-cloud-ecs" source="id-v33-do-cloud" target="id-v33-do-ecs" archimateRelationship="id-v33-flow-cloud-ecs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-cgw" archimateElement="id-v33-cgw">
+        <bounds x="280" y="260" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v33-conn-cgw-osjs" source="id-v33-do-cgw" target="id-v33-do-osjs" archimateRelationship="id-v33-flow-cgw-osjs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-csc" archimateElement="id-v33-csc" targetConnections="id-v33-conn-cloud-csc">
+        <bounds x="760" y="160" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-ecs" archimateElement="id-v33-ecs" targetConnections="id-v33-conn-cloud-ecs">
+        <bounds x="520" y="260" width="120" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v33-do-docker" archimateElement="id-v33-docker" targetConnections="id-v33-conn-osjs-docker">
+        <bounds x="280" y="340" width="120" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

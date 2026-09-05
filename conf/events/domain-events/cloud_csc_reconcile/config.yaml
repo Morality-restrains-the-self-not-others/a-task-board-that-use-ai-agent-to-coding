@@ -1,0 +1,7 @@
+intents:
+  1_sweep:
+    host: 0.0.0.0
+    port: 18063
+    groupId: task-events-cloud-csc-reconcile-1-sweep
+    events:
+    - CLOUD_CSC_RECONCILE

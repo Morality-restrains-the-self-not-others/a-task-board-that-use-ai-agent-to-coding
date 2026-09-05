@@ -1,0 +1,21 @@
+---
+table_name: merge_request_diff_files
+classes:
+- MergeRequestDiffFile
+feature_categories:
+- code_review_workflow
+description: Store file related information within a merge request diff
+introduced_by_url: https://gitlab.com/gitlab-org/gitlab-foss/-/merge_requests/12047
+milestone: '9.4'
+gitlab_schema: gitlab_main_org
+sharding_key_issue_url: https://gitlab.com/gitlab-org/gitlab/-/issues/422767
+desired_sharding_key:
+  project_id:
+    references: projects
+    backfill_via:
+      parent:
+        foreign_key: merge_request_diff_id
+        table: merge_request_diffs
+        sharding_key: project_id
+        belongs_to: merge_request_diff
+table_size: over_limit

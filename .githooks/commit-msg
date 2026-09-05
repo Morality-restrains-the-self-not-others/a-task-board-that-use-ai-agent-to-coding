@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# HOOK_VERSION 1.0.0
+# Bug 修复必须携带回归单测 — commit-msg 权威门禁
+# git 在 commit-msg 阶段将最终 message 文件作为 $1 传入（.git/COMMIT_EDITMSG），
+# 此时消息内容已确定，是唯一可靠的检测点。
+# 注意：pre-commit 阶段不可读 message 文件——`-m` 提交时该文件为「上次成功提交」的
+# 陈旧内容（git 仅在 commit-msg 前重写），会导致误拦截，故本门禁只挂 commit-msg。
+# 细则：.ai/01_project_constraints/41_bug_fix_unit_test_required.md
+set -euo pipefail
+
+echo "▸ [hook:commit-msg v1.0.0]"
+
+ROOT="$(cd "$(git rev-parse --git-common-dir 2>/dev/null || echo "${GIT_DIR:-.git}")/.." && pwd)"
+
+MESSAGE_FILE="${1:-}"
+if [ -n "$MESSAGE_FILE" ]; then
+  MSG_ARGS=(--commit-msg-file "$MESSAGE_FILE")
+else
+  MSG_ARGS=()
+fi
+
+echo "▸ Running bug-fix unit-test gate..."
+python3 "$ROOT/db/scripts/ci/check_bug_fix_unit_tests.py" --root "$ROOT" "${MSG_ARGS[@]}" || {
+  echo ""
+  echo "⛔ Bug-fix commit without a matching regression unit test — blocked."
+  echo "   Add the regression test, or add \`no-test: <reason>\` to the commit message if exempt."
+  exit 1
+}
+
+echo "▸ Running logic-rollback approval gate..."
+python3 "$ROOT/db/scripts/ci/check_logic_rollback_approval.py" --root "$ROOT" "${MSG_ARGS[@]}" || {
+  echo ""
+  echo "⛔ Logic rollback without approval — blocked (constraint 53 / ADR-0021)."
+  echo "   Delete the old path, or add \`Logic-Rollback-OK: <reason>\` after human approval."
+  exit 1
+}
+
+exit 0

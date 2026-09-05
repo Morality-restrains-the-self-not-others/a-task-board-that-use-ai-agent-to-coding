@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v94 diff (v93→v94)" id="id-v94eldiff01">
+  <folder name="Business" id="id-v94eld-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v94e-member" name="租户成员"/>
+    <element xsi:type="archimate:BusinessService" id="id-v94e-push" name="推送并创建PR"/>
+    <element xsi:type="archimate:BusinessService" id="id-v94e-reply" name="PR 链接回复 [NEW v94]"/>
+    <element xsi:type="archimate:BusinessService" id="id-v94e-merge" name="一键合并PR [NEW v94]"/>
+  </folder>
+  <folder name="Application" id="id-v94eld-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v94e-app-fe" name="taskFE [MODIFIED v94]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v94e-app-task" name="taskTaskService [MODIFIED v94]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v94e-app-go" name="taskGitOauth [MODIFIED v94]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v94eld-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v94e-pl-v93" name="Plateau v93"/>
+    <element xsi:type="archimate:Plateau" id="id-v94e-pl-v94" name="Plateau v94"/>
+    <element xsi:type="archimate:Gap" id="id-v94e-gap" name="Gap: PR 仅外链无回复"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v94e-wp" name="WP-pr-reply-merge-status"/>
+  </folder>
+  <folder name="Relations" id="id-v94eld-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v94e-rel-member-push" source="id-v94e-member" target="id-v94e-push"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v94e-rel-member-reply" source="id-v94e-member" target="id-v94e-reply"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v94e-rel-member-merge" source="id-v94e-member" target="id-v94e-merge"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v94e-rel-fe-push" source="id-v94e-app-fe" target="id-v94e-push"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v94e-rel-fe-reply" source="id-v94e-app-fe" target="id-v94e-reply"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v94e-rel-fe-merge" source="id-v94e-app-fe" target="id-v94e-merge"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v94e-rel-task-reply" source="id-v94e-app-task" target="id-v94e-reply"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v94e-rel-go-merge" source="id-v94e-app-go" target="id-v94e-merge"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v94e-rel-push-reply" source="id-v94e-push" target="id-v94e-reply" name="html_url"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v94e-rel-reply-merge" source="id-v94e-reply" target="id-v94e-merge" name="status"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v94e-rel-pl93-gap" source="id-v94e-pl-v93" target="id-v94e-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v94e-rel-wp-gap" source="id-v94e-wp" target="id-v94e-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v94e-rel-wp-pl94" source="id-v94e-wp" target="id-v94e-pl-v94"/>
+  </folder>
+  <folder name="Views" id="id-v94eld-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v94e-view-mig" name="架构变迁 v93→v94 — PR 回复合并">
+      <child xsi:type="archimate:DiagramObject" id="id-v94e-do-pl93" archimateElement="id-v94e-pl-v93">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94e-c-pl93-gap" source="id-v94e-do-pl93" target="id-v94e-do-gap" archimateRelationship="id-v94e-rel-pl93-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94e-do-gap" targetConnections="id-v94e-c-pl93-gap id-v94e-c-wp-gap" archimateElement="id-v94e-gap">
+        <bounds x="240" y="48" width="380" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94e-do-wp" archimateElement="id-v94e-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94e-c-wp-gap" source="id-v94e-do-wp" target="id-v94e-do-gap" archimateRelationship="id-v94e-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94e-c-wp-pl94" source="id-v94e-do-wp" target="id-v94e-do-pl94" archimateRelationship="id-v94e-rel-wp-pl94"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94e-do-pl94" targetConnections="id-v94e-c-wp-pl94" archimateElement="id-v94e-pl-v94">
+        <bounds x="560" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v94e-view-flow" name="v94 Target — 推送到一键合并">
+      <child xsi:type="archimate:DiagramObject" id="id-v94e-d-member" archimateElement="id-v94e-member">
+        <bounds x="48" y="48" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94e-c-member-push" source="id-v94e-d-member" target="id-v94e-d-push" archimateRelationship="id-v94e-rel-member-push"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94e-c-member-reply" source="id-v94e-d-member" target="id-v94e-d-reply" archimateRelationship="id-v94e-rel-member-reply"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94e-c-member-merge" source="id-v94e-d-member" target="id-v94e-d-merge" archimateRelationship="id-v94e-rel-member-merge"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94e-d-push" targetConnections="id-v94e-c-member-push id-v94e-c-fe-push" archimateElement="id-v94e-push">
+        <bounds x="220" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94e-c-push-reply" source="id-v94e-d-push" target="id-v94e-d-reply" archimateRelationship="id-v94e-rel-push-reply"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94e-d-reply" targetConnections="id-v94e-c-member-reply id-v94e-c-push-reply id-v94e-c-fe-reply id-v94e-c-task-reply" archimateElement="id-v94e-reply">
+        <bounds x="420" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94e-c-reply-merge" source="id-v94e-d-reply" target="id-v94e-d-merge" archimateRelationship="id-v94e-rel-reply-merge"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94e-d-merge" targetConnections="id-v94e-c-member-merge id-v94e-c-reply-merge id-v94e-c-fe-merge id-v94e-c-go-merge" archimateElement="id-v94e-merge">
+        <bounds x="620" y="48" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94e-d-fe" archimateElement="id-v94e-app-fe">
+        <bounds x="220" y="160" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94e-c-fe-push" source="id-v94e-d-fe" target="id-v94e-d-push" archimateRelationship="id-v94e-rel-fe-push"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94e-c-fe-reply" source="id-v94e-d-fe" target="id-v94e-d-reply" archimateRelationship="id-v94e-rel-fe-reply"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94e-c-fe-merge" source="id-v94e-d-fe" target="id-v94e-d-merge" archimateRelationship="id-v94e-rel-fe-merge"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94e-d-task" archimateElement="id-v94e-app-task">
+        <bounds x="420" y="160" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94e-c-task-reply" source="id-v94e-d-task" target="id-v94e-d-reply" archimateRelationship="id-v94e-rel-task-reply"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94e-d-go" archimateElement="id-v94e-app-go">
+        <bounds x="620" y="160" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94e-c-go-merge" source="id-v94e-d-go" target="id-v94e-d-merge" archimateRelationship="id-v94e-rel-go-merge"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

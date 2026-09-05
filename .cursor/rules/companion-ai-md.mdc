@@ -1,0 +1,39 @@
+---
+description: Monorepo 全局 Companion 规则 — 读取源文件时同步加载同名 .ai.md 与目录 ai.md
+alwaysApply: true
+---
+
+# Companion 规则伴读（Monorepo 全局）
+
+细则正文以仓库根 **`.ai/`** 为唯一 SSOT（`task2app/.ai` → `../.ai` 符号链接）。本规则适用于仓库根目录下**所有子项目**（含 `taskAuth/`、`runAll/`、`task2app/`、`go_relayToTrae/` 等）。`task2app/` 内另有完整规则加载见 `.cursor/rules/ai-rules-loader.mdc`；本文件确保 monorepo 任意路径的文件级/目录级 companion 不被遗漏。
+
+## 加载层级
+
+| 层级 | 触发条件 | 加载目标 |
+|------|----------|----------|
+| **文件级** | 读取或修改 `{path}` | 若存在 `{path}.ai.md`，**须与源文件一并读取** |
+| **目录级** | 读取或修改某目录下文件 | 若存在该目录 `ai.md`，须读取；并查看同目录 `.ai/` |
+| **跳过** | 目标已是 `*.ai.md`、`ai.md` 或 `.ai/` 内规则文件 | 不再递归查找 companion |
+
+**优先级**：`{filename}.ai.md` > 目录 `ai.md` > 目录 `.ai/` > 子项目全局规则（如 `.ai/`）。
+
+## 执行要求
+
+1. 使用 Read（或等价读文件手段）打开任意源文件前，先检查 `{filepath}.ai.md` 是否存在；若存在则**在同一轮工具调用中一并读取**。
+2. 进入新目录且尚未加载该目录 `ai.md` 时，应先读目录 `ai.md` 再读具体文件。
+3. 修改源文件时须严格遵循 companion 中的约束；冲突时：核心规则 > 最佳实践 > 风格指南；**文件级 > 目录级 > 全局**。
+
+## 示例
+
+| 读取目标 | 须一并读取（若存在） |
+|----------|----------------------|
+| `runAll.yaml` | `runAll.yaml.ai.md` |
+| `DESIGN.md` | `DESIGN.md.ai.md`（视觉 SSOT；技能 `.claude/skills/design-md`） |
+| `taskAuth/domain/foo.go` | `taskAuth/domain/foo.go.ai.md` |
+| `task2app/Saas_project/accounts/views.py` | `task2app/Saas_project/accounts/views.py.ai.md` |
+| `task2app/conf/port_config.json` | `task2app/conf/port_config.json.ai.md` |
+
+## 索引
+
+- `task2app` 完整 AI 规则：`.cursor/rules/trae-project-rules.mdc`、`.cursor/rules/ai-rules-loader.mdc`
+- 测试域速查：`task2app/测试.ai.md`

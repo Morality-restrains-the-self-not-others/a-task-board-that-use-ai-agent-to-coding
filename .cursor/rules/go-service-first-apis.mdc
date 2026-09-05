@@ -1,0 +1,27 @@
+---
+description: 新增服务与接口默认落 Go（扩展现有或新建）；Python/Django 为可审计例外
+globs:
+  - "task2app/Saas_project/**/urls.py"
+  - "task2app/Saas_project/**/views*.py"
+  - "db/api_route_ownership.yaml"
+  - "docs/architecture/**"
+alwaysApply: false
+---
+
+# 新增服务 / 接口优先落 Go（元规则）
+
+适用于整个 monorepo。详细条文见 `.ai/01_project_constraints/20_go_service_first_apis.md`。
+
+## 强制要求
+
+- **新增业务 HTTP/RPC 接口**或**新后端服务**时，默认落在 **Go** 进程。
+- 落点顺序：**① 扩展职责匹配的现有 Go 服务** → **② 新建 Go 服务** → **③ 仅当 Go 不可行且有书面理由时** 才在 Django/Flask 等 Python 进程新增接口。
+- 禁止以「先写 Django、以后再迁 Go」作为默认路径；未上线阶段应直接采用目标形态。
+- Go 落点须同时满足：单库/单表数据所有权（`.ai/01_project_constraints/19_single_service_data_ownership.md`）、Swagger 可见（本仓库 Swagger 元规则）、禁止业务进程内嵌 ticker（`.ai/01_project_constraints/51_no_service_internal_poll_loop.md`）。
+- 机器可读对照与 CI：`db/api_route_ownership.yaml`、`docs/architecture/api-route-to-owner.md`；`db/scripts/ci/check_django_new_api_routes.py` 禁止未批准的 Django 新增路由。存量迁出节奏见 `docs/superpowers/specs/2026-07-05-task2app-api-go-split-brainstorm-design.md`（不强制一次迁完）。
+
+## 推荐做法
+
+- 设计/Review 时先写「接口 → Go 服务 → 表 owner」对照，再编码。
+- 现有 Go 目录参考：`taskAuth`、`taskBill`、`taskCloudService`、`taskProjectService`、`taskTaskService`、`taskCredentialService`、`taskContainerGateway`、`taskEvents`、`taskAIEndPoint`、`taskAIComment`、`taskAgentSupport`、`go_relayToTrae`、`go_run_container` 等（以限界上下文为准，表非穷尽）。
+- 若设计仍新增 Python endpoint：遵循 brainstorming 技能中的「Python 新增接口清单与 Go 替代评估」门禁，并在设计文档记录例外理由与风险缓解。

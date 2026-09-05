@@ -1,0 +1,49 @@
+' @title: runAll 金丝雀平滑重启（企业景观）
+' @view: enterprise-landscape
+' @status: current
+' @version: 129
+' @iteration: runall-smooth-canary-restart
+' @author: cursor
+' @based_on: v128 (v128-enterprise-landscape-20260902-1410-cursor.puml)
+' @updated: 2026-09-03 00:50
+' @description: 运维在 9999 对托管服务做金丝雀平滑重启
+
+@startuml
+!include <archimate/Archimate>
+
+title 金丝雀平滑重启企业景观 — v129 (2026-09-03 00:40)
+
+rectangle "Business" {
+  Business_Actor(ops, "平台运维")
+  Business_Process(rst, "平滑重启托管栈")
+  note right of rst
+    金丝雀滚动，非整栈先停
+    @author: cursor @2026-09-03 00:40
+  end note
+}
+
+rectangle "Application" {
+  Application_Component(ui, "runAll Status")
+  Application_Component(orch, "runAll Runner")
+  Application_Component(svc, "业务 HTTP 服务")
+}
+
+rectangle "Technology" {
+  Technology_Node(host, "宿主机 SO_REUSEPORT")
+}
+
+Rel_Assignment(ops, rst)
+Rel_Flow(rst, ui, "点击按钮")
+Rel_Flow(ui, orch, "API")
+Rel_Flow(orch, svc, "canary")
+Rel_Serving(host, svc, "同端口双 listen")
+
+Implementation_Plateau(p128, "Plateau v128")
+Implementation_Plateau(p129, "Plateau v129")
+Implementation_Gap(gap, "Gap: 整栈空窗")
+Implementation_WorkPackage(wp, "WP-runall-smooth-canary-restart")
+Rel_Triggering(p128, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p129, "delivers")
+
+@enduml

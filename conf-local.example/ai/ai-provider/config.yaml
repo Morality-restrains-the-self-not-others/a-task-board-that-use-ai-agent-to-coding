@@ -1,0 +1,9 @@
+vendorDocs:
+  cos:
+    secretId: ''
+    secretKey: ''
+    corsAllowedOrigins:
+    - ''
+    - ''
+    - ''
+  backend: ''

@@ -1,0 +1,53 @@
+' @title: Application Integration — 闲置复用启动保护与孤儿交叉校验
+' @view: application-integration
+' @status: target
+' @version: 50
+' @author: claude
+' @based_on: v48 current
+' @updated: 2026-07-22 18:15
+' @description: idle reuse 需 idle_since；orphan 删除前 cross-CSC 持有校验
+' @iteration: idle-reuse-boot-guard-orphan-cross-check
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v50 — Idle Reuse Boot Guard + Orphan Cross-Check (2026-07-22 18:15)
+
+legend right
+  | <#LightYellow> </> | 🟡 [MODIFIED] v50 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+rectangle "Motivation" {
+  Motivation_Constraint(goFirst, "Constraint\n变更落 Go taskCloudService")
+  Motivation_Principle(bootSafe, "Principle\n启动中不可当闲置复用")
+  Motivation_Principle(noCrossKill, "Principle\n他任务持有实例不可孤儿删除")
+}
+
+rectangle "Application" {
+  Application_Component(tts, "taskTaskService\nauto_run → start-vm-auto")
+  Application_Component(tcs, "🟡 taskCloudService\nidle boot-guard + orphan cross-check")
+  Application_DataObject(csc, "🟡 cloud_server_configs\nidle_since 门闩")
+  Application_DataObject(policy, "workspace_machine_policies\nprefer_idle_reuse")
+}
+
+rectangle "Technology" {
+  Technology_Node(ecs, "Aliyun ECS\nInstanceName=task-{id}")
+}
+
+note right of tcs
+  [MODIFIED v50]
+  A: reuse 候选须 idle_since + 非 Starting
+  C: orphan 删除前 workspace owned 集合
+  @author: claude @2026-07-22 18:15
+end note
+
+Rel_Flow(tts, tcs, "start-vm-auto")
+Rel_Access_R(tcs, csc, "R/W bind/unbind")
+Rel_Access_R(tcs, policy, "R prefer_idle_reuse")
+Rel_Flow(tcs, ecs, "Describe/Delete orphan")
+Rel_Influence(goFirst, tcs, "落点")
+Rel_Influence(bootSafe, tcs, "A")
+Rel_Influence(noCrossKill, tcs, "C")
+
+@enduml

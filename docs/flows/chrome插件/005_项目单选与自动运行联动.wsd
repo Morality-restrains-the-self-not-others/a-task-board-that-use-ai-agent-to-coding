@@ -1,0 +1,21 @@
+@startuml
+title Chrome插件-项目单选与自动运行联动
+|普通用户|
+start
+:打开浮窗或 DevTools 并选择工作空间;
+:GET 工作空间项目列表;
+:单选一个项目;
+note right
+  radio，无全选
+end note
+if (所选项目 default_auto_run 为 true?) then (是)
+  :启用「是否自动运行」并默认勾选;
+else (否或未选)
+  :禁用并取消勾选自动运行;
+endif
+note right
+  测试：taskChromePlugin/test/project-auto-run-label.test.js
+  意图：frontend/task_chrome_plugin_project_single_select_auto_run
+end note
+stop
+@enduml

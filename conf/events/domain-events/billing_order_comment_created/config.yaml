@@ -1,0 +1,7 @@
+intents:
+  1_notify_other_side:
+    host: 0.0.0.0
+    port: 18061
+    groupId: task-events-billing-order-comment-created-1-notify-other-side
+    events:
+    - BILLING_ORDER_COMMENT_CREATED

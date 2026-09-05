@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="v30 Shipped — tenant-gitlab-oauth-connection" id="id-v30-model">
+  <folder name="Motivation" id="id-v30-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="Constraint 每租户最多1个自建 GitLab App" id="id-v30-c-tenant"/>
+    <element xsi:type="archimate:Constraint" name="Constraint Go-first 零新增 Python 公网" id="id-v30-c-go"/>
+  </folder>
+  <folder name="Application" id="id-v30-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue settings/gitlab-connection" id="id-v30-vue-admin"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue git-site-oauth" id="id-v30-vue-member"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v30-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskGitOauth CRUD+resolve" id="id-v30-go"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 saas-backend providers merge" id="id-v30-django"/>
+    <element xsi:type="archimate:DataObject" name="🟢 tenant_gitlab_oauth_connections" id="id-v30-conn"/>
+    <element xsi:type="archimate:DataObject" name="api_gitoauthappusercredential" id="id-v30-cred"/>
+  </folder>
+  <folder name="Technology" id="id-v30-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="db/git-oauth" id="id-v30-sqlite"/>
+    <element xsi:type="archimate:Node" name="🟢 Tenant self-hosted GitLab" id="id-v30-gl"/>
+    <element xsi:type="archimate:Node" name="Kafka" id="id-v30-kafka"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v30-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v29 — taskGitOauth" id="id-v30-plat29"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v30 — tenant-gitlab-oauth" id="id-v30-plat30"/>
+    <element xsi:type="archimate:Gap" name="Gap: 无租户自建 GitLab OAuth App 配置" id="id-v30-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v30-tenant-gitlab-oauth-connection" id="id-v30-wp"/>
+  </folder>
+  <folder name="Relations" id="id-v30-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v30-flow-admin-gw" source="id-v30-vue-admin" target="id-v30-gw" name="CRUD"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v30-flow-member-gw" source="id-v30-vue-member" target="id-v30-gw" name="providers+oauth"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v30-flow-gw-go" source="id-v30-gw" target="id-v30-go" name="tenant/oauth"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v30-flow-gw-dj" source="id-v30-gw" target="id-v30-django" name="providers"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v30-flow-dj-go" source="id-v30-django" target="id-v30-go" name="internal resolve"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v30-acc-go-conn" source="id-v30-go" target="id-v30-conn" name="W"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v30-acc-go-cred" source="id-v30-go" target="id-v30-cred" name="W bind"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v30-flow-go-gl" source="id-v30-go" target="id-v30-gl" name="authorize/token"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v30-flow-go-kafka" source="id-v30-go" target="id-v30-kafka" name="events"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v30-inf-tenant" source="id-v30-c-tenant" target="id-v30-go"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v30-inf-go" source="id-v30-c-go" target="id-v30-go"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v30-rel-plat29-gap" source="id-v30-plat29" target="id-v30-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v30-rel-wp-gap" source="id-v30-wp" target="id-v30-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v30-rel-wp-plat30" source="id-v30-wp" target="id-v30-plat30"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v30-rel-plat30-go" source="id-v30-plat30" target="id-v30-go"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v30-srv-sqlite-conn" source="id-v30-sqlite" target="id-v30-conn"/>
+  </folder>
+  <folder name="Views" id="id-v30-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v29→v30 — tenant-gitlab-oauth" id="id-v30-view-mig">
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-plat29" archimateElement="id-v30-plat29">
+        <bounds x="40" y="100" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-conn-plat29-gap" source="id-v30-do-plat29" target="id-v30-do-gap" archimateRelationship="id-v30-rel-plat29-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-gap" archimateElement="id-v30-gap" targetConnections="id-v30-conn-plat29-gap id-v30-conn-wp-gap">
+        <bounds x="360" y="100" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-wp" archimateElement="id-v30-wp">
+        <bounds x="760" y="60" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-conn-wp-gap" source="id-v30-do-wp" target="id-v30-do-gap" archimateRelationship="id-v30-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-conn-wp-plat30" source="id-v30-do-wp" target="id-v30-do-plat30" archimateRelationship="id-v30-rel-wp-plat30"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-plat30" archimateElement="id-v30-plat30" targetConnections="id-v30-conn-wp-plat30">
+        <bounds x="760" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-conn-plat30-go" source="id-v30-do-plat30" target="id-v30-do-go-m" archimateRelationship="id-v30-rel-plat30-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-go-m" archimateElement="id-v30-go" targetConnections="id-v30-conn-plat30-go">
+        <bounds x="760" y="250" width="320" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v30 Target — 租户 GitLab OAuth 连接数据流" id="id-v30-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-va" archimateElement="id-v30-vue-admin">
+        <bounds x="40" y="40" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-c-va-gw" source="id-v30-do-va" target="id-v30-do-gw" archimateRelationship="id-v30-flow-admin-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-vm" archimateElement="id-v30-vue-member">
+        <bounds x="40" y="120" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-c-vm-gw" source="id-v30-do-vm" target="id-v30-do-gw" archimateRelationship="id-v30-flow-member-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-gw" archimateElement="id-v30-gw" targetConnections="id-v30-c-va-gw id-v30-c-vm-gw">
+        <bounds x="240" y="80" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-c-gw-go" source="id-v30-do-gw" target="id-v30-do-go" archimateRelationship="id-v30-flow-gw-go"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-c-gw-dj" source="id-v30-do-gw" target="id-v30-do-dj" archimateRelationship="id-v30-flow-gw-dj"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-dj" archimateElement="id-v30-django" targetConnections="id-v30-c-gw-dj">
+        <bounds x="400" y="20" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-c-dj-go" source="id-v30-do-dj" target="id-v30-do-go" archimateRelationship="id-v30-flow-dj-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-go" archimateElement="id-v30-go" targetConnections="id-v30-c-gw-go id-v30-c-dj-go id-v30-c-inf-t id-v30-c-inf-g">
+        <bounds x="400" y="100" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-c-go-conn" source="id-v30-do-go" target="id-v30-do-conn" archimateRelationship="id-v30-acc-go-conn"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-c-go-cred" source="id-v30-do-go" target="id-v30-do-cred" archimateRelationship="id-v30-acc-go-cred"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-c-go-gl" source="id-v30-do-go" target="id-v30-do-gl" archimateRelationship="id-v30-flow-go-gl"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-c-go-k" source="id-v30-do-go" target="id-v30-do-k" archimateRelationship="id-v30-flow-go-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-conn" archimateElement="id-v30-conn" targetConnections="id-v30-c-go-conn id-v30-c-sql-conn">
+        <bounds x="640" y="40" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-cred" archimateElement="id-v30-cred" targetConnections="id-v30-c-go-cred">
+        <bounds x="640" y="120" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-gl" archimateElement="id-v30-gl" targetConnections="id-v30-c-go-gl">
+        <bounds x="640" y="200" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-k" archimateElement="id-v30-kafka" targetConnections="id-v30-c-go-k">
+        <bounds x="640" y="280" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-sql" archimateElement="id-v30-sqlite">
+        <bounds x="880" y="40" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-c-sql-conn" source="id-v30-do-sql" target="id-v30-do-conn" archimateRelationship="id-v30-srv-sqlite-conn"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-ct" archimateElement="id-v30-c-tenant">
+        <bounds x="40" y="280" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-c-inf-t" source="id-v30-do-ct" target="id-v30-do-go" archimateRelationship="id-v30-inf-tenant"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v30-do-cg" archimateElement="id-v30-c-go">
+        <bounds x="40" y="350" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v30-c-inf-g" source="id-v30-do-cg" target="id-v30-do-go" archimateRelationship="id-v30-inf-go"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

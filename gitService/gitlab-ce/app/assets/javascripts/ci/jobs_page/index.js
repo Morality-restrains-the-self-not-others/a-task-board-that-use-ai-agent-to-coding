@@ -1,0 +1,39 @@
+import { GlToast } from '@gitlab/ui';
+import Vue from 'vue';
+import VueApollo from 'vue-apollo';
+import JobsTableApp from '~/ci/jobs_page/jobs_page_app.vue';
+import createDefaultClient from '~/lib/graphql';
+import { parseBoolean } from '~/lib/utils/common_utils';
+
+Vue.use(VueApollo);
+Vue.use(GlToast);
+
+const apolloProvider = new VueApollo({
+  defaultClient: createDefaultClient(),
+});
+
+export default (containerId = 'js-jobs-table') => {
+  const containerEl = document.getElementById(containerId);
+
+  if (!containerEl) {
+    return false;
+  }
+
+  const { fullPath, jobStatuses, pipelineEditorPath, admin, projectId } = containerEl.dataset;
+
+  return new Vue({
+    el: containerEl,
+    name: 'JobsTableAppRoot',
+    apolloProvider,
+    provide: {
+      fullPath,
+      pipelineEditorPath,
+      jobStatuses: JSON.parse(jobStatuses),
+      admin: parseBoolean(admin),
+      projectId,
+    },
+    render(createElement) {
+      return createElement(JobsTableApp);
+    },
+  });
+};

@@ -1,0 +1,75 @@
+' @title: 评论启动日志 COS 归档（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 114
+' @iteration: ccb-startup-logs-cos-archive
+' @author: cursor
+' @based_on: v113 (v113-application-integration-20260826-1550-cursor.puml)
+' @updated: 2026-08-27 02:00
+' @description: CCB 启动日志分片热写 + COS startup_logs.json 双写；list union hydrate
+
+@startuml
+!include <archimate/Archimate>
+
+title v114 Target — 启动日志 COS 归档 2026-08-27 02:00
+
+legend right
+  | <#LightGreen>  </> | [NEW] v114 |
+  | <#LightYellow> </> | [MODIFIED] v114 |
+endlegend
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  [MODIFIED v114] 管理页 startupLogsPathRule
+  工作台启动日志契约不变
+  @author: cursor @2026-08-27 02:00
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(cloud, "taskCloudService")
+note right of cloud
+  [MODIFIED v114] insert 后 COS merge
+  list union 分片+对象
+  @author: cursor @2026-08-27 02:00
+end note
+
+Application_DataObject(shards, "cloud_comment_container_binding_logs_NN")
+note right of shards
+  [UNCHANGED] ADR-0023 热 append
+end note
+
+Application_DataObject(ptr, "cloud_comment_startup_log_object")
+note right of ptr
+  [NEW v114] 每评论一行指针
+  @author: cursor @2026-08-27 02:00
+end note
+
+Technology_Node(cos, "Tencent COS")
+note right of cos
+  [MODIFIED v114] startup_logs.json
+  共用 step_full bucket
+  @author: cursor @2026-08-27 02:00
+end note
+
+Business_Event(evArch, "CommentStartupLogArchived")
+note right of evArch
+  [NEW v114] publish-only
+  @author: cursor @2026-08-27 02:00
+end note
+
+Rel_Flow(taskFE, gw, "bindings list / admin COS")
+Rel_Flow(gw, cloud, "comment-container-bindings")
+Rel_Access(cloud, shards, "INSERT/SELECT")
+Rel_Access(cloud, ptr, "UPSERT/SELECT")
+Rel_Flow(cloud, cos, "Put/Get startup_logs.json")
+Rel_Flow(cloud, evArch, "archive ok")
+
+Implementation_Plateau(plateauV113, "Plateau v113 启动日志仅分片")
+Implementation_Plateau(plateauV114, "Plateau v114 分片+COS")
+Implementation_Gap(gapLogs, "Gap: 启动日志不在 COS，裁剪后冷打开丢失")
+Implementation_WorkPackage(wpLogs, "WP-ccb-startup-logs-cos-archive")
+Rel_Triggering(plateauV113, gapLogs, "identifies")
+Rel_Realization(wpLogs, gapLogs, "closes")
+Rel_Realization(wpLogs, plateauV114, "delivers")
+
+@enduml

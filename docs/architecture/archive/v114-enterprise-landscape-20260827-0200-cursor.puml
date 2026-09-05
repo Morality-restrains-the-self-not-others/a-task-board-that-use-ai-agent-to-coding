@@ -1,0 +1,54 @@
+' @title: 评论启动日志 COS 归档（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 114
+' @iteration: ccb-startup-logs-cos-archive
+' @author: cursor
+' @based_on: v113 (v113-enterprise-landscape-20260826-1550-cursor.puml)
+' @updated: 2026-08-27 02:00
+' @description: 用户查看启动日志；Cloud 热写分片并归档 COS
+
+@startuml
+!include <archimate/Archimate>
+
+title v114 — 企业景观 启动日志 COS 2026-08-27 02:00
+
+legend right
+  | <#LightGreen>  </> | [NEW] v114 |
+  | <#LightYellow> </> | [MODIFIED] v114 |
+endlegend
+
+Business_Actor(user, "工作台用户")
+Business_Process(start, "启动评论容器")
+Business_Process(view, "查看启动日志")
+note right of view
+  [MODIFIED v114] 刷新后仍完整
+  @author: cursor @2026-08-27 02:00
+end note
+Business_Process(archive, "归档启动日志到 COS")
+note right of archive
+  [NEW v114]
+  @author: cursor @2026-08-27 02:00
+end note
+
+Application_Component(fe, "taskFE 工作台")
+Application_Component(cloud, "taskCloudService")
+Technology_Node(cos, "Tencent COS")
+
+Rel_Assignment(user, start)
+Rel_Assignment(user, view)
+Rel_Flow(user, fe, "工作台云端开发")
+Rel_Flow(fe, cloud, "bindings")
+Rel_Flow(cloud, archive, "best-effort Put")
+Rel_Flow(archive, cos, "startup_logs.json")
+Rel_Flow(cloud, view, "logs[]")
+
+Implementation_Plateau(p113, "Plateau v113")
+Implementation_Plateau(p114, "Plateau v114")
+Implementation_Gap(g, "Gap: 启动日志未进 COS")
+Implementation_WorkPackage(wp, "WP-ccb-startup-logs-cos-archive")
+Rel_Triggering(p113, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p114, "delivers")
+
+@enduml

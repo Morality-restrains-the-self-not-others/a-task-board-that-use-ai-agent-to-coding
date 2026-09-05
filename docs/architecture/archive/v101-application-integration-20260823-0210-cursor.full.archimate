@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v101 全量 (post-change)" id="id-v101aifull01">
+  <folder name="Application" id="id-v101aif-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v101f-app-runall" name="runAll Status UI :9999 [MODIFIED v101]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v101f-app-svc" name="托管业务服务 [MODIFIED v101]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v101f-app-gw" name="APISIX taskGateway"/>
+  </folder>
+  <folder name="Technology" id="id-v101aif-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v101f-tech-kernel" name="Linux session/pgid [NEW v101]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v101aif-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v101f-pl-v100" name="Plateau v100"/>
+    <element xsi:type="archimate:Plateau" id="id-v101f-pl-v101" name="Plateau v101"/>
+    <element xsi:type="archimate:Gap" id="id-v101f-gap" name="Gap: runAll 退出级联停栈"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v101f-wp" name="WP-runall-orchestrator-independence"/>
+  </folder>
+  <folder name="Relations" id="id-v101aif-rel" type="relations">
+    <element xsi:type="archimate:ServingRelationship" id="id-v101f-rel-ra-svc" source="id-v101f-app-runall" target="id-v101f-app-svc" name="start/stop/adopt"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v101f-rel-ra-stop" source="id-v101f-app-runall" target="id-v101f-app-svc" name="显式 stop-all 才 SIGTERM"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v101f-rel-kern-svc" source="id-v101f-tech-kernel" target="id-v101f-app-svc" name="独立 sid"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v101f-rel-gw-svc" source="id-v101f-app-gw" target="id-v101f-app-svc" name="业务流量不经 9999"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v101f-rel-pl100-gap" source="id-v101f-pl-v100" target="id-v101f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v101f-rel-wp-gap" source="id-v101f-wp" target="id-v101f-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v101f-rel-wp-pl101" source="id-v101f-wp" target="id-v101f-pl-v101"/>
+  </folder>
+  <folder name="Views" id="id-v101aif-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v101f-view-mig" name="架构变迁 v100→v101 — runall-orchestrator-independence">
+      <child xsi:type="archimate:DiagramObject" id="id-v101f-do-pl100" archimateElement="id-v101f-pl-v100">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101f-c-pl100-gap" source="id-v101f-do-pl100" target="id-v101f-do-gap" archimateRelationship="id-v101f-rel-pl100-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v101f-do-gap" targetConnections="id-v101f-c-pl100-gap id-v101f-c-wp-gap" archimateElement="id-v101f-gap">
+        <bounds x="240" y="48" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v101f-do-wp" archimateElement="id-v101f-wp">
+        <bounds x="240" y="160" width="360" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101f-c-wp-gap" source="id-v101f-do-wp" target="id-v101f-do-gap" archimateRelationship="id-v101f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101f-c-wp-pl101" source="id-v101f-do-wp" target="id-v101f-do-pl101" archimateRelationship="id-v101f-rel-wp-pl101"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v101f-do-pl101" targetConnections="id-v101f-c-wp-pl101" archimateElement="id-v101f-pl-v101">
+        <bounds x="640" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v101f-view-topo" name="v101 全量拓扑 — 编排器独立于业务面">
+      <child xsi:type="archimate:DiagramObject" id="id-v101f-d-ra" archimateElement="id-v101f-app-runall">
+        <bounds x="48" y="48" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101f-c-ra-svc" source="id-v101f-d-ra" target="id-v101f-d-svc" archimateRelationship="id-v101f-rel-ra-svc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101f-c-ra-stop" source="id-v101f-d-ra" target="id-v101f-d-svc" archimateRelationship="id-v101f-rel-ra-stop"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v101f-d-svc" targetConnections="id-v101f-c-ra-svc id-v101f-c-ra-stop id-v101f-c-kern-svc id-v101f-c-gw-svc" archimateElement="id-v101f-app-svc">
+        <bounds x="320" y="48" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v101f-d-gw" archimateElement="id-v101f-app-gw">
+        <bounds x="48" y="160" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101f-c-gw-svc" source="id-v101f-d-gw" target="id-v101f-d-svc" archimateRelationship="id-v101f-rel-gw-svc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v101f-d-kern" archimateElement="id-v101f-tech-kernel">
+        <bounds x="320" y="160" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101f-c-kern-svc" source="id-v101f-d-kern" target="id-v101f-d-svc" archimateRelationship="id-v101f-rel-kern-svc"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

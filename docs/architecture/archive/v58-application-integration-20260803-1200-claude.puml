@@ -1,0 +1,181 @@
+' @title: Django 完全退役 — 纯 Go 微服务 Application Integration (v58: 邮箱邀请增强)
+' @view: application-integration
+' @status: target
+' @version: 58
+' @iteration: email-invite-enhancement
+' @author: claude
+' @based_on: v57 (v57-application-integration-20260730-0229-claude.puml)
+' @updated: 2026-08-03 12:00
+' @description: v57 基础上增强邮箱邀请系统 — taskAuth 新增 invite_reason/account_expires_at/assigned_role 字段，列表返回邀请人姓名
+
+@startuml
+!include <archimate/Archimate>
+
+title v58 Application Integration — 邮箱邀请增强 (Target, 2026-08-03 12:00)
+
+' ═══════════════════════════════════════
+' Change Legend — v58 变更图例
+' ═══════════════════════════════════════
+legend right
+  |<#LightGreen>  </>| 🟢 [CURRENT] — Go 微服务 |
+  |<#LightYellow> </>| 🟡 [MODIFIED v58] — taskAuth 邮箱邀请增强 |
+  |<#LightGray>  </>| 基础设施 — Kafka / DB |
+  |<#LightPink>   </>| 🔴 [REMOVED v57] — Django 已退役 |
+endlegend
+
+' ═══════════════════════════════════════
+' v58 Target — 邮箱邀请增强
+' ═══════════════════════════════════════
+
+' --- Go Services ---
+Application_Component(taskAuth, "taskAuth\n(:8003)")
+note right of taskAuth
+  [MODIFIED v58]
+  email invite 增强:
+  + invite_reason (邀请原因)
+  + account_expires_at (账号有效期)
+  + assigned_role (预设角色)
+  + GET list 返回 inviterName
+end note
+
+Application_Component(taskGitOauth, "taskGitOauth\n(:8002)")
+note right of taskGitOauth
+  [CURRENT v57]
+  git identities store,
+  GitHub/GitLab OAuth flow
+end note
+
+Application_Component(taskTenant, "taskTenantService\n(:8020)")
+note right of taskTenant
+  [CURRENT v57]
+  companies, members,
+  groups, tenant-options,
+  workspace-access
+end note
+
+Application_Component(taskProject, "taskProjectService\n(:8016)")
+note right of taskProject
+  [CURRENT v57]
+  projects CRUD,
+  deliverable/progress systems,
+  workspace ACL, GitLab 集成
+end note
+
+Application_Component(taskTask, "taskTaskService\n(:8021)")
+note right of taskTask
+  [CURRENT v57]
+  todos CRUD,
+  task field validation
+end note
+
+Application_Component(taskAIComment, "taskAIComment\n(:8022)")
+note right of taskAIComment
+  [CURRENT v57]
+  comment import 直写
+end note
+
+Application_Component(taskCloud, "taskCloudService\n(:8018)")
+note right of taskCloud
+  [CURRENT v57]
+  cloud platforms,
+  VPC/VSwitch/SG/images,
+  regions/zones/bandwidth,
+  aliyun OAuth 完整闭环,
+  server-userdata-verify,
+  repo-reclone,
+  feature-params 全量
+end note
+
+Application_Component(taskBill, "taskBill\n(:8004)")
+note right of taskBill
+  [CURRENT v57]
+  APISIX 直连 (无代理),
+  订阅/支付回调,
+  product-pricing, refund
+end note
+
+Application_Component(taskEvents, "taskEvents\n(:8023)")
+note right of taskEvents
+  [CURRENT v57]
+  16 intent consumers
+  (Kafka → Go 直消费),
+  SSE realtime dispatch
+end note
+
+' --- Kafka Consumers ---
+Application_Component(kafkaConsumers, "Kafka Consumers (Go)\n16 intent handlers")
+note right of kafkaConsumers
+  [CURRENT v57]
+  company-by-creator → taskTenant
+  create-company → taskTenant
+  upsert-user-profile → taskAuth
+  set-default-deliverable → taskProject
+  set-default-progress → taskProject
+  create-default-workspace → taskProject
+  handle-workspace-created → taskProject
+  create-access-key-iam → taskCloud
+  latest-pending-start-event → taskCloud
+  update-cloud-server-event-status → taskCloud
+  update-cloud-server-event-data → taskCloud
+  init-tenant-feature-params → taskCloud
+  grant-initial-resources → taskCloud
+  mark-user-tenant → taskTenant
+  realtime/dispatch → taskEvents
+end note
+
+' --- APISIX Gateway ---
+Application_Component(gateway, "APISIX Gateway\n(:18081)")
+
+' --- Infrastructure ---
+Application_DataObject(kafkaBroker, "Kafka\nDomain Events Bus")
+Application_DataObject(taskAuthDB, "taskAuth DB")
+Application_DataObject(taskGitOauthDB, "taskGitOauth DB")
+Application_DataObject(taskTenantDB, "taskTenant DB")
+Application_DataObject(taskProjectDB, "taskProject DB")
+Application_DataObject(taskTaskDB, "taskTask DB")
+Application_DataObject(taskCloudDB, "taskCloud DB")
+Application_DataObject(taskBillDB, "taskBill DB")
+
+' ═══════════════════════════════════════
+' REMOVED — Django (no longer present)
+' ═══════════════════════════════════════
+Application_Component(djangoRemoved, "Django saas-backend\n[REMOVED v57] — task2app/ 待删除")
+note bottom of djangoRemoved
+  [REMOVED v57]
+  runAll.yaml 已注释
+  所有 depends_on 已清理
+  DB registry 已标记 retired
+end note
+
+' ═══════════════════════════════════════
+' Relationships — v58 Data Flows
+' ═══════════════════════════════════════
+
+' Gateway routing (all Go, zero Django upstream)
+Rel_Flow(gateway, taskAuth, "/api/auth/*, /api/accounts/*")
+Rel_Flow(gateway, taskGitOauth, "/api/accounts/*/oauth/*")
+Rel_Flow(gateway, taskTenant, "/api/tenant/*/companies/*")
+Rel_Flow(gateway, taskProject, "/api/tenant/*/projects/*")
+Rel_Flow(gateway, taskTask, "/api/tenant/*/todos/*, /api/tasks/*")
+Rel_Flow(gateway, taskAIComment, "/api/tenant/*/ai-comments/*")
+Rel_Flow(gateway, taskCloud, "/api/tenant/*/cloud/*, /api/system-admin/*")
+Rel_Flow(gateway, taskBill, "/api/billing/*, /api/system-admin/resource-pricing/*")
+
+' Kafka event consumers
+Rel_Flow(kafkaBroker, kafkaConsumers, "consume domain events")
+Rel_Flow(kafkaConsumers, taskTenant, "company/user events")
+Rel_Flow(kafkaConsumers, taskAuth, "user profile events")
+Rel_Flow(kafkaConsumers, taskProject, "workspace/deliverable events")
+Rel_Flow(kafkaConsumers, taskCloud, "cloud/IAM/feature-params events")
+Rel_Flow(kafkaConsumers, taskEvents, "SSE dispatch")
+
+' Service data ownership
+Rel_Access_w(taskAuth, taskAuthDB, "users, profiles, sessions, email-invites")
+Rel_Access_w(taskGitOauth, taskGitOauthDB, "git identities, OAuth tokens")
+Rel_Access_w(taskTenant, taskTenantDB, "companies, members, groups")
+Rel_Access_w(taskProject, taskProjectDB, "projects, workspaces, ACL")
+Rel_Access_w(taskTask, taskTaskDB, "todos, task fields")
+Rel_Access_w(taskCloud, taskCloudDB, "platforms, VPCs, images, CSC")
+Rel_Access_w(taskBill, taskBillDB, "billing, subscriptions, pricing")
+
+@enduml

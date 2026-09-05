@@ -1,0 +1,6 @@
+# applyFaqPlaceholders.test.js
+
+- **目标**：FAQ markdown 中的 `{{contactEmail}}` 必须替换为 conf `vue.contactEmail` 注入值；缺配置时不得静默留下占位符或编造邮箱。
+- **关键断言**：多处占位符全部替换；无占位符则原文返回；占位符存在且邮箱为空/空白则抛错。
+- **破坏信号**：`?? 'author@example.com'` 一类静默兜底；只替换第一处；缺配置仍渲染 `{{contactEmail}}`。
+- **回归**：改 `applyFaqPlaceholders.js` / FAQ 占位符约定后跑本文件。

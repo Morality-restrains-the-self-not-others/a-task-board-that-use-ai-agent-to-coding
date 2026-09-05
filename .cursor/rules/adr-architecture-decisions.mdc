@@ -1,0 +1,128 @@
+---
+description: ADR 架构决策记录元规则 — 凡架构层面决策必须写入 docs/adr/ 作为 Architecture Decision Record
+globs: "**/*"
+alwaysApply: true
+---
+
+# ADR 架构决策记录元规则
+
+适用于整个 monorepo 的所有架构决策。本规则是**元规则**，优先级高于各语言局部惯例。违反此规则的架构决策视为未完成。
+
+## 核心原则
+
+**凡涉及架构层面的决策，必须在 `docs/adr/` 目录中创建对应的 Architecture Decision Record (ADR)，记录决策的上下文、方案、权衡和后果。**
+
+## 触发条件（必须创建 ADR 的场景）
+
+以下任一场景发生时，**必须**创建 ADR：
+
+| 场景 | 示例 |
+|------|------|
+| 新技术栈/框架/第三方服务选型 | 选择 Kafka 替代 Redis 做消息队列；引入 APISIX 作为网关 |
+| 新架构模式引入 | 采用事件驱动架构、CQRS、端口-适配器模式 |
+| 重要设计约束/编码规范制定 | 所有 ID 使用 Snowflake；ORM 优先禁止裸 SQL |
+| 拒绝显而易见的方案 | 为什么不用 Django REST framework 而用 Go 自建 |
+| 基础设施重大变更 | 消息队列从 Redis 迁移到 Kafka |
+| 跨服务协议/数据格式约定 | ID 字段字符串传输规范 |
+| 安全策略或合规架构 | KYC 数据隔离策略 |
+| 数据库 Schema 全局约定 | Snowflake 主键、禁止外键、动态外键双字段 |
+| 服务拆分/合并决策 | 从 Django 单体拆出 taskAuth |
+
+以下场景**不需要** ADR：
+- 常规功能开发（无架构层面影响）
+- Bug 修复
+- 小规模重构（不改变架构边界）
+- 已在现有 `.cursor/rules/*.mdc` 或 `.ai/` 规范中明确定义的模式
+
+## ADR 格式（强制）
+
+所有 ADR 必须放置在 `docs/adr/`，遵循以下结构（使用 `docs/adr/template.md`）：
+
+```markdown
+# ADR-NNNN: [决策标题]
+
+- **Status:** proposed | accepted | deprecated | superseded
+- **Date:** YYYY-MM-DD
+...
+
+## Context
+[架构问题、驱动力、约束]
+
+## Decision
+[We will... 清晰陈述决策]
+
+## Alternatives Considered
+[候选方案及拒绝原因]
+
+## Consequences
+[正面/负面后果及缓解措施]
+```
+
+## 文件命名规范
+
+```
+docs/adr/NNNN-title-in-kebab-case.md
+```
+
+- `NNNN` — 4 位递增序号（从 `0001` 开始）
+- `title` — 简短英文标题，全小写，连字符分隔
+- 序号通过查看 `docs/adr/` 目录下已有 ADR 的最大编号 + 1 确定
+
+## ADR 生命周期
+
+```
+proposed → accepted → (deprecated | superseded)
+```
+
+- **proposed** — 提案阶段，正在讨论
+- **accepted** — 已接受并正在实施
+- **deprecated** — 不再适用（但未被新决策取代）
+- **superseded** — 被新的 ADR 取代（必须在文档中注明 `**Superseded by:** ADR-NNNN`）
+
+## 存量决策回溯
+
+本规则生效**之前**已做出的重要架构决策，应在触及相关代码或下次架构评审时**回溯补写** ADR。优先补写的存量决策包括：
+
+- Snowflake ID 生成（`.ai/01_project_constraints/35_snowflake_id_generation.md`）
+- 消息队列 Redis → Kafka 迁移（`.ai/01_project_constraints/` 中相关规范）
+- 单库单表单服务数据所有权（`.ai/01_project_constraints/19_single_service_data_ownership.md`）
+- ORM 优先使用（`.ai/01_project_constraints/37_orm_priority_over_raw_sql.md`）
+- 外键禁止 + 动态外键双字段（`.ai/01_project_constraints/` 中相关规范）
+
+> **回溯策略**：不必一次性全部补完。触及相关代码做修改时，若该决策尚无 ADR，须在修改的同时创建 ADR（记录决策本身，而非修改细节）。
+
+## Commit Message 格式
+
+创建或修改 ADR 的 commit 应遵循：
+
+```
+docs(adr): add ADR-NNNN - <决策标题>
+
+<简述决策内容和原因>
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+## Code Review 门禁
+
+当 PR 涉及以下变更时，Reviewer 必须检查是否附带 ADR：
+1. 新增第三方依赖（Go `go.mod` 新 module / Python `requirements.txt` 新包）
+2. 新增服务或服务间通信方式
+3. 数据库 Schema 全局性变更
+4. API 协议/格式的跨服务约定
+5. 基础设施组件替换或新增
+
+若无对应 ADR，Reviewer 应要求作者补充或说明为何该变更不需要 ADR。
+
+## 与其他元规则的关系
+
+本规则与以下元规则互补：
+- **[[fix-one-search-all-meta-rule]]** — 发现架构问题时，搜索同类问题后一并创建 ADR 记录
+- **[[database-connection-pool-meta-rule]]** — 连接池规范本身是架构决策，应有一条 ADR
+- **`.cursor/rules/archimate-architecture-artifacts.mdc`** — ArchiMate 图是 ADR 的可视化补充，两者可互相引用
+
+## 例外（需在 commit message 中说明理由）
+
+- `No-ADR: covered by existing rule <rule-file>` — 该决策已在既有规范文件中充分定义
+- `No-ADR: trivial tech choice, no architectural impact` — 纯工具性选择，无架构影响
+- `No-ADR: revert-only change` — 纯回退操作

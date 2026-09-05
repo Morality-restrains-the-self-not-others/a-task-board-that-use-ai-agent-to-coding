@@ -1,0 +1,23 @@
+# TaskDetail.start-vm-auto-authorization.playwright.test.js
+
+## 意图
+
+`start-vm-auto` 请求体含 `authorization_id` 时，不得误报「未配置云平台授权」。
+
+## 验收
+
+- 经网关 POST start-vm-auto：响应不含「未配置云平台授权」，HTTP 非 400
+- 成功时 `status=success` 且含 `event_id`
+
+## 根因（回归）
+
+CPA 真源在 taskCloudService SQLite；Django `persist_start_vm_auto_records` 须 `filter(id=..., company_id=...)` 走 Go facade。
+
+## 运行
+
+```bash
+PLAYWRIGHT_SITE_ORIGIN=http://183.250.1.132:4000 \
+PLAYWRIGHT_GATEWAY_ORIGIN=http://183.250.1.132:18081 \
+npx playwright test tests/TaskDetail.start-vm-auto-authorization.playwright.test.js \
+  --config=playwright.config.chromium.js
+```

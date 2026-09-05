@@ -1,0 +1,356 @@
+---
+stage: Software Supply Chain Security
+group: Authentication
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see <https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments>
+gitlab_dedicated: yes
+title: New user account restrictions
+---
+
+{{< details >}}
+
+- Tier: Free, Premium, Ultimate
+- Offering: GitLab Self-Managed, GitLab Dedicated
+
+{{< /details >}}
+
+You can enforce the following restrictions on new user accounts:
+
+- Prevent account creation.
+- Require administrator approval for new accounts.
+- Require user email confirmation.
+- Allow or deny new accounts that use specific email domains.
+
+## Prerequisites
+
+You must have administrator access.
+
+## Disable new user account creation
+
+By default, any user visiting your GitLab domain can create an account. For customers running
+public-facing GitLab instances, we highly recommend that you consider disabling new accounts if
+you do not expect public users to create accounts. For GitLab Dedicated, new account creation is
+prevented by default when your instance is provisioned.
+
+To prevent new account creation:
+
+1. In the upper-right corner, select **Admin**.
+1. Select **Settings** > **General**.
+1. Expand **New user account restrictions**.
+1. Clear the **Allow new user accounts** checkbox, then select **Save changes**.
+
+You can also prevent new user accounts with the [Rails console](../operations/rails_console.md) by running the following command:
+
+```ruby
+::Gitlab::CurrentSettings.update!(signup_enabled: false)
+```
+
+## Require administrator approval for new user accounts
+
+This setting is enabled by default for new GitLab instances.
+When this setting is enabled, any user visiting your GitLab domain and signing up for a new account using the registration form
+must be explicitly [approved](../moderate_users.md#approve-or-reject-a-new-user-account) by an
+administrator before they can start using their account. It is only applicable if user accounts are allowed.
+
+To require administrator approval for new user accounts:
+
+1. In the upper-right corner, select **Admin**.
+1. Select **Settings** > **General**.
+1. Expand **New user account restrictions**.
+1. Select the **Require admin approval for new user accounts** checkbox, then select **Save changes**.
+
+If an administrator disables this setting, the users in pending approval state are
+automatically approved in a background job.
+
+> [!note]
+> This setting doesn't apply to LDAP or OmniAuth users. To enforce approvals for new users
+> signing up using OmniAuth or LDAP, set `block_auto_created_users` to `true` in the
+> [OmniAuth configuration](../../integration/omniauth.md#configure-common-settings) or
+> [LDAP configuration](../auth/ldap/_index.md#basic-configuration-settings).
+> A [user cap](#user-cap) can also be used to enforce approvals for new users.
+
+## Confirm user email
+
+{{< history >}}
+
+- Soft email confirmation [changed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/107302/diffs) from a feature flag to an application setting in GitLab 15.9.
+
+{{< /history >}}
+
+You can send confirmation emails upon account creation and require that users confirm
+their email address before they are allowed to sign in.
+
+To enforce confirmation of the email address used for new accounts:
+
+1. In the upper-right corner, select **Admin**.
+1. Select **Settings** > **General**.
+1. Expand **New user account restrictions**.
+1. Under **Email confirmation settings**, select **Hard**.
+
+The following settings are available:
+
+- **Hard** - Send a confirmation email during account creation. New users must confirm their email address before they can sign in.
+- **Soft** - Send a confirmation email during account creation. New users can sign in immediately, but must confirm their email in three days. After three days, the user is not able to sign in until they confirm their email.
+- **Off** - New users can sign in without confirming their email address.
+
+## Restricted access
+
+{{< details >}}
+
+- Tier: Premium, Ultimate
+- Offering: GitLab Self-Managed
+
+{{< /details >}}
+
+{{< history >}}
+
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/501717) in GitLab 17.8.
+- [Generally available](https://gitlab.com/gitlab-org/gitlab/-/issues/523464) in GitLab 18.0.
+- Group sharing settings [changed](https://gitlab.com/gitlab-org/gitlab/-/issues/488451) in GitLab 18.7.
+
+{{< /history >}}
+
+Use restricted access to prevent overage fees.
+Overage fees occur when you exceed the number of licensed users in your subscription,
+and must be paid at the next [quarterly reconciliation](../../subscriptions/quarterly_reconciliation.md).
+
+When you turn on restricted access, instances cannot add new billable users when no licensed seats
+are left in the subscription.
+
+> [!note]
+> If user cap is enabled for an instance or a group that has pending members, when you enable restricted access all pending members are automatically removed from the group.
+
+### Turn on restricted access
+
+Prerequisites:
+
+- You must be an administrator.
+- The group or one of its subgroups or projects must not be shared externally.
+
+To turn on restricted access:
+
+1. In the left sidebar, select **Settings** > **General**.
+1. Expand **New user account restrictions**.
+1. Under **Seat control**, select **Restricted access**.
+
+When you turn on restricted access, the setting to [prevent inviting groups outside the group hierarchy](../../user/project/members/sharing_projects_groups.md#prevent-inviting-groups-outside-the-group-hierarchy) is automatically turned on. This setting prevents unexpectedly adding new billable users, which might result in overage fees.
+
+You can still independently configure [project sharing for the group and its subgroups](../../user/project/members/sharing_projects_groups.md#prevent-a-project-from-being-shared-with-groups) as needed.
+
+### Provisioning behavior with SAML, SCIM, and LDAP
+
+{{< history >}}
+
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/206932) in GitLab 18.6 [with a flag](../feature_flags/_index.md) named `bso_minimal_access_fallback`. Disabled by default.
+- [Enabled by default](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/225777) in GitLab 18.10.
+
+{{< /history >}}
+
+When restricted access is enabled and no subscription seats are available, users provisioned through SAML, SCIM, or LDAP are assigned the Minimal Access role instead of their configured access level.
+This behavior ensures that synchronization can continue without consuming billable seats on GitLab.com and GitLab Self-Managed Ultimate.
+
+Users with the Minimal Access role can authenticate and access the group, but have [limited permissions](../../user/permissions.md#users-with-minimal-access).
+When seats become available, the users can be promoted to their intended access level.
+Existing users with billable roles are not affected by this behavior.
+
+You can [view seat usage](../../subscriptions/manage_seats.md#view-seat-usage) and manage users with Minimal Access.
+
+### Known issues
+
+When you turn on restricted access, the following known issues might occur and result in overages:
+
+- The number of billable users can still be exceeded if:
+  - You use SAML, SCIM, or LDAP to add new members, and have exceeded the number of seats in the subscription. When the Minimal Access fallback feature is enabled, users are assigned Minimal Access instead of being blocked.
+  - Multiple users with administrator access add members simultaneously.
+  - New billable users delay accepting an invitation. When you invite a user, they don't consume a billable seat until they accept the invitation. If an invited user delays accepting, you can invite and add other users during that time. When the delayed user finally accepts, they consume a billable seat, which might cause an overage if you've already reached your seat limit.
+- If you renew your subscription through the GitLab Sales Team for fewer users than your current
+  subscription, you will incur an overage fee. To avoid this fee, remove additional users before your
+  renewal starts. For example, if you have 20 users and renew your subscription for 15 users,
+  you will be charged overages for the five additional users.
+
+Additionally, restricted access might block the standard non-overage flows:
+
+- Service bots that are updated or added to a billable role are incorrectly blocked.
+- Inviting or updating existing billable users through email is blocked unexpectedly.
+
+## User cap
+
+{{< details >}}
+
+- Tier: Premium, Ultimate
+- Offering: GitLab Self-Managed, GitLab Dedicated
+
+{{< /details >}}
+
+The user cap is the maximum number of billable users who can create accounts or be added to a subscription
+without administrator approval. After the user cap is reached, users who create accounts or are
+added must be [approved](../moderate_users.md#approve-or-reject-a-new-user-account)
+by an administrator. Users can use their account only after they have been approved by an administrator.
+
+If an administrator increases or removes the user cap, users pending approval are automatically approved.
+
+The number of [billable users](../../subscriptions/manage_seats.md#billable-users) is updated once a day.
+The user cap might apply only retrospectively after the cap has already been exceeded.
+If the cap is set to a value below the current number of billable users (for example, `1`), the cap is enabled immediately.
+
+You can also set up [user caps for individual groups](../../user/group/manage.md#user-cap-for-groups).
+
+> [!note]
+> For instances that use LDAP or OmniAuth, when
+> [administrator approval for new user accounts](#require-administrator-approval-for-new-user-accounts)
+> is enabled or disabled, downtime might occur due to changes in the Rails configuration.
+> You can set a user cap to enforce approvals for new users.
+
+### Set a user cap
+
+Prerequisites:
+
+- You must be an administrator.
+
+To set a user cap:
+
+1. In the upper-right corner, select **Admin**.
+1. Select **Settings** > **General**.
+1. Expand **New user account restrictions**.
+1. In the **User cap** field, enter a number or leave blank for unlimited.
+1. Select **Save changes**.
+
+### Remove the user cap
+
+Remove the user cap so that the number of new users who can create accounts without
+administrator approval is not restricted.
+
+After you remove the user cap, users pending approval are automatically approved.
+
+Prerequisites:
+
+- You must be an administrator.
+
+To remove the user cap:
+
+1. In the upper-right corner, select **Admin**.
+1. Select **Settings** > **General**.
+1. Expand **New user account restrictions**.
+1. Remove the number from **User cap**.
+1. Select **Save changes**.
+
+## Changing from user cap to restricted access
+
+When you change from user cap to restricted access, all pending members (both members awaiting approval and invited members) are automatically removed.
+To ensure users are approved as members, you must approve or remove pending members before enabling restricted access.
+
+## Modify password complexity requirements
+
+By default, user passwords have a limited number of [requirements](../../user/profile/user_passwords.md#password-requirements).
+You can modify the requirements to increase the minimum length or require specific character types.
+
+Changing the password requirements does not affect existing user passwords.
+Modified complexity requirements are enforced only in these situations:
+
+- When a new user creates an account.
+- When an existing user resets their password.
+
+To modify password complexity requirements:
+
+1. In the upper-right corner, select **Admin**.
+1. Select **Settings** > **General**.
+1. Expand **New user account restrictions**.
+1. Modify the complexity requirements:
+
+   | Setting | Description |
+   |---------|-------------|
+   | **Minimum password length** | Sets the minimum number of characters required. Cannot be less than 8 characters or more than 128 characters. |
+   | **Require numbers** | Requires passwords to contain at least one number (0-9). Premium and Ultimate only. |
+   | **Require uppercase letters** | Requires passwords to contain at least one uppercase letter (A-Z). Premium and Ultimate only. |
+   | **Require lowercase letters** | Requires passwords to contain at least one lowercase letter (a-z). Premium and Ultimate only. |
+   | **Require symbols** | Requires passwords to contain at least one symbol. Premium and Ultimate only. |
+
+1. Select **Save changes**.
+
+## Allow or deny account creation by using specific email domains
+
+You can specify an inclusive or exclusive list of email domains that can be used for new user accounts.
+
+These restrictions are only applied during new account creation by an external user. An administrator can add a
+user through the administrator panel with a disallowed domain. The users can also change their
+email addresses to disallowed domains after they create an account.
+
+### Allowlist email domains
+
+You can restrict users to creating user accounts with email addresses that match the given
+domains list.
+
+### Denylist email domains
+
+You can block users from signing up when using an email addresses of specific domains. This can
+reduce the risk of malicious users creating spam accounts with disposable email addresses.
+
+### Create email domain allowlist or denylist
+
+To create an email domain allowlist or denylist:
+
+1. In the upper-right corner, select **Admin**.
+1. Select **Settings** > **General**.
+1. Expand **New user account restrictions**.
+1. For the allowlist, you must enter the list manually. For the denylist, you can enter the list
+   manually or upload a `.txt` file that contains list entries.
+
+   Both the allowlist and denylist accept wildcards. For example, you can use
+   `*.company.com` to accept every `company.com` subdomain, or `*.io` to block all
+   domains ending in `.io`. Domains must be separated by a whitespace,
+   semicolon, comma, or a new line.
+
+   ![The domain denylist settings with the options to upload a file or enter the denylist manually.](img/domain_denylist_v14_1.png)
+
+## Set up LDAP user filter
+
+You can limit GitLab access to a subset of the LDAP users on your LDAP server.
+
+See the [documentation on setting up an LDAP user filter](../auth/ldap/_index.md#set-up-ldap-user-filter) for more information.
+
+## Turn on administrator approval for role promotions
+
+{{< details >}}
+
+- Tier: Ultimate
+- Offering: GitLab Self-Managed, GitLab Dedicated
+
+{{< /details >}}
+
+{{< history >}}
+
+- [Introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/433166) in GitLab 16.9 [with a flag](../feature_flags/_index.md) named `member_promotion_management`.
+- Feature flag `member_promotion_management` [changed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/167757/) from `wip` to `beta` and enabled by default in GitLab 17.5.
+- Feature flag `member_promotion_management` [removed](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/187888) in GitLab 18.0.
+
+{{< /history >}}
+
+To prevent existing users from being promoted into a billable role in a project or group,
+turn on administrator approval for role promotions. You can then approve or reject promotion requests
+that are [pending administrator approval](../moderate_users.md#view-users-pending-role-promotion).
+
+- If an administrator adds a user to a group or project:
+  - If the new user role is [billable](../../subscriptions/manage_seats.md#billable-users),
+    all other membership requests for that user are automatically approved.
+  - If the new user role is not billable, other requests for that user remain pending until administrator approval.
+- If a user who isn't an administrator adds a user to a group or project:
+  - If the user does not have any billable role in any group or project, and is added or promoted to a billable role,
+    their request remains [pending until administrator approval](../moderate_users.md#view-users-pending-role-promotion).
+  - If the user already has a billable role, administrator approval is not required.
+
+Prerequisites:
+
+- You must be an administrator.
+
+To turn on approvals for role promotions:
+
+1. In the upper-right corner, select **Admin**.
+1. Select **Settings** > **General**.
+1. Expand **New user account restrictions**.
+1. In the **Seat control** section, select **Approve role promotions**.
+
+> [!note]
+> This approval requirement does not apply to memberships granted by
+> [LDAP synchronization](../auth/ldap/ldap_synchronization.md)
+> or [SAML group links](../../user/group/saml_sso/group_sync.md). Users who receive a role promotion
+> through LDAP or SAML do not require administrator approval, regardless of whether they previously
+> had a billable role.

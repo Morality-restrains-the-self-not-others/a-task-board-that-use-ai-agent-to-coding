@@ -1,0 +1,220 @@
+<template>
+  <nav data-alias="cmp-navbar-main" :class="{
+    'bg-white shadow-md fixed w-full top-0 z-50': navbarType === 'system_admin',
+    'bg-white/90 backdrop-blur-sm shadow-sm py-4 px-6 sticky top-0 z-50': navbarType !== 'system_admin'
+  }">
+    <div :class="{
+      'max-w-7xl mx-auto flex justify-between h-16': navbarType === 'system_admin',
+      'max-w-7xl mx-auto flex justify-between items-center': navbarType !== 'system_admin'
+    }">
+      <!-- 左侧部分：Logo、价格、代码仓库 -->
+      <div class="flex items-center min-w-0 gap-4 sm:gap-6">
+        <div class="flex-shrink-0 flex items-center">
+          <a href="/" class="text-primary text-xl sm:text-2xl font-bold truncate">AI项目推进平台</a>
+        </div>
+        <router-link
+          :to="pricingPath"
+          class="nav-link hover:text-primary transition-colors shrink-0"
+          data-testid="nav-pricing"
+        >
+          价格
+        </router-link>
+        <a
+          v-if="isUserAuthenticated && gitServiceUrl"
+          :href="gitServiceUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="nav-link hover:text-primary transition-colors shrink-0"
+          data-testid="nav-git-service"
+        >
+          代码仓库
+        </a>
+      </div>
+      
+      <!-- 右侧部分：导航链接和用户操作 -->
+      <div class="flex items-center gap-2 sm:gap-4 lg:gap-6 shrink-0">
+        <!-- 已登录状态 -->
+        <template v-if="isUserAuthenticated">
+          <!-- 导航项显示逻辑：系统管理员显示"系统管理"，普通用户显示"工作面板" -->
+          <template v-if="currentUser.isSuperuser">
+            <a href="/system-admin/" class="nav-link hover:text-primary transition-colors">系统管理</a>
+          </template>
+          
+          <!-- 普通用户导航项 -->
+          <template v-else>
+            <a
+              :href="workPanelHref"
+              :class="[
+                'nav-link',
+                'hover:text-primary transition-colors',
+                tenantPathTrimmed ? '' : 'pointer-events-none opacity-60'
+              ]"
+            >工作面板</a>
+          </template>
+
+          <!-- 工作空间切换器：全局导航栏中的工作空间选择 -->
+          <WorkspaceSwitcher
+            v-if="tenant && !currentUser.isSuperuser"
+            :tenant="tenant"
+            :refresh-trigger="workspaceRefreshTrigger"
+          />
+
+          <!-- 公司切换器：用户加入多个公司时显示 -->
+          <select
+            v-if="userCompanies.length > 1"
+            :value="currentTenant"
+            class="px-2 py-1 border border-gray-300 rounded text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            @change="$emit('company-switched', $event.target.value)"
+          >
+            <option
+              v-for="company in userCompanies"
+              :key="company.id"
+              :value="company.id"
+            >
+              {{ company.name }}
+            </option>
+          </select>
+
+          <!-- 用户昵称 -->
+          <router-link
+            :to="profilePath"
+            class="inline-flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer"
+          >
+            <img
+              :src="avatarSrc"
+              alt=""
+              class="w-8 h-8 rounded-full object-cover border border-gray-200 shrink-0"
+              width="32"
+              height="32"
+            >
+            <span>{{ displayName }}</span>
+          </router-link>
+          
+          <!-- 退出按钮 -->
+          <button @click="$emit('logout')" class="btn-secondary">退出</button>
+        </template>
+        
+        <!-- 未登录状态 -->
+        <template v-else>
+          <a href="/auth/login/" class="btn-primary px-3 py-2 sm:px-4 sm:py-2">登录</a>
+          <a href="/auth/register/" class="btn-secondary hidden sm:inline-flex px-3 py-2 sm:px-4 sm:py-2">注册</a>
+        </template>
+      </div>
+    </div>
+  </nav>
+</template>
+
+<script setup>
+/* @alias:cmp-navbar-main */
+import { computed } from 'vue'
+import { getCookie } from '../utils/cookieUtils'
+
+const props = defineProps({
+  navbarType: {
+    type: String,
+    default: 'user'
+  },
+  user: {
+    type: Object,
+    default: () => ({
+      isAuthenticated: false,
+      isSuperuser: false,
+      username: ''
+    })
+  },
+  currentUser: {
+    type: Object,
+    default: () => ({
+      isAuthenticated: false,
+      isSuperuser: false,
+      username: '',
+      avatarUrl: null,
+      userId: '',
+    })
+  },
+  isUserAuthenticated: {
+    type: Boolean,
+    default: false
+  },
+  tenantPath: {
+    type: String,
+    default: ''
+  },
+  route: {
+    type: Object,
+    required: true
+  },
+  userCompanies: {
+    type: Array,
+    default: () => []
+  },
+  currentTenant: {
+    type: String,
+    default: ''
+  }
+})
+
+// 定义组件事件
+const emit = defineEmits(['logout', 'company-switched'])
+
+const gitServiceUrl = import.meta.env.VITE_GIT_SERVICE_PUBLIC_URL || ''
+
+const displayName = computed(() => {
+  return props.currentUser?.username || '未设置昵称'
+})
+
+const tenantPathTrimmed = computed(() => String(props.tenantPath || '').trim())
+
+const DICEBEAR_COLORS = 'ffdfbf,fff1e6,fde2e4,fad2e1,e2ece9,bee1e6,dde2ff,e4e4ff'
+
+const avatarSrc = computed(() => {
+  const url = props.currentUser?.avatarUrl
+  if (url) {
+    return url
+  }
+  const seed = encodeURIComponent(props.currentUser?.username || 'user')
+  return `https://api.dicebear.com/7.x/initials/svg?seed=${seed}&backgroundColor=${DICEBEAR_COLORS}`
+})
+
+const profilePath = computed(() => {
+  const uid = String(props.currentUser?.userId || getCookie('userId') || '').trim()
+  const accessCode = props.route?.query?.accessCode ? String(props.route.query.accessCode) : ''
+  if (uid) {
+    return {
+      path: `/user/${uid}/profile/`,
+      query: accessCode ? { accessCode } : {}
+    }
+  }
+  return {
+    path: '/profile/',
+    query: accessCode ? { accessCode } : {}
+  }
+})
+
+const pricingPath = computed(() => {
+  const accessCode = props.route?.query?.accessCode ? String(props.route.query.accessCode) : ''
+  return {
+    path: '/pricing/',
+    query: accessCode ? { accessCode } : {}
+  }
+})
+
+/** 工作面板链接：须有租户前缀；与「价格」一致保留 accessCode query */
+const workPanelHref = computed(() => {
+  const tp = tenantPathTrimmed.value
+  if (!tp) {
+    return '#'
+  }
+  let path = `${tp}/work-panel/`
+  const accessCode = props.route?.query?.accessCode ? String(props.route.query.accessCode) : ''
+  if (accessCode) {
+    const sep = path.includes('?') ? '&' : '?'
+    path += `${sep}accessCode=${encodeURIComponent(accessCode)}`
+  }
+  return path
+})
+</script>
+
+<style scoped>
+/* 组件样式可以在这里添加 */
+</style>

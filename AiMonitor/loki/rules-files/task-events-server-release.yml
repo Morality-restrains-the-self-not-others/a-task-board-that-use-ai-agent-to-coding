@@ -1,0 +1,82 @@
+groups:
+  - name: task-events-server-release
+    interval: 60s
+    rules:
+      # Fires when CSC row is missing for a terminal task, indicating the handler
+      # is retrying repeatedly — suggests a task was cancelled before its container
+      # started, and the CSC row is never being created.
+      - alert: TaskServerReleaseCSCMissing
+        expr: |
+          sum by (task_id) (
+            count_over_time(
+              {job=~"task-events-.+"}
+              | logfmt
+              | consume_stage = "no_config_retry"
+              [15m]
+            )
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: task-events
+          category: server-release
+        annotations:
+          summary: "CSC row missing for terminal task ({{ $labels.task_id }})"
+          description: >
+            The task_status_changed handler has retried {{ $value }} times in 15 minutes
+            for task {{ $labels.task_id }} because the cloud_server_configs row does not
+            exist. This may indicate a task without auto_run that was incorrectly moved
+            to a terminal column, or a persistent CSC creation failure.
+            Check: taskEvents logs for no_config_retry events.
+
+      # Fires when a terminal task has a CSC row but no server_url/instance_id,
+      # indicating the container hasn't registered reachability yet.
+      - alert: TaskServerReleaseNoResource
+        expr: |
+          sum by (task_id) (
+            count_over_time(
+              {job=~"task-events-.+"}
+              | logfmt
+              | consume_stage = "no_running_resource_retry"
+              [15m]
+            )
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: task-events
+          category: server-release
+        annotations:
+          summary: "No running resource for terminal task ({{ $labels.task_id }})"
+          description: >
+            The task_status_changed handler has retried {{ $value }} times in 15 minutes
+            because no server_url or instance_id is registered for task {{ $labels.task_id }}.
+            The container may be stuck starting or the task was cancelled before
+            reachability was registered.
+            Check: taskCloudService CSC for task {{ $labels.task_id }}.
+
+      # Composite alert: excessive retries of any kind suggest a systemic issue
+      # with the server release pipeline.
+      - alert: TaskServerReleaseRetryStorm
+        expr: |
+          sum(
+            count_over_time(
+              {job=~"task-events-.+"}
+              | logfmt
+              | consume_stage =~ "no_config_retry|no_running_resource_retry"
+              [10m]
+            )
+          ) > 20
+        for: 5m
+        labels:
+          severity: critical
+          component: task-events
+          category: server-release
+        annotations:
+          summary: "Server release retry storm detected ({{ $value }} retries/10min)"
+          description: >
+            More than 20 retry events in 10 minutes across all tasks. This suggests
+            a systemic issue with the server release pipeline — possibly CSC creation
+            is broken, or many tasks are being cancelled before containers start.
+            Check: taskEvents consumer health, taskCloudService CSC table,
+            and recent task cancellation patterns.

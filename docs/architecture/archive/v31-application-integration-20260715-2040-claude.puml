@@ -1,0 +1,47 @@
+' @title: Application Integration — OTP/SMS 全切 Go（原生云短信）
+' @view: application-integration
+' @status: archived
+' @version: 31
+' @author: claude
+' @based_on: v29 current application-integration; OTP inc1 design
+' @updated: 2026-07-15 20:40
+' @description: taskAuth 原生 Aliyun/Tencent SMS；密码重置手机码本地；phone+code 登录经 enrich-login 不再 forward-login/dispatch-sms
+' @iteration: otp-go-full-native-sms
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v31 — OTP Go native SMS (2026-07-15 20:40)
+
+rectangle "Motivation" {
+  Motivation_Constraint(goFirst, "Constraint\nGo-first OTP/SMS")
+  Motivation_Constraint(singleOwner, "Constraint\naccounts_sms_verification_code\n→ task-auth")
+}
+
+rectangle "Application" {
+  Application_Component(vue, "Vue Login/Reset/Recharge")
+  Application_Component(gw, "task-gateway")
+  Application_Component(ta, "🟢 taskAuth\nnative SMS + OTP login")
+  Application_Component(django, "saas-backend\nenrich-login only")
+  Application_Component(bridge, "[DEPRECATED v31]\ndispatch-sms / forward-login OTP")
+  Application_DataObject(vc, "accounts_sms_verification_code")
+}
+
+rectangle "Technology" {
+  Technology_Node(authdb, "db/auth")
+  Technology_Node(aliyun, "Aliyun Dysmsapi")
+  Technology_Node(tencent, "Tencent SMS")
+}
+
+Rel_Flow(vue, gw, "send_code / auth / reset")
+Rel_Flow(gw, ta, "upstream")
+Rel_Flow(ta, aliyun, "SendSms")
+Rel_Flow(ta, tencent, "SendSms")
+Rel_Flow(ta, django, "enrich-login")
+Rel_Access_W(ta, vc, "W codes")
+Rel_Flow(authdb, vc, "store")
+Rel_Influence(goFirst, ta, "原生 SDK")
+Rel_Influence(singleOwner, ta, "唯一直连")
+Rel_Flow(bridge, django, "unused by Go")
+
+@enduml

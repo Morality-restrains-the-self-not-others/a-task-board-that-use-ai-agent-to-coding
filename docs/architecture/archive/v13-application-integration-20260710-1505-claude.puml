@@ -1,0 +1,67 @@
+' @title: AI Dev Platform — Application Component Architecture
+' @view: application-integration
+' @status: archived
+' @version: 13
+' @iteration: Container Exec Hot-Path Zero-Django
+' @author: claude
+' @based_on: v12 (v12-application-integration-20260709-2015-claude.puml)
+' @updated: 2026-07-10 15:05
+' @description: 容器执行热路径：tcg→taskAuth+taskCloudService，零 Django internal
+
+@startuml
+title AI Dev Platform — Application Component Architecture v13 Target (2026-07-10 15:05)
+
+legend right
+  |<#LightGreen>  </> | 🟢 [NEW v13] 本次新增 |
+  |<#LightYellow> </> | 🟡 [MODIFIED v13] 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED v13] 已删除/废弃 |
+  |<#White>       </> | 无标记 — v12 及更早 |
+endlegend
+
+component "Vue Frontend\n(:4000)" as VUE
+component "task-gateway\nAPISIX (:18081)" as GW
+component "task-container-gateway\nGo (:8014)" as CGW #LightYellow
+component "task-auth\nGo (:8003)" as AUTH #LightYellow
+component "task-cloud-service\nGo (:8018)" as TCS #LightYellow
+component "task-credential-service\nGo (:8015)" as CRED
+component "onlineServiceJS\n(:8765)" as OSJS
+component "saas-backend\nDjango (:8001)" as BE #LightPink
+component "Django tcg internal\nvalidate/resolve\n[DEPRECATED v13 hot-path]" as BE_TCG #LightPink
+
+note right of CGW
+  [MODIFIED v13] 热路径：
+  authValidate → taskAuth
+  cloudResolve → taskCloudService
+  不再 django_validate / django_resolve
+  @author: claude @2026-07-10 15:05
+end note
+
+note right of AUTH
+  [MODIFIED v13]
+  POST /api/internal/container-gateway/validate-session/
+  身份 + 租户成员（无 Django）
+end note
+
+note right of TCS
+  [MODIFIED v13]
+  tcg 直连已有
+  GET .../container-target/
+end note
+
+VUE --> GW : container-layer-command / job-*
+GW --> CGW : priority 890
+CGW -[#green]-> AUTH : 🟢 auth_validate
+CGW -[#green]-> TCS : 🟢 cloud_resolve
+TCS --> CRED : token by-scope
+CGW --> OSJS : POST /api/jobs + X-Access-Token
+
+CGW -[#red,dashed]-> BE_TCG : 🔴 DEPRECATED\ndjango_validate/resolve
+BE_TCG .. BE
+
+note bottom of BE
+  冷路径暂留（Phase C/D）：
+  git-push prepare、mock-run
+  不在执行热路径验收范围
+end note
+
+@enduml

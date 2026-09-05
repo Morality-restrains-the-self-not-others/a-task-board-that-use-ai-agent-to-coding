@@ -1,0 +1,18 @@
+# 测试意图：项目详情页 OAuth 按钮 token_status 感知 (E2E)
+
+## 测试目标
+验证项目详情页的 OAuth 授权按钮能根据后端返回的 token_status 正确展示或隐藏。
+
+## 测试场景
+1. token_available → 徽章「已授权」，按钮不渲染（用户已授权）
+2. not_bound → 徽章「未授权」，按钮渲染，文案 "OAuth 授权"
+3. token_error → 徽章「授权异常」，按钮渲染，文案 "重试"
+
+## Mock 策略
+使用 Playwright page.route() 拦截项目详情 API 响应，注入 git_repos_status 字段，
+避免依赖实际 gitOauth 服务状态。测试不需要真实 OAuth 授权。
+
+## 前提条件
+- 应用运行中（Vue dev server + APISIX gateway）
+- 测试账号可登录
+- 目标项目存在且有至少一个 git repo

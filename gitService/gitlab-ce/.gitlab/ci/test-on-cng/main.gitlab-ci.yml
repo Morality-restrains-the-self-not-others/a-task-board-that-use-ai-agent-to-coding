@@ -1,0 +1,236 @@
+# This pipeline runs E2E tests against CNG build which is deployed via helm chart on a job local kind kubernetes cluster
+
+include:
+  - local: .gitlab/ci/cng/main.gitlab-ci.yml
+  - local: .gitlab/ci/qa-common/main.gitlab-ci.yml
+  - local: .gitlab/ci/qa-common/variables.gitlab-ci.yml
+  - local: .gitlab/ci/qa-common/rules.gitlab-ci.yml
+
+.default-branch: &default-branch
+  if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+.cng-deploy-cmd:
+  script:
+    # save extra values to be available for after_script if created dynamically
+    - echo "${EXTRA_DEPLOY_VALUES}" > $CI_PROJECT_DIR/EXTRA_DEPLOY_VALUES
+    - export GITLAB_DOMAIN="$(getent hosts docker | awk '{ print $1 }' | head -n1).nip.io"
+    - |
+      bundle exec orchestrator create deployment "${DEPLOYMENT_TYPE:-kind}" \
+        --gitlab-domain "${GITLAB_DOMAIN}" \
+        --timeout 5m \
+        --chart-sha "${GITLAB_HELM_CHART_REF}" \
+        --admin-token "${GITLAB_QA_ADMIN_ACCESS_TOKEN}" \
+        --retry 1 \
+        --resource-preset high \
+        --kind-image "${KIND_NODE_IMAGE}" \
+        --ci \
+        ${EXTRA_DEPLOY_VALUES}
+    - export QA_GITLAB_URL="http://gitlab.${GITLAB_DOMAIN}${QA_RELATIVE_URL_ROOT}"
+
+.cng-test:
+  image: "${REGISTRY_HOST}/${REGISTRY_GROUP}/gitlab-build-images/ci/${BUILD_OS}-${OS_VERSION}-slim-ruby-${RUBY_VERSION}:rubygems-${RUBYGEMS_VERSION}-git-${GIT_VERSION}-lfs-${LFS_VERSION}-chrome-${CHROME_VERSION}-docker-${DOCKER_VERSION}-kubectl-${KUBECTL_VERSION}-helm-${HELM_VERSION}-kind-${KIND_VERSION}"
+  stage: test
+  extends:
+    - .e2e-test-base
+    - .cng-qa-cache  # cng-cache includes additional cached helm chart
+  needs:
+    - job: build-cng-env
+    - job: build-cng
+    - pipeline: $PARENT_PIPELINE_ID
+      job: clone-gitlab-repo
+  tags:
+    - e2e
+  variables:
+    NAMESPACE: gitlab
+    KUBECONFIG: /root/.kube/config
+    RSPEC_LAST_RUN_RESULTS_FILE: "$CI_PROJECT_DIR/qa/tmp/examples.txt"
+    ORCHESTRATOR_FORCE_COLOR: "true"
+    DEPLOYMENT_TYPE: kind
+    QA_DOCKER_NETWORK: host
+    QA_RUN_IN_PARALLEL: "true"
+    QA_PARALLEL_PROCESSES: 4
+    GITLAB_QA_ADMIN_ACCESS_TOKEN: $QA_ADMIN_ACCESS_TOKEN
+    GIT_STRATEGY: "none"
+  before_script:
+    - !reference [.qa-install, before_script]
+    - !reference [.cng-deploy-cmd, script]
+    - bundle exec orchestrator metrics start --interval 1
+  after_script:
+    - !reference [.gitlab-qa-report, after_script]
+    - source $CI_PROJECT_DIR/scripts/utils.sh
+    - |
+      section_start "logs_section" "Saving environment logs"
+      bundle exec orchestrator log events --save || true
+      bundle exec orchestrator log pods --save --containers all --no-fail-on-missing-pods || true
+      section_end "logs_section"
+    - |
+      section_start "cpu_metrics" "CNG Env CPU Utilization Graphs"
+      bundle exec orchestrator metrics serve --type cpu || true
+      section_end "cpu_metrics"
+    - |
+      section_start "memory_metrics" "CNG Env Memory Utilization Graphs"
+      bundle exec orchestrator metrics serve --type memory || true
+      section_end "memory_metrics"
+    # This command prints all the necessary arguments to be able to recreate the same deployment as on CI
+    - |
+      bundle exec orchestrator create deployment "${DEPLOYMENT_TYPE}" \
+        --chart-sha "${GITLAB_HELM_CHART_REF}" \
+        --resource-preset high \
+        --kind-image ${KIND_NODE_IMAGE} \
+        --ci \
+        --print-deploy-args \
+        $(cat $CI_PROJECT_DIR/EXTRA_DEPLOY_VALUES)
+  artifacts:
+    expire_in: 7 days
+    when: always
+    reports:
+      junit: qa/tmp/rspec-*.xml
+      dotenv: $QA_SUITE_STATUS_ENV_FILE
+    paths:
+      - qa/tmp
+      - ${CI_PROJECT_DIR}/qa/*.log
+
+.cng-test-parallel:
+  extends: .cng-test
+  parallel: 10
+
+.with-coverband-arg:
+  variables:
+    EXTRA_DEPLOY_VALUES: --env COVERBAND_ENABLED=${COVERBAND_ENABLED}
+
+# ==========================================
+# Pre stage
+# ==========================================
+build-cng-env:
+  stage: .pre
+  extends: .build-cng-env
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: clone-gitlab-repo
+  variables:
+    CNG_COMMIT_SHA: $GITLAB_CNG_MIRROR_REF
+    CNG_ACCESS_TOKEN: $CNG_MIRROR_ACCESS_TOKEN
+    CNG_SKIP_REDUNDANT_JOBS: "true"
+    GIT_STRATEGY: none
+  # when running in backport, override CNG_COMMIT so it defaults to release branch instead
+  # this ensures images are built using same stable release branch in CNG repository
+  # this is needed in case CNG repository backports some fixes related to specific release
+  rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^[\d-]+-stable(-ee|-jh)?$/
+      variables:
+        CNG_COMMIT_SHA: ''
+    - when: always
+
+build-cng:
+  stage: .pre
+  extends: .build-cng
+  needs: [build-cng-env]
+  variables:
+    # use larger runner for complex rails build jobs
+    HIGH_CAPACITY_RUNNER_TAG: e2e
+
+# ==========================================
+# Test stage
+# ==========================================
+cng-helm-cache:
+  extends:
+    - .cng-test
+    - .cng-deploy-cmd
+    - .cng-qa-cache-push
+  before_script:
+    - !reference [.qa-install, before_script]
+  after_script: []
+  rules:
+    - <<: *default-branch
+      allow_failure: true
+      changes:
+        - .gitlab/ci/qa-common/variables.gitlab-ci.yml
+        - qa/gems/gitlab-orchestrator/lib/gitlab/orchestrator/lib/kind/cluster.rb
+
+cng-instance:
+  extends:
+    - .cng-test-parallel
+    - .with-coverband-arg
+
+cng-registry:
+  extends:
+    - .cng-test
+    - .with-coverband-arg
+  variables:
+    QA_SCENARIO: Test::Integration::Registry
+    QA_RUN_IN_PARALLEL: "false"
+
+# == minimal supported redis version ==
+cng-qa-min-redis-version:
+  extends: .cng-test
+  variables:
+    QA_SCENARIO: Test::Instance::HealthCheck
+  before_script:
+    - |
+      redis_version=$(awk -F "=" "/MIN_REDIS_VERSION =/ {print \$2}" $CI_PROJECT_DIR/lib/system_check/app/redis_version_check.rb | sed "s/['\" ]//g")
+      export EXTRA_DEPLOY_VALUES="--set redis.image.tag=${redis_version%.*}"
+    - !reference [.cng-test, before_script]
+  rules:
+    - !reference [.rules:test:mr-code-patterns, rules]  # run validation for minimal supported redis version only on application code changes
+    - *default-branch
+
+cng-relative-url:
+  extends:
+    - cng-instance
+  variables:
+    QA_SCENARIO: Test::Instance::Smoke
+    QA_RELATIVE_URL_ROOT: "/relative"
+    EXTRA_DEPLOY_VALUES: "--set global.appConfig.relativeUrlRoot=${QA_RELATIVE_URL_ROOT}"
+
+cng-oauth:
+  extends:
+    - .cng-test
+  variables:
+    QA_SCENARIO: Test::Integration::OAuth
+    QA_RSPEC_TAGS: --tag oauth
+    QA_RUN_IN_PARALLEL: "false"
+    QA_GITHUB_OAUTH_APP_ID: $QA_GITHUB_OAUTH_APP_ID
+    QA_GITHUB_OAUTH_APP_SECRET: $QA_GITHUB_OAUTH_APP_SECRET
+  before_script:
+    # Install 1Password CLI for GitHub 2FA authentication
+    - |
+      curl -sSfO https://downloads.1password.com/linux/debian/amd64/stable/1password-cli-amd64-latest.deb
+      dpkg -i 1password-cli-amd64-latest.deb || apt-get install -f -y
+      rm 1password-cli-amd64-latest.deb
+      op --version
+    - !reference [.qa-install, before_script]
+    # Set up gitlab.test domain with hosts file
+    - export CLUSTER_IP="$(getent hosts docker | awk '{ print $1 }' | head -n1)"
+    - echo "${CLUSTER_IP} gitlab.test" >> /etc/hosts
+    - export GITLAB_DOMAIN="test"
+    # Deploy with test domain (don't use reference to avoid override)
+    - echo "${EXTRA_DEPLOY_VALUES}" > $CI_PROJECT_DIR/EXTRA_DEPLOY_VALUES
+    - |
+      bundle exec orchestrator create deployment "${DEPLOYMENT_TYPE:-kind}" \
+        --gitlab-domain "${GITLAB_DOMAIN}" \
+        --timeout 5m \
+        --chart-sha "${GITLAB_HELM_CHART_REF}" \
+        --admin-token "${GITLAB_QA_ADMIN_ACCESS_TOKEN}" \
+        --retry 1 \
+        --resource-preset high \
+        --ci ${EXTRA_DEPLOY_VALUES}
+    - export QA_GITLAB_URL="http://gitlab.${GITLAB_DOMAIN}${QA_RELATIVE_URL_ROOT}"
+    - bundle exec orchestrator metrics start --interval 1
+
+# ==========================================
+# Post test stage
+# ==========================================
+e2e-test-report:
+  extends: .rules:report:allure-report
+  variables:
+    ALLURE_REPORT_RESULTS_GLOB: "qa/tmp/allure-results"
+
+notify-slack:
+  extends:
+    - .notify-slack
+    - .rules:report:process-results
+
+upload-test-runtime-data:
+  extends:
+    - .upload-test-runtime-data
+    - .rules:report:upload-test-runtime-data

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v109 变迁 (v108→v109)" id="id-v109eldiff01">
+  <folder name="Business" id="id-v109el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v109-el-staff" name="平台员工 / 超管"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v109-el-browse" name="浏览租户目录 [MODIFIED v109]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v109-el-detail" name="查看租户详情 [NEW v109]"/>
+  </folder>
+  <folder name="Application" id="id-v109el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v109-el-fe" name="taskFE 系统管理 [MODIFIED v109]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v109-el-tenant" name="taskTenantService [MODIFIED v109]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v109-el-bill" name="taskBill [MODIFIED v109]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v109-el-proj" name="taskProjectService [MODIFIED v109]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v109el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v109-el-pl108" name="Plateau v108"/>
+    <element xsi:type="archimate:Plateau" id="id-v109-el-pl109" name="Plateau v109"/>
+    <element xsi:type="archimate:Gap" id="id-v109-el-gap" name="Gap: 租户名纯文本，无详情页"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v109-el-wp" name="WP-system-admin-tenant-detail"/>
+  </folder>
+  <folder name="Relations" id="id-v109el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v109-el-rel-staff-browse" source="id-v109-el-staff" target="id-v109-el-browse"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v109-el-rel-staff-detail" source="id-v109-el-staff" target="id-v109-el-detail"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v109-el-rel-staff-fe" source="id-v109-el-staff" target="id-v109-el-fe" name="点击公司名称"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v109-el-rel-fe-tenant" source="id-v109-el-fe" target="id-v109-el-tenant" name="GET tenant header"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v109-el-rel-fe-bill" source="id-v109-el-fe" target="id-v109-el-bill" name="GET quotas + orders"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v109-el-rel-fe-proj" source="id-v109-el-fe" target="id-v109-el-proj" name="GET workspaces"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v109-el-rel-pl108-gap" source="id-v109-el-pl108" target="id-v109-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v109-el-rel-wp-gap" source="id-v109-el-wp" target="id-v109-el-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v109-el-rel-wp-pl109" source="id-v109-el-wp" target="id-v109-el-pl109"/>
+  </folder>
+  <folder name="Views" id="id-v109el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v109-el-view-mig" name="架构变迁 v108→v109 — system-admin-tenant-detail">
+      <child xsi:type="archimate:DiagramObject" id="id-v109-el-do-pl108" archimateElement="id-v109-el-pl108">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v109-el-c-pl108-gap" source="id-v109-el-do-pl108" target="id-v109-el-do-gap" archimateRelationship="id-v109-el-rel-pl108-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v109-el-do-gap" targetConnections="id-v109-el-c-pl108-gap id-v109-el-c-wp-gap" archimateElement="id-v109-el-gap">
+        <bounds x="240" y="48" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v109-el-do-wp" archimateElement="id-v109-el-wp">
+        <bounds x="240" y="160" width="360" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v109-el-c-wp-gap" source="id-v109-el-do-wp" target="id-v109-el-do-gap" archimateRelationship="id-v109-el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v109-el-c-wp-pl109" source="id-v109-el-do-wp" target="id-v109-el-do-pl109" archimateRelationship="id-v109-el-rel-wp-pl109"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v109-el-do-pl109" targetConnections="id-v109-el-c-wp-pl109" archimateElement="id-v109-el-pl109">
+        <bounds x="640" y="160" width="160" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v109-el-view-topo" name="v109 Target — 租户详情业务流">
+      <child xsi:type="archimate:DiagramObject" id="id-v109-el-do-staff" archimateElement="id-v109-el-staff">
+        <bounds x="48" y="96" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v109-el-c-staff-browse" source="id-v109-el-do-staff" target="id-v109-el-do-browse" archimateRelationship="id-v109-el-rel-staff-browse"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v109-el-c-staff-detail" source="id-v109-el-do-staff" target="id-v109-el-do-detail" archimateRelationship="id-v109-el-rel-staff-detail"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v109-el-c-staff-fe" source="id-v109-el-do-staff" target="id-v109-el-do-fe" archimateRelationship="id-v109-el-rel-staff-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v109-el-do-browse" targetConnections="id-v109-el-c-staff-browse" archimateElement="id-v109-el-browse">
+        <bounds x="48" y="16" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v109-el-do-detail" targetConnections="id-v109-el-c-staff-detail" archimateElement="id-v109-el-detail">
+        <bounds x="48" y="176" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v109-el-do-fe" targetConnections="id-v109-el-c-staff-fe" archimateElement="id-v109-el-fe">
+        <bounds x="280" y="96" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v109-el-c-fe-tenant" source="id-v109-el-do-fe" target="id-v109-el-do-tenant" archimateRelationship="id-v109-el-rel-fe-tenant"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v109-el-c-fe-bill" source="id-v109-el-do-fe" target="id-v109-el-do-bill" archimateRelationship="id-v109-el-rel-fe-bill"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v109-el-c-fe-proj" source="id-v109-el-do-fe" target="id-v109-el-do-proj" archimateRelationship="id-v109-el-rel-fe-proj"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v109-el-do-tenant" targetConnections="id-v109-el-c-fe-tenant" archimateElement="id-v109-el-tenant">
+        <bounds x="520" y="16" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v109-el-do-bill" targetConnections="id-v109-el-c-fe-bill" archimateElement="id-v109-el-bill">
+        <bounds x="520" y="96" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v109-el-do-proj" targetConnections="id-v109-el-c-fe-proj" archimateElement="id-v109-el-proj">
+        <bounds x="520" y="176" width="200" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

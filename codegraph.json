@@ -1,0 +1,27 @@
+{
+  "exclude": [
+    "gitService/gitlab-ce/",
+    "gitService/gitlab_home/",
+    "sdk/",
+    "**/node_modules/",
+    "**/bin/",
+    "taskAuth/taskAuth",
+    "taskBill/taskBill",
+    "taskCloudService/taskCloudService",
+    "taskCredentialService/taskCredentialService",
+    "taskProjectService/task-project-service",
+    "runAll/runAll",
+    "claude-agent/claudeAgent",
+    "**/*.o",
+    "**/*.a",
+    "**/*.so",
+    "**/*.dylib",
+    "**/*.dll",
+    "**/*.exe",
+    "**/*.class",
+    "**/*.jar",
+    "**/*.pyc",
+    "**/*.pyo",
+    "**/*.wasm"
+  ]
+}

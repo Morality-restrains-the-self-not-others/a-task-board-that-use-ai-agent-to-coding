@@ -1,0 +1,671 @@
+version: "1"
+
+# 接口 / 路由前缀 → 目标服务（机器可读 SSOT）
+# 规范：.ai/01_project_constraints/20_go_service_first_apis.md
+# 人读摘要：docs/architecture/api-route-to-owner.md
+# 存量 Django 公网 API 迁出节奏（本规则管新增，不强制一次迁完）：
+#   docs/superpowers/specs/2026-07-05-task2app-api-go-split-brainstorm-design.md
+#
+# 约定：
+# - django_baseline_routes：当前 Django urls.py 中 path/re_path/url 字面量冻结清单（file::pattern）
+# - 新增 Django 路由 = 出现在扫描结果但不在 baseline、且不在 approved_python_exceptions → CI 失败
+# - 迁出后删除 Django 路由时，应同步从 baseline 剔除（CI 对 stale baseline 仅 WARN）
+# - route_prefixes：目标 owner 与状态（文档 + 失败时提示）；以限界上下文为准，可渐进补全
+# - status: go | django-legacy | django-internal | migrate-to-go | python-exception
+
+policy:
+  scope: new_django_routes
+  default_for_new_apis: go
+  legacy_migration_doc: docs/superpowers/specs/2026-07-05-task2app-api-go-split-brainstorm-design.md
+  notes: |
+    元规则约束新增服务/接口默认落 Go（扩展现有或新建）。
+    存量 Django 公网 API 按 legacy_migration_doc 的优先级与 Phase 节奏迁出，不要求一次性迁完。
+
+django_url_scan_roots:
+  - path: task2app/Saas_project
+    process: saas-backend
+  - path: taskAiProvider
+    process: ai-provider
+    note: Go taskAiProvider（原 Django Saas_Ai_Provider）
+scan_exclude_globs:
+  - "**/migrations/**"
+  - "**/tests/**"
+  - "**/test_*.py"
+  - "**/*_test.py"
+
+# 目标 owner（前缀级；失败提示与人读文档用）
+route_prefixes:
+  - prefix: /api/tenant/*/accounts/members/
+    target_owner: task-tenant-service
+    status: go
+    note: 人员邀请/成员管理；表 owner task_tenant.db
+  - prefix: /api/tenant/*/accounts/groups/
+    target_owner: task-tenant-service
+    status: go
+    note: 公司分组 CRUD；表 owner task_tenant.db
+  - prefix: /api/tenant/*/daydaymoney/
+    target_owner: taskProjectService
+    status: go
+    note: daydaymoney.yaml resolve + parse-yaml；按 tags 一对多反查工作空间/项目
+  - prefix: /api/auth/
+    target_owner: task-auth
+    status: django-legacy
+    note: 认证编排仍多在 Django；SSOT 在 taskAuth
+  - prefix: /api/kyc/
+    target_owner: task-auth
+    status: go
+    note: >
+      KYC 公网只读/超管操作（/me、/admin/users/*）；表 auth_kyc_* / auth_aml_*；
+      tracking docs/superpowers/specs/2026-07-22-kyc-identity-tier-audit-design.md
+  - prefix: /api/internal/kyc/
+    target_owner: task-auth
+    status: go
+    note: >
+      KYC internal（profile/evaluate/recharge-gate/aml/limit-policy）；
+      taskBill 充值门禁等调用；表 owner task-auth
+  - prefix: /api/internal/referral/
+    target_owner: task-referral
+    status: go
+    note: 内部绑边 bind-from-code、过期扫描 expire-codes；表 referral_* + 经 taskBill sync-edge 写 billing_referral_edge
+  - prefix: /api/system-admin/referral/
+    target_owner: task-referral
+    status: go
+    note: 超管申请列表/审批/拒绝/取消资格/审计与策略；表 referral_code + referral_qualification_audit
+  - prefix: /api/referral/
+    target_owner: task-referral
+    status: go
+    note: 公网渠道 CRUD、分渠道/时段 stats；资格申请仍走 /api/accounts/users/referral-codes/
+  - prefix: /api/accounts/users/client-ip/
+    target_owner: task-auth
+    status: go
+    note: 导航栏回显客户端公网 IP；须经网关独立路由，勿落入 GET /api/accounts/users/*
+  - prefix: /api/accounts/users/access-tokens/
+    target_owner: task-auth
+    status: go
+    note: 访问令牌 CRUD（POST/GET/DELETE）；须经网关独立路由到 taskAuth，勿落入 django-default（否则 POST 405）
+  - prefix: /api/accounts/users/registration-invite-codes/
+    target_owner: task-auth
+    status: go
+    note: 平台注册邀请码申请/列表；owner task-auth.db
+  - prefix: /api/public/registration-invite-policy/
+    target_owner: task-auth
+    status: go
+    note: 注册邀请码策略公开只读（enabled/quota/remaining）
+  - prefix: /api/system-admin/step-full-cos
+    target_owner: taskCloudService
+    status: go
+    note: 超管配置执行日志 step_full.json COS；须高于 django /api/system-admin/ 通配
+  - prefix: /api/system-admin/registration-invite-
+    target_owner: task-auth
+    status: go
+    note: 注册邀请码策略与关系；须高于 django /api/system-admin/
+  - prefix: /api/system-admin/email-invitations/
+    target_owner: task-auth
+    status: go
+    note: 邮箱注册邀请（管理员 CRUD）；须高于 django /api/system-admin/ 通配
+  - prefix: /api/public/email-unsubscribe/
+    target_owner: task-auth
+    status: go
+    note: 邮件邀请退订（公开 HMAC token GET/POST）；须高于 django /api/public/ 通配
+  - prefix: /api/public/email-resubscribe/
+    target_owner: task-auth
+    status: go
+    note: 邮件邀请重新订阅（公开 HMAC token POST）；须高于 django /api/public/ 通配
+  - prefix: /api/internal/email-unsubscription/
+    target_owner: task-auth
+    status: go
+    note: 内部查询邮箱是否已退订邀请邮件
+  - prefix: /api/accounts/
+    target_owner: saas-backend
+    status: django-legacy
+  - prefix: /api/user/
+    target_owner: saas-backend
+    status: django-legacy
+  - prefix: /api/internal/taskauth/
+    target_owner: saas-backend
+    status: django-internal
+  - prefix: /api/user/*/profile/git-identities/
+    target_owner: task-task-service
+    status: go
+    note: "user git identities CRUD (OPT-052: migrated from saas-backend, data in task_task.git_identities)"
+  - prefix: /api/git-identities/
+    target_owner: task-task-service
+    status: go
+    note: "user + tenant member git identities CRUD; internal ensure-default (v77)"
+  - prefix: /api/internal/git-identities/ensure-default/
+    target_owner: task-task-service
+    status: go
+    note: "MEMBER_JOINED consumer → ensure system-auto git identity"
+  - prefix: /api/internal/git-identities/
+    target_owner: saas-backend
+    status: django-internal
+    note: DEPRECATED — UserCompanyGitIdentity by-ids lookup; use taskTaskService git-identities handler
+  - prefix: /api/internal/session/
+    target_owner: saas-backend
+    status: django-internal
+    note: Django SessionStore resolve session_key→user_id for task-auth
+  - prefix: /api/internal/tasks/
+    target_owner: task-task-service
+    status: go
+    note: container-snapshot 等服务间只读聚合
+  - prefix: /api/accounts/sso/
+    target_owner: saas-backend
+    status: django-legacy
+    note: 浏览器导航 SSO 桥；须经 /api/ → APISIX forward-auth（勿再挂非 /api 路径）
+  - prefix: /api/internal/nested-git-repos/
+    target_owner: task-project-service
+    status: go
+    note: 服务间发现父仓子 Git 仓库（容器 task-detail enrich）
+  - prefix: /api/internal/projects/git-oauth-grant/
+    target_owner: task-project-service
+    status: go
+    note: 服务间项目 Git OAuth L2（POST 标记 / GET 查询 has_grant）；X-Internal-Secret
+  - prefix: /api/tenant/*/projects/*/nested-git-repos/
+    target_owner: task-project-service
+    status: go
+    note: 项目详情发现父仓子 Git 仓库列表（只读）
+  - prefix: /api/tenant/*/projects/validate-git-repos/
+    target_owner: task-project-service
+    status: go
+    note: 批量 Git 仓库校验（Go 原生 token+可选远端 probe；不经 Django）
+  - prefix: /api/tenant/*/projects/validate-git-repo/
+    target_owner: task-project-service
+    status: go
+    note: 单仓 Git 仓库校验（Go 原生；不经 Django）
+  - prefix: /api/tenant/*/projects/*/repo-access-check/
+    target_owner: task-project-service
+    status: go
+    note: 项目主仓可访问性检查（Go 原生 probe+分类；不经 Django）
+  - prefix: /api/internal/taskproject/git-repos-status/
+    target_owner: saas-backend
+    status: django-internal
+    note: DEPRECATED 2026-07-15 — Go enrichProjectGitReposStatus 已原生 token 状态；择机删除
+  - prefix: /api/internal/taskproject/validate-git-repo/
+    target_owner: saas-backend
+    status: django-internal
+    note: DEPRECATED 2026-07-15 — 公网 validate-git-repo 已 Go 原生；择机删除
+  - prefix: /api/tenant/
+    target_owner: saas-backend
+    status: django-legacy
+    note: "Phase 4 (2026-07-26): projects 全量迁 taskProjectService (Go)；workspaces CRUD 迁 taskProjectService；workspaces cloud/platforms 仍由 Django 提供"
+
+  # Phase 4 (2026-07-26): projects 域全量迁 Go taskProjectService
+  - prefix: /api/tenant/*/projects/
+    target_owner: task-project-service
+    status: go
+    note: 项目 CRUD + Git 仓库导入 + validate/branches/resolve-ref/nested-git-repos 全量 Go；API route via APISIX priority 864
+  - prefix: /api/tenant/*/workspaces/
+    target_owner: task-project-service
+    status: go
+    note: Workspace CRUD + 子资源全量 Go；仅 cloud/platforms 仍由 Django 经 APISIX priority 866 提供
+  - prefix: /api/v1/tenants/*/projects/
+    target_owner: task-project-service
+    status: go
+    note: Phase 4 新增 v1 路径 → Go taskProjectService (APISIX priority 864)
+  - prefix: /api/v1/tenants/*/workspaces/
+    target_owner: saas-backend
+    status: django-legacy
+    note: cloud/platforms 子资源仍由 Django projects.urls_workspaces 提供；CRUD 经 Go
+  - prefix: /api/system-admin/projects/
+    target_owner: task-project-service
+    status: go
+    note: Phase 4 新增 → Go taskProjectService (APISIX priority 864)
+  - prefix: /api/projects/
+    target_owner: task-project-service
+    status: go
+    note: Phase 4 新增 → Go taskProjectService (APISIX priority 864)
+  - prefix: /api/tasks/
+    target_owner: saas-backend
+    status: django-legacy
+  - prefix: /api/subscriptions/
+    target_owner: saas-backend
+    status: django-legacy
+  - prefix: /api/system-admin/
+    target_owner: saas-backend
+    status: django-legacy
+  - prefix: /api/system-admin/refund-policy
+    target_owner: task-bill
+    status: migrated
+    note: Migrated to Go taskBill 2026-08-02 (OPT-040 follow-up); direct Go handler with gateway auth
+  - prefix: /api/system-admin/orders
+    target_owner: task-bill
+    status: go
+    note: 订单列表/详情（含分账快照）与评论；须高于 django /api/system-admin/ 通配
+  - prefix: /api/system-admin/tenant-quotas
+    target_owner: task-bill
+    status: go
+    note: 平台员工按租户只读配额（租户详情页）
+  - prefix: /api/system-admin/tenant-workspaces
+    target_owner: task-project-service
+    status: go
+    note: 平台员工按租户列出全部工作空间（无 mine 裁剪）
+  - prefix: /api/system-admin/profit-sharing
+    target_owner: task-bill
+    status: go
+    note: 待分账队列只读；须高于 django /api/system-admin/ 通配
+  - prefix: /api/system-admin/refund-applications
+    target_owner: task-bill
+    status: python-exception
+    note: Django superuser gate thin proxy; refund business SSOT in taskBill
+  - prefix: /api/system-admin/invoice-applications
+    target_owner: task-bill
+    status: go
+    note: 订单电子发票申请审批；须高于 django /api/system-admin/ 通配
+  - prefix: /api/system-admin/feedback-link-groups
+    target_owner: task-bill
+    status: go
+    note: 意见与建议链接组 CRUD；须高于 django /api/system-admin/ 通配
+  - prefix: /api/system-admin/feedback-resource-kinds
+    target_owner: task-bill
+    status: go
+    note: 意见与建议资源种类目录；须高于 django /api/system-admin/ 通配
+  - prefix: /api/system_admin/
+    target_owner: saas-backend
+    status: django-legacy
+  - prefix: /api/health/
+    target_owner: saas-backend
+    status: django-legacy
+  - prefix: /api/live/
+    target_owner: saas-backend
+    status: django-legacy
+  - prefix: /api/public/
+    target_owner: saas-backend
+    status: django-legacy
+  - prefix: /api/internal/task-events/
+    target_owner: saas-backend
+    status: django-internal
+  - prefix: /api/internal/taskbill/
+    target_owner: saas-backend
+    status: django-internal
+  - prefix: /api/internal/task-ai-endpoint/
+    target_owner: task-ai-endpoint
+    status: migrate-to-go
+  - prefix: /api/internal/task-container-gateway/
+    target_owner: task-container-gateway
+    status: migrate-to-go
+  - prefix: /api/internal/budget/
+    target_owner: task-cloud-service
+    status: go
+  - prefix: /api/internal/extract-auto-run-steps/
+    target_owner: task-cloud-service
+    status: go
+    note: OCI 抽取镜像内 /app/autoRunStep.md，供 ai-provider 注册/更新写缓存
+  - prefix: /api/ai-provider/saas-inbound-skill-versions/
+    target_owner: ai-provider
+    status: go
+    note: 已发布容器→SaaS inbound 契约版本目录（ADR-0024）；公开只读
+  - prefix: /api/public/image-groups/
+    target_owner: ai-provider
+    status: go
+    note: 镜像组公开图标流 GET /api/public/image-groups/{id}/icon
+  - prefix: /api/ai-provider/public-image-groups/
+    target_owner: ai-provider
+    status: go
+    note: 镜像组公开图标流（convention 前缀）
+  - prefix: /api/tenant/*/feature-params/
+    target_owner: task-cloud-service
+    status: go
+    note: 公司功能参数公网 CRUD；表在 task_cloud.db；Django 公网 410
+  - prefix: /api/tenant/*/workspace/*/feature-params/
+    target_owner: task-cloud-service
+    status: go
+    note: 工作空间功能参数公网 CRUD；表在 task_cloud.db；Django 公网 410
+  - prefix: /api/personal/feature-params-configs/
+    target_owner: task-cloud-service
+    status: go
+    note: 个人功能参数配置 CRUD；表在 task_cloud.db；Django 公网 410
+  - prefix: /api/tenant/*/workspace/*/task/*/cloud/compute/feature-params-env-preview/
+    target_owner: task-cloud-service
+    status: go
+    note: 个人配置 env 预览；Django 同路径 410
+  - prefix: /api/internal/feature-params/
+    target_owner: saas-backend
+    status: django-internal
+    note: >
+      store/upsert/snapshot/audit 已 410（SSOT task_cloud.db）；
+      仍活跃：resolve-owner-user、budget-permissions*、company-creator
+  - prefix: /api/git-oauth/tenant-connection/
+    target_owner: git-oauth
+    status: go
+    note: >
+      租户级自建 GitLab OAuth App CRUD（taskGitOauth）；
+      canonical /api/git-oauth/tenant-connection/tenant_id/{tid}/；
+      legacy /api/git-oauth/tenant-connection/{tid}/gitlab-oauth-connection/ 仍兼容
+  - prefix: /api/tenant/*/gitlab-oidc-sso/
+    target_owner: task-auth
+    status: go
+    note: ADR-0043 租户自建 GitLab 平台 OIDC SSO 签发/轮换/吊销；owner task-auth.db auth_oidc_client
+  - prefix: /api/tenant/*/gitlab-oauth-connection/
+    target_owner: git-oauth
+    status: go
+    note: 历史 Django/旧网关路径痕迹；现行公网契约见 /api/git-oauth/tenant-connection/
+  - prefix: /api/internal/gitlab/tenant-oauth-connection/
+    target_owner: git-oauth
+    status: go
+    note: Django providers catalog 合并用（bridge secret）
+  - prefix: /api/internal/git-oauth/gitlab-tenant-connection/
+    target_owner: git-oauth
+    status: go
+    note: taskGitOauth internal catalog 合并（bridge secret；path 以服务 OpenAPI 为准）
+  - prefix: /api/tenant/*/billing/
+    target_owner: task-bill
+    status: go
+    note: 2026-07-26 APISIX direct (priority 868) — SMS 门禁 + consent 验证已迁 taskBill；phone verify 端点仍 Django (priority 870)
+  - prefix: /api/tenant/*/billing/recharge-events-sse/
+    target_owner: task-sse
+    status: go
+    note: 充值完成 EventSource 读端；APISIX token+forward-auth 注入 X-User-Id + X-TaskGateway-Internal-Secret
+  - prefix: /api/tenant/*/workspace/*/work-panel-events-sse/
+    target_owner: task-sse
+    status: go
+    note: Work Panel 任务状态 EventSource；APISIX token+forward-auth + X-TaskGateway-Internal-Secret；hub workspace:{ws}
+  - prefix: /api/billing/paypal/webhook/
+    target_owner: task-bill
+    status: go
+    note: APISIX 直挂 taskBill（auth_mode none）
+  - prefix: /api/billing/wechat/notify/
+    target_owner: task-bill
+    status: go
+    note: APISIX 直挂 taskBill（auth_mode none）
+  - prefix: /api/billing/profit-sharing/referrer-orders/
+    target_owner: task-bill
+    status: go
+    note: 推荐人本人冻结/可分账订单列表与手动分账；APISIX token，禁止 query 覆盖 referrer
+  - prefix: /api/billing/wechat/fapiao/notify/
+    target_owner: task-bill
+    status: go
+    note: 微信电子发票回调；APISIX machine，优先级须高于 /api/billing/* token
+  - prefix: /api/system_admin/license-agreement/
+    target_owner: task-bill
+    status: go
+    note: 2026-07-26 迁 taskBill (legal_handlers.go)；Django license_agreement app 已删除
+  - prefix: /api/system_admin/privacy-policy/
+    target_owner: task-bill
+    status: go
+    note: 2026-07-26 迁 taskBill (legal_handlers.go)；Django privacy_policy app 已删除
+  - prefix: /api/license-agreement/
+    target_owner: task-bill
+    status: go
+    note: 2026-07-26 迁 taskBill（公开服务协议 + 登录后补同意）
+  - prefix: /api/privacy-policy/
+    target_owner: task-bill
+    status: go
+    note: 2026-07-26 迁 taskBill（公开隐私条款 + 登录后补同意）
+  # 容器 inbound/outbound 热路径已迁 Go（gateway / credential / agent-support / cloud）
+  - prefix: /api/tenant/*/workspace/*/task/*/cloud/compute/container-
+    target_owner: task-container-gateway
+    status: go
+  - prefix: /api/tenant/*/workspace/*/task/*/cloud/compute/relay-to-trae/
+    target_owner: task-container-gateway
+    status: go
+  - prefix: /api/tenant/*/workspace/*/task/*/comment/*/cloud/server-container-token/
+    target_owner: task-credential-service
+    status: go
+    note: 容器 inbound 必须含 /comment/{cid}/；无 comment 段的旧 /task/*/cloud/ 已拒绝
+  - prefix: /api/tenant/*/workspace/*/cloud/compute/comment-container-bindings/
+    target_owner: task-cloud-service
+    status: go
+    note: 评论级容器绑定/调度（query task_id）；与 workspace 级 compute 同源
+  - prefix: /api/tenant/*/task/*/comment-container-bindings/
+    target_owner: task-cloud-service
+    status: go
+    note: 评论级容器绑定直连路径（无 workspace 前缀）
+
+# 有意在 Django 新增的接口（须 reason + tracking）；默认应为空
+approved_python_exceptions:
+  - route: "task2app/Saas_project/saas_project/urls.py::api/internal/feature-params/"
+    reason: >
+      feature-params store 表已迁 task_cloud.db（Cloud 本地 SQL）；
+      Django internal 仍保留 resolve-owner-user / budget-permissions / company-creator，
+      以及 store 路径的 410 stub（兼容旧调用方）。
+    tracking: docs/superpowers/specs/2026-07-20-feature-params-store-and-env-preview-design.md
+  - route: "task2app/Saas_project/projects/urls_feature_params_internal.py::"
+    reason: >
+      同上 — feature-params internal 子路由（含 410 stub 与仍活跃的 resolve/budget）。
+    tracking: docs/superpowers/specs/2026-07-20-feature-params-store-and-env-preview-design.md
+  - route: "task2app/Saas_project/projects/feature_params_internal_upsert_views.py::"
+    reason: >
+      store upsert/list/audit 410 stub 模块（表 SSOT 在 task_cloud.db）。
+    tracking: docs/superpowers/specs/2026-07-20-feature-params-store-and-env-preview-design.md
+  - route: "task2app/Saas_project/saas_project/urls.py::api/internal/session/"
+    reason: >
+      django_session 表 owner 为 saas-backend；
+      task-auth 整改跨库直连时需要 SessionStore resolve internal API。
+      符合 go_service_first「Django 作为已声明 internal 真源」例外。
+    tracking: docs/architecture/table-to-owner.md#known-debt
+  - route: "task2app/Saas_project/accounts/urls_session_internal.py::resolve/"
+    reason: >
+      同上 — session resolve 子路由（带尾斜杠）。
+    tracking: docs/architecture/table-to-owner.md#known-debt
+  - route: "task2app/Saas_project/accounts/urls_session_internal.py::resolve"
+    reason: >
+      同上 — session resolve 子路由（无尾斜杠兼容）。
+    tracking: docs/architecture/table-to-owner.md#known-debt
+
+  - route: "task2app/Saas_project/frontend_app/urls.py::api/system-admin/refund-policy/"
+    reason: >
+      Django superuser gate thin proxy to taskBill refund-policy;
+      business logic SSOT in taskBill.
+    tracking: docs/superpowers/specs/2026-07-22-tenant-refund-application-design.md
+  - route: "task2app/Saas_project/frontend_app/urls.py::api/system-admin/refund-applications/"
+    reason: >
+      Django superuser gate thin proxy to taskBill internal refund APIs;
+      business logic SSOT in taskBill (refund_handlers.go).
+    tracking: docs/superpowers/specs/2026-07-22-tenant-refund-application-design.md
+  - route: "task2app/Saas_project/frontend_app/urls.py::api/system-admin/refund-applications/<str:application_id>/approve/"
+    reason: >
+      Django superuser gate thin proxy to taskBill approve refund application;
+      business logic SSOT in taskBill.
+    tracking: docs/superpowers/specs/2026-07-22-tenant-refund-application-design.md
+  - route: "task2app/Saas_project/frontend_app/urls.py::api/system-admin/refund-applications/<str:application_id>/reject/"
+    reason: >
+      Django superuser gate thin proxy to taskBill reject refund application;
+      business logic SSOT in taskBill.
+    tracking: docs/superpowers/specs/2026-07-22-tenant-refund-application-design.md
+  - route: "task2app/Saas_project/frontend_app/urls.py::api/system-admin/user-recharge-consumption/"
+    reason: >
+      Django superuser gate thin proxy + user profile enrichment for taskBill
+      admin user-recharge-consumption aggregate; ledger SSOT remains in taskBill.
+    tracking: docs/superpowers/specs/2026-07-22-admin-recharge-consumption-overview-design.md
+  - route: "task2app/Saas_project/saas_project/urls.py::api/system_admin/users/"
+    reason: >
+      Superuser thin aggregate for per-user recharge consents / recharge list
+      (license_agreement + taskBill); write path for ledger remains in Go.
+    tracking: docs/superpowers/specs/2026-07-22-admin-recharge-consumption-overview-design.md
+  - route: "task2app/Saas_project/accounts/urls.py::me/kyc/"
+    reason: >
+      历史 Django 薄路径登记；KYC SSOT 已迁 Go taskAuth（GET /api/kyc/me/、
+      /api/kyc/admin/users/*、/api/internal/kyc/*）。保留本行以免 stale-scan 噪音，
+      勿再扩展 Django KYC。
+    tracking: docs/superpowers/specs/2026-07-22-kyc-identity-tier-audit-design.md
+
+django_baseline_routes:
+  - "task2app/Saas_project/accounts/urls.py::"
+  - "task2app/Saas_project/accounts/urls.py::admin/tenant-options/"
+  - "task2app/Saas_project/accounts/urls.py::git-oauth/providers/"
+  - "task2app/Saas_project/accounts/urls.py::github/app/start/"
+  - "task2app/Saas_project/accounts/urls.py::github/internal/bind/"
+  - "task2app/Saas_project/accounts/urls.py::github/oauth/start-from-gateway/"
+  - "task2app/Saas_project/accounts/urls.py::github/oauth/start/"
+  - "task2app/Saas_project/accounts/urls.py::gitlab/app/start/"
+  - "task2app/Saas_project/accounts/urls.py::gitlab/internal/bind/"
+  - "task2app/Saas_project/accounts/urls.py::gitlab/oauth/start-from-gateway/"
+  - "task2app/Saas_project/accounts/urls.py::gitlab/oauth/start/"
+  # 2026-07-26: BillingProxyView 仅作降级回退（APISIX priority 868 直连 taskBill 覆盖主路径）
+  - "task2app/Saas_project/billing_bridge/urls.py::^api/tenant/(?P<tenant_id>[^/]+)/billing/(?P<subpath>.*)$"
+  # 2026-07-26 gone: emit-billing-event → taskBill Kafka direct (events.go)
+  # 2026-07-26 gone: enrich-transactions → taskBill direct (enrich.go → taskTaskService + taskProjectService)
+  # 2026-07-26 gone: recharge*/phone*/sms* → 余额充值已移除 + SMS 已迁 taskAuth (recharge_sms_gate.go)
+  # 2026-07-26 cloud/urls.py 全量迁 Go taskCloudService:
+  #   cloud/ tenant/ workspace/ v1/ 各级路由 → handleCloudTenantRoutes / handleCloudWorkspaceRoutes / handleCloudTaskRoutes
+  #   oauth/aliyun/* → handleCloudOAuthRoutes / handleAliyunOAuthCallback
+  #   server-startup-status* → taskSSE sidecar + Go runtime_session_open
+  #   vpcs/vswitches/security-groups → handleCloudNetworkList
+  #   images/server-images → handleCloudImages / handleCloudServerImages
+  #   compute (start/stop/ai-model/oauth-token/server-config/userdata-template) → compute_handlers.go 等
+  # 2026-07-26: cloud/task_cloud_urls.py 5 个端点全量迁 Go taskCloudService:
+  #   server-container-token/* → handleContainerInboundToken
+  #   model-budget-usage/ → handleContainerInboundScoped
+  #   relay-to-trae/status-push/ → handleContainerInboundScoped
+  #   repo-reclone/ → handleRepoReclone (compute_repo_reclone.go)
+  #   server-userdata-verify/{secret}/ → handleServerUserdataVerify (compute_handlers.go)
+  # 仅保留 TAS internal scoped dispatch（Django 回退 + 兼容）
+  - "task2app/Saas_project/cloud/urls_task_agent_support_internal.py::"  # TAS internal scoped dispatch（兼容存量）
+  - "task2app/Saas_project/cloudSystemAdmin/urls.py::"
+  - "task2app/Saas_project/cloudSystemAdmin/urls.py::images/"
+  - "task2app/Saas_project/cloudSystemAdmin/urls.py::instance-types/"
+  - "task2app/Saas_project/cloudSystemAdmin/urls.py::regions/"
+  # 2026-07-26 gone: column_systems/ app deleted — CRUD fully migrated to Go taskProjectService
+  - "task2app/Saas_project/core/grafana_errors/urls.py::grafana-errors/"
+  - "task2app/Saas_project/core/urls.py::public/catalog/"
+  - "task2app/Saas_project/core/urls.py::public/image-runtime-environments/"
+  - "task2app/Saas_project/core/urls.py::public/unsubmitted-image/"
+  - "task2app/Saas_project/core/urls.py::public/vendor-development-catalog/"
+  - "task2app/Saas_project/core/urls.py::test-decimal-serialization/"
+  - "task2app/Saas_project/core/urls.py::test-drf-response/"
+  - "task2app/Saas_project/core/urls.py::test-number-serialization/"
+  - "task2app/Saas_project/frontend_app/urls.py::"
+  - "task2app/Saas_project/frontend_app/urls.py::^(?!api/|static/|media/)(?P<path>.*)$"
+  - "task2app/Saas_project/frontend_app/urls.py::^api/tenant/(?P<tenant>[^/]+)/manage-progress-column/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^api/tenant/(?P<tenant>\\d+)/feature-params/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^api/tenant/(?P<tenant>\\d+)/manage-deliverable-obj/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^api/tenant/(?P<tenant>\\d+)/manage-deliverable-system/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^api/tenant/(?P<tenant>\\d+)/manage-task-panels/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^api/tenant/(?P<tenant>\\d+)/workspace/(?P<workspace>[\\w-]+)/feature-params/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^api/tenant/(?P<tenant_id>[^/]+)/?$"
+  - "task2app/Saas_project/frontend_app/urls.py::^api/tenant/(?P<tenant_id>[^/]+)/default-deliverable-system/?$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>[^/]+)/todos/?$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>[^/]+)/work-panel/company-deliverable-systems/(?P<pk>[^/]+)/?$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>[^/]+)/work-panel/company-deliverable-systems/(?P<pk>[^/]+)/set-default/?$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>[^/]+)/work-panel/company-deliverable-systems/?$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>[^/]+)/work-panel/company-progress-systems/(?P<pk>[^/]+)/?$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>[^/]+)/work-panel/company-progress-systems/?$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>[^/]+)/work-panel/system-deliverable-systems/(?P<pk>[^/]+)/set-default/?$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>[^/]+)/work-panel/workspaces/"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>[^/]+)/workspace/(?P<workspace_id>[^/]+)/todos/?$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>\\d+)/create-project/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>\\d+)/create-workspace/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>\\d+)/projects/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>\\d+)/projects/(?P<project_id>[0-9]+)/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>\\d+)/projects/move-to-workspace/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>\\d+)/user-console/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>\\d+)/work-panel/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>\\d+)/workspace/(?P<workspace_id>[\\w-]+)/settings/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>\\d+)/workspace/(?P<workspace_id>[\\w-]+)/settings/cloud-platform/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>\\d+)/workspace/(?P<workspace_id>[\\w-]+)/settings/deliverable-system/$"
+  - "task2app/Saas_project/frontend_app/urls.py::^tenant/(?P<tenant>\\d+)/workspace/(?P<workspace_id>[\\w-]+)/settings/status/$"
+  - "task2app/Saas_project/frontend_app/urls.py::api/personal/feature-params-configs/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/personal/feature-params-configs/<str:config_id>/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/public/product-pricing/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/public/system-feature-policy/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/recommended-llm-providers/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/sub-token-providers/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/system-admin/refund-policy/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/system-admin/refund-applications/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/system-admin/refund-applications/<str:application_id>/approve/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/system-admin/refund-applications/<str:application_id>/reject/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/system-admin/pricing-packages/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/system-admin/pricing-packages/<str:package_id>/end/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/system-admin/pricing-packages/<str:package_id>/tenants/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/system-admin/product-pricing/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/system-admin/user-recharge-consumption/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/system-admin/recommended-llm-providers/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/system-admin/sub-token-providers/"
+  - "task2app/Saas_project/frontend_app/urls.py::api/system-admin/system-feature-policy/"
+  - "task2app/Saas_project/frontend_app/urls.py::auth/login/"
+  - "task2app/Saas_project/frontend_app/urls.py::auth/register/"
+  - "task2app/Saas_project/frontend_app/urls.py::auth/reset-password-request/"
+  - "task2app/Saas_project/frontend_app/urls.py::get-deliverable-systems/"
+  - "task2app/Saas_project/frontend_app/urls.py::logout/"
+  - "task2app/Saas_project/frontend_app/urls.py::manage-deliverable-obj/"
+  - "task2app/Saas_project/frontend_app/urls.py::manage-deliverable-system/"
+  - "task2app/Saas_project/frontend_app/urls.py::register/"
+  - "task2app/Saas_project/frontend_app/urls.py::reset-password/"
+  - "task2app/Saas_project/frontend_app/urls.py::system-admin/"
+  - "task2app/Saas_project/frontend_app/urls.py::system-admin/deliverable-system/"
+  - "task2app/Saas_project/frontend_app/urls.py::system-admin/grant-points/"
+  - "task2app/Saas_project/frontend_app/urls.py::system-admin/refund-applications/"
+  - "task2app/Saas_project/frontend_app/urls.py::system-admin/price-management/"
+  - "task2app/Saas_project/frontend_app/urls.py::system-admin/users/"
+  - "task2app/Saas_project/frontend_app/urls.py::task-detail/<int:task_id>/"
+  - "task2app/Saas_project/frontend_app/urls.py::upload-image/"
+  # 2026-07-26 gone: license_agreement/urls.py + privacy_policy/urls.py → taskBill legal_handlers.go
+  - "task2app/Saas_project/privacy_policy/urls.py::user-consents/"
+  - "task2app/Saas_project/projects/urls.py::translate-branch-title/"
+  # Phase 4 (2026-07-26) gone: projects/urls.py 全量迁 Go taskProjectService — urlpatterns = []
+  # - translate-branch-title/ → Go handleTranslateBranchTitle
+  # - deliverable-systems/  → Go handleSystemDeliverableSystems
+  # - deliverable-systems/<id>/ → Go handleSystemDeliverableSystemByID
+  # All APISIX paths: /api/tenant/*/projects/, /api/v1/tenants/*/projects/,
+  #   /api/system-admin/projects/, /api/projects/ → taskProjectService (priority 864)
+  - "task2app/Saas_project/saas_project/urls.py::"
+  - "task2app/Saas_project/saas_project/urls.py::^api/tenant/(?P<tenant_id>[^/]+)/workspace/(?P<workspace_id>[^/]+)/todos/(?P<task_id>[^/]+)/model-budgets/?$"
+  - "task2app/Saas_project/saas_project/urls.py::^api/tenant/(?P<tenant_id>[^/]+)/workspace/(?P<workspace_id>[^/]+)/todos/(?P<task_id>[^/]+)/model-budgets/raise/?$"
+  - "task2app/Saas_project/saas_project/urls.py::^redoc/$"
+  - "task2app/Saas_project/saas_project/urls.py::^skillList/(?P<path>.*)$"
+  - "task2app/Saas_project/saas_project/urls.py::^swagger(?P<format>\\.json|\\.yaml)$"
+  - "task2app/Saas_project/saas_project/urls.py::^swagger/$"
+  - "task2app/Saas_project/saas_project/urls.py::api/accounts/sso/"
+  - "task2app/Saas_project/saas_project/urls.py::admin/"
+  - "task2app/Saas_project/saas_project/urls.py::api-auth/"
+  - "task2app/Saas_project/saas_project/urls.py::api/"
+  - "task2app/Saas_project/saas_project/urls.py::api/accounts/"
+  - "task2app/Saas_project/saas_project/urls.py::api/auth/"
+  # 2026-07-26 gone: api/cloud/ → Go taskCloudService handleCloudTenantRoutes / handleCloudOAuthRoutes
+  - "task2app/Saas_project/saas_project/urls.py::api/core/"
+  - "task2app/Saas_project/saas_project/urls.py::api/health/"
+  # 2026-07-26 gone: api/internal/cloud/ → Go internal routes (taskCloudService)
+  - "task2app/Saas_project/saas_project/urls.py::api/internal/task-agent-support/"
+  - "task2app/Saas_project/saas_project/urls.py::api/internal/task-ai-comment/"
+  - "task2app/Saas_project/saas_project/urls.py::api/internal/task-container-gateway/"
+  - "task2app/Saas_project/saas_project/urls.py::api/internal/task-events/"
+  - "task2app/Saas_project/saas_project/urls.py::api/internal/taskauth/"
+  - "task2app/Saas_project/saas_project/urls.py::api/internal/taskproject/"
+  # 2026-07-26 gone: api/license-agreement/ + api/privacy-policy/ + api/subscriptions/ → Go
+  - "task2app/Saas_project/saas_project/urls.py::api/live/"
+  # Phase 4 gone (2026-07-26): /api/projects/ include → Go taskProjectService (APISIX priority 864)
+  - "task2app/Saas_project/saas_project/urls.py::api/projects/"
+  - "task2app/Saas_project/saas_project/urls.py::api/public/"
+  - "task2app/Saas_project/saas_project/urls.py::api/system-admin/"
+  - "task2app/Saas_project/saas_project/urls.py::api/system-admin/progress-systems/"
+  - "task2app/Saas_project/saas_project/urls.py::api/system/progress-systems/"
+  - "task2app/Saas_project/saas_project/urls.py::api/system_admin/<str:uid>/cloud/"
+  - "task2app/Saas_project/saas_project/urls.py::api/system_admin/accounts/"
+  # 2026-07-26 gone: api/system_admin/license-agreement/ + privacy-policy/ → taskBill
+  # Phase 4 gone (2026-07-26): api/system_admin/projects/ include → Go taskProjectService (APISIX priority 864)
+  - "task2app/Saas_project/saas_project/urls.py::api/system_admin/projects/"
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/accounts/"
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/budget-permissions/"
+  # 2026-07-26 gone: api/tenant/<tid>/cloud/ → Go handleCloudTenantRoutes
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/deliverable-systems/"
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/deliverable-systems/<str:pk>/"
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/deliverable-systems/<str:pk>/set-default/"
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/github/repo/access-check/<str:project_id>/"
+  # 2026-07-26 gone: api/tenant/*/installed-images/ → taskCloudService (Django 410 removed)
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/progress-systems/"
+  # Phase 4 gone (2026-07-26): api/tenant/<tid>/projects/ include → Go taskProjectService (APISIX priority 864)
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/projects/"
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/settings/"
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/work-panel/company-deliverable-systems/"
+  # 2026-07-26 gone: workspace/cloud/ → Go handleCloudWorkspaceRoutes
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/workspace/<str:workspace_id>/task/<str:task_id>/ai/instructs/"
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/workspace/<str:workspace_id>/task/<str:task_id>/ai/instructs/<str:instruct_id>/abort/"
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/workspace/<str:workspace_id>/task/<str:task_id>/cloud/"
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/workspace/<str:workspace_id>/task/<str:task_id>/cloud/server-startup-status-sse/"
+  - "task2app/Saas_project/saas_project/urls.py::api/tenant/<str:tenant_id>/workspaces/"
+  - "task2app/Saas_project/saas_project/urls.py::api/user/<str:uid>/profile/git-identities/"
+  # OPT-049: Migrated from Django to Go taskReferral
+  - "taskReferral/src/handlers.go::GET /api/user/{userId}/profile/referral-stats/"
+  - "task2app/Saas_project/saas_project/urls.py::api/user/<str:user_id>/accounts/"
+  - "task2app/Saas_project/saas_project/urls.py::api/user/<str:user_id>/accounts/github/app/connection/"
+  - "task2app/Saas_project/saas_project/urls.py::api/user/<str:user_id>/accounts/gitlab/app/connection/"
+  # 2026-07-26 gone: api/v1/tenants/<tid>/cloud/ → Go handleCloudTenantRoutes
+  - "task2app/Saas_project/saas_project/urls.py::api/v1/tenants/<str:tenant_id>/progress-systems/"
+  # Phase 4 gone (2026-07-26): api/v1/tenants/<tid>/projects/ include → Go taskProjectService (APISIX priority 864)
+  - "task2app/Saas_project/saas_project/urls.py::api/v1/tenants/<str:tenant_id>/projects/"
+  - "task2app/Saas_project/saas_project/urls.py::api/v1/tenants/<str:tenant_id>/settings/"
+  - "task2app/Saas_project/saas_project/urls.py::api/v1/tenants/<str:tenant_id>/workspaces/"
+  # 2026-07-26 gone: callback/cloudplatform/oauth2.0/aliyun → Go handleAliyunOAuthCallback
+  - "task2app/Saas_project/saas_project/urls.py::skillList"
+  - "task2app/Saas_project/saas_project/urls.py::switch-workspace/"
+  - "task2app/Saas_project/subscriptions/urls.py::"

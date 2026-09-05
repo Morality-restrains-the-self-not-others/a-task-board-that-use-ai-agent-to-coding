@@ -1,0 +1,23 @@
+---
+description: 前端副作用按钮必须有防重放（同步锁 + debounce + Idempotency-Key）
+alwaysApply: true
+---
+
+# 前端按钮点击须有防重放设计（元规则）
+
+细则：`.ai/01_project_constraints/57_frontend_button_anti_replay.md`；约束索引第 52 条；ADR-0020。
+
+## 强制要求
+
+- 触发写操作的点击必须有**同步门闩**（`createClickGuard` 或等价 `busyRef`），不能只靠下一帧的 `disabled`。
+- 进行中须 `disabled` + `aria-busy` + 可感知文案；短窗 debounce 只防误触，**不能单独充当防重放**。
+- 对 `POST/PUT/PATCH/DELETE`：在被接受的那一次点击生成 `Idempotency-Key`，同一次意图内重试回传同一键；禁止每次 HTTP 新建 UUID。
+- 前端锁不替代服务端幂等（元规则 48/49）。资金/配额/云资源路径默认服务端 ≥ L3。
+- 纯 UI / 真实 `<a href>` / 只读刷新须注释 `Anti-Replay-OK: …`。
+
+## 验收样例
+
+```bash
+python3 db/scripts/ci/check_frontend_button_anti_replay.py
+rg -n 'createClickGuard|Idempotency-Key' taskFE/app/src/views/OrderCreate.vue
+```

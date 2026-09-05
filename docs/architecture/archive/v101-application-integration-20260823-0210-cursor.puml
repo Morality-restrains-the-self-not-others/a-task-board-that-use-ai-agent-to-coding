@@ -1,0 +1,42 @@
+' @title: runAll 编排器与托管服务解耦
+' @view: application-integration
+' @status: archived
+' @version: 101
+' @iteration: runall-orchestrator-independence
+' @author: cursor
+' @based_on: v100 (v100-application-integration-20260823-0125-cursor.puml)
+' @updated: 2026-08-23 02:10
+' @description: runAll UI 退出不再 Shutdown 托管进程；子进程独立 session；adopt 接管
+
+@startuml
+!include <archimate/Archimate>
+
+title v101 — runAll orchestrator independence 2026-08-23 02:10
+
+Application_Component(runAll, "runAll Status UI :9999")
+note right of runAll
+  🟢 退出默认 skipShutdownServices
+  SIGTERM 不拆栈
+end note
+
+Application_Component(svc, "托管业务服务")
+note right of svc
+  🟢 Setsid 独立会话
+  stop-all 才停止
+end note
+
+Technology_Node(kernel, "Linux session/pgid")
+
+Rel_Serving(runAll, svc, "start/stop/adopt (optional)")
+Rel_Flow(runAll, svc, "显式 stop-all 才 SIGTERM")
+Rel_Serving(kernel, svc, "独立 sid")
+
+Implementation_Plateau(plateauV100, "Plateau v100")
+Implementation_Plateau(plateauV101, "Plateau v101 orchestrator independent")
+Implementation_Gap(gapQ, "Gap: runAll 退出级联停栈")
+Implementation_WorkPackage(wpQ, "WP-runall-orchestrator-independence")
+Rel_Triggering(plateauV100, gapQ, "identifies")
+Rel_Realization(wpQ, gapQ, "closes")
+Rel_Realization(wpQ, plateauV101, "delivers")
+
+@enduml

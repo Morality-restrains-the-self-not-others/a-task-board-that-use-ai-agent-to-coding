@@ -1,0 +1,51 @@
+' @title: Application Integration — 项目详情内部仓磁盘占用
+' @view: application-integration
+' @status: archived
+' @version: 34
+' @author: claude
+' @based_on: v33 current (v33-application-integration-20260716-1145-claude.puml)
+' @updated: 2026-07-16 16:30
+' @description: 项目详情 enrich 内部仓（gitlab-local）disk_size_bytes；外部仓不展示；60s 短缓存；无新公网 path
+' @iteration: project-internal-repo-disk-size
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v34 — Internal Repo Disk Size (2026-07-16 16:30)
+
+rectangle "Motivation" {
+  Motivation_Constraint(internalOnly, "Constraint\n仅 gitlab-local 查/展大小\n外部仓零调用")
+}
+
+rectangle "Application" {
+  Application_Component(vue, "Vue ProjectDetail\nGitReposSection disk badge")
+  Application_Component(gw, "task-gateway\nJWT + tenant")
+  Application_Component(project, "taskProjectService\nenrich disk_size_bytes\n+ 60s cache")
+  Application_Component(gitoauth, "gitoauth / taskAuth\nfetchGitAccessToken")
+  Application_DataObject(projectRepos, "project_repos\n(既有，只读引用)")
+}
+
+rectangle "Technology" {
+  Technology_Node(gitlab, "GitLab API\n?statistics=true")
+}
+
+note top of vue
+  仅当 disk_size_bytes 为数字时
+  显示 data-testid=git-repo-disk-size
+  @author: claude @2026-07-16 16:30
+end note
+
+note top of project
+  IsInternalRepo → gitlab:gitlab-local
+  enrichProjectGitRepoDiskSizes 并行拉 statistics
+  成功结果进程内缓存 60s；失败省略字段，详情仍 200
+end note
+
+Rel_Flow(vue, gw, "GET project detail")
+Rel_Flow(gw, project, "tenant + user auth")
+Rel_Access_R(project, projectRepos, "R 关联仓 URL")
+Rel_Flow(project, gitoauth, "fetchGitAccessToken(当前用户)")
+Rel_Flow(project, gitlab, "GET project?statistics=true")
+Rel_Influence(internalOnly, project, "仅内部仓")
+
+@enduml

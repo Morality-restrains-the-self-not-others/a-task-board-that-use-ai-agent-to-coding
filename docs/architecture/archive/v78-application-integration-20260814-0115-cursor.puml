@@ -1,0 +1,55 @@
+' @title: 评论级容器令牌
+' @view: application-integration
+' @status: target
+' @version: v78
+' @iteration: comment-scoped-container-token-v78
+' @author: cursor
+' @based_on: v77
+' @updated: 2026-08-14 01:15
+' @description: 容器令牌按 (tenant, workspace, task, comment) 隔离；Cloud init / JS exchange 带 comment_id
+
+@startuml
+!include <archimate/Archimate>
+
+title v78 — Comment-Scoped Container Token Target 2026-08-14 01:15
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v78 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v78 |
+endlegend
+
+Application_Component(cloud, "taskCloudService")
+note right of cloud
+  🟡 [MODIFIED v78]
+  bootstrap token init
+  /comment/{commentId}
+  by-scope + comment_id
+end note
+
+Application_Component(cred, "taskCredentialService")
+note right of cred
+  🟡 [MODIFIED v78]
+  TaskScope.CommentID
+  IssueToken requires comment
+end note
+
+Application_DataObject(tok, "credential_container_tokens")
+note right of tok
+  🟢 [NEW] comment_id
+  UNIQUE(company, workspace, task, comment)
+end note
+
+Application_Component(osjs, "onlineServiceJS")
+note right of osjs
+  🟡 [MODIFIED v78]
+  exchange-refresh
+  register-reachability
+  body COMMENT_ID
+end note
+
+Rel_Flow(cloud, cred, "POST token/init .../comment/{c}")
+Rel_Access(cred, tok, "R/W")
+Rel_Flow(osjs, cred, "exchange-refresh + comment_id")
+Rel_Flow(osjs, cloud, "register-reachability + comment_id")
+
+@enduml

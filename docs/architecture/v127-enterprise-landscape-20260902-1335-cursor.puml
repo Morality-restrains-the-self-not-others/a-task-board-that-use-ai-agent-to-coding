@@ -1,0 +1,91 @@
+' @title: 部署 9999 编排源码编译（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 127
+' @iteration: deploy-9999-source-compile-restart
+' @author: cursor
+' @based_on: v126 (v126-enterprise-landscape-20260901-2244-cursor.puml)
+' @updated: 2026-09-02 13:45
+' @description: 部署侧 9999 编排 SOURCE_ROOT 编译、conf-local rsync、增量安装；日常不再 update.sh 全量拷贝
+
+@startuml
+!include <archimate/Archimate>
+
+title 部署 9999 源码编译编排 — v127 Current Architecture (2026-09-02 13:45)
+
+rectangle "Business" {
+  Business_Actor(ops, "平台运维")
+  Business_Process(precise, "精准编译重启")
+  note right of precise
+    部署 9999 按钮
+    编译在 SOURCE_ROOT
+    @author: cursor @2026-09-02 13:35
+  end note
+  Business_Process(buildAll, "全部重新编译")
+  note right of buildAll
+    只编+安装+rsync
+    不杀业务进程
+    @author: cursor @2026-09-02 13:35
+  end note
+  Business_Actor(member, "租户成员")
+  Business_Process(createTask, "工作面板创建自动运行任务")
+}
+
+rectangle "Application" {
+  Application_Component(runAll, "runAll :9999")
+  note top of runAll
+    DEPLOY_MODE
+    编排 precise-compile + rsync + install
+    @author: cursor @2026-09-02 13:35
+  end note
+  Application_Component(fe, "taskFE")
+  Application_Component(task, "taskTaskService")
+}
+
+rectangle "Technology" {
+  Technology_Node(src, "SOURCE_ROOT 源码树")
+  note right of src
+    /tmp/ram-work
+    precise-compile.sh
+    @author: cursor @2026-09-02 13:35
+  end note
+  Technology_Artifact(bins, "deploy-binaries/")
+  note right of bins
+    gitignored 产物暂存
+  end note
+  Technology_Node(dep, "DEPLOY_ROOT")
+  Technology_Artifact(conflocal, "conf-local/")
+  note right of conflocal
+    编译成功后
+    rsync -a --delete
+    @author: cursor @2026-09-02 13:35
+  end note
+  Technology_Artifact(upd, "update.sh")
+  note bottom of upd
+    应急 bootstrap
+    非日常路径
+    @author: cursor @2026-09-02 13:35
+  end note
+}
+
+Rel_Assignment(ops, precise)
+Rel_Assignment(ops, buildAll)
+Rel_Flow(precise, runAll, "POST /api/precise-restart")
+Rel_Flow(buildAll, runAll, "POST /api/build-all")
+Rel_Flow(runAll, src, "precise-compile.sh")
+Rel_Flow(src, bins, "collect")
+Rel_Flow(runAll, bins, "增量 install")
+Rel_Flow(runAll, conflocal, "rsync --delete")
+Rel_Serving(dep, runAll, "exec DEPLOY_MODE")
+Rel_Assignment(member, createTask)
+Rel_Flow(createTask, fe, "校验项目 L2")
+
+Implementation_Plateau(p126, "Plateau v126 项目 L2 可种自动运行")
+Implementation_Plateau(p127, "Plateau v127 部署 9999 源码编译编排")
+Implementation_Gap(gap, "Gap: 部署 9999 不能编译；靠 update.sh 全量拷")
+Implementation_WorkPackage(wp, "WP-deploy-9999-source-compile-restart")
+Rel_Triggering(p126, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p127, "delivers")
+
+@enduml

@@ -1,0 +1,110 @@
+# Nested independent git repositories under this meta-repo.
+# Canonical remote: git@github.com:task2money/<repo>.git
+# These paths remain separately cloned and listed in .gitignore; this file is
+# the Git-standard path↔url registry used for discovery (not full gitlink checkout).
+# Remote 命名约定（OPT-20260904-001）: origin = GitHub 镜像（规范 remote，日常 push 走它）；
+# gitlab = 私有主站 GitLab git@gitlab.daydaymoney.com（仅已配置主站镜像的仓库才设置，禁止把
+# gitlab 设成 github URL —— 曾致 24 子仓 gitlab==origin 重复、删分支打错端）；
+# gitlab-sh-1 = 腾讯侧 gitlab-tencent-sh-1.daydaymoney.com。2026-09-05 已清理本地冗余 remote。
+[submodule "DaydaymoneyGrafana"]
+	path = DaydaymoneyGrafana
+	url = git@github.com:task2money/DaydaymoneyGrafana.git
+[submodule "AiMonitor"]
+	path = AiMonitor
+	url = git@github.com:task2money/AiMonitor.git
+[submodule "claude-agent"]
+	path = claude-agent
+	url = git@github.com:task2money/claude-agent.git
+[submodule "conf"]
+	path = conf
+	url = git@github.com:task2money/conf.git
+[submodule "db"]
+	path = db
+	url = git@github.com:task2money/db.git
+[submodule "dockerInfra"]
+	path = dockerInfra
+	url = git@github.com:task2money/dockerInfra.git
+[submodule "docs"]
+	path = docs
+	url = git@github.com:task2money/docs.git
+[submodule "taskGitOauth"]
+	path = taskGitOauth
+	url = git@github.com:task2money/taskGitOauth.git
+[submodule "gitService"]
+	path = gitService
+	url = git@github.com:task2money/gitService.git
+[submodule "go_relayToTrae"]
+	path = go_relayToTrae
+	url = git@github.com:task2money/go_relayToTrae.git
+[submodule "runAll"]
+	path = runAll
+	url = git@github.com:task2money/runAll.git
+[submodule "sdk"]
+	path = sdk
+	url = git@github.com:task2money/sdk.git
+[submodule "shareLib"]
+	path = shareLib
+	url = git@github.com:task2money/shareLib.git
+[submodule "taskAgentSupport"]
+	path = taskAgentSupport
+	url = git@github.com:task2money/taskAgentSupport.git
+[submodule "taskAIComment"]
+	path = taskAIComment
+	url = git@github.com:task2money/taskAIComment.git
+[submodule "taskAIEndPoint"]
+	path = taskAIEndPoint
+	url = git@github.com:task2money/taskAIEndPoint.git
+[submodule "taskAiProvider"]
+	path = taskAiProvider
+	url = git@github.com:task2money/taskAiProvider.git
+[submodule "taskAuth"]
+	path = taskAuth
+	url = git@github.com:task2money/taskAuth.git
+[submodule "taskBill"]
+	path = taskBill
+	url = git@github.com:task2money/taskBill.git
+[submodule "taskChromePlugin"]
+	path = taskChromePlugin
+	url = git@github.com:task2money/taskChromePlugin.git
+[submodule "taskCloudService"]
+	path = taskCloudService
+	url = git@github.com:task2money/taskCloudService.git
+[submodule "taskContainerGateway"]
+	path = taskContainerGateway
+	url = git@github.com:task2money/taskContainerGateway.git
+[submodule "taskCredentialService"]
+	path = taskCredentialService
+	url = git@github.com:task2money/taskCredentialService.git
+[submodule "taskEvents"]
+	path = taskEvents
+	url = git@github.com:task2money/taskEvents.git
+[submodule "taskGateway"]
+	path = taskGateway
+	url = git@github.com:task2money/taskGateway.git
+[submodule "taskProjectService"]
+	path = taskProjectService
+	url = git@github.com:task2money/taskProjectService.git
+[submodule "taskReferral"]
+	path = taskReferral
+	url = git@github.com:task2money/taskReferral.git
+[submodule "taskSSE"]
+	path = taskSSE
+	url = git@github.com:task2money/taskSSE.git
+[submodule "taskTaskService"]
+	path = taskTaskService
+	url = git@github.com:task2money/taskTaskService.git
+[submodule "trae-agent"]
+	path = trae-agent
+	url = git@github.com:task2money/trae-agent.git
+[submodule "valueStream"]
+	path = valueStream
+	url = git@github.com:task2money/valueStream.git
+[submodule "taskTenantService"]
+	path = taskTenantService
+	url = git@github.com:task2money/taskTenantService.git
+[submodule "taskFE"]
+	path = taskFE
+	url = git@github.com:task2money/taskFE.git
+[submodule "dataMigrate"]
+	path = dataMigrate
+	url = git@github.com:task2money/dataMigrate.git

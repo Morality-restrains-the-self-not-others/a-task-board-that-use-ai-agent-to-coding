@@ -1,0 +1,48 @@
+# API URL 路径设计规范
+
+**alwaysApply: true**
+
+## 强制规则
+
+新增 API 端点路径必须遵循：
+
+```
+/api/${serviceName}/${funcName}/${key1}/${value1}/${key2}/${value2}/...
+```
+
+| 段 | 说明 | 示例 |
+|---|---|---|
+| `/api/` | 标准前缀 | 所有 API 统一 |
+| `${serviceName}` | 服务域 | `cloud`, `tenant`, `billing`, `accounts`, `projects`, `tasks` |
+| `${funcName}` | 功能/资源名 | `server-config-default`, `workspace-platforms`, `recharges` |
+| `${key}/${value}` | 键值对参数 | `tenant_id/871412288261746688` |
+
+## 设计原则
+
+1. **前两段即可确定路由目标** — `/api/${serviceName}/*` 天然隔离不同服务，避免 APISIX 通配符路由冲突
+2. **禁止无意义深度嵌套** — 不用 `/api/tenant/{tid}/workspaces/{wid}/cloud/platforms/` 这种需要多级 `*` 匹配的模式
+3. **路径参数自文档化** — 键值对格式（`user_id/123`）比位置参数更可读
+
+## 正例
+
+```
+✅ /api/cloud/workspace-platforms/tenant_id/{tid}/workspace_id/{wid}/
+✅ /api/cloud/server-config-default/tenant_id/{tid}/
+✅ /api/billing/user-recharges/user_id/{uid}/
+```
+
+## 反例
+
+```
+❌ /api/tenant/{tid}/workspaces/{wid}/cloud/platforms/
+❌ /api/tenant/{tid}/cloud/server-config-default/
+❌ /api/system_admin/users/{uid}/recharges/
+```
+
+## 存量兼容
+
+存量路径不强制迁移，但新增端点必须遵循此规范。修改存量路由时应优先考虑迁移。
+
+## 背景
+
+2026-08-02 发现 `taskGateway/routes/routes.yaml` 中 task-cloud-service（priority 860）的 `/api/tenant/*/workspaces/*/cloud/*` 被 task-project-service（priority 864）的 `/api/tenant/*/workspaces/*/*` 劫持，根因是深度嵌套 + 通配符匹配导致的路由优先级冲突。采用此规范后，不同 serviceName 的路由天然隔离，彻底消除此类问题。

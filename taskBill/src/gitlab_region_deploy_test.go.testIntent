@@ -1,0 +1,15 @@
+# gitlab_region_deploy_test.go 测试意图
+
+## 测试范围
+`resolveGitlabRegionDeployInfo` 把区域 slug 映射为运维可见的服务进程、配置文件、数据目录与启动命令。
+
+## 关键业务断言
+- 现网默认区（`tencent-shanghai-5` + `conf/infra/git-service`）启动命令为 `bash gitService/run.sh start`
+- `tencent-sh-1` 启动命令为 `bash gitService/scripts/deploy_tencent_sh_1.sh`，不得与现网相同
+- 其它 slug 使用 `GITSERVICE_CONF_APP=git-service-<slug> bash gitService/run.sh start`
+
+## 破坏信号
+两张区域卡片或两实例解析结果的 `service_start` 字符串相同。
+
+## 回归验证
+`go test -count=1 ./src -run 'TestResolveGitlabRegionDeployInfo'`

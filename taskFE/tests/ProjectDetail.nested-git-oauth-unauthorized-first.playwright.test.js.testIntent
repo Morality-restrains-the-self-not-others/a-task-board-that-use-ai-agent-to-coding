@@ -1,0 +1,14 @@
+# 测试意图：项目详情子仓 OAuth 未授权置顶 + 批量 validate-git-repos (E2E)
+
+## 测试目标
+1. `nested-git-repo-oauth-status-0` 文案为「未授权」且对应行排在子仓列表最前。
+2. 前端通过 `POST …/validate-git-repos/` 批量拉取状态，而非 N 次 `validate-git-repo`。
+
+## Mock 策略
+- `nested-git-repos`：返回已授权 DaydaymoneyGrafana + 未授权 docs
+- `validate-git-repos`：按请求 urls 返回 token_status
+- 项目详情：注入父仓与 git_repos_status
+
+## 前提
+- Vue + 网关可用；测试账号可登录
+- `PRE_COMMIT=1` 时跳过

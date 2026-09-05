@@ -1,0 +1,32 @@
+---
+description: 提交时须随机跑单元测试；遗留失败每次至少修复发现集合的 10%
+alwaysApply: true
+---
+
+# 提交随机单元测试与遗留债 10% 修复（元规则）
+
+适用于整个 monorepo。细则见 `.ai/01_project_constraints/28_commit_random_unit_test_debt_fix.md`；约束索引第 29 条。
+
+## 强制要求
+
+- **每个子仓**提交须安装并执行 task2app 风格随机单测 pre-commit（`scripts/hooks/pre-commit` → `.git/hooks`）；模板见 `db/scripts/hooks/templates/`，部署 `bash db/scripts/deploy_repo_random_precommit.sh`。
+- **根仓**另经：`python3 db/scripts/ci/run_commit_random_unit_tests.py`（与子仓钩子叠加）。
+- 随机抽测发现失败文件数为 **N（N≥1）** 时，本次提交须至少修复 **`max(1, ceil(N×0.10))`** 个（复跑通过）；余债写入 `.learnings/UNIT_TEST_DEBT.md`。
+- **暂存触及的单测必须 100% 通过**，不适用 10% 配额。
+- **禁止** `--no-verify` 跳过本门禁；禁止删测例/假 skip 凑配额。
+
+## 触发
+
+- 任意子仓 / 根仓提交的 pre-commit
+- 门禁输出 `LEGACY UNIT TEST DEBT` / `Quota not met`
+- Agent 准备提交且本地复现随机单测失败
+- 新建子仓或克隆后未装 hooks
+
+## 验收
+
+```bash
+bash db/scripts/deploy_repo_random_precommit.sh
+python3 db/scripts/ci/run_commit_random_unit_tests.py
+python3 db/scripts/ci/test_run_commit_random_unit_tests.py
+test -x <repo>/.git/hooks/pre-commit
+```

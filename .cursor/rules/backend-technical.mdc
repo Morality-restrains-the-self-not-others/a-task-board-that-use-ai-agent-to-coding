@@ -1,0 +1,40 @@
+---
+description: 后端与技术实现规则 - 引用 .ai/03_technical_implementation
+globs: "**/*.py,**/views.py,**/models.py,**/urls.py"
+alwaysApply: false
+---
+
+# 后端与技术实现
+
+修改 Python 后端、Django 视图、模型、API 时，必须读取并遵循：
+
+- `.ai/03_technical_implementation/00_technical_implementation.md`（索引）
+- `.ai/03_technical_implementation/01_core_business_logic.md`
+- `.ai/03_technical_implementation/02_api_specifications.md`
+- `.ai/03_technical_implementation/04_functional_programming.md`
+
+涉及云厂商 SDK 时，还需参考：`.ai/03_technical_implementation/03_cloud_sdk_specifications.md`；涉及阿里云 SDK 时，参考：`.ai/03_technical_implementation/07_aliyun_sdk_usage.md`
+
+涉及任务容器换票 / `Saas_project/skillList/machine_container.md` 所列接口时，访问日志路径与实现约定见：`.ai/01_project_constraints/15_container_machine_api_access_logging.md`
+
+涉及 **数据库 / 数据表访问边界**（多服务是否直连同一库或同一表、跨服务读表、迁表）时，必须遵循：`.ai/01_project_constraints/19_single_service_data_ownership.md`（一库/一表仅一服务直连；否则服务转发或迁表）
+
+涉及 **新增服务或新增 HTTP/RPC 接口落点**（Go vs Django/Python、扩展现有服务 vs 新建）时，必须遵循：`.ai/01_project_constraints/20_go_service_first_apis.md`（默认落 Go；先扩展现有 Go 服务，否则新建；Python 为可审计例外）
+
+涉及 **服务启动路径 / ticker / 定时扫描 / 进程内 poll** 时，必须遵循：`.ai/01_project_constraints/51_no_service_internal_poll_loop.md`（业务进程禁止自唤醒循环；周期工作走 `taskEvents` timer worker，即时工作走 HTTP/Kafka/Webhook）
+
+涉及 **Kafka / 领域事件消费者 / 幂等键 / 重复投递** 时，必须遵循：`.ai/01_project_constraints/54_event_consumer_idempotency.md`（消费走共享 `IdempotentDispatchService`；禁止业务服务自建 Reader；键禁止默认 company_id/user_id）
+
+涉及 **服务监听地址 / bind host / listen host**（含「安全加固」改绑定、conf `host`、APISIX `host.docker.internal`）时，必须遵循：`.ai/01_project_constraints/22_service_listen_host_not_localhost_only.md` 与根 `.ai.md`（**禁止**仅绑 `127.0.0.1`；须 `0.0.0.0`）
+
+涉及 **应用启动与环境 Proxy**（`HTTP(S)_PROXY`、runAll `use_proxy`、出站 Client、`proxyconnect`）时，必须遵循：`.ai/01_project_constraints/23_app_startup_no_env_proxy.md` 与根 `.ai.md`（业务进程**禁止**继承环境代理；env proxy 仅开发机加速）
+
+涉及 **服务配置文件读取**（`confload`、`config.go`、`conf/**/sync.manifest.yaml`、跨服务 YAML）时，必须遵循：`.ai/01_project_constraints/29_service_own_conf_directory_only_via_sync.md`（**仅读本服务 conf 目录**；跨服务键须 sync 到本目录片段）
+
+涉及 **GitLab 登录/注册、OmniAuth、OIDC SSO、`conf/infra/git-service*`** 时，必须遵循：`.ai/01_project_constraints/55_gitlab_sso_only_no_self_signup.md`（禁止自行注册；Web 仅 taskAuth SSO；禁止打开 signup/账密排障）
+
+涉及 **微信支付 / WeChat Pay / APIv3 下单退款分账回调** 时，必须遵循：`.ai/01_project_constraints/59_wechatpay_go_sdk.md`（必须调用仓内 `sdk/wechatpay-go`；禁止社区 SDK 与裸 HTTP）
+
+涉及 **ID 字段**（`id`、`*_id`、Snowflake 主键/外键）的类型与传输边界时，必须遵循：`.ai/03_technical_implementation/11_id_field_string_transit.md`（进程内与进程间 string，仅入库转 DB 类型）
+
+新建或修改 **Python 辅助 Web 侧车**（如 monorepo 根目录 `relayToTrae/`、`mock_run_container/` 的 Flask 服务）时，必须遵循：`.ai/03_technical_implementation/10_python_sidecar_web_concurrency.md`

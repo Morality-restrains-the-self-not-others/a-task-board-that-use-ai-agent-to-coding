@@ -1,0 +1,30 @@
+# frozen_string_literal: true
+
+module MergeRequests
+  module Mergeability
+    class CheckRebaseStatusService < CheckBaseService
+      set_identifier :need_rebase
+      set_description 'Checks whether the merge request needs to be rebased'
+
+      def execute
+        return inactive unless merge_request.project.ff_merge_must_be_possible?
+
+        return inactive if merge_request.project.project_setting.automatic_rebase_available?
+
+        if merge_request.should_be_rebased?
+          failure
+        else
+          success
+        end
+      end
+
+      def skip?
+        params[:skip_rebase_check].present?
+      end
+
+      def cacheable?
+        false
+      end
+    end
+  end
+end

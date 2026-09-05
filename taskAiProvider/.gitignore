@@ -1,0 +1,19 @@
+/bin/
+*.exe
+frontend/node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/*.timestamp-*.mjs
+*.log
+.DS_Store
+logs/
+
+# Local VendorDocStore (KYC + image-group icons)
+data/
+
+# Secret env files (meta gitignore parity — OPT-20260827-017)
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template

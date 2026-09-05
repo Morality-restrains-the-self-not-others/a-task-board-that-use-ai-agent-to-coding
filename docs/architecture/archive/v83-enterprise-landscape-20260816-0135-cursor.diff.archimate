@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v83 变迁 (v81→v83)" id="id-v83el-diff01">
+  <folder name="Business" id="id-v83el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v83el-dev" name="Developer"/>
+    <element xsi:type="archimate:BusinessObject" id="id-v83el-link" name="Task Linked Projects"/>
+    <element xsi:type="archimate:BusinessObject" id="id-v83el-ident" name="Comment Run Repo Identity [NEW]"/>
+    <element xsi:type="archimate:BusinessService" id="id-v83el-svc" name="Task Management Service"/>
+  </folder>
+  <folder name="Application" id="id-v83el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v83el-fe" name="taskFE [MOD]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v83el-task" name="taskTaskService [MOD]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v83el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v83el-pl81" name="Plateau v81"/>
+    <element xsi:type="archimate:Plateau" id="id-v83el-pl83" name="Plateau v83"/>
+    <element xsi:type="archimate:Gap" id="id-v83el-gap" name="Gap: identity UX on task linked projects"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v83el-wp" name="WP: comment-level-repo-identity"/>
+  </folder>
+  <folder name="Relations" id="id-v83el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v83el-rel-asg" source="id-v83el-dev" target="id-v83el-svc"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v83el-rel-flow" source="id-v83el-dev" target="id-v83el-fe" name="select identity when commenting"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v83el-rel-fe" source="id-v83el-fe" target="id-v83el-svc"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v83el-rel-task" source="id-v83el-task" target="id-v83el-svc"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v83el-rel-link" source="id-v83el-fe" target="id-v83el-link" name="display"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v83el-rel-ident" source="id-v83el-task" target="id-v83el-ident" name="persist with comment"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v83el-rel-pl-gap" source="id-v83el-pl81" target="id-v83el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v83el-rel-wp-gap" source="id-v83el-wp" target="id-v83el-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v83el-rel-wp-pl" source="id-v83el-wp" target="id-v83el-pl83"/>
+  </folder>
+  <folder name="Views" id="id-v83el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v83el-view-mig" name="架构变迁 v81→v83 — comment-level-repo-identity">
+      <child xsi:type="archimate:DiagramObject" id="id-v83el-d-pl81" archimateElement="id-v83el-pl81">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83el-c-pl-gap" source="id-v83el-d-pl81" target="id-v83el-d-gap" archimateRelationship="id-v83el-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83el-d-gap" targetConnections="id-v83el-c-pl-gap id-v83el-c-wp-gap" archimateElement="id-v83el-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83el-d-wp" archimateElement="id-v83el-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83el-c-wp-gap" source="id-v83el-d-wp" target="id-v83el-d-gap" archimateRelationship="id-v83el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83el-c-wp-pl" source="id-v83el-d-wp" target="id-v83el-d-pl83" archimateRelationship="id-v83el-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83el-d-pl83" targetConnections="id-v83el-c-wp-pl" archimateElement="id-v83el-pl83">
+        <bounds x="560" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v83el-view-topo" name="v83 Target — comment run identity">
+      <child xsi:type="archimate:DiagramObject" id="id-v83el-d-dev" archimateElement="id-v83el-dev">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83el-c-asg" source="id-v83el-d-dev" target="id-v83el-d-svc" archimateRelationship="id-v83el-rel-asg"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83el-c-flow" source="id-v83el-d-dev" target="id-v83el-d-fe" archimateRelationship="id-v83el-rel-flow"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83el-d-fe" targetConnections="id-v83el-c-flow" archimateElement="id-v83el-fe">
+        <bounds x="240" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83el-c-fe" source="id-v83el-d-fe" target="id-v83el-d-svc" archimateRelationship="id-v83el-rel-fe"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83el-c-link" source="id-v83el-d-fe" target="id-v83el-d-link" archimateRelationship="id-v83el-rel-link"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83el-d-svc" targetConnections="id-v83el-c-asg id-v83el-c-fe id-v83el-c-task" archimateElement="id-v83el-svc">
+        <bounds x="240" y="160" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83el-d-task" archimateElement="id-v83el-task">
+        <bounds x="480" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83el-c-task" source="id-v83el-d-task" target="id-v83el-d-svc" archimateRelationship="id-v83el-rel-task"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83el-c-ident" source="id-v83el-d-task" target="id-v83el-d-ident" archimateRelationship="id-v83el-rel-ident"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83el-d-link" targetConnections="id-v83el-c-link" archimateElement="id-v83el-link">
+        <bounds x="48" y="160" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83el-d-ident" targetConnections="id-v83el-c-ident" archimateElement="id-v83el-ident">
+        <bounds x="480" y="160" width="240" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

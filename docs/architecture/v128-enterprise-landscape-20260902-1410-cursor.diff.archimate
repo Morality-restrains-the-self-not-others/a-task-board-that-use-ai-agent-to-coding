@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v128 变迁 (v127→v128)" id="id-v128eldiff01">
+  <folder name="Business" id="id-v128el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v128-act-vip" name="VIP1 租户"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v128-act-ops" name="平台运维"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v128-bp-buy" name="购买 GitLab 资源 [MODIFIED v128]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v128-bp-node" name="人工创建阿里云 GitLab 节点 [NEW v128]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v128-bp-open" name="开通租户 GitLab 组"/>
+  </folder>
+  <folder name="Application" id="id-v128el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v128-app-fe" name="taskFE OrderCreate [MODIFIED v128]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v128-app-bill" name="taskBill [MODIFIED v128]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v128-app-admin" name="taskFE SystemAdmin GitLab"/>
+  </folder>
+  <folder name="Technology" id="id-v128el-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v128-node-tx" name="腾讯云 GitLab CE ready"/>
+    <element xsi:type="archimate:Node" id="id-v128-node-ali" name="阿里云 GitLab CE [NEW v128]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v128el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v128-pl-v127" name="Plateau v127 部署 9999"/>
+    <element xsi:type="archimate:Plateau" id="id-v128-pl-v128" name="Plateau v128 阿里云 pending_node"/>
+    <element xsi:type="archimate:Gap" id="id-v128-gap" name="Gap: 购买页无阿里云区域"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v128-wp" name="WP-aliyun-gitlab-region-manual-node"/>
+  </folder>
+  <folder name="Relations" id="id-v128el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v128-rel-vip-buy" source="id-v128-act-vip" target="id-v128-bp-buy"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v128-rel-buy-fe" source="id-v128-bp-buy" target="id-v128-app-fe" name="选区域下单"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v128-rel-fe-bill" source="id-v128-app-fe" target="id-v128-app-bill" name="POST orders"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v128-rel-ops-node" source="id-v128-act-ops" target="id-v128-bp-node"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v128-rel-node-ali" source="id-v128-bp-node" target="id-v128-node-ali" name="部署 CE"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v128-rel-ops-admin" source="id-v128-act-ops" target="id-v128-app-admin" name="PUT ready"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v128-rel-admin-bill" source="id-v128-app-admin" target="id-v128-app-bill" name="登记 API"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v128-rel-ops-open" source="id-v128-act-ops" target="id-v128-bp-open"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v128-rel-open-bill" source="id-v128-bp-open" target="id-v128-app-bill" name="provision iff ready"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v128-rel-tx-bill" source="id-v128-node-tx" target="id-v128-app-bill" name="hybrid Admin API"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v128-rel-ali-bill" source="id-v128-node-ali" target="id-v128-app-bill" name="就绪后 Admin API"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v128-rel-pl-gap" source="id-v128-pl-v127" target="id-v128-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v128-rel-wp-gap" source="id-v128-wp" target="id-v128-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v128-rel-wp-pl" source="id-v128-wp" target="id-v128-pl-v128"/>
+  </folder>
+  <folder name="Views" id="id-v128el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v128-el-view-mig" name="架构变迁 v127→v128 — 阿里云 GitLab pending_node">
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-pl127" archimateElement="id-v128-pl-v127">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-pl-gap" source="id-v128-el-do-pl127" target="id-v128-el-do-gap" archimateRelationship="id-v128-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-gap" targetConnections="id-v128-el-c-pl-gap id-v128-el-c-wp-gap" archimateElement="id-v128-gap">
+        <bounds x="340" y="48" width="420" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-wp" archimateElement="id-v128-wp">
+        <bounds x="340" y="140" width="420" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-wp-gap" source="id-v128-el-do-wp" target="id-v128-el-do-gap" archimateRelationship="id-v128-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-wp-pl" source="id-v128-el-do-wp" target="id-v128-el-do-pl128" archimateRelationship="id-v128-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-pl128" targetConnections="id-v128-el-c-wp-pl" archimateElement="id-v128-pl-v128">
+        <bounds x="800" y="140" width="300" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v128-el-view-topo" name="v128 Target — 购买阿里云区域与人工建节点">
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-vip" archimateElement="id-v128-act-vip">
+        <bounds x="48" y="48" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-vip-buy" source="id-v128-el-do-vip" target="id-v128-el-do-buy" archimateRelationship="id-v128-rel-vip-buy"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-buy" targetConnections="id-v128-el-c-vip-buy" archimateElement="id-v128-bp-buy">
+        <bounds x="220" y="48" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-buy-fe" source="id-v128-el-do-buy" target="id-v128-el-do-fe" archimateRelationship="id-v128-rel-buy-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-fe" targetConnections="id-v128-el-c-buy-fe" archimateElement="id-v128-app-fe">
+        <bounds x="430" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-fe-bill" source="id-v128-el-do-fe" target="id-v128-el-do-bill" archimateRelationship="id-v128-rel-fe-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-bill" targetConnections="id-v128-el-c-fe-bill id-v128-el-c-admin-bill id-v128-el-c-open-bill id-v128-el-c-tx-bill id-v128-el-c-ali-bill" archimateElement="id-v128-app-bill">
+        <bounds x="660" y="48" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-ops" archimateElement="id-v128-act-ops">
+        <bounds x="48" y="160" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-ops-node" source="id-v128-el-do-ops" target="id-v128-el-do-node" archimateRelationship="id-v128-rel-ops-node"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-ops-admin" source="id-v128-el-do-ops" target="id-v128-el-do-admin" archimateRelationship="id-v128-rel-ops-admin"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-ops-open" source="id-v128-el-do-ops" target="id-v128-el-do-open" archimateRelationship="id-v128-rel-ops-open"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-node" targetConnections="id-v128-el-c-ops-node" archimateElement="id-v128-bp-node">
+        <bounds x="220" y="160" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-node-ali" source="id-v128-el-do-node" target="id-v128-el-do-ali" archimateRelationship="id-v128-rel-node-ali"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-admin" targetConnections="id-v128-el-c-ops-admin" archimateElement="id-v128-app-admin">
+        <bounds x="460" y="160" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-admin-bill" source="id-v128-el-do-admin" target="id-v128-el-do-bill" archimateRelationship="id-v128-rel-admin-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-open" targetConnections="id-v128-el-c-ops-open" archimateElement="id-v128-bp-open">
+        <bounds x="220" y="240" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-open-bill" source="id-v128-el-do-open" target="id-v128-el-do-bill" archimateRelationship="id-v128-rel-open-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-tx" archimateElement="id-v128-node-tx">
+        <bounds x="660" y="160" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-tx-bill" source="id-v128-el-do-tx" target="id-v128-el-do-bill" archimateRelationship="id-v128-rel-tx-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-el-do-ali" targetConnections="id-v128-el-c-node-ali" archimateElement="id-v128-node-ali">
+        <bounds x="660" y="240" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-el-c-ali-bill" source="id-v128-el-do-ali" target="id-v128-el-do-bill" archimateRelationship="id-v128-rel-ali-bill"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

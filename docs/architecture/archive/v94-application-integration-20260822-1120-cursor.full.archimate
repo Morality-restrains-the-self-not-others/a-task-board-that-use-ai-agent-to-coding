@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v94 full" id="id-v94aifull01">
+  <folder name="Application" id="id-v94aid-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v94-app-fe" name="taskFE Vue SPA [MODIFIED v94]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v94-app-task" name="taskTaskService [MODIFIED v94]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v94-app-go" name="taskGitOauth [MODIFIED v94]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v94-app-git" name="GitHub/GitLab API"/>
+    <element xsi:type="archimate:DataObject" id="id-v94-do-cmt" name="task_comments [MODIFIED v94]"/>
+    <element xsi:type="archimate:DataObject" id="id-v94-do-aud" name="git_oauth_taskcredentialaudit [MODIFIED v94]"/>
+  </folder>
+  <folder name="Technology" id="id-v94aid-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v94-tech-mysqlt" name="MySQL task_task utf8mb4"/>
+    <element xsi:type="archimate:Node" id="id-v94-tech-mysqlg" name="MySQL git_oauth utf8mb4"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v94aid-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v94-pl-v93" name="Plateau v93"/>
+    <element xsi:type="archimate:Plateau" id="id-v94-pl-v94" name="Plateau v94"/>
+    <element xsi:type="archimate:Gap" id="id-v94-gap" name="Gap: PR 无回复/无远端合并审计"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v94-wp" name="WP-pr-reply-merge-status"/>
+  </folder>
+  <folder name="Relations" id="id-v94aid-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v94-rel-fe-task" source="id-v94-app-fe" target="id-v94-app-task" name="POST comments git_pr"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v94-rel-fe-go" source="id-v94-app-fe" target="id-v94-app-go" name="status / merge"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v94-rel-go-git" source="id-v94-app-go" target="id-v94-app-git" name="GET/PUT merge request"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v94-rel-task-cmt" source="id-v94-app-task" target="id-v94-do-cmt" name="insert idempotent"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v94-rel-go-aud" source="id-v94-app-go" target="id-v94-do-aud" name="merge_request_merge"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v94-rel-mysql-cmt" source="id-v94-tech-mysqlt" target="id-v94-do-cmt" name="InnoDB"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v94-rel-mysql-aud" source="id-v94-tech-mysqlg" target="id-v94-do-aud" name="InnoDB"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v94-rel-pl93-gap" source="id-v94-pl-v93" target="id-v94-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v94-rel-wp-gap" source="id-v94-wp" target="id-v94-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v94-rel-wp-pl94" source="id-v94-wp" target="id-v94-pl-v94"/>
+  </folder>
+  <folder name="Views" id="id-v94aid-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v94-view-mig" name="架构变迁 v93→v94 — pr-reply-merge-status">
+      <child xsi:type="archimate:DiagramObject" id="id-v94-do-pl93" archimateElement="id-v94-pl-v93">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94-c-pl93-gap" source="id-v94-do-pl93" target="id-v94-do-gap" archimateRelationship="id-v94-rel-pl93-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94-do-gap" targetConnections="id-v94-c-pl93-gap id-v94-c-wp-gap" archimateElement="id-v94-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94-do-wp" archimateElement="id-v94-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94-c-wp-gap" source="id-v94-do-wp" target="id-v94-do-gap" archimateRelationship="id-v94-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94-c-wp-pl94" source="id-v94-do-wp" target="id-v94-do-pl94" archimateRelationship="id-v94-rel-wp-pl94"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94-do-pl94" targetConnections="id-v94-c-wp-pl94" archimateElement="id-v94-pl-v94">
+        <bounds x="560" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v94-view-flow" name="v94 Target — PR 回复与一键合并">
+      <child xsi:type="archimate:DiagramObject" id="id-v94-d-fe" archimateElement="id-v94-app-fe">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94-c-fe-task" source="id-v94-d-fe" target="id-v94-d-task" archimateRelationship="id-v94-rel-fe-task"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94-c-fe-go" source="id-v94-d-fe" target="id-v94-d-go" archimateRelationship="id-v94-rel-fe-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94-d-task" targetConnections="id-v94-c-fe-task" archimateElement="id-v94-app-task">
+        <bounds x="280" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94-c-task-cmt" source="id-v94-d-task" target="id-v94-d-cmt" archimateRelationship="id-v94-rel-task-cmt"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94-d-go" targetConnections="id-v94-c-fe-go" archimateElement="id-v94-app-go">
+        <bounds x="280" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94-c-go-git" source="id-v94-d-go" target="id-v94-d-git" archimateRelationship="id-v94-rel-go-git"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94-c-go-aud" source="id-v94-d-go" target="id-v94-d-aud" archimateRelationship="id-v94-rel-go-aud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94-d-git" targetConnections="id-v94-c-go-git" archimateElement="id-v94-app-git">
+        <bounds x="500" y="140" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94-d-cmt" targetConnections="id-v94-c-task-cmt id-v94-c-mysql-cmt" archimateElement="id-v94-do-cmt">
+        <bounds x="500" y="48" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94-d-aud" targetConnections="id-v94-c-go-aud id-v94-c-mysql-aud" archimateElement="id-v94-do-aud">
+        <bounds x="500" y="230" width="260" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94-d-mysqlt" archimateElement="id-v94-tech-mysqlt">
+        <bounds x="48" y="230" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94-c-mysql-cmt" source="id-v94-d-mysqlt" target="id-v94-d-cmt" archimateRelationship="id-v94-rel-mysql-cmt"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v94-d-mysqlg" archimateElement="id-v94-tech-mysqlg">
+        <bounds x="48" y="310" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v94-c-mysql-aud" source="id-v94-d-mysqlg" target="id-v94-d-aud" archimateRelationship="id-v94-rel-mysql-aud"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

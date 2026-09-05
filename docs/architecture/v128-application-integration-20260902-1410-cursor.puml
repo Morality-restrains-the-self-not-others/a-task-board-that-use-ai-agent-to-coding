@@ -1,0 +1,60 @@
+' @title: 阿里云 GitLab 区域目录先行（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 128
+' @iteration: aliyun-gitlab-region-manual-node
+' @author: cursor
+' @based_on: v127 (v127-application-integration-20260902-1335-cursor.puml)
+' @updated: 2026-09-02 14:20
+' @description: OrderCreate→taskBill 目录；pending_node 跳过 GitLab API；Kafka 履约排队事件
+
+@startuml
+!include <archimate/Archimate>
+
+title 阿里云 GitLab pending_node 数据流 — v128 (2026-09-02 14:20)
+
+Application_Component(fe, "taskFE OrderCreate")
+note right of fe
+  阿里云 optgroup
+  @author: cursor @2026-09-02 14:20
+end note
+
+Application_Component(bill, "taskBill")
+note top of bill
+  infra_status 门闩
+  @author: cursor @2026-09-02 14:20
+end note
+
+Application_DataObject(reg, "billing_gitlab_region")
+note right of reg
+  infra_status + aliyun seed
+end note
+
+Application_DataObject(quota, "billing_tenant_gitlab_resource")
+Application_Component(gl, "GitLab Admin API")
+note bottom of gl
+  pending_node 不调用
+  @author: cursor @2026-09-02 14:20
+end note
+
+Application_Component(kfk, "Kafka")
+note right of kfk
+  GitlabManualNodeFulfillmentQueued
+  @author: cursor @2026-09-02 14:20
+end note
+
+Rel_Flow(fe, bill, "GET regions / POST orders")
+Rel_Access_r(bill, reg, "list sellable")
+Rel_Access_w(bill, quota, "pending_admin on pay")
+Rel_Flow(bill, gl, "ensure group iff ready")
+Rel_Flow(bill, kfk, "Queued / InfraMarkedReady")
+
+Implementation_Plateau(p127, "Plateau v127")
+Implementation_Plateau(p128, "Plateau v128")
+Implementation_Gap(gap, "Gap: 无阿里云可售区")
+Implementation_WorkPackage(wp, "WP-aliyun-gitlab-region-manual-node")
+Rel_Triggering(p127, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p128, "delivers")
+
+@enduml

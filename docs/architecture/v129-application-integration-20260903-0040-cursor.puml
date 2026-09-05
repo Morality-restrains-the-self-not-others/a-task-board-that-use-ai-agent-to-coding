@@ -1,0 +1,51 @@
+' @title: runAll 金丝雀平滑重启（应用集成）
+' @view: application-integration
+' @status: current
+' @version: 129
+' @iteration: runall-smooth-canary-restart
+' @author: cursor
+' @based_on: v128 (v128-application-integration-20260902-1410-cursor.puml)
+' @updated: 2026-09-03 00:50
+' @description: 9999 全部重启/精准编译重启改为 overlap+drain；tracelog.ListenAndServe
+
+@startuml
+!include <archimate/Archimate>
+
+title 金丝雀平滑重启 — v129 (2026-09-03 00:40)
+
+Application_Component(ui, "runAll Status 9999")
+note right of ui
+  全部重启 / 精准编译重启
+  滚动 canary
+  @author: cursor @2026-09-03 00:40
+end note
+
+Application_Component(orch, "runAll Runner")
+note top of orch
+  PlanCanaryRestartAll
+  overlap then drain
+end note
+
+Application_Component(tl, "tracelog.ListenAndServe")
+note bottom of tl
+  SO_REUSEPORT + Shutdown
+end note
+
+Application_Component(svc, "托管 Go HTTP 服务")
+Application_Component(ev, "taskEvents 消费者")
+
+Rel_Flow(ui, orch, "POST restart-all / precise-restart")
+Rel_Flow(orch, svc, "start overlap + SIGTERM old")
+Rel_Flow(orch, ev, "same canary")
+Rel_Serving(tl, svc, "listen+drain")
+Rel_Serving(tl, ev, "ReusePort + Pid header")
+
+Implementation_Plateau(p128, "Plateau v128")
+Implementation_Plateau(p129, "Plateau v129")
+Implementation_Gap(gap, "Gap: 整栈 stop-all 空窗")
+Implementation_WorkPackage(wp, "WP-runall-smooth-canary-restart")
+Rel_Triggering(p128, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p129, "delivers")
+
+@enduml

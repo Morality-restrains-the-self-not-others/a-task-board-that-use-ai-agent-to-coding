@@ -1,0 +1,94 @@
+---
+stage: AI-powered
+group: Agent Foundations
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see <https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments>
+title: Troubleshooting the GitLab Duo Agent Platform
+---
+
+If you are working with the GitLab Duo Agent Platform,
+you might encounter the following issues.
+
+## View logs
+
+After a flow is created, you can view the flow's session by going to **Automate** > **Sessions**.
+
+The **Details** tab shows a link to the CI/CD job logs.
+These logs can contain troubleshooting information.
+
+## Flows not visible in the UI
+
+If you are trying to run a flow but it's not visible in the GitLab UI:
+
+1. Ensure you have at least Developer role in the project.
+1. Ensure GitLab Duo is [turned on and flows are allowed to execute](../gitlab_duo/turn_on_off.md).
+1. Ensure the group you are in has been given permission [to use flows](../../administration/gitlab_duo/configure/access_control.md).
+1. If the top-level group is configured correctly but flows are not visible for an individual project:
+   1. Go to the project.
+   1. Select **Automate** > **Flows**.
+   1. In the upper-right corner, select **Enable flow from group**.
+   1. Select a flow, then select **Enable**.
+
+1. If it still does not work:
+   1. Disable the affected flow in the top-level group and save the configuration.
+   1. Enable the affected flow in the top-level group and save the configuration.
+   1. Wait a few minutes for the setting to propagate across your groups.
+
+## Insufficient permissions to create a new pipeline for imported projects
+
+If you are trying to run foundational flows in an imported project or a project created from a template,
+you might get the error: `Error in creating workload: Insufficient permissions to create a new pipeline`.
+
+To fix this issue:
+
+1. Go to the top-level group.
+1. Select **Settings** > **General**.
+1. Expand **GitLab Duo features**.
+1. Under **Flow execution**, identify the foundational flows you want to turn on.
+1. Disable the flows in the top-level group and save the configuration.
+1. Enable the same flows in the top-level group and save the configuration.
+1. Wait a few minutes for the setting to propagate across projects in the group.
+
+## Session is stuck in created state
+
+If a session for your flow does not start:
+
+- Ensure push rules are configured.
+
+### Configure push rules to allow a service account
+
+In the GitLab UI, foundational flows use a service account that:
+
+- Creates commits with its own email address.
+- Creates a [workload pipeline](../../ci/pipelines/pipeline_types.md#workload-pipeline).
+
+Prerequisites:
+
+- Administrator access.
+
+To configure push rules for a project:
+
+1. Find the email address associated with the service account:
+   1. In the upper-right corner, select **Admin**.
+   1. Select **Overview** > **Users** and search for the account associated with the flow.
+      The account follows the pattern `duo-[flow-name]-[top-level-group-name]`.
+   1. Locate the service account user and copy the email address.
+
+1. Allow the email address to push to the project:
+   1. In the top bar, select **Search or go to** and find your project.
+   1. Select **Settings** > **Repository**.
+   1. Expand **Push rules**.
+   1. In **Commit author's email**, add a regular expression that allows the email address you just copied.
+   1. Select **Save push rules**.
+
+1. Allow the `duo/feature/` branch prefix:
+   1. In the **Push rules** section, find **Branch name**.
+   1. Add a regular expression that allows branches starting with ^duo/(fix|feature|refactor|docs/).*
+      For example: `^(duo/feature)/.*$`
+   1. Select **Save push rules**.
+
+To create push rules for the instance:
+
+1. In the upper-right corner, select **Admin**.
+1. Select **Push rules**.
+1. Follow the previous steps to allow **Commit author's email** and **Branch name**.
+1. Select **Save push rules**.

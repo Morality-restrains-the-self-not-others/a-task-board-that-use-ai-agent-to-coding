@@ -1,0 +1,13 @@
+# useServerConfigRuntimeFetch 任务ID解析与历史空态
+
+## 测试范围
+`fetchServerStartHistoryApi` 及同源 compute 拉取的 taskId 解析、空成功不写 message。
+
+## 被测试行为
+- 空成功 records=[] 不写 message
+- task 无 id 时回退 route.params.taskId / task.pk / props.taskId
+- 无任何任务 ID 时写「缺少任务ID」且不发请求
+- 服务器内容 starting 降级、Workbench/stop-vm comment_id 路径
+
+## 测试依赖
+- vitest + vue ref；`apiFetch` mock

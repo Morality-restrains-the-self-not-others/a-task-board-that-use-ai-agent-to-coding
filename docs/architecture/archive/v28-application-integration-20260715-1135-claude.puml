@@ -1,0 +1,65 @@
+' @title: Application Integration — 项目详情子 Git 仓库列表
+' @view: application-integration
+' @status: target
+' @version: 28
+' @author: claude
+' @based_on: v27 (v27-application-integration-20260715-1010-claude.puml)
+' @updated: 2026-07-15 11:35
+' @description: 项目详情只读发现 nested git repos；OAuth 仅拉 .gitmodules；不写 project_repos
+' @iteration: project-nested-git-repos
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v28 — Project Nested Git Repos (2026-07-15 11:35)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v28 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v28 |
+  | <#White>       </> | 无标记 — 未变 |
+endlegend
+
+rectangle "Motivation" {
+  Motivation_Constraint(readOnly, "🟢 Constraint\n只读发现\n不写 project_repos\n[NEW v28]")
+}
+
+rectangle "Application" {
+  Application_Component(vue, "🟡 Vue ProjectDetail\nProjectDetailGitReposSection\n[MODIFIED v28]")
+  Application_Component(gw, "task-gateway\nJWT + tenant")
+  Application_Component(project, "🟢 taskProjectService\nnested-git-repos handler\n[NEW v28]")
+  Application_Component(gitoauth, "gitoauth / taskAuth\nfetchGitAccessToken")
+  Application_DataObject(projectRepos, "project_repos\n(既有，只读引用)")
+}
+
+rectangle "Technology" {
+  Technology_Node(gitlab, "GitLab API\nraw .gitmodules only")
+  Technology_Node(github, "GitHub API\ncontents / raw")
+}
+
+note top of vue
+  [MODIFIED v28] composable useProjectNestedGitRepos
+  子区块 data-testid=project-detail-nested-git-repos
+  Loading / error / 空三态
+  @author: claude @2026-07-15 11:35
+end note
+
+note top of project
+  [NEW v28] 仅 .gitmodules + Git relative URL；无 gitignore 回退
+  权限对齐 project 详情读 + 当前用户 OAuth
+  @author: claude @2026-07-15 11:35 / 2026-07-17
+end note
+
+note right of readOnly
+  禁止 INSERT/UPDATE project_repos
+  纯查询，无领域事件
+end note
+
+Rel_Flow(vue, gw, "GET nested-git-repos")
+Rel_Flow(gw, project, "tenant + user auth")
+Rel_Access_R(project, projectRepos, "R 关联仓 URL")
+Rel_Flow(project, gitoauth, "fetchGitAccessToken(当前用户)")
+Rel_Flow(project, gitlab, "GET raw files")
+Rel_Flow(project, github, "GET raw files")
+Rel_Influence(readOnly, project, "只读发现")
+
+@enduml

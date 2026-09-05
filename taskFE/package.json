@@ -1,0 +1,18 @@
+{
+  "name": "taskFE",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install:app": "npm --prefix app install",
+    "dev": "npm --prefix app run dev",
+    "build": "npm --prefix app run build",
+    "preview": "npm --prefix app run preview",
+    "test": "npm --prefix app run test",
+    "test:e2e": "npm --prefix app run test:e2e",
+    "test:e2e:headed": "npm --prefix app run test:e2e:headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "jsdom": "^29.1.1"
+  }
+}

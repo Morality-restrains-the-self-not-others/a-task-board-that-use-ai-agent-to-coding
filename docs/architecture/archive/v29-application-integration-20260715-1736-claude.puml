@@ -1,0 +1,59 @@
+' @title: Application Integration — gitOauth Python→Go (taskGitOauth)
+' @view: application-integration
+' @status: archived
+' @version: 29
+' @author: claude
+' @based_on: v27 current (v27-application-integration-20260715-1010-claude.puml); parallel with v28
+' @updated: 2026-07-15 18:31
+' @description: 新建 taskGitOauth Go 服务直替 Django gitOauth(:8002)；同库同契约；清理 Python
+' @iteration: gitoauth-go-migration
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v29 — taskGitOauth Go Migration (2026-07-15 17:36)
+
+rectangle "Motivation" {
+  Motivation_Constraint(goFirst, "Constraint\nGo-first APIs\ngit-oauth 废止 Non-Goal")
+  Motivation_Constraint(singleOwner, "Constraint\n单表所有权\ndb/git-oauth")
+}
+
+rectangle "Application" {
+  Application_Component(vue, "Vue\ngit-site-oauth")
+  Application_Component(gw, "task-gateway")
+  Application_Component(goAuth, "🟢 taskGitOauth\n:8002 Go")
+  Application_Component(django, "saas-backend\ninternal/bind bridge")
+  Application_Component(cred, "taskCredentialService")
+  Application_Component(proj, "taskProjectService")
+  Application_Component(cloud, "taskCloudService")
+  Application_Component(pyGone, "[DEPRECATED v29]\nDjango gitOauth")
+  Application_DataObject(db, "api_gitoauth*\nSQLite")
+}
+
+rectangle "Technology" {
+  Technology_Node(sqlite, "db/git-oauth")
+  Technology_Node(gh, "GitHub OAuth")
+  Technology_Node(gl, "GitLab OAuth")
+}
+
+Rel_Flow(vue, gw, "oauth start/callback")
+Rel_Flow(gw, goAuth, "upstream :8002")
+Rel_Flow(goAuth, gh, "authorize/token")
+Rel_Flow(goAuth, gl, "authorize/token")
+Rel_Flow(goAuth, django, "internal/bind")
+Rel_Access_W(goAuth, db, "W credentials/audit")
+Rel_Flow(cred, goAuth, "access-for-user")
+Rel_Flow(proj, goAuth, "access-for-user")
+Rel_Flow(cloud, goAuth, "access/summary")
+Rel_Flow(sqlite, db, "store")
+Rel_Influence(goFirst, goAuth, "新建 Go")
+Rel_Influence(singleOwner, goAuth, "唯一直连")
+Rel_Flow(pyGone, goAuth, "replaced by")
+
+note top of goAuth
+  契约兼容 Python gitOauth
+  Fernet + Bridge JWT 互操作
+  @author: claude @2026-07-15 17:36
+end note
+
+@enduml

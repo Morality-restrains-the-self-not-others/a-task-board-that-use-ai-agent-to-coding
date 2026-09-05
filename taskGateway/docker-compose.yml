@@ -1,0 +1,36 @@
+services:
+  apisix:
+    image: apache/apisix:3.11.0-debian
+    restart: "no"
+    environment:
+      APISIX_STAND_ALONE: "true"
+    # APISIX warns when nofile soft limit is <= 1024; raise for worker connection headroom.
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    volumes:
+      - ./apisix/config.yaml:/usr/local/apisix/conf/config.yaml
+      - ./apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml
+      - ./certs:/usr/local/apisix/conf/certs:ro
+      - ./logs:/usr/local/apisix/logs
+    ports:
+      - "18444:9443"
+      - "18081:9080"
+      - "127.0.0.1:9180:9180"
+      # OPT-20260827-003: prometheus plugin 指标导出端口（容器内 0.0.0.0:9091
+      # privileged_agent export server）。绑定所有接口：AiMonitor Prometheus 经
+      # host.docker.internal(172.17.0.1) 抓取，仅暴露网关请求量/延迟直方图无敏感载荷。
+      - "19091:9091"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - docs-portal
+
+  docs-portal:
+    image: nginx:1.27-alpine
+    restart: "no"
+    volumes:
+      - ./generated/docs-portal:/usr/share/nginx/html:ro
+    expose:
+      - "80"

@@ -1,0 +1,58 @@
+---
+description: ArchiMate 架构制品规则 — .puml / .diff.archimate / .full.archimate / 架构变迁视图连线与验证
+globs: "docs/architecture/**/*"
+alwaysApply: false
+---
+
+# ArchiMate 架构制品（docs/architecture/）
+
+创建或修改 `docs/architecture/` 下 `.puml`、`.diff.archimate`、`.full.archimate`、`.mermaid.md`、`VERSION_HISTORY.md` 时，**必须**加载并遵循：
+
+- **`.claude/skills/archimate/SKILL.md`** — 元素/关系类型、两层结构、`sourceConnection` 规则、Archi 验证
+- **`.claude/skills/1-brainstorming-design-docs/SKILL.md`** — 架构交付物清单、Step 3e/3f（伴生格式、视图连线、验证报告）、Step 6/7 设计文档模板
+
+## 双 .archimate 约定（强制）
+
+每个架构版本**必须同时生成两个** ArchiMate XML 文件：
+
+| 文件 | 内容 | 回答的问题 |
+|------|------|-----------|
+| `v<N>-<视图>-<时间戳>-<作者>.diff.archimate` | 增量模型：本次 🟢/🟡/🔴 变更元素 + 变更数据流两端 + Plateau/Gap/WP 迁移链 | 「这版改了什么」 |
+| `v<N>-<视图>-<时间戳>-<作者>.full.archimate` | 全量模型：变迁后完整架构拓扑（全部服务/DB/事件 + 变更标注） | 「改完的完整架构长什么样」 |
+
+## 两层结构（强制）
+
+| 层级 | 位置 | 遗漏后果 |
+|------|------|----------|
+| 语义模型 | `Relations` 文件夹 + 各 layer 的 `<element>` | 模型树有关系，画布无箭头 |
+| 视图布局 | `Views` → `ArchimateDiagramModel` → **`sourceConnection`** | Archi 打开只见孤立方框 |
+
+**禁止**：仅在 `Relations` 声明关系，却在视图中只写 `DiagramObject` 的 `<bounds>` 而不写 `sourceConnection`。
+
+## 视图连线要点
+
+- 每条应在图上可见的关系，须在至少一个视图中用 `sourceConnection` 绑定 `archimateRelationship`
+- `source`/`target` 为 **DiagramObject 的 id**，不是 element id
+- 目标节点加 `targetConnections` 列出入站 Connection id
+- 样板：`.diff` 以 `docs/architecture/v66-application-integration-20260806-0040-claude.diff.archimate`、`.full` 以 `docs/architecture/v63-application-integration-20260805-0238-claude.archimate` 为参照
+
+## 架构变迁（target 版本）
+
+每个 target 迭代，两个 `.archimate` 分别满足：
+
+- **`.diff.archimate`**：
+  1. **架构变迁视图** — Plateau(vN-1) → Gap；WorkPackage → Gap / Plateau(vN)
+  2. **目标拓扑视图** — 与 `.puml` 中 🟢/🟡 数据流一致且全部连线
+- **`.full.archimate`**：
+  1. **继承**上一版全部 Views（`ArchimateDiagramModel` 名称全集保留）
+  2. **追加**本版全量拓扑视图 + 架构变迁视图
+  3. 稳定 id：不整文件换号；禁止 `.diff` 改名伪全量
+  4. 门禁：`python3 db/scripts/ci/check_archimate_full_inherits_views.py`
+
+## 交付前验证
+
+1. 3f-2b 视图连线完整性（见 brainstorming Step 3f-2b；`.diff` 与 `.full` 均须通过）
+2. **`.full` Views 继承**：上一版视图名 ⊆ 本版；`check_archimate_full_inherits_views.py` 通过
+3. Archi CLI：`--loadModel docs/architecture/v<N>-<视图名>-<timestamp>-<author>.diff.archimate` 与 `.full.archimate`（**必须带 `.archimate` 后缀**；漏后缀 → `Could not load model`，且常仍 exit 0）
+4. **成功判据**：两个文件控制台均出现 `Loaded model:`，勿仅凭退出码
+5. 验证报告须含「视图连线 OK」「架构变迁链路可追踪 (diff)」「继承上版 Views + 全量拓扑连线完整 (full)」

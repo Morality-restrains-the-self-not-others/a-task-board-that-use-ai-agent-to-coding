@@ -1,0 +1,58 @@
+' @title: Git PR 回复评论 SSE 推送到任务详情
+' @view: application-integration
+' @status: current
+' @version: 131
+' @iteration: git-pr-reply-sse-fanout
+' @author: cursor
+' @based_on: v130 (v130-application-integration-20260904-1520-cursor.puml)
+' @updated: 2026-09-04 18:20
+' @description: git_pr 子评论创建时发布 SSE_MESSAGE，任务详情 EventSource 重拉 Feed
+
+@startuml
+!include <archimate/Archimate>
+
+title Git PR 回复 SSE fanout v131 Target (2026-09-04 18:15)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v131 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v131 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(task, "taskTaskService")
+note top of task
+  [MODIFIED v131] handleCreateComment:
+  首次 git_pr 插入 →
+  TASK_GIT_PULL_REQUEST_RECORDED
+  + SSE_MESSAGE(task_git_pr_reply_created)
+  @author: cursor @2026-09-04 18:15
+end note
+
+Application_Component(ev, "taskEvents sse_message/1_send")
+Application_Component(sse, "taskSSE")
+Application_Component(fe, "taskFE TaskDetail")
+note right of fe
+  [MODIFIED v131] establishSSEConnection:
+  on task_git_pr_reply_created → fetchTaskDetail
+end note
+
+Data_Object(kafka_rec, "Kafka task-git-pull-request-recorded")
+Data_Object(kafka_sse, "Kafka sse-message")
+Data_Object(redis, "Redis sse:{task_id}")
+
+Rel_Flow(task, kafka_rec, "TASK_GIT_PULL_REQUEST_RECORDED")
+Rel_Flow(task, kafka_sse, "🟢 SSE_MESSAGE")
+Rel_Flow(kafka_sse, ev, "consume")
+Rel_Flow(ev, redis, "PUBLISH")
+Rel_Flow(redis, sse, "pSubscribe")
+Rel_Flow(sse, fe, "EventSource server-startup-status")
+
+Implementation_Plateau(p130, "Plateau v130")
+Implementation_Plateau(p131, "Plateau v131")
+Implementation_Gap(gap, "Gap: git_pr 回复需刷新才可见")
+Implementation_WorkPackage(wp, "WP-git-pr-reply-sse-fanout")
+Rel_Triggering(p130, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p131, "delivers")
+
+@enduml

@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# HOOK_VERSION 1.0.0
+# dataMigrate 部署链路门禁（OPT-20260808-013）
+#
+# 背景：OPT-013 教训 — taskTaskService v15 存续期代码已部署生产，但
+# dataMigrate/taskTaskService/009_post_expires_at.sql 从未应用 → 生产 task_tasks
+# 缺列 → internal-apis smoke HTTP 500。推送含 dataMigrate 新文件的子仓时，
+# 若未执行 9999 init-databases / migrate.sh，缺口将静默带到生产。
+#
+# 行为：
+#   1. 计算本次推送涉及的新增 .sql 文件（origin/main..推送范围，或相对远端 HEAD）
+#   2. 无新增文件 → 放行
+#   3. 有新增文件 → 调巡检脚本 check_data_migrate_applied.py 比对生产 data_migrate_log
+#      - 全部已应用（一致）→ 放行
+#      - 存在缺口（本地有未应用）→ 阻断推送，提示执行 9999 init-databases 或 migrate.sh
+#      - 生产不可达 → 提示（不阻断，离线开发放行；巡检脚本 SKIP 语义）
+#
+# 跳过：git push --no-verify（显式绕过）
+# 依赖：db 子仓 scripts/ci/check_data_migrate_applied.py（monorepo 根路径）
+set -euo pipefail
+
+echo "▸ [hook:pre-push v1.0.0 — dataMigrate 部署链路门禁]"
+
+ROOT="$(cd "$(git rev-parse --show-toplevel)/.." && pwd 2>/dev/null || true)"
+AUDIT="$ROOT/db/scripts/ci/check_data_migrate_applied.py"
+
+# 推送范围默认远端：origin（pre-push 参数: <remote> <url>）
+REMOTE="${1:-origin}"
+
+# 收集本次推送涉及的新增/修改 .sql 文件（相对 dataMigrate 根）
+NEW_SQL=()
+while IFS= read -r line; do
+  [ -z "$line" ] && continue
+  NEW_SQL+=("$line")
+done < <(git diff --name-only --diff-filter=AM "origin/main...HEAD" -- '*.sql' 2>/dev/null || true)
+
+if [ ${#NEW_SQL[@]} -eq 0 ]; then
+  echo "✓ 无新增/修改迁移文件，放行"
+  exit 0
+fi
+
+echo "⚠ 本次推送含迁移文件（${#NEW_SQL[@]} 个）:"
+for f in "${NEW_SQL[@]}"; do
+  printf "    • %s\n" "$f"
+done
+
+if [ ! -f "$AUDIT" ]; then
+  echo "⚠ 巡检脚本缺失（$AUDIT），跳过门禁（不阻断）"
+  exit 0
+fi
+
+# 服务目录 → registry key 映射（仅巡检受影响库，避免全库连接超时）
+dir_to_key() {
+  case "$1" in
+    taskAuth)          echo "task-auth" ;;
+    taskBill)          echo "task-bill" ;;
+    taskGitOauth)      echo "git-oauth" ;;
+    taskAiProvider)    echo "ai-provider" ;;
+    taskCredentialService) echo "container" ;;
+    taskBudget)        echo "task-budget" ;;
+    taskProjectService) echo "task-project" ;;
+    taskTaskService)   echo "task-task" ;;
+    taskCloudService)  echo "task-cloud" ;;
+    taskAIComment)     echo "task-ai-comment" ;;
+    taskTenantService) echo "task-tenant" ;;
+    taskReferral)      echo "task-referral" ;;
+    *)                 echo "" ;;
+  esac
+}
+
+AFFECTED_KEYS=""
+for f in "${NEW_SQL[@]}"; do
+  DIR="$(echo "$f" | cut -d/ -f1)"
+  KEY="$(dir_to_key "$DIR")"
+  if [ -n "$KEY" ] && [[ " $AFFECTED_KEYS " != *" $KEY "* ]]; then
+    AFFECTED_KEYS="$AFFECTED_KEYS $KEY"
+  fi
+done
+
+echo ""
+echo "▶ 巡检生产 data_migrate_log（受影响库:$AFFECTED_KEYS ）..."
+AUDIT_ARGS=()
+if [ -n "$AFFECTED_KEYS" ]; then
+  for k in $AFFECTED_KEYS; do
+    AUDIT_ARGS+=("--db" "$k")
+  done
+fi
+if python3 "$AUDIT" "${AUDIT_ARGS[@]}" >/tmp/datamigrate_audit.out 2>&1; then
+  cat /tmp/datamigrate_audit.out
+  echo "✅ 生产各库迁移一致，放行"
+  exit 0
+fi
+
+AUDIT_EXIT=$?
+cat /tmp/datamigrate_audit.out
+echo ""
+echo "╔════════════════════════════════════════════════════════════════════╗"
+echo "║  ⛔ dataMigrate 部署链路门禁：存在未应用到生产的迁移文件          ║"
+echo "╠════════════════════════════════════════════════════════════════════╣"
+echo "║  新增迁移须先应用再推送（OPT-013 教训：未应用的迁移 → 生产        ║"
+echo "║  schema 缺口 → smoke 500）：                                        ║"
+echo "║    • 全部库: 9999 UI「初始化全部数据库」（或 curl 触发）           ║"
+echo "║      curl -X POST 'http://127.0.0.1:9999/api/dev/init-databases?confirm=INIT_ALL'"║
+echo "║    • 单库:   bash db/scripts/apply_datamigrate.sh <db> dataMigrate/<dir>"║
+echo "║    • 确认已应用但脚本误报（网络抖动）: 重跑巡检后仍失败可            ║"
+echo "║      git push --no-verify 显式绕过                                 ║"
+echo "╚════════════════════════════════════════════════════════════════════╝"
+echo ""
+exit 1

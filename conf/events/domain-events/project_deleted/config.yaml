@@ -1,0 +1,10 @@
+# PROJECT_DELETED — project_entries row removed.
+# Consumer: taskEvents project_deleted/1_detach_task_projects → DELETE task_projects by project_id.
+# Kafka topic SSOT remains taskEvents/config DefaultTopicForEventType (project-deleted).
+intents:
+  1_detach_task_projects:
+    host: 0.0.0.0
+    port: 18074
+    groupId: task-events-project-deleted-1-detach-task-projects
+    events:
+    - PROJECT_DELETED

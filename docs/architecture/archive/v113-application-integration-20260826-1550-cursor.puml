@@ -1,0 +1,84 @@
+' @title: 推荐资格服务号动态 scene 码（应用集成）
+' @view: application-integration
+' @status: current
+' @version: 113
+' @iteration: referral-mp-dynamic-qr-ticket
+' @author: cursor
+' @based_on: v112 (v112-application-integration-20260826-0950-cursor.puml)
+' @updated: 2026-08-26 16:35
+' @description: 临时 ID 带参二维码；subscribe/SCAN 对账；unionId 冲突不抢绑
+
+@startuml
+!include <archimate/Archimate>
+
+title v113 Target — 动态 scene 码对账 2026-08-26 15:50
+
+legend right
+  | <#LightGreen>  </> | [NEW] v113 |
+  | <#LightYellow> </> | [MODIFIED] v113 |
+  | <#LightPink>   </> | [DEPRECATED] v113 |
+endlegend
+
+Application_Component(wxmp, "微信服务号")
+note right of wxmp
+  [MODIFIED v113] qrcode/create + SCAN
+  @author: cursor @2026-08-26 15:50
+end note
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  [MODIFIED v113] 动态码闸门
+  废弃静态 jjf_qrcode 凭证
+  @author: cursor @2026-08-26 15:50
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+note right of gw
+  [MODIFIED v113] follow-qr token
+  @author: cursor @2026-08-26 15:50
+end note
+
+Application_Component(auth, "taskAuth")
+note right of auth
+  [MODIFIED v113] scene 对账
+  unionId 冲突不抢绑
+  @author: cursor @2026-08-26 15:50
+end note
+
+Application_Component(ref, "taskReferral")
+Application_DataObject(ident, "wechat_identity")
+Application_DataObject(pend, "auth_wechat_mp_subscribe_pending")
+Application_DataObject(ticket, "auth_wechat_mp_follow_ticket")
+note right of ticket
+  [NEW v113] Snowflake temp_id
+  status pending/bound/conflict
+  @author: cursor @2026-08-26 15:50
+end note
+Business_Event(evSub, "WECHAT_MP_SUBSCRIBED")
+Business_Event(evConf, "WECHAT_IDENTITY_CONFLICT")
+note right of evConf
+  [NEW v113 本流使用] unionId 属他人
+  @author: cursor @2026-08-26 15:50
+end note
+
+Rel_Flow(wxmp, gw, "subscribe/SCAN XML")
+Rel_Flow(gw, auth, "mp/callback")
+Rel_Flow(taskFE, gw, "follow-qr / follow-status")
+Rel_Flow(gw, ref, "referral apply/status")
+Rel_Flow(auth, wxmp, "qrcode/create")
+Rel_Access(auth, ident, "upsert mp if no conflict")
+Rel_Access(auth, pend, "no-scene fallback")
+Rel_Access(auth, ticket, "scene match")
+Rel_Flow(auth, evSub, "bound/conflict/pending")
+Rel_Flow(auth, evConf, "unionId occupied")
+Rel_Flow(ref, auth, "read mp bound")
+
+Implementation_Plateau(plateauV112, "Plateau v112 静态码闸门")
+Implementation_Plateau(plateauV113, "Plateau v113 动态 scene 票")
+Implementation_Gap(gapQr, "Gap: 静态码无 scene，已关注无 SCAN")
+Implementation_WorkPackage(wpQr, "WP-referral-mp-dynamic-qr-ticket")
+Rel_Triggering(plateauV112, gapQr, "identifies")
+Rel_Realization(wpQr, gapQr, "closes")
+Rel_Realization(wpQr, plateauV113, "delivers")
+
+@enduml

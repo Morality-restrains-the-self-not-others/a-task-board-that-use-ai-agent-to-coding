@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="trae-service" content="task2app" />
+    <meta name="daydaymoney-service-id" content="task2app" />
+    <meta name="daydaymoney-tags" content="svc:task2app,domain:saas" />
+    <title>SaaS Platform</title>
+    <!-- Non-Django runtime config: override API base URL via ?apiBaseUrl=... or data-api-base attribute -->
+    <script>
+      window.__TASK2APP_API_BASE_URL__ = (function() {
+        var p = new URLSearchParams(window.location.search).get('apiBaseUrl');
+        if (p) return p;
+        var s = document.currentScript && document.currentScript.dataset && document.currentScript.dataset.apiBase;
+        return s || '';
+      })();
+    </script>
+    <script type="module" crossorigin src="/static/assets/index-B_ALncww.js"></script>
+    <link rel="stylesheet" crossorigin href="/static/assets/style-B9NYaxVj.css">
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

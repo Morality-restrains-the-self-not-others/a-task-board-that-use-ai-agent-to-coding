@@ -1,0 +1,8 @@
+---
+name: read_wiki
+description: Grants the ability to read wikis
+boundaries:
+  - group
+  - project
+permissions:
+  - read_wiki

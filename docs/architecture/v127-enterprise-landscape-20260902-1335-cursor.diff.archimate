@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v127 变迁 (v126→v127)" id="id-v127eldiff01">
+  <folder name="Business" id="id-v127el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v127-biz-ops" name="平台运维 [NEW v127]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v127-biz-precise" name="精准编译重启 [NEW v127]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v127-biz-buildall" name="全部重新编译 [NEW v127]"/>
+  </folder>
+  <folder name="Application" id="id-v127el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127el-app-runall" name="runAll :9999 [MODIFIED v127]"/>
+  </folder>
+  <folder name="Technology" id="id-v127el-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v127el-src" name="SOURCE_ROOT 源码树 [NEW v127]"/>
+    <element xsi:type="archimate:Artifact" id="id-v127el-bins" name="deploy-binaries/ [NEW v127]"/>
+    <element xsi:type="archimate:Artifact" id="id-v127el-cl" name="conf-local/ [MODIFIED v127]"/>
+    <element xsi:type="archimate:Artifact" id="id-v127el-upd" name="update.sh [DEPRECATED v127]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v127el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v127el-pl-v126" name="Plateau v126 项目 L2 可种自动运行"/>
+    <element xsi:type="archimate:Plateau" id="id-v127el-pl-v127" name="Plateau v127 部署 9999 源码编译编排"/>
+    <element xsi:type="archimate:Gap" id="id-v127el-gap" name="Gap: 部署 9999 不能编译；靠 update.sh 全量拷"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v127el-wp" name="WP-deploy-9999-source-compile-restart"/>
+  </folder>
+  <folder name="Relations" id="id-v127el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v127el-rel-ops-precise" source="id-v127-biz-ops" target="id-v127-biz-precise"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v127el-rel-ops-buildall" source="id-v127-biz-ops" target="id-v127-biz-buildall"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v127el-rel-precise-runall" source="id-v127-biz-precise" target="id-v127el-app-runall" name="POST /api/precise-restart"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v127el-rel-buildall-runall" source="id-v127-biz-buildall" target="id-v127el-app-runall" name="POST /api/build-all"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v127el-rel-runall-src" source="id-v127el-app-runall" target="id-v127el-src" name="precise-compile.sh"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v127el-rel-src-bins" source="id-v127el-src" target="id-v127el-bins" name="collect"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v127el-rel-runall-bins" source="id-v127el-app-runall" target="id-v127el-bins" name="增量 install"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v127el-rel-runall-cl" source="id-v127el-app-runall" target="id-v127el-cl" name="rsync --delete"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v127el-rel-pl-gap" source="id-v127el-pl-v126" target="id-v127el-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v127el-rel-wp-gap" source="id-v127el-wp" target="id-v127el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v127el-rel-wp-pl" source="id-v127el-wp" target="id-v127el-pl-v127"/>
+  </folder>
+  <folder name="Views" id="id-v127el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v127el-view-mig" name="架构变迁 v126→v127 — 部署 9999 源码编译编排">
+      <child xsi:type="archimate:DiagramObject" id="id-v127el-do-pl126" archimateElement="id-v127el-pl-v126">
+        <bounds x="48" y="48" width="300" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127el-c-pl-gap" source="id-v127el-do-pl126" target="id-v127el-do-gap" archimateRelationship="id-v127el-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127el-do-gap" targetConnections="id-v127el-c-pl-gap id-v127el-c-wp-gap" archimateElement="id-v127el-gap">
+        <bounds x="380" y="48" width="460" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127el-do-wp" archimateElement="id-v127el-wp">
+        <bounds x="380" y="140" width="460" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127el-c-wp-gap" source="id-v127el-do-wp" target="id-v127el-do-gap" archimateRelationship="id-v127el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127el-c-wp-pl" source="id-v127el-do-wp" target="id-v127el-do-pl127" archimateRelationship="id-v127el-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127el-do-pl127" targetConnections="id-v127el-c-wp-pl" archimateElement="id-v127el-pl-v127">
+        <bounds x="880" y="140" width="320" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v127el-view-topo" name="v127 Target — 部署 9999 编排源码编译">
+      <child xsi:type="archimate:DiagramObject" id="id-v127el-do-ops" archimateElement="id-v127-biz-ops">
+        <bounds x="48" y="80" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127el-c-ops-precise" source="id-v127el-do-ops" target="id-v127el-do-precise" archimateRelationship="id-v127el-rel-ops-precise"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127el-c-ops-buildall" source="id-v127el-do-ops" target="id-v127el-do-buildall" archimateRelationship="id-v127el-rel-ops-buildall"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127el-do-precise" targetConnections="id-v127el-c-ops-precise" archimateElement="id-v127-biz-precise">
+        <bounds x="220" y="48" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127el-c-precise-runall" source="id-v127el-do-precise" target="id-v127el-do-runall" archimateRelationship="id-v127el-rel-precise-runall"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127el-do-buildall" targetConnections="id-v127el-c-ops-buildall" archimateElement="id-v127-biz-buildall">
+        <bounds x="220" y="120" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127el-c-buildall-runall" source="id-v127el-do-buildall" target="id-v127el-do-runall" archimateRelationship="id-v127el-rel-buildall-runall"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127el-do-runall" targetConnections="id-v127el-c-precise-runall id-v127el-c-buildall-runall" archimateElement="id-v127el-app-runall">
+        <bounds x="440" y="80" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127el-c-runall-src" source="id-v127el-do-runall" target="id-v127el-do-src" archimateRelationship="id-v127el-rel-runall-src"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127el-c-runall-bins" source="id-v127el-do-runall" target="id-v127el-do-bins" archimateRelationship="id-v127el-rel-runall-bins"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127el-c-runall-cl" source="id-v127el-do-runall" target="id-v127el-do-cl" archimateRelationship="id-v127el-rel-runall-cl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127el-do-src" targetConnections="id-v127el-c-runall-src" archimateElement="id-v127el-src">
+        <bounds x="680" y="48" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127el-c-src-bins" source="id-v127el-do-src" target="id-v127el-do-bins" archimateRelationship="id-v127el-rel-src-bins"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127el-do-bins" targetConnections="id-v127el-c-runall-bins id-v127el-c-src-bins" archimateElement="id-v127el-bins">
+        <bounds x="680" y="120" width="220" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127el-do-cl" targetConnections="id-v127el-c-runall-cl" archimateElement="id-v127el-cl">
+        <bounds x="680" y="192" width="220" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127el-do-upd" archimateElement="id-v127el-upd">
+        <bounds x="440" y="192" width="200" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

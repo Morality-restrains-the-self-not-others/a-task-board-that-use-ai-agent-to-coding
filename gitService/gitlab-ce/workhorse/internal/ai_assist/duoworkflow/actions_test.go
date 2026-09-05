@@ -1,0 +1,620 @@
+package duoworkflow
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	pb "gitlab.com/gitlab-org/modelops/applied-ml/code-suggestions/ai-assist/clients/gopb/contract"
+
+	"gitlab.com/gitlab-org/gitlab/workhorse/internal/testhelper"
+
+	"gitlab.com/gitlab-org/gitlab/workhorse/internal/api"
+)
+
+const testRemoteAddr = "192.0.2.1:1234"
+
+// createBackendHandler creates a backend handler that makes HTTP requests using the provided client
+func createBackendHandler(client *http.Client) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp, err := client.Do(r)
+		if err != nil {
+			w.WriteHeader(http.StatusBadGateway)
+			fmt.Fprint(w, err.Error())
+			return
+		}
+		defer resp.Body.Close()
+
+		// Copy response headers
+		for k, v := range resp.Header {
+			w.Header()[k] = v
+		}
+		w.WriteHeader(resp.StatusCode)
+
+		// Copy response body
+		buf := bytes.NewBuffer(nil)
+		if _, err := buf.ReadFrom(resp.Body); err != nil {
+			fmt.Fprint(w, err.Error())
+			return
+		}
+		fmt.Fprint(w, buf.String())
+	})
+}
+
+func TestRunHttpActionHandler_Execute(t *testing.T) {
+	testhelper.ConfigureSecret()
+
+	t.Run("successful request with body", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/api/projects/123", r.URL.Path)
+			assert.Equal(t, "Bearer test-token", r.Header.Get("Authorization"))
+			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+			assert.Equal(t, "Agent-Flow-via-GitLab-Workhorse", r.Header.Get("User-Agent"))
+			assert.NotEmpty(t, r.Header.Get("Gitlab-Workhorse-Api-Request"))
+			assert.Equal(t, "192.0.2.1", r.Header.Get("X-Forwarded-For"))
+			assert.Equal(t, "POST", r.Method)
+			w.WriteHeader(http.StatusCreated)
+			fmt.Fprint(w, `{"id": 123, "name": "test-project"}`)
+		}))
+		defer server.Close()
+
+		serverURL, err := url.Parse(server.URL)
+		require.NoError(t, err)
+
+		body := `{"name": "test-project"}`
+
+		action := &pb.Action{
+			RequestID: "req-123",
+			Action: &pb.Action_RunHTTPRequest{
+				RunHTTPRequest: &pb.RunHTTPRequest{
+					Method: "POST",
+					Path:   "/api/projects/123",
+					Body:   &body,
+				},
+			},
+		}
+
+		originalReq := httptest.NewRequest("GET", "/ws", nil)
+		originalReq.RemoteAddr = testRemoteAddr
+
+		handler := &runHTTPActionHandler{
+			rails: &api.API{
+				Client: server.Client(),
+				URL:    serverURL,
+			},
+			backend:     http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { server.Config.Handler.ServeHTTP(w, r) }),
+			action:      action,
+			token:       "test-token",
+			originalReq: originalReq,
+		}
+
+		result, err := handler.Execute(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, "req-123", result.GetActionResponse().RequestID)
+		require.JSONEq(t, `{"id": 123, "name": "test-project"}`, result.GetActionResponse().GetHttpResponse().Body)
+		require.Equal(t, int32(201), result.GetActionResponse().GetHttpResponse().StatusCode)
+	})
+
+	t.Run("successful request without body", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/api/projects", r.URL.Path)
+			assert.Equal(t, "127.0.0.1:3000, 192.0.2.1", r.Header.Get("X-Forwarded-For"))
+			assert.Equal(t, "GET", r.Method)
+
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, `[{"id": 123, "name": "test-project"}]`)
+		}))
+		defer server.Close()
+
+		serverURL, err := url.Parse(server.URL)
+		require.NoError(t, err)
+
+		action := &pb.Action{
+			RequestID: "req-456",
+			Action: &pb.Action_RunHTTPRequest{
+				RunHTTPRequest: &pb.RunHTTPRequest{
+					Method: "GET",
+					Path:   "/api/projects",
+				},
+			},
+		}
+
+		originalReq := httptest.NewRequest("GET", "/ws", nil)
+		originalReq.RemoteAddr = testRemoteAddr
+		originalReq.Header.Set("X-Forwarded-For", "127.0.0.1:3000")
+
+		handler := &runHTTPActionHandler{
+			rails: &api.API{
+				Client: server.Client(),
+				URL:    serverURL,
+			},
+			backend:     createBackendHandler(server.Client()),
+			action:      action,
+			token:       "test-token",
+			originalReq: originalReq,
+		}
+
+		result, err := handler.Execute(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, "req-456", result.GetActionResponse().RequestID)
+		require.JSONEq(t, `[{"id": 123, "name": "test-project"}]`, result.GetActionResponse().GetHttpResponse().Body)
+		require.Equal(t, int32(200), result.GetActionResponse().GetHttpResponse().StatusCode)
+	})
+
+	t.Run("successful request with limited body", func(t *testing.T) {
+		body := strings.Repeat("large body", 5*1024*1024)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/api/projects", r.URL.Path)
+			assert.Equal(t, "GET", r.Method)
+
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, body)
+		}))
+		defer server.Close()
+
+		serverURL, err := url.Parse(server.URL)
+		require.NoError(t, err)
+
+		action := &pb.Action{
+			RequestID: "req-456",
+			Action: &pb.Action_RunHTTPRequest{
+				RunHTTPRequest: &pb.RunHTTPRequest{
+					Method: "GET",
+					Path:   "/api/projects",
+				},
+			},
+		}
+
+		handler := &runHTTPActionHandler{
+			rails: &api.API{
+				Client: server.Client(),
+				URL:    serverURL,
+			},
+			backend:     createBackendHandler(server.Client()),
+			action:      action,
+			token:       "test-token",
+			originalReq: &http.Request{},
+		}
+
+		result, err := handler.Execute(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, "req-456", result.GetActionResponse().RequestID)
+		require.Equal(t, body[:ActionResponseBodyLimit], result.GetActionResponse().GetHttpResponse().Body)
+		require.Equal(t, int32(200), result.GetActionResponse().GetHttpResponse().StatusCode)
+	})
+
+	t.Run("server error", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, `{"error": "internal server error"}`)
+		}))
+		defer server.Close()
+
+		serverURL, err := url.Parse(server.URL)
+		require.NoError(t, err)
+
+		action := &pb.Action{
+			RequestID: "req-789",
+			Action: &pb.Action_RunHTTPRequest{
+				RunHTTPRequest: &pb.RunHTTPRequest{
+					Method: "GET",
+					Path:   "/api/projects",
+				},
+			},
+		}
+
+		handler := &runHTTPActionHandler{
+			rails: &api.API{
+				Client: server.Client(),
+				URL:    serverURL,
+			},
+			backend:     createBackendHandler(server.Client()),
+			action:      action,
+			token:       "test-token",
+			originalReq: &http.Request{},
+		}
+
+		result, err := handler.Execute(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, int32(500), result.GetActionResponse().GetHttpResponse().StatusCode)
+		require.JSONEq(t, `{"error": "internal server error"}`, result.GetActionResponse().GetHttpResponse().Body)
+	})
+
+	t.Run("invalid request URL", func(t *testing.T) {
+		serverURL, err := url.Parse("http://localhost:0")
+		require.NoError(t, err)
+
+		action := &pb.Action{
+			RequestID: "req-invalid",
+			Action: &pb.Action_RunHTTPRequest{
+				RunHTTPRequest: &pb.RunHTTPRequest{
+					Method: "GET",
+					Path:   ":%invalid",
+				},
+			},
+		}
+
+		handler := &runHTTPActionHandler{
+			rails: &api.API{
+				Client: &http.Client{},
+				URL:    serverURL,
+			},
+			backend:     http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {}),
+			action:      action,
+			token:       "test-token",
+			originalReq: &http.Request{},
+		}
+
+		result, err := handler.Execute(context.Background())
+
+		// Note: This test still expects an error because the URL parsing happens
+		// before the HTTP request, in url.Parse() and http.NewRequestWithContext()
+		// which are not covered by our HTTP error handling changes
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+
+	t.Run("request with query parameters", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/api/projects", r.URL.Path)
+			assert.Equal(t, "visibility=public&page=1", r.URL.RawQuery)
+
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, `[{"id": 123, "name": "test-project"}]`)
+		}))
+		defer server.Close()
+
+		serverURL, err := url.Parse(server.URL)
+		require.NoError(t, err)
+
+		action := &pb.Action{
+			RequestID: "req-query",
+			Action: &pb.Action_RunHTTPRequest{
+				RunHTTPRequest: &pb.RunHTTPRequest{
+					Method: "GET",
+					Path:   "/api/projects?visibility=public&page=1",
+				},
+			},
+		}
+
+		handler := &runHTTPActionHandler{
+			rails: &api.API{
+				Client: server.Client(),
+				URL:    serverURL,
+			},
+			backend:     createBackendHandler(server.Client()),
+			action:      action,
+			token:       "test-token",
+			originalReq: &http.Request{},
+		}
+
+		result, err := handler.Execute(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, int32(200), result.GetActionResponse().GetHttpResponse().StatusCode)
+	})
+}
+
+func TestServeHTTPSafe(t *testing.T) {
+	t.Run("recovers ErrAbortHandler with canceled context and returns error", func(t *testing.T) {
+		handler := http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+			panic(http.ErrAbortHandler)
+		})
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // cancel before the call to simulate a disconnected client
+
+		req, err := http.NewRequestWithContext(ctx, "GET", "http://example.com", nil)
+		require.NoError(t, err)
+
+		err = serveHTTPSafe(handler, httptest.NewRecorder(), req)
+
+		require.ErrorIs(t, err, context.Canceled)
+	})
+
+	t.Run("recovers ErrAbortHandler with size limit hit and returns error", func(t *testing.T) {
+		handler := http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+			panic(http.ErrAbortHandler)
+		})
+
+		req, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", nil)
+		require.NoError(t, err)
+
+		nrw := &nullResponseWriter{
+			sizeLimitHit: true,
+		}
+
+		err = serveHTTPSafe(handler, nrw, req)
+
+		require.EqualError(t, err, "response body exceeded size limit (4190208 bytes)")
+	})
+
+	t.Run("recovers ErrAbortHandler with non-canceled context and returns error", func(t *testing.T) {
+		handler := http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+			panic(http.ErrAbortHandler)
+		})
+
+		req, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", nil)
+		require.NoError(t, err)
+
+		err = serveHTTPSafe(handler, httptest.NewRecorder(), req)
+
+		require.EqualError(t, err, "request aborted")
+	})
+
+	t.Run("re-panics on unexpected panics", func(t *testing.T) {
+		handler := http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+			panic("something unexpected")
+		})
+
+		req, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", nil)
+		require.NoError(t, err)
+
+		require.Panics(t, func() {
+			_ = serveHTTPSafe(handler, httptest.NewRecorder(), req)
+		})
+	})
+
+	t.Run("returns nil when handler completes normally", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+
+		req, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", nil)
+		require.NoError(t, err)
+
+		err = serveHTTPSafe(handler, httptest.NewRecorder(), req)
+
+		require.NoError(t, err)
+	})
+}
+
+func TestRunHttpActionHandler_Execute_ContextCancelled(t *testing.T) {
+	t.Run("sends error to dws instead of panicking or erroring when context is canceled", func(t *testing.T) {
+		// This backend simulates what httputil.ReverseProxy does when the request
+		// context is canceled mid-flight: it panics with http.ErrAbortHandler.
+		// Without the serveHTTPSafe wrapper, this panic would propagate uncaught
+		// out of the agent goroutine and crash the process.
+		backend := http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+			panic(http.ErrAbortHandler)
+		})
+
+		serverURL, err := url.Parse("http://localhost:0")
+		require.NoError(t, err)
+
+		action := &pb.Action{
+			RequestID: "req-cancel",
+			Action: &pb.Action_RunHTTPRequest{
+				RunHTTPRequest: &pb.RunHTTPRequest{
+					Method: "GET",
+					Path:   "/api/test",
+				},
+			},
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		originalReq := httptest.NewRequest("GET", "/ws", nil)
+		originalReq.RemoteAddr = testRemoteAddr
+
+		handler := &runHTTPActionHandler{
+			rails: &api.API{
+				Client: &http.Client{},
+				URL:    serverURL,
+			},
+			backend:     backend,
+			action:      action,
+			token:       "test-token",
+			originalReq: originalReq,
+		}
+
+		result, err := handler.Execute(ctx)
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.NotEmpty(t, result.GetActionResponse().GetHttpResponse().Error)
+	})
+}
+
+func TestHeaderParsing(t *testing.T) {
+	t.Run("response headers are correctly parsed and joined", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Custom-Header", "custom-value")
+			w.Header().Set("Cache-Control", "no-cache")
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, `{"status": "ok"}`)
+		}))
+		defer server.Close()
+
+		serverURL, err := url.Parse(server.URL)
+		require.NoError(t, err)
+
+		action := &pb.Action{
+			RequestID: "req-headers",
+			Action: &pb.Action_RunHTTPRequest{
+				RunHTTPRequest: &pb.RunHTTPRequest{
+					Method: "GET",
+					Path:   "/api/test",
+				},
+			},
+		}
+
+		handler := &runHTTPActionHandler{
+			rails: &api.API{
+				Client: server.Client(),
+				URL:    serverURL,
+			},
+			backend:     createBackendHandler(server.Client()),
+			action:      action,
+			token:       "test-token",
+			originalReq: &http.Request{},
+		}
+
+		result, err := handler.Execute(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+
+		headers := result.GetActionResponse().GetHttpResponse().Headers
+		require.NotNil(t, headers)
+		require.Equal(t, "application/json", headers["Content-Type"])
+		require.Equal(t, "custom-value", headers["X-Custom-Header"])
+		require.Equal(t, "no-cache", headers["Cache-Control"])
+	})
+
+	t.Run("multiple header values are joined with comma and space", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Add("Set-Cookie", "session=abc123")
+			w.Header().Add("Set-Cookie", "user=john")
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, `{}`)
+		}))
+		defer server.Close()
+
+		serverURL, err := url.Parse(server.URL)
+		require.NoError(t, err)
+
+		action := &pb.Action{
+			RequestID: "req-multi-headers",
+			Action: &pb.Action_RunHTTPRequest{
+				RunHTTPRequest: &pb.RunHTTPRequest{
+					Method: "GET",
+					Path:   "/api/test",
+				},
+			},
+		}
+
+		handler := &runHTTPActionHandler{
+			rails: &api.API{
+				Client: server.Client(),
+				URL:    serverURL,
+			},
+			backend:     createBackendHandler(server.Client()),
+			action:      action,
+			token:       "test-token",
+			originalReq: &http.Request{},
+		}
+
+		result, err := handler.Execute(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+
+		headers := result.GetActionResponse().GetHttpResponse().Headers
+		require.NotNil(t, headers)
+		// Multiple header values should be joined with ", "
+		require.Equal(t, "session=abc123, user=john", headers["Set-Cookie"])
+	})
+
+	t.Run("X-Forwarded-For header with existing prior value", func(t *testing.T) {
+		var capturedHeaders http.Header
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedHeaders = r.Header
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, `{}`)
+		}))
+		defer server.Close()
+
+		serverURL, err := url.Parse(server.URL)
+		require.NoError(t, err)
+
+		action := &pb.Action{
+			RequestID: "req-forwarded",
+			Action: &pb.Action_RunHTTPRequest{
+				RunHTTPRequest: &pb.RunHTTPRequest{
+					Method: "GET",
+					Path:   "/api/test",
+				},
+			},
+		}
+
+		originalReq := httptest.NewRequest("GET", "/ws", nil)
+		originalReq.RemoteAddr = testRemoteAddr
+		originalReq.Header.Set("X-Forwarded-For", "10.0.0.1, 10.0.0.2")
+
+		handler := &runHTTPActionHandler{
+			rails: &api.API{
+				Client: server.Client(),
+				URL:    serverURL,
+			},
+			backend:     createBackendHandler(server.Client()),
+			action:      action,
+			token:       "test-token",
+			originalReq: originalReq,
+		}
+
+		result, err := handler.Execute(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+
+		// X-Forwarded-For should contain prior values plus the new client IP
+		require.Equal(t, "10.0.0.1, 10.0.0.2, 192.0.2.1", capturedHeaders.Get("X-Forwarded-For"))
+	})
+
+	t.Run("X-Forwarded-For header without prior value", func(t *testing.T) {
+		var capturedHeaders http.Header
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedHeaders = r.Header
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, `{}`)
+		}))
+		defer server.Close()
+
+		serverURL, err := url.Parse(server.URL)
+		require.NoError(t, err)
+
+		action := &pb.Action{
+			RequestID: "req-forwarded-new",
+			Action: &pb.Action_RunHTTPRequest{
+				RunHTTPRequest: &pb.RunHTTPRequest{
+					Method: "GET",
+					Path:   "/api/test",
+				},
+			},
+		}
+
+		originalReq := httptest.NewRequest("GET", "/ws", nil)
+		originalReq.RemoteAddr = testRemoteAddr
+
+		handler := &runHTTPActionHandler{
+			rails: &api.API{
+				Client: server.Client(),
+				URL:    serverURL,
+			},
+			backend:     createBackendHandler(server.Client()),
+			action:      action,
+			token:       "test-token",
+			originalReq: originalReq,
+		}
+
+		result, err := handler.Execute(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+
+		// X-Forwarded-For should contain only the client IP
+		require.Equal(t, "192.0.2.1", capturedHeaders.Get("X-Forwarded-For"))
+	})
+}

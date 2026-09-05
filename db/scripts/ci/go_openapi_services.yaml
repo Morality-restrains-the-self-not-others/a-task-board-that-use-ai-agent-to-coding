@@ -1,0 +1,125 @@
+# Go 服务 mountRoutes ↔ openapi.yaml 漂移检查配置（SSOT）
+# 消费方：db/scripts/ci/check_go_openapi_routes.py
+version: 1
+
+# 全局：文档元路径 / 探针，默认不要求出现在 OpenAPI
+default_ignore_mounted:
+  - /api/schema/
+  - /api/schema
+  - /api/swagger/
+  - /api/swagger
+  - /api/schema-internal/
+  - /api/schema-internal
+  - /api/swagger-internal/
+  - /api/swagger-internal
+  - /api/metrics
+  - /api/metrics/
+  - /api/live
+  - /api/live/
+  - /metrics
+  - /metrics/
+
+services:
+  taskBill:
+    handlers: taskBill/src/handlers.go
+    openapi: taskBill/src/openapi.yaml
+    openapi_internal: taskBill/src/openapi-internal.yaml
+    internal_coverage: complete
+    prefix_routers:
+      - /api/internal/taskbill/accounts/
+      - /api/internal/taskbill/pricing-packages/
+      - /api/internal/taskbill/refund-applications/
+      - /api/internal/taskbill/invoice-applications/
+      - /api/internal/taskbill/refund-policy/
+      - /api/system-admin/invoice-applications/
+      - /api/billing/profit-sharing/referrer-orders/
+      - /api/system-admin/profit-sharing/
+      - /api/system-admin/feedback-link-groups/
+    skip_mounted_prefixes:
+      - /api/internal/
+    ignore_mounted:
+      - /callback/
+      - /cancel/
+      - /orders/
+      - /pay/
+      - /comments/
+      - /invoice-applications/
+      - /invoices/
+      - /file/
+    # Contains+HasSuffix 组合路由（orders/{order_id} 动态子路径）无法由静态解析建模，
+    # 文档化路径在此显式豁免
+    ignore_openapi:
+      - /api/tenant/{tenant_id}/billing/orders/{order_id}/
+      - /api/tenant/{tenant_id}/billing/orders/{order_id}/pay/
+      - /api/tenant/{tenant_id}/billing/orders/{order_id}/cancel/
+      - /api/tenant/{tenant_id}/billing/orders/{order_id}/callback/
+      - /api/tenant/{tenant_id}/billing/orders/{order_id}/comments/
+      - /api/tenant/{tenant_id}/billing/orders/{order_id}/invoice-applications/
+      - /api/tenant/{tenant_id}/billing/orders/{order_id}/invoices/
+      - /api/tenant/{tenant_id}/billing/orders/{order_id}/invoices/{invoice_id}/file/
+      - /api/tenant/{tenant_id}/billing/accounts/admin_grant_points/
+
+  taskAuth:
+    handlers: taskAuth/src/handlers.go
+    openapi: taskAuth/src/openapi.yaml
+    openapi_internal: taskAuth/src/openapi-internal.yaml
+    internal_coverage: complete
+    prefix_routers: []
+    skip_mounted_prefixes:
+      - /api/internal/
+      - /api/oidc/
+      - /.well-known/
+      - /api/health/oidc
+    # system-admin 用户子路径由 prefix router 分发，静态 mount 解析不到
+    ignore_openapi:
+      - /api/system-admin/users/{id}/impersonate/
+      - /api/system-admin/users/{id}/login-history/
+
+  taskProjectService:
+    handlers: taskProjectService/src/main.go
+    openapi: taskProjectService/src/openapi.yaml
+    prefix_routers:
+      - /api/tenant/
+      - /api/internal/workspaces/
+      - /api/internal/tenants/
+    skip_mounted_prefixes: []
+
+  taskCloudService:
+    handlers: taskCloudService/src/main.go
+    openapi: taskCloudService/src/openapi.yaml
+    openapi_internal: taskCloudService/src/openapi-internal.yaml
+    internal_coverage: complete
+    prefix_routers:
+      - /api/tenant/
+      - /api/cloud/
+      - /api/vendor/cloud-platform-credentials/
+      - /api/vendor/cloud-server-images/
+      - /api/personal/
+      - /api/internal/cloud-server-config/
+    skip_mounted_prefixes:
+      - /api/internal/
+    ignore_mounted:
+      - /callback/cloudplatform/oauth2.0/aliyun
+    # 前缀路由 /api/internal/cloud-server-config/ 的子路径，静态 mount 解析不到
+    ignore_openapi:
+      - /api/internal/cloud-server-config/list-by-task/
+
+  taskTaskService:
+    handlers: taskTaskService/src/main.go
+    openapi: taskTaskService/src/openapi.yaml
+    prefix_routers:
+      - /api/tenant/
+      - /api/tenant_id/
+      - /api/tasks/
+      - /api/internal/tasks/
+    skip_mounted_prefixes:
+      - /api/internal/comments/
+      - /api/internal/git-identities/
+
+  taskAIComment:
+    handlers: taskAIComment/src/main.go
+    openapi: taskAIComment/src/openapi.yaml
+    prefix_routers:
+      - /api/tenant/
+      - /api/internal/task-ai-comment/
+    skip_mounted_prefixes: []

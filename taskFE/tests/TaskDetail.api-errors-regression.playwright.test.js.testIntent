@@ -1,0 +1,26 @@
+# TaskDetail.api-errors-regression.playwright.test.js
+
+## 测试目标
+
+任务详情页打开时，核心 cloud/compute 读接口不得再出现 taskCloudService 路由缺失（404 workspace cloud route / 501 not yet ported）。
+
+## 关键业务断言
+
+- 登录后可进入 `/task-detail/{id}/` 页面
+- 监听网络响应，凡 body 含 `workspace cloud route not found`、`compute action not yet ported` 等路由缺失文案，测试失败
+
+## 典型破坏信号
+
+- taskCloudService `main.go` 将 workspace cloud 子路径截断为 `cloud` 单段
+- 新增 compute 读接口未在 taskCloudService 注册也未代理到 Django/taskContainerGateway
+
+## 回归验证
+
+```bash
+PLAYWRIGHT_SITE_ORIGIN=http://183.250.1.132:4000 \
+PLAYWRIGHT_GATEWAY_ORIGIN=http://183.250.1.132:18081 \
+npx playwright test tests/TaskDetail.api-errors-regression.playwright.test.js \
+  --config=playwright.config.chromium.js
+```
+
+环境类失败（阿里云 proxy、server-content 502、容器未注册 token）不计入断言。

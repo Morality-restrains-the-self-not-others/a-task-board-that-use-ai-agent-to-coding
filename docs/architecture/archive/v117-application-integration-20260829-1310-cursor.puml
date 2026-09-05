@@ -1,0 +1,74 @@
+' @title: 开放式邀请链接（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 117
+' @iteration: open-invite-link
+' @author: cursor
+' @based_on: v116 (v116-application-integration-20260829-0940-cursor.puml)
+' @updated: 2026-08-29 13:20
+' @description: tenant_invitation 支持开放链；核销表记录多人加入
+
+@startuml
+!include <archimate/Archimate>
+
+title v117 — 开放式邀请链接 2026-08-29 13:10
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  邀请人：单次/开放开关
+  待处理列表已用/上限
+  @author: cursor @2026-08-29 13:10
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(ten, "taskTenantService")
+note right of ten
+  invite/validate/join
+  原子 use_count；single 行为不变
+  @author: cursor @2026-08-29 13:10
+end note
+
+Application_Component(ev, "taskEvents")
+note right of ev
+  消费 INVITATION_CREATED / MEMBER_JOINED
+end note
+
+Application_DataObject(inv, "tenant_invitation")
+note right of inv
+  link_kind max_uses use_count
+  @author: cursor @2026-08-29 13:10
+end note
+
+Application_DataObject(red, "tenant_invitation_redemption")
+note right of red
+  UNIQUE(invitation_id, user_id)
+  @author: cursor @2026-08-29 13:10
+end note
+
+Business_Event(evCreated, "INVITATION_CREATED")
+note right of evCreated
+  payload link_kind max_uses
+end note
+
+Business_Event(evJoined, "MEMBER_JOINED")
+note right of evJoined
+  invitation_exhausted
+end note
+
+Rel_Flow(taskFE, gw, "invite / validate / join")
+Rel_Flow(gw, ten, "tenant members APIs")
+Rel_Access(ten, inv, "INSERT/UPDATE")
+Rel_Access(ten, red, "INSERT")
+Rel_Flow(ten, evCreated, "after invite commit")
+Rel_Flow(ten, evJoined, "after join commit")
+Rel_Flow(ten, ev, "publish Kafka")
+
+Implementation_Plateau(plateauV116, "Plateau v116 链接仅单次")
+Implementation_Plateau(plateauV117, "Plateau v117 开放邀请链接")
+Implementation_Gap(gapOpen, "Gap: 邀请链接只能使用一次")
+Implementation_WorkPackage(wpOpen, "WP-open-invite-link")
+Rel_Triggering(plateauV116, gapOpen, "identifies")
+Rel_Realization(wpOpen, gapOpen, "closes")
+Rel_Realization(wpOpen, plateauV117, "delivers")
+
+@enduml

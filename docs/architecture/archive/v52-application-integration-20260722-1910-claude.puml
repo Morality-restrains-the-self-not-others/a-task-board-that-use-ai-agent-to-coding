@@ -1,0 +1,39 @@
+' @title: Application Integration — 服务器运行状态评论 Tab
+' @view: application-integration
+' @status: archived
+' @version: 52
+' @author: claude
+' @based_on: v51 current
+' @updated: 2026-07-22 19:10
+' @description: ServerConfigCommentRuntimeTabs 按评论展示共享任务级 runtime
+' @iteration: comment-runtime-server-tabs
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v52 — Comment Runtime Server Tabs (2026-07-22 19:10)
+
+' 🟢 NEW
+Application_Component(vue_runtime_tabs, "ServerConfigCommentRuntimeTabs\n(Vue)")
+Application_DataObject(comment_runtime_tabs, "CommentRuntimeServerTab[]\n(frontend)")
+
+' 🟡 MODIFIED
+Application_Component(vue_server_config, "ServerConfig.logic\n(Vue)")
+Application_Component(vue_runtime_panel, "ServerConfigServerRuntimePanel\n(Vue)")
+Application_Component(vue_comment_ctx, "CommentExecutionContext\n(Vue)")
+
+' ⚪ UNCHANGED
+Application_Service(cloud_runtime_api, "server-runtime-status\n/ workbench / stop-vm")
+
+Rel_Composition(vue_server_config, vue_runtime_tabs)
+Rel_Serving(vue_runtime_tabs, vue_runtime_panel)
+Rel_Access_r(vue_runtime_tabs, comment_runtime_tabs)
+Rel_Flow(vue_comment_ctx, comment_runtime_tabs)
+Rel_Flow(vue_runtime_panel, cloud_runtime_api)
+
+note right of vue_runtime_tabs
+  MVP: tabs share task-level instance.
+  Per-comment containers = OPT-038.
+end note
+
+@enduml

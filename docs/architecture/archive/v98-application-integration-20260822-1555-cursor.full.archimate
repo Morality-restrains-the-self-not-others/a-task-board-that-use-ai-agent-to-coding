@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v98 全量 (post-change)" id="id-v98aifull01">
+  <folder name="Application" id="id-v98aif-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v98f-app-osjs" name="onlineServiceJS [MODIFIED v98]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v98f-app-cred" name="taskCredentialService [MODIFIED v98]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v98f-app-cloud" name="taskCloudService [MODIFIED v98]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v98f-app-ev" name="taskEvents [MODIFIED v98]"/>
+    <element xsi:type="archimate:DataObject" id="id-v98f-do-pol" name="cloud_workspace_machine_policies"/>
+    <element xsi:type="archimate:DataObject" id="id-v98f-do-csc" name="cloud_server_configs [MODIFIED v98]"/>
+    <element xsi:type="archimate:DataObject" id="id-v98f-do-evt" name="CONTAINER_INSTRUCTION_IDLE_* [NEW v98]"/>
+  </folder>
+  <folder name="Technology" id="id-v98aif-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v98f-tech-mysql" name="MySQL task_cloud utf8mb4"/>
+    <element xsi:type="archimate:Node" id="id-v98f-tech-ecs" name="Aliyun ECS"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v98aif-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v98f-pl-v96" name="Plateau v96"/>
+    <element xsi:type="archimate:Plateau" id="id-v98f-pl-v97" name="Plateau v98"/>
+    <element xsi:type="archimate:Gap" id="id-v98f-gap" name="Gap: 指令跑完仍占机器"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v98f-wp" name="WP-instruction-idle-recycle"/>
+  </folder>
+  <folder name="Relations" id="id-v98aif-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v98f-rel-osjs-cred" source="id-v98f-app-osjs" target="id-v98f-app-cred" name="POST task-detail"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v98f-rel-cred-cloud" source="id-v98f-app-cred" target="id-v98f-app-cloud" name="internal GET policy"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v98f-rel-osjs-cloud" source="id-v98f-app-osjs" target="id-v98f-app-cloud" name="heartbeat idle + request-machine-release"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v98f-rel-ev-cloud" source="id-v98f-app-ev" target="id-v98f-app-cloud" name="recycle-idle-machines"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v98f-rel-cloud-csc" source="id-v98f-app-cloud" target="id-v98f-do-csc" name="instruction_idle_since"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v98f-rel-cloud-pol" source="id-v98f-app-cloud" target="id-v98f-do-pol" name="idle_recycle_minutes"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v98f-rel-cloud-evt" source="id-v98f-app-cloud" target="id-v98f-do-evt" name="publish"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v98f-rel-cloud-ecs" source="id-v98f-app-cloud" target="id-v98f-tech-ecs" name="DeleteInstance CPA or STS"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v98f-rel-mysql-pol" source="id-v98f-tech-mysql" target="id-v98f-do-pol" name="InnoDB"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v98f-rel-mysql-csc" source="id-v98f-tech-mysql" target="id-v98f-do-csc" name="InnoDB"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v98f-rel-pl96-gap" source="id-v98f-pl-v96" target="id-v98f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v98f-rel-wp-gap" source="id-v98f-wp" target="id-v98f-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v98f-rel-wp-pl97" source="id-v98f-wp" target="id-v98f-pl-v97"/>
+  </folder>
+  <folder name="Views" id="id-v98aif-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v98f-view-topo" name="v98 全量拓扑 — instruction-idle-recycle">
+      <child xsi:type="archimate:DiagramObject" id="id-v98f-d-osjs" archimateElement="id-v98f-app-osjs">
+        <bounds x="48" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98f-c-osjs-cred" source="id-v98f-d-osjs" target="id-v98f-d-cred" archimateRelationship="id-v98f-rel-osjs-cred"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98f-c-osjs-cloud" source="id-v98f-d-osjs" target="id-v98f-d-cloud" archimateRelationship="id-v98f-rel-osjs-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98f-d-cred" targetConnections="id-v98f-c-osjs-cred" archimateElement="id-v98f-app-cred">
+        <bounds x="280" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98f-c-cred-cloud" source="id-v98f-d-cred" target="id-v98f-d-cloud" archimateRelationship="id-v98f-rel-cred-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98f-d-ev" archimateElement="id-v98f-app-ev">
+        <bounds x="48" y="140" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98f-c-ev-cloud" source="id-v98f-d-ev" target="id-v98f-d-cloud" archimateRelationship="id-v98f-rel-ev-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98f-d-cloud" targetConnections="id-v98f-c-osjs-cloud id-v98f-c-cred-cloud id-v98f-c-ev-cloud" archimateElement="id-v98f-app-cloud">
+        <bounds x="280" y="140" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98f-c-cloud-csc" source="id-v98f-d-cloud" target="id-v98f-d-csc" archimateRelationship="id-v98f-rel-cloud-csc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98f-c-cloud-pol" source="id-v98f-d-cloud" target="id-v98f-d-pol" archimateRelationship="id-v98f-rel-cloud-pol"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98f-c-cloud-evt" source="id-v98f-d-cloud" target="id-v98f-d-evt" archimateRelationship="id-v98f-rel-cloud-evt"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98f-c-cloud-ecs" source="id-v98f-d-cloud" target="id-v98f-d-ecs" archimateRelationship="id-v98f-rel-cloud-ecs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98f-d-pol" targetConnections="id-v98f-c-cloud-pol id-v98f-c-mysql-pol" archimateElement="id-v98f-do-pol">
+        <bounds x="540" y="48" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98f-d-csc" targetConnections="id-v98f-c-cloud-csc id-v98f-c-mysql-csc" archimateElement="id-v98f-do-csc">
+        <bounds x="540" y="140" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98f-d-evt" targetConnections="id-v98f-c-cloud-evt" archimateElement="id-v98f-do-evt">
+        <bounds x="540" y="232" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98f-d-mysql" archimateElement="id-v98f-tech-mysql">
+        <bounds x="48" y="232" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98f-c-mysql-pol" source="id-v98f-d-mysql" target="id-v98f-d-pol" archimateRelationship="id-v98f-rel-mysql-pol"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98f-c-mysql-csc" source="id-v98f-d-mysql" target="id-v98f-d-csc" archimateRelationship="id-v98f-rel-mysql-csc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98f-d-ecs" targetConnections="id-v98f-c-cloud-ecs" archimateElement="id-v98f-tech-ecs">
+        <bounds x="280" y="232" width="180" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v98f-view-mig" name="架构变迁 v96→v98 — instruction-idle-recycle">
+      <child xsi:type="archimate:DiagramObject" id="id-v98f-do-pl96" archimateElement="id-v98f-pl-v96">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98f-c-pl96-gap" source="id-v98f-do-pl96" target="id-v98f-do-gap" archimateRelationship="id-v98f-rel-pl96-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98f-do-gap" targetConnections="id-v98f-c-pl96-gap id-v98f-c-wp-gap" archimateElement="id-v98f-gap">
+        <bounds x="240" y="48" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98f-do-wp" archimateElement="id-v98f-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98f-c-wp-gap" source="id-v98f-do-wp" target="id-v98f-do-gap" archimateRelationship="id-v98f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98f-c-wp-pl97" source="id-v98f-do-wp" target="id-v98f-do-pl97" archimateRelationship="id-v98f-rel-wp-pl97"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98f-do-pl97" targetConnections="id-v98f-c-wp-pl97" archimateElement="id-v98f-pl-v97">
+        <bounds x="560" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

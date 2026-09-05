@@ -1,0 +1,79 @@
+' @title: 部署 9999 编排源码编译（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 127
+' @iteration: deploy-9999-source-compile-restart
+' @author: cursor
+' @based_on: v126 (v126-application-integration-20260901-2244-cursor.puml)
+' @updated: 2026-09-02 13:45
+' @description: 9999 按钮 → SOURCE_ROOT 编译 → conf-local rsync → 增量 install → 精准 restartService
+
+@startuml
+!include <archimate/Archimate>
+
+title 部署 9999 源码编译编排 — v127 Current Architecture (2026-09-02 13:45)
+
+Application_Component(ui, "runAll status UI :9999")
+note right of ui
+  既有两按钮
+  DEPLOY_MODE 改后端编排
+  @author: cursor @2026-09-02 13:35
+end note
+
+Application_Component(runAll, "runAll Runner")
+note top of runAll
+  PreciseRestart / BuildAll
+  调 SOURCE_ROOT；缺配置 fail-fast
+  @author: cursor @2026-09-02 13:35
+end note
+
+Application_Component(compile, "precise-compile.sh")
+note right of compile
+  源码树 build_command
+  写入 deploy-binaries/
+  @author: cursor @2026-09-02 13:35
+end note
+
+Application_DataObject(reg, "precise_restart_services.txt")
+note right of reg
+  读 SOURCE_ROOT/.runall
+  Agent/hook 仍写源码仓
+end note
+
+Application_DataObject(bins, "deploy-binaries / artifacts")
+Application_DataObject(cl, "conf-local/")
+note right of cl
+  rsync -a --delete
+  仅编译成功后
+end note
+
+Application_Component(svc, "业务进程 last-good ELF")
+note bottom of svc
+  精准路径 stop→start
+  BuildAll 不杀
+end note
+
+Application_Component(upd, "update.sh")
+note bottom of upd
+  应急 bootstrap
+  非日常路径
+  @author: cursor @2026-09-02 13:35
+end note
+
+Rel_Flow(ui, runAll, "POST precise-restart / build-all")
+Rel_Access_r(runAll, reg, "读登记")
+Rel_Flow(runAll, compile, "exec unset DEPLOY_MODE")
+Rel_Flow(compile, bins, "collect incremental")
+Rel_Flow(runAll, cl, "rsync after compile ok")
+Rel_Flow(runAll, bins, "install_over copy-then-mv")
+Rel_Flow(runAll, svc, "精准 restartService")
+
+Implementation_Plateau(p126, "Plateau v126 项目 L2 seed")
+Implementation_Plateau(p127, "Plateau v127 部署 9999 源码编译")
+Implementation_Gap(gap, "Gap: DEPLOY_MODE 清空 build_command")
+Implementation_WorkPackage(wp, "WP-deploy-9999-source-compile-restart")
+Rel_Triggering(p126, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p127, "delivers")
+
+@enduml

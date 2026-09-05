@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v41-task-subtree-terminal-gate-20260719-1816">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v41 Target (task-subtree-status-and-terminal-gate)</name>
+  <purpose>TTS subtree read API + DescendantTerminalGate on terminal transitions; Vue task-detail shows child/grandchild status</purpose>
+
+  <folder name="Motivation" id="id-v41-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="Constraint 新增接口默认 Go" id="id-v41-constraint"/>
+    <element xsi:type="archimate:Principle" name="Principle 父终态前子树须关闭" id="id-v41-principle"/>
+  </folder>
+  <folder name="Application" id="id-v41-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue Task Detail [MODIFIED v41]" id="id-v41-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v41-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskTaskService [MODIFIED v41]" id="id-v41-tts"/>
+    <element xsi:type="archimate:ApplicationComponent" name="saas-backend progress-system" id="id-v41-django"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskEvents" id="id-v41-te"/>
+    <element xsi:type="archimate:DataObject" name="task.db parent_task_id" id="id-v41-tdb"/>
+  </folder>
+  <folder name="Technology" id="id-v41-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="Kafka" id="id-v41-kafka"/>
+  </folder>
+  <folder name="Relations" id="id-v41-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v41-flow-vue-gw" source="id-v41-vue" target="id-v41-gw" name="subtree GET / todos PATCH"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v41-flow-gw-tts" source="id-v41-gw" target="id-v41-tts" name="JWT"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v41-acc-tts-tdb" source="id-v41-tts" target="id-v41-tdb" name="R/W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v41-flow-tts-django" source="id-v41-tts" target="id-v41-django" name="progress columns map"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v41-flow-tts-kafka" source="id-v41-tts" target="id-v41-kafka" name="TASK_STATUS_CHANGED"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v41-flow-kafka-te" source="id-v41-kafka" target="id-v41-te" name="consume"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v41-inf-c" source="id-v41-constraint" target="id-v41-tts" name="落点"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v41-inf-p" source="id-v41-principle" target="id-v41-tts" name="门禁"/>
+  </folder>
+  <folder name="Implementation" id="id-v41-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v40 — queued-auto-run-schedule (current)" id="id-v41-plat-v40"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v41 — task-subtree-terminal-gate (target)" id="id-v41-plat-v41"/>
+    <element xsi:type="archimate:Gap" name="Gap: 详情无子树状态 / 终态无子树门禁" id="id-v41-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v41-task-subtree-terminal-gate" id="id-v41-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v41-rel-plat40-gap" source="id-v41-plat-v40" target="id-v41-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v41-rel-wp-gap" source="id-v41-wp" target="id-v41-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v41-rel-wp-plat41" source="id-v41-wp" target="id-v41-plat-v41"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v41-rel-plat41-tts" source="id-v41-plat-v41" target="id-v41-tts"/>
+  </folder>
+  <folder name="Views" id="id-v41-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v40→v41 — task-subtree-terminal-gate" id="id-v41-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-plat40" archimateElement="id-v41-plat-v40">
+        <bounds x="48" y="100" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v41-conn-plat40-gap"
+          source="id-v41-do-plat40" target="id-v41-do-gap"
+          archimateRelationship="id-v41-rel-plat40-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-gap" archimateElement="id-v41-gap"
+        targetConnections="id-v41-conn-plat40-gap id-v41-conn-wp-gap">
+        <bounds x="420" y="100" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-wp" archimateElement="id-v41-wp">
+        <bounds x="880" y="60" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v41-conn-wp-gap"
+          source="id-v41-do-wp" target="id-v41-do-gap"
+          archimateRelationship="id-v41-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v41-conn-wp-plat41"
+          source="id-v41-do-wp" target="id-v41-do-plat41"
+          archimateRelationship="id-v41-rel-wp-plat41"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-plat41" archimateElement="id-v41-plat-v41"
+        targetConnections="id-v41-conn-wp-plat41">
+        <bounds x="880" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v41-conn-plat41-tts"
+          source="id-v41-do-plat41" target="id-v41-do-tts-m"
+          archimateRelationship="id-v41-rel-plat41-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-tts-m" archimateElement="id-v41-tts"
+        targetConnections="id-v41-conn-plat41-tts">
+        <bounds x="880" y="250" width="320" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v41 Target — subtree status &amp; terminal gate 数据流" id="id-v41-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-vue" archimateElement="id-v41-vue">
+        <bounds x="40" y="80" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v41-conn-vue-gw"
+          source="id-v41-do-vue" target="id-v41-do-gw"
+          archimateRelationship="id-v41-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-gw" archimateElement="id-v41-gw"
+        targetConnections="id-v41-conn-vue-gw">
+        <bounds x="260" y="80" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v41-conn-gw-tts"
+          source="id-v41-do-gw" target="id-v41-do-tts"
+          archimateRelationship="id-v41-flow-gw-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-tts" archimateElement="id-v41-tts"
+        targetConnections="id-v41-conn-gw-tts id-v41-conn-inf-c id-v41-conn-inf-p">
+        <bounds x="440" y="80" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v41-conn-tts-tdb"
+          source="id-v41-do-tts" target="id-v41-do-tdb"
+          archimateRelationship="id-v41-acc-tts-tdb"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v41-conn-tts-django"
+          source="id-v41-do-tts" target="id-v41-do-django"
+          archimateRelationship="id-v41-flow-tts-django"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v41-conn-tts-kafka"
+          source="id-v41-do-tts" target="id-v41-do-kafka"
+          archimateRelationship="id-v41-flow-tts-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-tdb" archimateElement="id-v41-tdb"
+        targetConnections="id-v41-conn-tts-tdb">
+        <bounds x="440" y="200" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-django" archimateElement="id-v41-django"
+        targetConnections="id-v41-conn-tts-django">
+        <bounds x="680" y="80" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-kafka" archimateElement="id-v41-kafka"
+        targetConnections="id-v41-conn-tts-kafka">
+        <bounds x="260" y="200" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v41-conn-kafka-te"
+          source="id-v41-do-kafka" target="id-v41-do-te"
+          archimateRelationship="id-v41-flow-kafka-te"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-te" archimateElement="id-v41-te"
+        targetConnections="id-v41-conn-kafka-te">
+        <bounds x="260" y="280" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-c" archimateElement="id-v41-constraint">
+        <bounds x="40" y="200" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v41-conn-inf-c"
+          source="id-v41-do-c" target="id-v41-do-tts"
+          archimateRelationship="id-v41-inf-c"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v41-do-p" archimateElement="id-v41-principle">
+        <bounds x="40" y="280" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v41-conn-inf-p"
+          source="id-v41-do-p" target="id-v41-do-tts"
+          archimateRelationship="id-v41-inf-p"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

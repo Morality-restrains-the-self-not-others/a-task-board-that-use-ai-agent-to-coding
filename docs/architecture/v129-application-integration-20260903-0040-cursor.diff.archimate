@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v129 变迁 (v128→v129)" id="id-v129aidiff01">
+  <folder name="Application" id="id-v129ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v129-ai-ui" name="runAll Status 9999 [MODIFIED v129]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v129-ai-orch" name="runAll Runner [MODIFIED v129]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v129-ai-tl" name="tracelog.ListenAndServe [NEW v129]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v129-ai-svc" name="托管 Go HTTP 服务 [MODIFIED v129]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v129-ai-ev" name="taskEvents 消费者 [MODIFIED v129]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v129ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v129-ai-pl128" name="Plateau v128"/>
+    <element xsi:type="archimate:Plateau" id="id-v129-ai-pl129" name="Plateau v129"/>
+    <element xsi:type="archimate:Gap" id="id-v129-ai-gap" name="Gap: 整栈 stop-all 空窗"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v129-ai-wp" name="WP-runall-smooth-canary-restart"/>
+  </folder>
+  <folder name="Relations" id="id-v129ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v129-ai-rel-ui-orch" source="id-v129-ai-ui" target="id-v129-ai-orch" name="POST restart-all / precise-restart"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v129-ai-rel-orch-svc" source="id-v129-ai-orch" target="id-v129-ai-svc" name="start overlap + SIGTERM old"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v129-ai-rel-orch-ev" source="id-v129-ai-orch" target="id-v129-ai-ev" name="same canary"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v129-ai-rel-tl-svc" source="id-v129-ai-tl" target="id-v129-ai-svc" name="listen+drain"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v129-ai-rel-tl-ev" source="id-v129-ai-tl" target="id-v129-ai-ev" name="ReusePort + Pid header"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v129-ai-rel-pl-gap" source="id-v129-ai-pl128" target="id-v129-ai-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v129-ai-rel-wp-gap" source="id-v129-ai-wp" target="id-v129-ai-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v129-ai-rel-wp-pl" source="id-v129-ai-wp" target="id-v129-ai-pl129"/>
+  </folder>
+  <folder name="Views" id="id-v129ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v129-ai-view-mig" name="架构变迁 v128→v129 — 金丝雀平滑重启">
+      <child xsi:type="archimate:DiagramObject" id="id-v129-ai-do-pl128" archimateElement="id-v129-ai-pl128">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-ai-c-pl-gap" source="id-v129-ai-do-pl128" target="id-v129-ai-do-gap" archimateRelationship="id-v129-ai-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-ai-do-gap" targetConnections="id-v129-ai-c-pl-gap id-v129-ai-c-wp-gap" archimateElement="id-v129-ai-gap">
+        <bounds x="280" y="48" width="280" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-ai-do-wp" archimateElement="id-v129-ai-wp">
+        <bounds x="280" y="140" width="360" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-ai-c-wp-gap" source="id-v129-ai-do-wp" target="id-v129-ai-do-gap" archimateRelationship="id-v129-ai-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-ai-c-wp-pl" source="id-v129-ai-do-wp" target="id-v129-ai-do-pl129" archimateRelationship="id-v129-ai-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-ai-do-pl129" targetConnections="id-v129-ai-c-wp-pl" archimateElement="id-v129-ai-pl129">
+        <bounds x="680" y="140" width="200" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v129-ai-view-topo" name="v129 Target — 金丝雀滚动重启">
+      <child xsi:type="archimate:DiagramObject" id="id-v129-ai-do-ui" archimateElement="id-v129-ai-ui">
+        <bounds x="48" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-ai-c-ui-orch" source="id-v129-ai-do-ui" target="id-v129-ai-do-orch" archimateRelationship="id-v129-ai-rel-ui-orch"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-ai-do-orch" targetConnections="id-v129-ai-c-ui-orch" archimateElement="id-v129-ai-orch">
+        <bounds x="280" y="80" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-ai-c-orch-svc" source="id-v129-ai-do-orch" target="id-v129-ai-do-svc" archimateRelationship="id-v129-ai-rel-orch-svc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-ai-c-orch-ev" source="id-v129-ai-do-orch" target="id-v129-ai-do-ev" archimateRelationship="id-v129-ai-rel-orch-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-ai-do-svc" targetConnections="id-v129-ai-c-orch-svc id-v129-ai-c-tl-svc" archimateElement="id-v129-ai-svc">
+        <bounds x="500" y="48" width="220" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-ai-do-ev" targetConnections="id-v129-ai-c-orch-ev id-v129-ai-c-tl-ev" archimateElement="id-v129-ai-ev">
+        <bounds x="500" y="120" width="220" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-ai-do-tl" archimateElement="id-v129-ai-tl">
+        <bounds x="280" y="200" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-ai-c-tl-svc" source="id-v129-ai-do-tl" target="id-v129-ai-do-svc" archimateRelationship="id-v129-ai-rel-tl-svc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-ai-c-tl-ev" source="id-v129-ai-do-tl" target="id-v129-ai-do-ev" archimateRelationship="id-v129-ai-rel-tl-ev"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

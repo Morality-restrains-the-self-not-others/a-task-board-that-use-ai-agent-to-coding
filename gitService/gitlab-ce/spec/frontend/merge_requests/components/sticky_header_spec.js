@@ -1,0 +1,139 @@
+import Vue from 'vue';
+import { GlSprintf } from '@gitlab/ui';
+import { PiniaVuePlugin } from 'pinia';
+import { createTestingPinia } from '@pinia/testing';
+import { shallowMountExtended } from 'helpers/vue_test_utils_helper';
+import StickyHeader from '~/merge_requests/components/sticky_header.vue';
+import ImportedBadge from '~/vue_shared/components/imported_badge.vue';
+import DiscussionCounter from '~/notes/components/discussion_counter.vue';
+import SubmitReviewButton from '~/batch_comments/components/submit_review_button.vue';
+import TodoWidget from '~/sidebar/components/todo_toggle/sidebar_todo_widget.vue';
+import SubscriptionsWidget from '~/sidebar/components/subscriptions/sidebar_subscriptions_widget.vue';
+import RapidDiffsToggle from '~/rapid_diffs/app/rapid_diffs_toggle.vue';
+import { globalAccessorPlugin } from '~/pinia/plugins';
+import { useMrNotes } from '~/mr_notes/store/legacy_mr_notes';
+import { useLegacyDiffs } from '~/diffs/stores/legacy_diffs';
+import { useNotes } from '~/notes/store/legacy_notes';
+import { isLoggedIn } from '~/lib/utils/common_utils';
+
+jest.mock('~/lib/utils/common_utils');
+isLoggedIn.mockReturnValue(true);
+
+Vue.use(PiniaVuePlugin);
+
+describe('Merge requests sticky header component', () => {
+  let wrapper;
+  let pinia;
+
+  const createComponent = ({ provide = {}, props = {} } = {}) => {
+    wrapper = shallowMountExtended(StickyHeader, {
+      pinia,
+      provide: {
+        glFeatures: {},
+        ...provide,
+      },
+      propsData: {
+        tabs: [],
+        ...props,
+      },
+      stubs: {
+        GlSprintf,
+      },
+    });
+  };
+
+  const findImportedBadge = () => wrapper.findComponent(ImportedBadge);
+  const findTodoWidget = () => wrapper.findComponent(TodoWidget);
+  const findSubscriptionsWidget = () => wrapper.findComponent(SubscriptionsWidget);
+
+  beforeEach(() => {
+    pinia = createTestingPinia({ plugins: [globalAccessorPlugin] });
+    useLegacyDiffs();
+    useNotes().doneFetchingBatchDiscussions = true;
+    useNotes().noteableData.id = 1;
+    useNotes().noteableData.source_branch = 'source-branch';
+    useNotes().noteableData.target_branch = 'main';
+    useMrNotes().activeTab = 'overview';
+  });
+
+  describe('forked project', () => {
+    it('renders source branch with source project path', () => {
+      createComponent({
+        provide: {
+          projectPath: 'gitlab-org/gitlab',
+          sourceProjectPath: 'root/gitlab',
+        },
+      });
+
+      expect(wrapper.findByTestId('source-branch').text()).toBe('root/gitlab:source-branch');
+    });
+  });
+
+  describe('imported badge', () => {
+    it('renders when merge request is imported', () => {
+      createComponent({
+        props: { isImported: true },
+      });
+
+      expect(findImportedBadge().exists()).toBe(true);
+    });
+
+    it('does not render when merge request is not imported', () => {
+      createComponent({
+        props: { isImported: false },
+      });
+
+      expect(findImportedBadge().exists()).toBe(false);
+    });
+  });
+
+  describe('discussion counter', () => {
+    it('renders in compact mode', () => {
+      createComponent();
+
+      const counter = wrapper.findComponent(DiscussionCounter);
+
+      expect(counter.exists()).toBe(true);
+      expect(counter.props('compact')).toBe(true);
+    });
+  });
+
+  describe('submit review', () => {
+    it('renders submit review button', () => {
+      createComponent();
+
+      expect(wrapper.findComponent(SubmitReviewButton).exists()).toBe(true);
+    });
+  });
+
+  describe('todo and notifications buttons', () => {
+    it('renders todo widget for signed-in users', () => {
+      createComponent();
+
+      expect(findTodoWidget().exists()).toBe(true);
+    });
+
+    it('renders subscriptions widget for signed-in users', () => {
+      createComponent();
+
+      expect(findSubscriptionsWidget().exists()).toBe(true);
+    });
+  });
+
+  describe('rapid diffs toggle', () => {
+    it.each`
+      activeTab  | flag     | visible
+      ${'diffs'} | ${true}  | ${true}
+      ${'diffs'} | ${false} | ${false}
+      ${'show'}  | ${true}  | ${false}
+    `(
+      'visible=$visible when activeTab=$activeTab and flag=$flag',
+      ({ activeTab, flag, visible }) => {
+        useMrNotes().activeTab = activeTab;
+        createComponent({ provide: { glFeatures: { rapidDiffsOnMrShow: flag } } });
+
+        expect(wrapper.findComponent(RapidDiffsToggle).exists()).toBe(visible);
+      },
+    );
+  });
+});

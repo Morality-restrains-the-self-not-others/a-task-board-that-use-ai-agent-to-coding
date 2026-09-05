@@ -1,0 +1,7 @@
+intents:
+  1_audit_alert:
+    host: 0.0.0.0
+    port: 18056
+    groupId: task-events-wechat-identity-conflict-1-audit-alert
+    events:
+    - WECHAT_IDENTITY_CONFLICT

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v15-ai-20260710-2009">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v15 Target</name>
+  <purpose>relayToTrae start resolves TenantInstalledImage and docker pull/run selected image</purpose>
+
+  <folder name="Application" id="id-v15-f-app" type="application"/>
+  <folder name="Technology" id="id-v15-f-tech" type="technology"/>
+  <folder name="Relations" id="id-v15-f-rel" type="relations"/>
+  <folder name="Implementation" id="id-v15-f-impl" type="implementation_migration"/>
+
+  <!-- Application Components -->
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue ServerConfig [MODIFIED v15]" id="id-v15-vue"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 taskContainerGateway [MODIFIED v15]" id="id-v15-cgw"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskCloudService" id="id-v15-cloud"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 go_relayToTrae [MODIFIED v15]" id="id-v15-relay"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskCredentialService" id="id-v15-cred"/>
+
+  <!-- Technology -->
+  <element xsi:type="archimate:Node" name="Docker Engine" id="id-v15-docker"/>
+
+  <!-- Data -->
+  <element xsi:type="archimate:DataObject" name="TenantInstalledImageRef" id="id-v15-img-ref"/>
+
+  <!-- Flow Relations -->
+  <element xsi:type="archimate:FlowRelationship" id="id-v15-flow-vue-cgw" source="id-v15-vue" target="id-v15-cgw" name="POST start + installed_image_id"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v15-flow-cgw-cred" source="id-v15-cgw" target="id-v15-cred" name="token-init"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v15-flow-cgw-cloud" source="id-v15-cgw" target="id-v15-cloud" name="resolve-image"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v15-flow-cloud-cgw" source="id-v15-cloud" target="id-v15-cgw" name="image ref"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v15-flow-cgw-relay" source="id-v15-cgw" target="id-v15-relay" name="POST /v1/start + image"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v15-flow-relay-docker" source="id-v15-relay" target="id-v15-docker" name="docker pull + run"/>
+
+  <!-- Implementation & Migration -->
+  <element xsi:type="archimate:Plateau" name="Plateau v14 — relay Token cloud parity" id="id-v15-plat-v14"/>
+  <element xsi:type="archimate:Plateau" name="🎯 Plateau v15 — relay selected image runtime" id="id-v15-plat-v15"/>
+  <element xsi:type="archimate:Gap" name="Gap: relay 启动忽略用户所选镜像" id="id-v15-gap"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-v15-relay-start-selected-image" id="id-v15-wp"/>
+  <element xsi:type="archimate:AssociationRelationship" id="id-v15-rel-plat14-gap" source="id-v15-plat-v14" target="id-v15-gap"/>
+  <element xsi:type="archimate:RealizationRelationship" id="id-v15-rel-wp-gap" source="id-v15-wp" target="id-v15-gap"/>
+  <element xsi:type="archimate:RealizationRelationship" id="id-v15-rel-wp-plat15" source="id-v15-wp" target="id-v15-plat-v15"/>
+  <element xsi:type="archimate:CompositionRelationship" id="id-v15-rel-plat15-relay" source="id-v15-plat-v15" target="id-v15-relay"/>
+  <element xsi:type="archimate:CompositionRelationship" id="id-v15-rel-plat15-cgw" source="id-v15-plat-v15" target="id-v15-cgw"/>
+
+  <folder name="Views" id="id-v15-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v14→v15 — relay 启动所选镜像" id="id-v15-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v15-do-plat-v14" archimateElement="id-v15-plat-v14">
+        <bounds x="48" y="120" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v15-conn-plat14-gap"
+          source="id-v15-do-plat-v14" target="id-v15-do-gap"
+          archimateRelationship="id-v15-rel-plat14-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v15-do-gap" archimateElement="id-v15-gap"
+        targetConnections="id-v15-conn-plat14-gap id-v15-conn-wp-gap">
+        <bounds x="360" y="120" width="280" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v15-do-wp" archimateElement="id-v15-wp">
+        <bounds x="700" y="80" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v15-conn-wp-gap"
+          source="id-v15-do-wp" target="id-v15-do-gap"
+          archimateRelationship="id-v15-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v15-conn-wp-plat15"
+          source="id-v15-do-wp" target="id-v15-do-plat-v15"
+          archimateRelationship="id-v15-rel-wp-plat15"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v15-do-plat-v15" archimateElement="id-v15-plat-v15"
+        targetConnections="id-v15-conn-wp-plat15">
+        <bounds x="700" y="180" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v15-conn-plat15-relay"
+          source="id-v15-do-plat-v15" target="id-v15-do-relay-m"
+          archimateRelationship="id-v15-rel-plat15-relay"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v15-conn-plat15-cgw"
+          source="id-v15-do-plat-v15" target="id-v15-do-cgw-m"
+          archimateRelationship="id-v15-rel-plat15-cgw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v15-do-relay-m" archimateElement="id-v15-relay"
+        targetConnections="id-v15-conn-plat15-relay">
+        <bounds x="620" y="280" width="180" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v15-do-cgw-m" archimateElement="id-v15-cgw"
+        targetConnections="id-v15-conn-plat15-cgw">
+        <bounds x="840" y="280" width="180" height="45"/>
+      </child>
+    </element>
+
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v15 Target — relay selected image start" id="id-v15-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v15-do-vue" archimateElement="id-v15-vue">
+        <bounds x="48" y="200" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v15-conn-vue-cgw"
+          source="id-v15-do-vue" target="id-v15-do-cgw"
+          archimateRelationship="id-v15-flow-vue-cgw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v15-do-cgw" archimateElement="id-v15-cgw"
+        targetConnections="id-v15-conn-vue-cgw id-v15-conn-cloud-cgw">
+        <bounds x="240" y="200" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v15-conn-cgw-cred"
+          source="id-v15-do-cgw" target="id-v15-do-cred"
+          archimateRelationship="id-v15-flow-cgw-cred"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v15-conn-cgw-cloud"
+          source="id-v15-do-cgw" target="id-v15-do-cloud"
+          archimateRelationship="id-v15-flow-cgw-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v15-conn-cgw-relay"
+          source="id-v15-do-cgw" target="id-v15-do-relay"
+          archimateRelationship="id-v15-flow-cgw-relay"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v15-do-cred" archimateElement="id-v15-cred"
+        targetConnections="id-v15-conn-cgw-cred">
+        <bounds x="480" y="48" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v15-do-cloud" archimateElement="id-v15-cloud"
+        targetConnections="id-v15-conn-cgw-cloud">
+        <bounds x="480" y="200" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v15-conn-cloud-cgw"
+          source="id-v15-do-cloud" target="id-v15-do-cgw"
+          archimateRelationship="id-v15-flow-cloud-cgw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v15-do-relay" archimateElement="id-v15-relay"
+        targetConnections="id-v15-conn-cgw-relay">
+        <bounds x="700" y="200" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v15-conn-relay-docker"
+          source="id-v15-do-relay" target="id-v15-do-docker"
+          archimateRelationship="id-v15-flow-relay-docker"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v15-do-docker" archimateElement="id-v15-docker"
+        targetConnections="id-v15-conn-relay-docker">
+        <bounds x="920" y="200" width="140" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v15-do-img-ref" archimateElement="id-v15-img-ref">
+        <bounds x="480" y="320" width="200" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

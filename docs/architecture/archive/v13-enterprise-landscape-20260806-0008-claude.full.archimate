@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v13-full-20260806">
+
+  <name xml:lang="en">v13 全量 — Git Hooks 入库 (post-change)</name>
+  <purpose>基线回填 v11（2026-07-07）之后的结构性变化 — 全量 Go 微服务拓扑、Django saas-backend 完全退役、RBAC 集中授权（PDP + shareLib/authz）、微信身份统一
+v13 全量模型：合并「Git Hooks 入库」变更后的完整架构。</purpose>
+
+  <folder name="Business" id="f-biz" type="business"/>
+  <folder name="Application" id="f-app" type="application"/>
+  <folder name="Technology" id="f-tech" type="technology"/>
+  <folder name="Implementation" id="f-impl" type="implementation_migration"/>
+  <folder name="Relations" id="f-rel" type="relations"/>
+
+  <!-- Business Layer -->
+  <element xsi:type="archimate:BusinessActor" name="Marketplace Vendor" id="vendor"/>
+  <element xsi:type="archimate:BusinessService" name="Image Marketplace Service" id="imageMarket"/>
+  <element xsi:type="archimate:BusinessService" name="Identity &amp; Access Service (RBAC) [NEW v12]" id="identitySvc"/>
+  <element xsi:type="archimate:BusinessService" name="Referral &amp; Growth Service [NEW v12]" id="referralSvcBiz"/>
+  <element xsi:type="archimate:BusinessObject" name="Tenant Role / Permission [NEW v12]" id="tenantPermBO"/>
+  <element xsi:type="archimate:BusinessObject" name="WeChat Identity (openid/unionid) [NEW v12]" id="wxIdentityBO"/>
+
+  <!-- Application Layer -->
+  <element xsi:type="archimate:ApplicationComponent" name="API Gateway (APISIX :18081)" id="gateway"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟢 taskAuth Go (:8003) [PDP + 微信身份] [NEW v12]" id="authSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟢 taskTenantService Go (:8020) [NEW v12]" id="tenantSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟢 taskAiProvider Go (:8010) [NEW v12]" id="aiProvider"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskProjectService Go (:8016)" id="taskProjectSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskTaskService Go (:8017)" id="taskTaskSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskCloudService Go (:8018)" id="taskCloudSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskBill Go (:8004)" id="billSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟢 taskReferral Go (:8025) [NEW v12]" id="referralSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskGitOauth Go (:8002) [NEW v12]" id="gitOauthSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟢 taskSSE Go (:8007) [NEW v12]" id="sseSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟢 taskEvents Kafka intents [NEW v12]" id="eventsSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskFE (Vue SPA)" id="feSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="shareLib/authz 薄客户端 [NEW v12]" id="shareLibAuthz"/>
+
+  <element xsi:type="archimate:ApplicationService" name="Authentication &amp; RBAC API" id="authAPI"/>
+  <element xsi:type="archimate:ApplicationService" name="Cloud Resource API" id="cloudAPI"/>
+  <element xsi:type="archimate:ApplicationService" name="Tenant/Member/Group API [NEW v12]" id="tenantAPI"/>
+  <element xsi:type="archimate:ApplicationService" name="Image Marketplace API" id="imageMarketAPI"/>
+
+  <element xsi:type="archimate:ApplicationDataObject" name="taskAuth DB (+wechat_identity) [MODIFIED v12]" id="authDB"/>
+  <element xsi:type="archimate:ApplicationDataObject" name="taskTenant DB (+RBAC 组/资源表) [NEW v12]" id="tenantDB"/>
+  <element xsi:type="archimate:ApplicationDataObject" name="taskCloud DB" id="cloudDB"/>
+  <element xsi:type="archimate:ApplicationDataObject" name="taskBill DB (+billing_payment_pending) [MODIFIED v12]" id="billDB"/>
+
+  <!-- Technology Layer -->
+  <element xsi:type="archimate:SystemSoftware" name="Go Runtime" id="goRuntime"/>
+  <element xsi:type="archimate:TechnologyService" name="GitLab CE (:8012)" id="gitlab"/>
+  <element xsi:type="archimate:TechnologyService" name="Aliyun ECS/STS API" id="upstreamCloud"/>
+  <element xsi:type="archimate:TechnologyService" name="Upstream LLM (DeepSeek/OpenAI)" id="upstreamLLM"/>
+  <element xsi:type="archimate:TechnologyService" name="Kafka" id="kafka"/>
+  <element xsi:type="archimate:TechnologyService" name="Redis" id="redis"/>
+  <element xsi:type="archimate:TechnologyService" name="SQLite (per-service)" id="sqlite"/>
+  <element xsi:type="archimate:Artifact" name="🔴 Django saas-backend [RETIRED v12]" id="djangoArt"/>
+
+  <!-- Implementation & Migration -->
+  <element xsi:type="archimate:Plateau" name="Plateau v11 — Vendor Cloud Test Credentials (2026-07-07)" id="platV11"/>
+  <element xsi:type="archimate:Plateau" name="🎯 Plateau v12 — 基线回填 (2026-08-05)" id="platV12"/>
+  <element xsi:type="archimate:Gap" name="Gap: v11 视图过期 — 缺新 Go 服务 / Django 未退役" id="gapBaseline"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-v12-baseline-backfill" id="wpV12"/>
+
+  <!-- Relationships -->
+  <element xsi:type="archimate:FlowRelationship" id="rel1" source="gateway" target="authSvc"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel2" source="gateway" target="tenantSvc"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel3" source="gateway" target="taskCloudSvc"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel4" source="gateway" target="billSvc"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel5" source="authSvc" target="authAPI"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel6" source="taskCloudSvc" target="cloudAPI"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel7" source="tenantSvc" target="tenantAPI"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel8" source="aiProvider" target="imageMarketAPI"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel9" source="taskCloudSvc" target="cloudAPI"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel10" source="tenantSvc" target="tenantAPI"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel11" source="aiProvider" target="imageMarketAPI"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel12" source="authAPI" target="identitySvc"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel13" source="cloudAPI" target="imageMarket"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel14" source="imageMarketAPI" target="imageMarket"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel15" source="tenantAPI" target="identitySvc"/>
+  <element xsi:type="archimate:AccessRelationship" id="rel16" source="authSvc" target="authDB"/>
+  <element xsi:type="archimate:AccessRelationship" id="rel17" source="tenantSvc" target="tenantDB"/>
+  <element xsi:type="archimate:AccessRelationship" id="rel18" source="taskCloudSvc" target="cloudDB"/>
+  <element xsi:type="archimate:AccessRelationship" id="rel19" source="billSvc" target="billDB"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel20" source="aiProvider" target="upstreamCloud"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel21" source="eventsSvc" target="kafka"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel22" source="sseSvc" target="redis"/>
+  <element xsi:type="archimate:AssociationRelationship" id="rel23" source="djangoArt" target="goRuntime"/>
+  <element xsi:type="archimate:TriggeringRelationship" id="rel24" source="platV11" target="gapBaseline"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel25" source="wpV12" target="gapBaseline"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel26" source="wpV12" target="platV12"/>
+  <element xsi:type="archimate:CompositionRelationship" id="rel27" source="platV12" target="authSvc"/>
+  <element xsi:type="archimate:CompositionRelationship" id="rel28" source="platV12" target="tenantSvc"/>
+
+  <folder name="Views" id="f-views" type="diagrams">
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v11→v12 — 基线回填" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-platV11" archimateElement="platV11">
+        <bounds x="48" y="120" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v11-gap" source="do-platV11" target="do-gapBaseline" archimateRelationship="rel24"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gapBaseline" archimateElement="gapBaseline" targetConnections="conn-v11-gap conn-wp-gap">
+        <bounds x="300" y="120" width="280" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wpV12" archimateElement="wpV12">
+        <bounds x="620" y="80" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wpV12" target="do-gapBaseline" archimateRelationship="rel25"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-v12" source="do-wpV12" target="do-platV12" archimateRelationship="rel26"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-platV12" archimateElement="platV12" targetConnections="conn-wp-v12">
+        <bounds x="620" y="180" width="280" height="50"/>
+      </child>
+    </element>
+  
+  <element xsi:type="archimate:BusinessActor" name="Developer" id="developer"/>
+  <element xsi:type="archimate:Artifact" name="Git Hooks 模板 SSOT (scripts/hooks/templates/)" id="hooksSSOT"/>
+  <element xsi:type="archimate:Artifact" name="Hooks 分发/校验器 (install-hooks-all.sh + --check/deploy, HOOK_VERSION)" id="hooksDeploy"/>
+  <element xsi:type="archimate:Artifact" name=".githooks/ 入库真源 ×38 仓 (core.hooksPath)" id="repoGitHooks"/>
+  <element xsi:type="archimate:Plateau" name="Plateau v12 — 基线回填 (2026-08-05)" id="plateauV12"/>
+  <element xsi:type="archimate:Plateau" name="✅ Plateau v13 — Git Hooks 入库 (2026-08-06)" id="plateauV13"/>
+  <element xsi:type="archimate:Gap" name="Gap: 钩子不入库 → 内容/部署/版本不可跟踪；4 套部署机制漂移" id="gapHooks"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-git-hooks-vc (P0 主仓 → P1 docs → P2 FE/Referral → P3 全量子仓 → P4 文档/CI)" id="wpHooks"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-ssot-deploy" source="hooksSSOT" target="hooksDeploy"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-deploy-repo" source="hooksDeploy" target="repoGitHooks"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-dev-deploy" source="developer" target="hooksDeploy"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-repo-gitlab" source="repoGitHooks" target="gitlab"/>
+  <element xsi:type="archimate:TriggeringRelationship" id="rel-trigger" source="plateauV12" target="gapHooks"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wpHooks" target="gapHooks"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-plat" source="wpHooks" target="plateauV13"/>
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v13 全量拓扑 — Git Hooks 入库" id="view-full-13">
+      <child xsi:type="archimate:DiagramObject" id="do-f-platV11" archimateElement="platV11">
+        <bounds x="0" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel24" source="do-f-platV11" target="do-f-gapBaseline" archimateRelationship="rel24"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-platV12" archimateElement="platV12" targetConnections="cf-rel26">
+        <bounds x="240" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel27" source="do-f-platV12" target="do-f-authSvc" archimateRelationship="rel27"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel28" source="do-f-platV12" target="do-f-tenantSvc" archimateRelationship="rel28"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapBaseline" archimateElement="gapBaseline" targetConnections="cf-rel24 cf-rel25">
+        <bounds x="480" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpV12" archimateElement="wpV12">
+        <bounds x="720" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel25" source="do-f-wpV12" target="do-f-gapBaseline" archimateRelationship="rel25"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel26" source="do-f-wpV12" target="do-f-platV12" archimateRelationship="rel26"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV12" archimateElement="plateauV12">
+        <bounds x="960" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-trigger" source="do-f-plateauV12" target="do-f-gapHooks" archimateRelationship="rel-trigger"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV13" archimateElement="plateauV13" targetConnections="cf-rel-wp-plat">
+        <bounds x="1200" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapHooks" archimateElement="gapHooks" targetConnections="cf-rel-trigger cf-rel-wp-gap">
+        <bounds x="1440" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpHooks" archimateElement="wpHooks">
+        <bounds x="1680" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp-gap" source="do-f-wpHooks" target="do-f-gapHooks" archimateRelationship="rel-wp-gap"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp-plat" source="do-f-wpHooks" target="do-f-plateauV13" archimateRelationship="rel-wp-plat"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-vendor" archimateElement="vendor">
+        <bounds x="0" y="150" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-imageMarket" archimateElement="imageMarket" targetConnections="cf-rel13 cf-rel14">
+        <bounds x="240" y="150" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-identitySvc" archimateElement="identitySvc" targetConnections="cf-rel12 cf-rel15">
+        <bounds x="480" y="150" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-referralSvc" archimateElement="referralSvc">
+        <bounds x="1920" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-tenantPermBO" archimateElement="tenantPermBO">
+        <bounds x="960" y="150" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wxIdentityBO" archimateElement="wxIdentityBO">
+        <bounds x="1200" y="150" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-developer" archimateElement="developer">
+        <bounds x="1440" y="150" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-dev-deploy" source="do-f-developer" target="do-f-hooksDeploy" archimateRelationship="rel-dev-deploy"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gateway" archimateElement="gateway">
+        <bounds x="0" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel1" source="do-f-gateway" target="do-f-authSvc" archimateRelationship="rel1"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel2" source="do-f-gateway" target="do-f-tenantSvc" archimateRelationship="rel2"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel3" source="do-f-gateway" target="do-f-taskCloudSvc" archimateRelationship="rel3"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel4" source="do-f-gateway" target="do-f-billSvc" archimateRelationship="rel4"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-authSvc" archimateElement="authSvc" targetConnections="cf-rel1 cf-rel27">
+        <bounds x="240" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel5" source="do-f-authSvc" target="do-f-authAPI" archimateRelationship="rel5"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel16" source="do-f-authSvc" target="do-f-authDB" archimateRelationship="rel16"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-tenantSvc" archimateElement="tenantSvc" targetConnections="cf-rel2 cf-rel28">
+        <bounds x="480" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel7" source="do-f-tenantSvc" target="do-f-tenantAPI" archimateRelationship="rel7"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel10" source="do-f-tenantSvc" target="do-f-tenantAPI" archimateRelationship="rel10"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel17" source="do-f-tenantSvc" target="do-f-tenantDB" archimateRelationship="rel17"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-aiProvider" archimateElement="aiProvider">
+        <bounds x="720" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel8" source="do-f-aiProvider" target="do-f-imageMarketAPI" archimateRelationship="rel8"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel11" source="do-f-aiProvider" target="do-f-imageMarketAPI" archimateRelationship="rel11"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel20" source="do-f-aiProvider" target="do-f-upstreamCloud" archimateRelationship="rel20"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskProjectSvc" archimateElement="taskProjectSvc">
+        <bounds x="960" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskTaskSvc" archimateElement="taskTaskSvc">
+        <bounds x="1200" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskCloudSvc" archimateElement="taskCloudSvc" targetConnections="cf-rel3">
+        <bounds x="1440" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel6" source="do-f-taskCloudSvc" target="do-f-cloudAPI" archimateRelationship="rel6"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel9" source="do-f-taskCloudSvc" target="do-f-cloudAPI" archimateRelationship="rel9"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel18" source="do-f-taskCloudSvc" target="do-f-cloudDB" archimateRelationship="rel18"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-billSvc" archimateElement="billSvc" targetConnections="cf-rel4">
+        <bounds x="1680" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel19" source="do-f-billSvc" target="do-f-billDB" archimateRelationship="rel19"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-referralSvc" archimateElement="referralSvc">
+        <bounds x="1920" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gitOauthSvc" archimateElement="gitOauthSvc">
+        <bounds x="2160" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sseSvc" archimateElement="sseSvc">
+        <bounds x="2400" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel22" source="do-f-sseSvc" target="do-f-redis" archimateRelationship="rel22"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-eventsSvc" archimateElement="eventsSvc">
+        <bounds x="2640" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel21" source="do-f-eventsSvc" target="do-f-kafka" archimateRelationship="rel21"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-feSvc" archimateElement="feSvc">
+        <bounds x="2880" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-shareLibAuthz" archimateElement="shareLibAuthz">
+        <bounds x="3120" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-authAPI" archimateElement="authAPI" targetConnections="cf-rel5">
+        <bounds x="3360" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel12" source="do-f-authAPI" target="do-f-identitySvc" archimateRelationship="rel12"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-cloudAPI" archimateElement="cloudAPI" targetConnections="cf-rel6 cf-rel9">
+        <bounds x="3600" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel13" source="do-f-cloudAPI" target="do-f-imageMarket" archimateRelationship="rel13"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-tenantAPI" archimateElement="tenantAPI" targetConnections="cf-rel7 cf-rel10">
+        <bounds x="3840" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel15" source="do-f-tenantAPI" target="do-f-identitySvc" archimateRelationship="rel15"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-imageMarketAPI" archimateElement="imageMarketAPI" targetConnections="cf-rel8 cf-rel11">
+        <bounds x="4080" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel14" source="do-f-imageMarketAPI" target="do-f-imageMarket" archimateRelationship="rel14"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-authDB" archimateElement="authDB" targetConnections="cf-rel16">
+        <bounds x="0" y="380" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-tenantDB" archimateElement="tenantDB" targetConnections="cf-rel17">
+        <bounds x="240" y="380" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-cloudDB" archimateElement="cloudDB" targetConnections="cf-rel18">
+        <bounds x="480" y="380" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-billDB" archimateElement="billDB" targetConnections="cf-rel19">
+        <bounds x="720" y="380" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-goRuntime" archimateElement="goRuntime" targetConnections="cf-rel23">
+        <bounds x="0" y="500" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gitlab" archimateElement="gitlab" targetConnections="cf-rel-repo-gitlab">
+        <bounds x="240" y="500" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-upstreamCloud" archimateElement="upstreamCloud" targetConnections="cf-rel20">
+        <bounds x="480" y="500" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-upstreamLLM" archimateElement="upstreamLLM">
+        <bounds x="720" y="500" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-kafka" archimateElement="kafka" targetConnections="cf-rel21">
+        <bounds x="960" y="500" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-redis" archimateElement="redis" targetConnections="cf-rel22">
+        <bounds x="1200" y="500" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sqlite" archimateElement="sqlite">
+        <bounds x="1440" y="500" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-hooksSSOT" archimateElement="hooksSSOT">
+        <bounds x="1680" y="500" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-ssot-deploy" source="do-f-hooksSSOT" target="do-f-hooksDeploy" archimateRelationship="rel-ssot-deploy"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-hooksDeploy" archimateElement="hooksDeploy" targetConnections="cf-rel-ssot-deploy cf-rel-dev-deploy">
+        <bounds x="1920" y="500" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-deploy-repo" source="do-f-hooksDeploy" target="do-f-repoGitHooks" archimateRelationship="rel-deploy-repo"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-repoGitHooks" archimateElement="repoGitHooks" targetConnections="cf-rel-deploy-repo">
+        <bounds x="2160" y="500" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-repo-gitlab" source="do-f-repoGitHooks" target="do-f-gitlab" archimateRelationship="rel-repo-gitlab"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-djangoArt" archimateElement="djangoArt">
+        <bounds x="0" y="620" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel23" source="do-f-djangoArt" target="do-f-goRuntime" archimateRelationship="rel23"/>
+      </child>
+    </element></folder>
+</archimate:model>

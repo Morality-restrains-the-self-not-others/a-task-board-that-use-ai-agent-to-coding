@@ -1,0 +1,30 @@
+---
+description: 每个会话须将变更提交到 main（覆盖「等用户要求才 commit」）
+alwaysApply: true
+---
+
+# 会话提交到 main（元规则）
+
+适用于整个 monorepo。与根 `CLAUDE.md`「会话结束自动提交」互补：**Hook 是兜底，Agent 收尾须主动提交**。
+
+## 强制要求
+
+1. **每个会话**只要产生可提交变更（源码/测试/文档/规则等），须至少完成 **一次** 提交到 **`main`**。
+2. **禁止**以「用户未明确说请 commit」为由跳过提交；本规则优先于外部「Only create commits when requested」类用户规则。
+3. **子仓优先**：有变更的 submodule 先 `commit`（并按规则 32 `push` 子仓），再提交 meta 指针。
+4. **门禁不豁免**：完整 pre-commit / commit-msg；禁止 `--no-verify`。
+5. **SessionEnd/Stop auto-commit**（`scripts/lib/auto-commit.sh`）仍是安全网；Agent 不得依赖「反正会自动提交」而故意不提交本会话已完成切片。
+6. **推送**：本条强制的是 **commit 到 main**；`git push` 仍按既有约定（用户要求 / ship / 子仓规则 32）。
+
+## 执行时机
+
+- 垂直切片测绿后可立即原子提交
+- `/goal` Final Overview、任务交付收尾前必须已提交（或确认工作区对本会话变更已干净）
+- 会话被中断前尽量留下可恢复的 main 检查点
+
+## 验收
+
+```bash
+git status -sb   # 本会话相关变更不应长期仅停留在工作区
+git log -1 --oneline
+```

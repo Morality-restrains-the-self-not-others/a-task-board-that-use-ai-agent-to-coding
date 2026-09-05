@@ -1,0 +1,60 @@
+' @title: Application Integration — 自动安全组入网白名单
+' @view: application-integration
+' @status: archived
+' @version: 25
+' @author: claude
+' @based_on: v21 (v21-application-integration-20260714-0130-claude.puml); parallel with v24
+' @updated: 2026-07-14 21:15
+' @description: start-vm-auto 透传 client_public_ip；taskEvents 两阶段白名单（用户IP+服务器IP），撤销 0.0.0.0/0
+' @iteration: auto-sg-ingress-whitelist
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v25 — Auto SG Ingress Whitelist (2026-07-14 21:15)
+
+rectangle "Motivation" {
+  Motivation_Constraint(sgDeny, "Constraint\n自动 SG 默认拒绝未授权入站")
+}
+
+rectangle "Application" {
+  Application_Component(vue, "Vue TaskDetail\nServerConfigHardwarePanel")
+  Application_Component(gw, "task-gateway")
+  Application_Component(cloud, "taskCloudService\n:8018")
+  Application_Component(events, "taskEvents")
+  Application_DataObject(evtIp, "event_data\nclient_public_ip\n+ auto_sg_whitelist")
+}
+
+rectangle "Technology" {
+  Technology_Node(kafka, "Kafka\nCLOUD_SERVER_*")
+  Technology_Node(aliyunSg, "Aliyun ECS\nSecurity Group")
+}
+
+note top of cloud
+  resolveClientIP
+  X-Forwarded-For → X-Real-IP → RemoteAddr
+  写入 start-vm-auto 事件
+  @author: claude @2026-07-14 21:15
+end note
+
+note top of events
+  Phase A: 用户 IP /32
+  Phase B: 服务器公网 IP /32
+  撤销 0.0.0.0/0 入站；出站仍全开
+  @author: claude @2026-07-14 21:15
+end note
+
+note right of sgDeny
+  无新服务组件
+  依赖阿里云默认拒绝未授权入站
+end note
+
+Rel_Flow(vue, gw, "start-vm-auto")
+Rel_Flow(gw, cloud, "compute API")
+Rel_Access_W(cloud, evtIp, "W client_public_ip")
+Rel_Flow(cloud, kafka, "CLOUD_SERVER_START_AUTO")
+Rel_Flow(kafka, events, "consume")
+Rel_Flow(events, aliyunSg, "Authorize/Revoke\ningress whitelist")
+Rel_Influence(sgDeny, events, "约束入站策略")
+
+@enduml

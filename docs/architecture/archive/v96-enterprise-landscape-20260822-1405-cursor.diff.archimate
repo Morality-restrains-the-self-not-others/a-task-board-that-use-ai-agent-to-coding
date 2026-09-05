@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v96 diff (v95→v96)" id="id-v96eldiff01">
+  <folder name="Business" id="id-v96eld-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v96-biz-admin" name="系统超级管理员"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v96-biz-tenant" name="租户成员"/>
+    <element xsi:type="archimate:BusinessService" id="id-v96-biz-orders" name="订单记录"/>
+    <element xsi:type="archimate:BusinessService" id="id-v96-biz-psview" name="查阅订单分账 [NEW v96]"/>
+    <element xsi:type="archimate:BusinessService" id="id-v96-biz-torders" name="租户订单列表"/>
+  </folder>
+  <folder name="Application" id="id-v96eld-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v96-el-fe" name="taskFE [MODIFIED v96]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v96-el-bill" name="taskBill [MODIFIED v96]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v96eld-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v96-el-pl95" name="Plateau v95"/>
+    <element xsi:type="archimate:Plateau" id="id-v96-el-pl96" name="Plateau v96"/>
+    <element xsi:type="archimate:Gap" id="id-v96-el-gap" name="Gap: 订单展开无分账对象与金额"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v96-el-wp" name="WP-admin-order-profit-sharing"/>
+  </folder>
+  <folder name="Relations" id="id-v96eld-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v96-rel-admin-orders" source="id-v96-biz-admin" target="id-v96-biz-orders"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v96-rel-admin-ps" source="id-v96-biz-admin" target="id-v96-biz-psview"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v96-rel-tenant-to" source="id-v96-biz-tenant" target="id-v96-biz-torders"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v96-rel-fe-orders" source="id-v96-el-fe" target="id-v96-biz-orders"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v96-rel-fe-ps" source="id-v96-el-fe" target="id-v96-biz-psview"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v96-rel-fe-to" source="id-v96-el-fe" target="id-v96-biz-torders"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v96-rel-orders-ps" source="id-v96-biz-orders" target="id-v96-biz-psview" name="expand row"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v96-rel-ps-bill" source="id-v96-biz-psview" target="id-v96-el-bill" name="GET admin order detail"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v96-rel-to-bill" source="id-v96-biz-torders" target="id-v96-el-bill" name="GET tenant order — no profit_sharing"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v96-rel-el-pl95-gap" source="id-v96-el-pl95" target="id-v96-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v96-rel-el-wp-gap" source="id-v96-el-wp" target="id-v96-el-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v96-rel-el-wp-pl96" source="id-v96-el-wp" target="id-v96-el-pl96"/>
+  </folder>
+  <folder name="Views" id="id-v96eld-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v96-el-view-mig" name="架构变迁 v95→v96 — admin-order-profit-sharing">
+      <child xsi:type="archimate:DiagramObject" id="id-v96-eld-pl95" archimateElement="id-v96-el-pl95">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-elc-pl95-gap" source="id-v96-eld-pl95" target="id-v96-eld-gap" archimateRelationship="id-v96-rel-el-pl95-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-eld-gap" targetConnections="id-v96-elc-pl95-gap id-v96-elc-wp-gap" archimateElement="id-v96-el-gap">
+        <bounds x="240" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-eld-wp" archimateElement="id-v96-el-wp">
+        <bounds x="240" y="160" width="300" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-elc-wp-gap" source="id-v96-eld-wp" target="id-v96-eld-gap" archimateRelationship="id-v96-rel-el-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-elc-wp-pl96" source="id-v96-eld-wp" target="id-v96-eld-pl96" archimateRelationship="id-v96-rel-el-wp-pl96"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-eld-pl96" targetConnections="id-v96-elc-wp-pl96" archimateElement="id-v96-el-pl96">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v96-el-view-flow" name="v96 Target — 管理员查阅订单分账">
+      <child xsi:type="archimate:DiagramObject" id="id-v96-eld-admin" archimateElement="id-v96-biz-admin">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-elc-admin-orders" source="id-v96-eld-admin" target="id-v96-eld-orders" archimateRelationship="id-v96-rel-admin-orders"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-elc-admin-ps" source="id-v96-eld-admin" target="id-v96-eld-ps" archimateRelationship="id-v96-rel-admin-ps"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-eld-tenant" archimateElement="id-v96-biz-tenant">
+        <bounds x="48" y="280" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-elc-tenant-to" source="id-v96-eld-tenant" target="id-v96-eld-to" archimateRelationship="id-v96-rel-tenant-to"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-eld-orders" targetConnections="id-v96-elc-admin-orders id-v96-elc-fe-orders" archimateElement="id-v96-biz-orders">
+        <bounds x="260" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-elc-orders-ps" source="id-v96-eld-orders" target="id-v96-eld-ps" archimateRelationship="id-v96-rel-orders-ps"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-eld-ps" targetConnections="id-v96-elc-admin-ps id-v96-elc-orders-ps id-v96-elc-fe-ps" archimateElement="id-v96-biz-psview">
+        <bounds x="260" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-elc-ps-bill" source="id-v96-eld-ps" target="id-v96-eld-bill" archimateRelationship="id-v96-rel-ps-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-eld-to" targetConnections="id-v96-elc-tenant-to id-v96-elc-fe-to" archimateElement="id-v96-biz-torders">
+        <bounds x="260" y="280" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-elc-to-bill" source="id-v96-eld-to" target="id-v96-eld-bill" archimateRelationship="id-v96-rel-to-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-eld-fe" archimateElement="id-v96-el-fe">
+        <bounds x="48" y="140" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-elc-fe-orders" source="id-v96-eld-fe" target="id-v96-eld-orders" archimateRelationship="id-v96-rel-fe-orders"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-elc-fe-ps" source="id-v96-eld-fe" target="id-v96-eld-ps" archimateRelationship="id-v96-rel-fe-ps"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-elc-fe-to" source="id-v96-eld-fe" target="id-v96-eld-to" archimateRelationship="id-v96-rel-fe-to"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-eld-bill" targetConnections="id-v96-elc-ps-bill id-v96-elc-to-bill" archimateElement="id-v96-el-bill">
+        <bounds x="480" y="200" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

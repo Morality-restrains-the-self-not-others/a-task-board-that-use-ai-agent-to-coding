@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v45-tenant-refund-application-20260722-1225">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v45 Target (tenant-refund-application)</name>
+  <purpose>Tenant refund apply freezes points; superuser approve original-path refunds via PayPal/WeChat; taskBill ledger</purpose>
+
+  <folder name="Motivation" id="id-v45-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="Constraint 新增接口默认 Go" id="id-v45-constraint"/>
+    <element xsi:type="archimate:Principle" name="Principle 付费积分原路退回" id="id-v45-principle"/>
+    <element xsi:type="archimate:Constraint" name="Constraint 支付合规/日志脱敏" id="id-v45-compliance"/>
+  </folder>
+  <folder name="Application" id="id-v45-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue BillingDashboard [MODIFIED v45]" id="id-v45-vue-bill"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟢 Vue SystemAdminRefunds [NEW v45]" id="id-v45-vue-admin"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Django billing_bridge [MODIFIED v45]" id="id-v45-django"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskBill freeze/approve/refund [MODIFIED v45]" id="id-v45-taskbill"/>
+    <element xsi:type="archimate:DataObject" name="🟡 billing_account frozen_balance" id="id-v45-account"/>
+    <element xsi:type="archimate:DataObject" name="🟢 billing_refund_application [NEW v45]" id="id-v45-refund-app"/>
+    <element xsi:type="archimate:DataObject" name="🟢 billing_payment_ledger [NEW v45]" id="id-v45-ledger"/>
+  </folder>
+  <folder name="Technology" id="id-v45-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="PayPal Refunds API" id="id-v45-paypal"/>
+    <element xsi:type="archimate:Node" name="WeChat Pay Refund API" id="id-v45-wechat"/>
+    <element xsi:type="archimate:Node" name="Kafka" id="id-v45-kafka"/>
+    <element xsi:type="archimate:Node" name="billing.db" id="id-v45-sqlite"/>
+  </folder>
+  <folder name="Relations" id="id-v45-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v45-flow-bill-django" source="id-v45-vue-bill" target="id-v45-django" name="POST refund-applications"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v45-flow-admin-django" source="id-v45-vue-admin" target="id-v45-django" name="approve/reject"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v45-flow-django-tb" source="id-v45-django" target="id-v45-taskbill" name="proxy / internal"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v45-acc-tb-account" source="id-v45-taskbill" target="id-v45-account" name="R/W freeze"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v45-acc-tb-refund" source="id-v45-taskbill" target="id-v45-refund-app" name="R/W"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v45-acc-tb-ledger" source="id-v45-taskbill" target="id-v45-ledger" name="R/W FIFO"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v45-acc-tb-sqlite" source="id-v45-taskbill" target="id-v45-sqlite" name="R/W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v45-flow-tb-paypal" source="id-v45-taskbill" target="id-v45-paypal" name="Refund Capture"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v45-flow-tb-wechat" source="id-v45-taskbill" target="id-v45-wechat" name="Refund"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v45-flow-tb-kafka" source="id-v45-taskbill" target="id-v45-kafka" name="BillingRefund*"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v45-inf-go" source="id-v45-constraint" target="id-v45-taskbill" name="落点"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v45-inf-orig" source="id-v45-principle" target="id-v45-taskbill" name="原路退"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v45-inf-comp" source="id-v45-compliance" target="id-v45-taskbill" name="脱敏"/>
+  </folder>
+  <folder name="Implementation" id="id-v45-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v41 — current" id="id-v45-plat-v41"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v45 — tenant-refund-application (target)" id="id-v45-plat-v45"/>
+    <element xsi:type="archimate:Gap" name="Gap: 无退款申请冻结与原路退审批" id="id-v45-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v45-tenant-refund-application" id="id-v45-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v45-rel-plat41-gap" source="id-v45-plat-v41" target="id-v45-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v45-rel-wp-gap" source="id-v45-wp" target="id-v45-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v45-rel-wp-plat45" source="id-v45-wp" target="id-v45-plat-v45"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v45-rel-plat45-tb" source="id-v45-plat-v45" target="id-v45-taskbill"/>
+  </folder>
+  <folder name="Views" id="id-v45-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v41→v45 — tenant-refund-application" id="id-v45-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-plat41" archimateElement="id-v45-plat-v41">
+        <bounds x="48" y="100" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-plat41-gap"
+          source="id-v45-do-plat41" target="id-v45-do-gap"
+          archimateRelationship="id-v45-rel-plat41-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-gap" archimateElement="id-v45-gap"
+        targetConnections="id-v45-conn-plat41-gap id-v45-conn-wp-gap">
+        <bounds x="380" y="100" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-wp" archimateElement="id-v45-wp">
+        <bounds x="800" y="60" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-wp-gap"
+          source="id-v45-do-wp" target="id-v45-do-gap"
+          archimateRelationship="id-v45-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-wp-plat45"
+          source="id-v45-do-wp" target="id-v45-do-plat45"
+          archimateRelationship="id-v45-rel-wp-plat45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-plat45" archimateElement="id-v45-plat-v45"
+        targetConnections="id-v45-conn-wp-plat45">
+        <bounds x="800" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-plat45-tb"
+          source="id-v45-do-plat45" target="id-v45-do-tb-m"
+          archimateRelationship="id-v45-rel-plat45-tb"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-tb-m" archimateElement="id-v45-taskbill"
+        targetConnections="id-v45-conn-plat45-tb">
+        <bounds x="800" y="250" width="320" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v45 Target — refund 数据流" id="id-v45-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-vue-bill" archimateElement="id-v45-vue-bill">
+        <bounds x="40" y="40" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-bill-django"
+          source="id-v45-do-vue-bill" target="id-v45-do-django"
+          archimateRelationship="id-v45-flow-bill-django"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-vue-admin" archimateElement="id-v45-vue-admin">
+        <bounds x="40" y="140" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-admin-django"
+          source="id-v45-do-vue-admin" target="id-v45-do-django"
+          archimateRelationship="id-v45-flow-admin-django"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-django" archimateElement="id-v45-django"
+        targetConnections="id-v45-conn-bill-django id-v45-conn-admin-django">
+        <bounds x="260" y="80" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-django-tb"
+          source="id-v45-do-django" target="id-v45-do-tb"
+          archimateRelationship="id-v45-flow-django-tb"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-tb" archimateElement="id-v45-taskbill"
+        targetConnections="id-v45-conn-django-tb id-v45-conn-inf-go id-v45-conn-inf-orig id-v45-conn-inf-comp">
+        <bounds x="480" y="80" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-tb-account"
+          source="id-v45-do-tb" target="id-v45-do-account"
+          archimateRelationship="id-v45-acc-tb-account"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-tb-refund"
+          source="id-v45-do-tb" target="id-v45-do-refund"
+          archimateRelationship="id-v45-acc-tb-refund"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-tb-ledger"
+          source="id-v45-do-tb" target="id-v45-do-ledger"
+          archimateRelationship="id-v45-acc-tb-ledger"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-tb-sqlite"
+          source="id-v45-do-tb" target="id-v45-do-sqlite"
+          archimateRelationship="id-v45-acc-tb-sqlite"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-tb-paypal"
+          source="id-v45-do-tb" target="id-v45-do-paypal"
+          archimateRelationship="id-v45-flow-tb-paypal"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-tb-wechat"
+          source="id-v45-do-tb" target="id-v45-do-wechat"
+          archimateRelationship="id-v45-flow-tb-wechat"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-tb-kafka"
+          source="id-v45-do-tb" target="id-v45-do-kafka"
+          archimateRelationship="id-v45-flow-tb-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-account" archimateElement="id-v45-account"
+        targetConnections="id-v45-conn-tb-account">
+        <bounds x="480" y="200" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-refund" archimateElement="id-v45-refund-app"
+        targetConnections="id-v45-conn-tb-refund">
+        <bounds x="660" y="200" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-ledger" archimateElement="id-v45-ledger"
+        targetConnections="id-v45-conn-tb-ledger">
+        <bounds x="860" y="200" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-sqlite" archimateElement="id-v45-sqlite"
+        targetConnections="id-v45-conn-tb-sqlite">
+        <bounds x="480" y="280" width="120" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-paypal" archimateElement="id-v45-paypal"
+        targetConnections="id-v45-conn-tb-paypal">
+        <bounds x="640" y="280" width="140" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-wechat" archimateElement="id-v45-wechat"
+        targetConnections="id-v45-conn-tb-wechat">
+        <bounds x="800" y="280" width="160" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-kafka" archimateElement="id-v45-kafka"
+        targetConnections="id-v45-conn-tb-kafka">
+        <bounds x="980" y="280" width="100" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-constraint" archimateElement="id-v45-constraint">
+        <bounds x="40" y="280" width="160" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-inf-go"
+          source="id-v45-do-constraint" target="id-v45-do-tb"
+          archimateRelationship="id-v45-inf-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-principle" archimateElement="id-v45-principle">
+        <bounds x="40" y="340" width="160" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-inf-orig"
+          source="id-v45-do-principle" target="id-v45-do-tb"
+          archimateRelationship="id-v45-inf-orig"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v45-do-compliance" archimateElement="id-v45-compliance">
+        <bounds x="40" y="400" width="160" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v45-conn-inf-comp"
+          source="id-v45-do-compliance" target="id-v45-do-tb"
+          archimateRelationship="id-v45-inf-comp"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

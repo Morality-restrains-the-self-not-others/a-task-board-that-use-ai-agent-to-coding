@@ -1,0 +1,7 @@
+intents:
+  1_process_pending:
+    host: 0.0.0.0
+    port: 18064
+    groupId: task-events-billing-profit-sharing-scan-1-process-pending
+    events:
+    - BILLING_PROFIT_SHARING_SCAN

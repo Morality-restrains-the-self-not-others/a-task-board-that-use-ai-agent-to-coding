@@ -1,0 +1,91 @@
+---
+description: 加载并遵循项目 .ai 目录下的规则，根据任务类型引用对应规则文件
+alwaysApply: true
+---
+
+# 项目规则加载指引
+
+本项目的详细规则以 **[`.ai/`](../../.ai)** 为 **唯一细则 SSOT**（见 [`.ai/README.md`](../../.ai/README.md)；`task2app/.ai` 仅为指向根 `.ai` 的符号链接）；**总索引**见 **[`.ai/project_rules.md`](../../.ai/project_rules.md)**（文首「元规则导航」；Cursor 目录内 [`.cursor/rules/project_rules.md`](./project_rules.md) 为同文件符号链接）。Monorepo 全局 Companion 伴读见仓库根 **[`.cursor/rules/companion-ai-md.mdc`](./companion-ai-md.mdc)**。执行任务时**必须**按任务类型加载对应文件。
+
+## 规则加载机制
+
+### 按任务类型加载
+
+| 任务类型 | 需加载的规则 |
+|---------|-------------|
+| 任意任务开始时 | `.ai/00_start/00_start.md`；会话收尾优化待办见 `.ai/01_project_constraints/25_session_end_optimization_todo.md` 与 `.learnings/OPTIMIZATION_TODOS.md` |
+| 会话中途恢复、「继续」类简短续接 | `.ai/00_start/01_session_continuation.md`（与 `00_start.md` 配合；优先于泛泛重规划） |
+| 会话收尾、优化建议落盘、标记 OPT 完成 | `.ai/01_project_constraints/25_session_end_optimization_todo.md`；清单 SSOT：`.learnings/OPTIMIZATION_TODOS.md` |
+| 项目规范、Git、环境、文件修改 | `.ai/01_project_constraints/00_project_constraints.md`；涉及机器容器/任务容器 token 与 `Saas_project/skillList/machine_container.md` 接口时另见 `.ai/01_project_constraints/15_container_machine_api_access_logging.md`；**前端站点与 API 不同域名**（CORS、Cookie、回调、E2E 基地址等）另见 `.ai/01_project_constraints/17_cross_domain_frontend_api.md`；**静态资源 URL 缓存击穿（hash query）** 另见 `.ai/01_project_constraints/18_static_resource_cache_bust_query.md`；**单库/单表仅一服务直连**（跨服务须转发或迁表）另见 `.ai/01_project_constraints/19_single_service_data_ownership.md`；**新增服务/接口默认落 Go**（扩展现有或新建）另见 `.ai/01_project_constraints/20_go_service_first_apis.md`；**已合入 feat 分支与 `*-wt` worktree 须自动清理**另见 `.ai/01_project_constraints/21_merged_feat_branch_cleanup.md`；**服务 listen 禁止仅绑 127.0.0.1（须 0.0.0.0）**另见 `.ai/01_project_constraints/22_service_listen_host_not_localhost_only.md` 与根 `.ai.md`；**应用启动禁止环境 Proxy**另见 `.ai/01_project_constraints/23_app_startup_no_env_proxy.md` 与根 `.ai.md`；**请求报错展示须带 data-traceId**另见 `.ai/01_project_constraints/24_frontend_error_data_trace_id.md`；**会话结束优化建议 Todo**另见 `.ai/01_project_constraints/25_session_end_optimization_todo.md`；**行数门禁触发后须自动削文件**另见 `.ai/01_project_constraints/27_source_file_line_limit_auto_reduce.md`；**提交随机单测与遗留债 10% 修复**另见 `.ai/01_project_constraints/28_commit_random_unit_test_debt_fix.md`；**服务仅读本目录 conf、跨服务须 sync**另见 `.ai/01_project_constraints/29_service_own_conf_directory_only_via_sync.md`；**迁移/重构——测试先行**（确保改动前后行为一致）另见 `.ai/01_project_constraints/30_migration_refactoring_test_first.md` 与 `.cursor/rules/migration-refactoring-test-first.mdc`；**子仓库优先提交**（先提交推送子仓库再提交推送主仓库）另见 `.ai/01_project_constraints/32_submodule_commit_order.md` |
+| 读/改 monorepo `conf/**`、`confload`、服务 `config.go` / sync.manifest、跨服务配置依赖 | `.ai/01_project_constraints/29_service_own_conf_directory_only_via_sync.md`（须与 `00_project_constraints.md` 第 30 条一并遵守；Cursor：`.cursor/rules/service-own-conf-directory-sync.mdc`；目录 companion：`conf/ai.md`、`shareLib/confload/ai.md`）；**改 `conf/runAll.yaml` health_check / domain-events 端口**另见 `.ai/01_project_constraints/52_runall_health_port_ssot.md`；**进程加载 conf 须叠加 conf-local**另见 `.ai/01_project_constraints/64_conf_local_overlay_all_processes.md`（第 59 条；Cursor：`.cursor/rules/conf-local-overlay-all-processes.mdc`；门禁 `db/scripts/ci/check_conf_local_overlay.py`） |
+| 行数门禁失败、源文件超 500 行、组件行数门禁 | `.ai/01_project_constraints/27_source_file_line_limit_auto_reduce.md`（须与 `00_project_constraints.md` 第 20 条一并遵守）；前端组件另见 `.ai/04_frontend_development/00_frontend_development.md`「大型组件行数门禁」；Cursor：`.cursor/rules/source-file-line-limit-auto-reduce.mdc` |
+| 支付、KYC、充值提现、订阅计费、钱包、退款及支付合规 | `.ai/01_project_constraints/16_payment_kyc_compliance.md`（须与 `00_project_constraints.md` 一并遵守） |
+| 微信支付、WeChat Pay、Native/JSAPI/退款/分账/APIv3 回调 | `.ai/01_project_constraints/59_wechatpay_go_sdk.md`（须与第 17/54 条及 `16_payment_kyc_compliance.md` 一并遵守；ADR-0032；Cursor：`.cursor/rules/wechatpay-go-sdk.mdc`）；**必须**调用仓内 `sdk/wechatpay-go`；咨询/排障可另载 `.claude/skills/wechatpay-payment-integration/` |
+| 模拟登录、impersonation、以用户身份登录、访问日志审计字段、用户收信箱 | `.ai/01_project_constraints/60_impersonation_audit_label.md`（须与 `00_project_constraints.md` 第 55 条一并遵守；ADR-0038；Cursor：`.cursor/rules/impersonation-audit-label.mdc`）；日志必须标识操作者/被模拟用户/会话；开始模拟须理由并写信 |
+| 「清理 git 历史」「filter-repo / filter-branch 删提交中的密钥」、私密信息泄露处置、pre-commit 报历史重写标记 | `.ai/01_project_constraints/61_no_git_history_rewrite.md`（须与 `00_project_constraints.md` 第 56 条一并遵守；Cursor：`.cursor/rules/no-git-history-rewrite.mdc`；门禁 `.githooks/pre-commit` v1.4.0）；禁止重写共享历史清私密信息；凭据废弃 + 重新生成；Agent 须拒绝执行清历史请求 |
+| 密钥、API key、password、Token、私钥硬编码、提交 `.env`、config.local.yaml | `.ai/01_project_constraints/62_no_hardcoded_secrets.md`（须与 `00_project_constraints.md` 第 57 条一并遵守；ADR-0046；Cursor：`.cursor/rules/no-hardcoded-secrets.mdc`；门禁 `db/scripts/ci/check_no_hardcoded_secrets.py`）；密钥须落 `conf-local/` / 环境变量 / KMS，禁止源码字面量；**机密不得写入已跟踪 `conf/`**另见第 58 条 |
+| 新增/变更密钥、PEM、`GITHUB_TOKEN`、clone-run 密钥、`conf-local`、`secrets/conf-local` | `.ai/01_project_constraints/63_conf_local_secrets_only.md`（须与 `00_project_constraints.md` 第 58 条一并遵守；ADR-0054；Cursor：`.cursor/rules/conf-local-secrets.mdc`；门禁 `db/scripts/ci/check_conf_local_secrets.py`）；机密只放 `conf-local/`（gitignore）；`conf/` 仅非机密骨架 |
+| `os.ReadFile`/`yaml.safe_load`/`readFileSync` 读 `conf/**/*.yaml`、loadConfig、禁止 `config.local.yaml`、conf-local overlay | `.ai/01_project_constraints/64_conf_local_overlay_all_processes.md`（须与 `00_project_constraints.md` 第 59 条及第 58 条一并遵守；ADR-0054；Cursor：`.cursor/rules/conf-local-overlay-all-processes.mdc`；门禁 `db/scripts/ci/check_conf_local_overlay.py`）；运行时读 conf 必须深合并 `conf-local/<rel>` |
+| 多服务共享库/表、跨进程直连数据库、表所有权与迁表 | `.ai/01_project_constraints/19_single_service_data_ownership.md`（须与 `00_project_constraints.md` 一并遵守） |
+| 新增后端服务、新增 HTTP/RPC 接口、接口落点选型（Go vs Django/Python） | `.ai/01_project_constraints/20_go_service_first_apis.md`（须与 `00_project_constraints.md` 一并遵守；Python 例外另见 brainstorming 技能门禁）；**禁止业务进程内嵌 ticker/轮询**另见 `.ai/01_project_constraints/51_no_service_internal_poll_loop.md` 与 `.cursor/rules/no-service-internal-poll-loop.mdc`；**runAll 探活端口必须等于监听 SSOT**另见 `.ai/01_project_constraints/52_runall_health_port_ssot.md` 与 `.cursor/rules/runall-health-port-ssot.mdc` |
+| 新增/修改服务启动路径、ticker、定时扫描、进程内 poll | `.ai/01_project_constraints/51_no_service_internal_poll_loop.md`（须与 `00_project_constraints.md` 第 46 条一并遵守；ADR-0011；Cursor：`.cursor/rules/no-service-internal-poll-loop.mdc`）；周期工作只允许 `taskEvents` timer worker 或 HTTP/Kafka/Webhook 外界触发 |
+| 新增/修改 Kafka 消费者、eventbin.RunIntent、领域事件 handler、幂等键 | `.ai/01_project_constraints/54_event_consumer_idempotency.md`（须与 `00_project_constraints.md` 第 49 条一并遵守；ADR-0015；Cursor：`.cursor/rules/event-consumer-idempotency.mdc`）；消费必须走共享 `IdempotentDispatchService`，键与业务重复边界同粒度 |
+| 读/改 gitService、GitLab 登录/注册、OmniAuth/OIDC、`conf/infra/git-service*`、新增 GitLab 区域 | `.ai/01_project_constraints/55_gitlab_sso_only_no_self_signup.md`（须与 `00_project_constraints.md` 第 50 条一并遵守；ADR-0016；Cursor：`.cursor/rules/gitlab-sso-only-no-self-signup.mdc`）；禁止自行注册；Web 仅 taskAuth SSO；禁止打开 signup/账密排障 |
+| 会话收尾提交、auto-commit、是否须等用户要求才 commit | `.ai/01_project_constraints/56_session_commit_to_main.md`（须与 `00_project_constraints.md` 第 51 条一并遵守；Cursor：`.cursor/rules/session-commit-to-main.mdc`；根 `CLAUDE.md`）；每会话须提交到 main，禁止以「未明确要求」跳过 |
+| 代码修改中的逻辑回退、保留旧实现、双路径/注释掉旧代码、git revert 业务源码 | `.ai/01_project_constraints/58_logic_rollback_requires_approval.md`（须与 `00_project_constraints.md` 第 53 条一并遵守；ADR-0021；Cursor：`.cursor/rules/logic-rollback-requires-approval.mdc`）；默认删除旧逻辑；保留须本会话人类审批 + `Logic-Rollback-OK:`；`/goal` 零交互不覆盖 |
+| 新增/修改 runAll 服务、task-events intent、domain-events 端口、health_check.url、Prometheus runall-health-targets | `.ai/01_project_constraints/52_runall_health_port_ssot.md`（须与 `00_project_constraints.md` 第 47 条一并遵守；ADR-0012；Cursor：`.cursor/rules/runall-health-port-ssot.mdc`）；task-events 端口 SSOT 为 `conf/events/domain-events/<event>/config.yaml`；禁止从相邻条目复制 health URL |
+| 服务 listen/bind host、安全加固改绑定、APISIX `host.docker.internal`、边缘 nginx 上游可达性 | 根 `.ai.md`「服务监听地址」+ `.ai/01_project_constraints/22_service_listen_host_not_localhost_only.md`（**禁止**仅绑 `127.0.0.1`；须 `0.0.0.0`） |
+| 应用启动、runAll `use_proxy`、出站 HTTP Client、`HTTP(S)_PROXY`/`proxyconnect`、死本地 SOCKS | 根 `.ai.md`「应用启动与环境 Proxy」+ `.ai/01_project_constraints/23_app_startup_no_env_proxy.md`（**禁止**业务进程继承环境代理；env proxy 仅开发加速） |
+| 文档、流程图、业务逻辑调整；需求对照与变更留痕 | `.ai/02_documentation/00_documentation.md` |
+| 后端、API、云 SDK、函数式编程 | `.ai/03_technical_implementation/` 下对应文件；涉及 **ID 字段类型边界** 时另读 `11_id_field_string_transit.md`；**租户域 API / RequireRegion / PDP** 另见 `.ai/01_project_constraints/45_tenant_logical_rbac_resource_groups.md` 与 `shareLib/authz/ai.md`；**微信支付**另见 `.ai/01_project_constraints/59_wechatpay_go_sdk.md`（仓内 `sdk/wechatpay-go`） |
+| Python 辅助 Web 侧车（relayToTrae、mock_run_container 等 Flask + threading） | `.ai/03_technical_implementation/10_python_sidecar_web_concurrency.md` |
+| 前端、Vue、组件开发、平台设计规范 | `.ai/04_frontend_development/00_frontend_development.md` 及 `01_platform_design_skills.md`；**视觉基线**仓库根 `DESIGN.md` + `.claude/skills/design-md`（awesome-design-md 只作模板，禁止品牌覆盖）；**请求报错展示须带 data-traceId**另见 `.ai/01_project_constraints/24_frontend_error_data_trace_id.md` 与 `.cursor/rules/frontend-error-data-trace-id.mdc`；**入口 HTML head 标明服务**另见 `.ai/01_project_constraints/26_frontend_head_trae_service.md` 与 `.cursor/rules/frontend-head-trae-service.mdc`；**行数门禁触发后须自动削文件**另见 `.ai/01_project_constraints/27_source_file_line_limit_auto_reduce.md`；**租户控制台/侧栏/访问管理**另见 `.ai/01_project_constraints/45_tenant_logical_rbac_resource_groups.md` 与 `.cursor/rules/tenant-logical-rbac-resource-groups.mdc`；**禁止链接点击拦截 / 鉴权失败禁静默 replace**另见 `.ai/01_project_constraints/49_no_link_click_interception.md` 与 `.cursor/rules/no-link-click-interception.mdc`；**无必要禁止 Teleport / createPortal**另见 `.ai/01_project_constraints/50_no_unnecessary_vue_teleport.md` 与 `.cursor/rules/no-unnecessary-vue-teleport.mdc`；**禁止无触发后台 API 轮询**另见 `.ai/01_project_constraints/51_no_service_internal_poll_loop.md`；**副作用按钮须防重放（同步锁 + Idempotency-Key）**另见 `.ai/01_project_constraints/57_frontend_button_anti_replay.md` 与 `.cursor/rules/frontend-button-anti-replay.mdc` |
+| 租户控制台、成员/组/角色、访问管理、租户 settings/billing 权限 | `.ai/01_project_constraints/45_tenant_logical_rbac_resource_groups.md`（须与 `00_project_constraints.md` 第 40 条一并遵守；ADR-0003；Cursor：`.cursor/rules/tenant-logical-rbac-resource-groups.mdc`） |
+| trae-agent / onlineServiceJS 修改并提交、镜像交付 | `.ai/01_project_constraints/46_trae_agent_online_service_docker_push.md`（须在 `trae-agent/onlineServiceJS` 执行 `DOCKER_PUSH=1 ./buildDocker.sh`；Cursor：`.cursor/rules/trae-agent-docker-push.mdc`；入口 `scripts/trae-agent-docker-push.sh`） |
+| 测试、Playwright、单元测试 | [`task2app/测试.ai.md`](../../task2app/测试.ai.md)（Playwright 凭证等环境变量速查）；`.ai/05_testing_quality/` 下 00/01/02 文件 |
+| 执行、pre-commit、测试结果 | `.ai/06_execution_monitoring/00_execution_monitoring.md`；**提交随机单测 / 遗留债 10%**另见 `.ai/01_project_constraints/28_commit_random_unit_test_debt_fix.md` 与 `.cursor/rules/commit-random-unit-test-debt-fix.mdc` |
+| TOGAF、架构 | `.ai/07_togaf_project_management/`；**创建/修改 `docs/architecture/` 下 `.puml` / `.archimate` 时另读** `.cursor/rules/archimate-architecture-artifacts.mdc` 与 `.claude/skills/archimate/SKILL.md` |
+| 头脑风暴、设计文档（含架构变更） | `.claude/skills/1-brainstorming-design-docs/SKILL.md`；**须另读** `.cursor/rules/archimate-architecture-artifacts.mdc` 与 `.claude/skills/archimate/SKILL.md`（交付物含 `.puml` + `.diff.archimate` + `.full.archimate` + `.mermaid.md`，不可只写 `.puml`；两个 `.archimate` 缺一不可） |
+| NFR 澄清（`/5-nfr`）、`*-nfr-clarification.md`、路径/分片键可伸缩性、写路径幂等性 | `.claude/skills/5-nfr/SKILL.md` + `references/path-shard-id-scalability.md` + `references/idempotency.md`；须与 `.ai/01_project_constraints/48_nfr_path_shard_id_scalability.md`、`.ai/01_project_constraints/53_nfr_idempotency.md` 一并遵守；Cursor：`.cursor/rules/nfr-path-shard-id-scalability.mdc`、`.cursor/rules/nfr-idempotency.mdc` |
+| 提示词管理 | `.ai/08_prompt_management/00_prompt_management.md` |
+| 编译/运行时错误排查 | `.ai/09_failure_experience/` |
+| 软件设计、代码审查、架构 | `.ai/10_software_design_philosophy/` |
+| AI 辅助开发、Prompt 工程 | `.ai/11_ai_development/00_ai_development.md`；新建或修改 `.claude/skills/` 下 `SKILL.md` 时另读 `02_agent_skills_authoring.md`；**非琐碎实现类任务默认遵循** `.ai/11_ai_development/03_superpowers_workflow.md`（统一十步，**无需用户点名** Superpowers/gstack；`04_gstack_sprint_alignment.md` 仅为旧链重定向；目录表见 `.claude/skills/README.md`） |
+| Agent 工程与推理（Matt Pocock 实践 + Heavy Thinking） | `.ai/project_rules.md`：「Matt Pocock Skills 实践吸收」（对照表、四失败模式）与「HeavySkill（Heavy Thinking）实践要点」；配套 `.ai/05_testing_quality/`、`.ai/09_failure_experience/`、`.ai/10_software_design_philosophy/`、`.ai/02_documentation/` |
+
+### 按文件 / 目录加载（Companion 规则）
+
+读取或修改源代码、配置、脚本等**非规则元文件**时，须按下列优先级加载局部规则（与 `project_rules.md`「规则加载与使用」一致）：
+
+| 层级 | 触发条件 | 加载目标 |
+|------|----------|----------|
+| **文件级** | 读取或修改 `{path}` | 若存在 `{path}.ai.md`，**须与源文件一并读取** |
+| **目录级** | 读取或修改某目录下文件 | 若存在该目录 `ai.md`，须读取；并查看同目录 `.ai/` |
+| **跳过** | 目标已是 `*.ai.md`、`ai.md` 或 `.ai/` 内规则文件 | 不再递归查找 companion |
+
+**优先级**：`{filename}.ai.md` > 目录 `ai.md` > 目录 `.ai/` > 全局 `.ai/` 任务类型规则。
+
+### 规则索引
+
+完整规则索引与详细条目见：`.ai/project_rules.md`（文首 **「元规则导航」**；`.cursor/rules/project_rules.md` 为符号链接）。**沿革归档**：`.ai/project_rules_CHANGELOG_ARCHIVE.md`。
+
+### 执行原则
+
+1. **按需加载**：根据当前任务的领域，主动读取 `.ai` 中相关规则的 00 索引文件
+2. **索引文件指向子文件**：00 文件多含子文件链接，需进一步读取具体规则
+3. **冲突处理**：核心规则 > 最佳实践 > 风格指南；文件级 > 目录级 > 全局
+4. **接续优先**：在用户仅表示「继续」或上下文显示上一轮应答被截断时，先遵循 `.ai/00_start/01_session_continuation.md`：**用 git/diff/定向读文件校准进度**，再从中断点附近继续；避免重做已完成的大范围探索与同前提长耗时命令。
+5. **需求对照与变更留痕**：执行实现或调整类指令前，对照既有需求来源（如 `docs/intents/` 下意图与测试意图文档、`docs/flows/`、`docs/ProjectFeature.opml`、相关设计或流程说明）。若当前指令与既有文档或约定不一致，或构成需求变更，须在落地代码与测试的**同时**，把变更后的需求写回对应文档（必要时同步价值流图测试点、流程图等），并可用简短变更记录（日期、相对旧版差异、原因）便于日后对照，避免实现与文档漂移。
+6. **Agent 工程实践（吸收 [mattpocock/skills](https://github.com/mattpocock/skills)）**：上游强调小而可组合、可改编、与模型无关的 repeatable practices。落实为本项目行为时**不依赖**上游 `npx skills` 安装，而以 `.ai` / `.claude/skills` 为准：
+   - **对齐（Grilling）**：重大或易偏差任务在编码前用结构化追问消化目标、边界与验收；可与 `.claude/skills/plan-interview`、`intent-framed-agent` 等配合。
+   - **共享语言（Ubiquitous Language）**：代码命名与文档使用项目已定义术语，减少冗长复述；术语与决策沉淀见 `.ai/02_documentation/`、`docs/intents/` 等（复杂决策可按团队约定使用 ADR 或等价说明）。
+   - **反馈闭环**：小步迭代，以可运行证据为准（类型检查、测试、本地复现）。优先红-绿-重构与好测试，见 `.ai/05_testing_quality/`；疑难问题按复现 → 缩小范围 → 假设 → 验证 → 修复 → 回归，见 `.ai/09_failure_experience/`。
+   - **系统与设计视角**：改动时关注模块边界与深度；阅读陌生代码时补充系统上下文（边界、调用链、数据流）；与 `.ai/10_software_design_philosophy/` 一致，避免无设计地堆复杂度。
+7. **上游技能名落地（mattpocock/skills）**：上游以 slash 命令分发（如 `tdd`、`diagnose`、`grill-with-docs`），本仓库将其映射为行为约束而非依赖插件。**禁止水平切片 TDD**（一次性写完全部测试再实现）；**诊断先建确定性反馈环**，无可靠复现则不空转假设；**工单拆分**用垂直切片（HITL/AFK）；**陌生代码**先 zoom-out；**架构审视**关注 seam、模块深度与删除检验。完整对照表与四失败模式见 `.ai/project_rules.md`「Matt Pocock Skills 实践吸收」。
+8. **Heavy Thinking（HeavySkill 要点）**：对**可核验的高难度推理**（数学、算法竞赛式推导、严密逻辑）可启用两阶段——**多路独立推理**（并行 Agent 或分轮独立思路，K 宜小如 3～5）再 **顺序审议合成**；审议以论证质量与交叉验证为准，**不等于多数票**，亦承认「可能全错」。日常编码仍以测试与复现为完成判据，详见 `.ai/project_rules.md`「HeavySkill（Heavy Thinking）实践要点」。
+9. **统一 Agent 交付工作流**：凡 **实现类任务**（定义与裁剪见 `.ai/11_ai_development/03_superpowers_workflow.md`「适用范围与裁剪」）默认按该文件 **十步单轨** 推进，**无需**用户显式提及 Superpowers、gstack 等词；等价于在对应阶段自觉加载 `.claude/skills/` 与 `.ai` 专文并产出验证证据。
+10. **预期问题前置处理**：当执行过程中已能预见某问题将发生（如明显的边界缺失、依赖缺口、可预测报错、缺少必要校验），应在当前阶段直接修复并补充必要验证，不得等其实际触发后再被动处理。仅当受外部权限/环境/信息阻塞时，才可暂缓，并需明确说明阻塞点与后续动作。
+11. **Companion 规则伴读**：使用 Read（或等价读文件手段）打开任意源文件前，先检查 `{filepath}.ai.md` 是否存在；若存在则**在同一轮工具调用中一并读取**，并在修改该文件时严格遵循其约束。进入新目录且尚未加载该目录 `ai.md` 时，应先读目录 `ai.md` 再读具体文件。示例：读 `Saas_project/accounts/views.py` 时须同时读 `Saas_project/accounts/views.py.ai.md`。
+12. **会话结束优化建议 Todo**：任务收尾时，将可执行、非阻塞的优化建议编号写入 `.learnings/OPTIMIZATION_TODOS.md`（`OPT-YYYYMMDD-NNN`，`pending`）；某条落地验证后标记 `completed`。禁止只在聊天中写建议不落盘。细则见 `.ai/01_project_constraints/25_session_end_optimization_todo.md`。
+13. **行数门禁触发后自动削减**：源文件超过默认 **500** 行、或 pre-commit/CI 行数门禁失败并点名路径时，须**立即**将全部目标文件拆分削减到 **≤ 阈值** 并复跑验收，再继续其它改动；禁止仅注释「后续拆分」、禁止询问是否拆分。细则见 `.ai/01_project_constraints/27_source_file_line_limit_auto_reduce.md`。
+14. **提交随机单元测试与遗留债 10% 修复**：每次提交须跑随机单元测试门禁；发现遗留失败 N 个时至少修复 `max(1, ceil(N×0.10))` 个并复跑通过，余债写入 `.learnings/UNIT_TEST_DEBT.md`；暂存相关单测须 100% 通过；禁止 `--no-verify`。细则见 `.ai/01_project_constraints/28_commit_random_unit_test_debt_fix.md`。

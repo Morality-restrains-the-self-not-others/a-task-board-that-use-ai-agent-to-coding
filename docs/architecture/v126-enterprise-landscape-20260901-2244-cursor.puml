@@ -1,0 +1,55 @@
+' @title: 项目 L2 种下自动运行评论（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 126
+' @iteration: 项目 L2 种下自动运行评论
+' @author: cursor
+' @based_on: v125 (v125-enterprise-landscape-20260901-1405-cursor.puml)
+' @updated: 2026-09-01 23:10
+' @description: 同用户同项目同 Git 站的项目 OAuth 使用标记可种下【自动运行】评论 L2；创建任务不再只认 session grant_ticket
+
+@startuml
+!include <archimate/Archimate>
+
+title 项目 L2 种下自动运行 — v126 Current Architecture (2026-09-01 23:10)
+
+rectangle "Business" {
+  Business_Actor(member, "租户成员")
+  Business_Process(projOauth, "项目详情 Git OAuth")
+  Business_Process(createTask, "工作面板创建自动运行任务")
+  note right of createTask
+    项目已授权则不再二次点 OAuth
+    @author: cursor @2026-09-01 23:10
+  end note
+  Business_Process(autorun, "【自动运行】评论克隆/推送")
+}
+
+rectangle "Application" {
+  Application_Component(fe, "taskFE")
+  Application_Component(gitoauth, "taskGitOauth")
+  Application_Component(proj, "taskProjectService")
+  Application_Component(task, "taskTaskService")
+  note top of task
+    用项目 L2 remote_user_id 种评论 L2
+    @author: cursor @2026-09-01 23:10
+  end note
+}
+
+Rel_Assignment(member, projOauth)
+Rel_Assignment(member, createTask)
+Rel_Flow(projOauth, fe, "grant_kind=project")
+Rel_Flow(createTask, fe, "校验项目 L2 或 pending ticket")
+Rel_Flow(fe, gitoauth, "OAuth start/callback")
+Rel_Flow(gitoauth, proj, "Mark project grant")
+Rel_Flow(task, proj, "GET internal grant")
+Rel_Flow(createTask, autorun, "种下后换票")
+
+Implementation_Plateau(p125, "Plateau v125 ImageMarket")
+Implementation_Plateau(p126, "Plateau v126 项目 L2 可种自动运行")
+Implementation_Gap(gap, "Gap: 创建任务不认项目页授权")
+Implementation_WorkPackage(wp, "WP-project-l2-seed-autorun-comment")
+Rel_Triggering(p125, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p126, "delivers")
+
+@enduml

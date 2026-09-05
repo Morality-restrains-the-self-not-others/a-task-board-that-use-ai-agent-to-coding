@@ -1,0 +1,7 @@
+# daydaymoney.yaml — service identity (do NOT put workspace_id / project_id / company_id)
+version: 1
+service_id: DaydaymoneyGrafana
+display_name: Daydaymoney Grafana Plugin
+tags:
+  - svc:DaydaymoneyGrafana
+  - domain:observability

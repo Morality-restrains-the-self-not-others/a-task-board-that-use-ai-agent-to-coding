@@ -1,0 +1,8 @@
+version: "1"
+fragments:
+  # taskBill 内部密钥。taskReferral sync-edge 必须带 X-TaskBill-Internal-Secret，
+  # 否则 taskBill 在 internalSecret 非空时 403，billing_referral_edge 永不写入。
+  # 规则 29：运行时只读本目录片段，禁止直读 conf/billing/task-bill。
+  - from: ../billing/task-bill/config.yaml
+    to: task-bill.yaml
+    pick: [internalSecret]

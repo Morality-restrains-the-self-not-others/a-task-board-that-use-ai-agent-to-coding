@@ -1,0 +1,21 @@
+# WorkspaceAccess.collaborators-api-200.playwright.test.js
+
+## 测试意图
+验证 `GET /api/tenant/{tid}/projects/workspace-access/workspace-collaborators/?workspace_id={wid}` 端点返回 200（而非 500 FieldError）。
+
+## 背景
+该端点曾因 `CompanyMember.objects.filter(user__id__in=...)` 字段名错误导致 500。
+`CompanyMember` 模型只有 `user_id` CharField（非 ForeignKey），Django ORM 无法解析 `user` 跨关系查询。
+修复为 `user_id__in` 后应正常返回。
+
+## 测试流程
+1. 登录（邮箱/密码）
+2. 导航到工作面板 `/tenant/{tid}/work-panel/`
+3. 点击「创建任务」按钮 → CreateTaskModal 触发 `fetchCollaborators`
+4. 拦截 workspace_collaborators API 响应
+5. 断言状态码为 200，响应体中无 FieldError
+
+## 前提条件
+- 测试账号有非 default 的工作空间
+- 后端 Django 服务运行中
+- 前端 Vite dev server 运行中（或通过 CDP 连接外部 Chrome）

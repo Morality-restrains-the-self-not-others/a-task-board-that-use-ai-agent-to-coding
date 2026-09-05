@@ -1,0 +1,7 @@
+---
+name: update_page
+description: Grants the ability to update pages
+boundaries:
+  - project
+permissions:
+  - update_page

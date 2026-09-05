@@ -1,0 +1,11 @@
+{
+  "name": "claude-agent-bundle",
+  "private": true,
+  "description": "Node.js dependency layer for claude-agent — bundles @anthropic-ai/claude-code",
+  "dependencies": {
+    "@anthropic-ai/claude-code": "^2.1.197"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

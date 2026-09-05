@@ -1,0 +1,160 @@
+include:
+  - local: .gitlab/ci/qa-common/main.gitlab-ci.yml
+  - local: .gitlab/ci/qa-common/rules.gitlab-ci.yml
+  - local: .gitlab/ci/qa-common/variables.gitlab-ci.yml
+
+.rules:test:gdk-load-balancer-changes:
+  rules:
+    - when: manual
+      allow_failure: true
+      changes:
+        - ".gitlab/ci/test-on-gdk/**"
+        - "lib/gitlab/database/load_balancing/**/*"
+
+.rules:test:gdk-gitaly-version-change:
+  rules:
+    - if: '$PARENT_PIPELINE_SOURCE == "schedule"'
+      when: manual
+      allow_failure: true
+    - changes:
+        - "GITALY_SERVER_VERSION"
+    - when: manual
+      allow_failure: true
+
+.with-parallel:
+  parallel: 15
+
+.with-gdk-log:
+  after_script:
+    - mv $CI_BUILDS_DIR/*.log $CI_PROJECT_DIR/
+
+.gdk-qa-base:
+  image: "${REGISTRY_HOST}/${REGISTRY_GROUP}/gitlab-build-images/ci/${BUILD_OS}-${OS_VERSION}-slim-ruby-${RUBY_VERSION}:rubygems-${RUBYGEMS_VERSION}-git-${GIT_VERSION}-lfs-${LFS_VERSION}-chrome-${CHROME_VERSION}-docker-${DOCKER_VERSION}"
+  extends:
+    - .e2e-test-base
+    # ignore runtime data from gdk because it's significantly slower than cng and runtime data for
+    # optimizing parallel distribution should be geared towards test-on-cng
+    - .with-ignored-runtime-data
+  stage: test
+  services:
+    - name: "$GL_DOCKER_REGISTRY_MIRROR/docker:${DOCKER_VERSION}-dind"
+      alias: docker
+      entrypoint: ["sh", "-c", "dockerd-entrypoint.sh $GL_DOCKER_DIND_OPTIONS"]
+    - name: ${GDK_IMAGE}
+      alias: gdk.test
+      # CI setup will tail each component in to separate file
+      # Override default command so we don't tail all of the logs to stdout unnecessarily
+      command: [gdk, tail, rails-web]
+  tags:
+    - e2e
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: clone-gitlab-repo
+  variables:
+    COVERBAND_ENABLED: "$COVERBAND_ENABLED"  # explicitly define variable so it is passed in to gdk service container
+    BABEL_ENV: "$BABEL_ENV"
+    GITLAB_CRON_JOBS_POLL_INTERVAL: "0"
+    GITLAB_DEVELOPMENT_USE_PRECOMPILED_ASSETS: "true"
+    GITLAB_QA_ADMIN_ACCESS_TOKEN: $QA_ADMIN_ACCESS_TOKEN
+    GL_DOCKER_REGISTRY_MIRROR: mirror.gcr.io
+    GL_DOCKER_REGISTRY_MIRROR_ENDPOINT: https://${GL_DOCKER_REGISTRY_MIRROR}
+    GL_DOCKER_DIND_OPTIONS: "--registry-mirror=$GL_DOCKER_REGISTRY_MIRROR_ENDPOINT"
+    HEALTHCHECK_TCP_PORT: "2375"
+    QA_DOCKER_NETWORK: host
+    QA_GITLAB_URL: http://gdk.test:3000
+    QA_RUN_IN_PARALLEL: "true"
+    QA_PARALLEL_PROCESSES: 4
+    RSPEC_LAST_RUN_RESULTS_FILE: "$CI_PROJECT_DIR/qa/tmp/examples.txt"
+    GIT_STRATEGY: "none"
+  after_script:
+    - !reference [.with-gdk-log, after_script]
+    - !reference [.gitlab-qa-report, after_script]
+  artifacts:
+    paths:
+      - qa/tmp
+      - ${CI_PROJECT_DIR}/*.log
+    reports:
+      junit: qa/tmp/rspec-*.xml
+      dotenv: "$QA_SUITE_STATUS_ENV_FILE"
+    expire_in: 7 days
+    when: always
+
+# ==========================================
+# Test stage
+# ==========================================
+
+gdk-instance:
+  extends:
+    - .gdk-qa-base
+    - .with-parallel
+  variables:
+    QA_SCENARIO: Test::Instance::All
+
+gdk-instance-ff-inverse:
+  extends: gdk-instance
+  variables:
+    QA_FEATURE_FLAGS: $FEATURE_FLAGS
+  rules:
+    - !reference [.rules:test:feature-flags-set, rules]
+
+gdk-instance-gitaly-transactions:
+  extends: gdk-instance
+  variables:
+    QA_GITALY_TRANSACTIONS_ENABLED: "true"
+  rules:
+    - !reference [.rules:test:gdk-gitaly-version-change, rules]
+
+# Take the existing GDK docker image and reconfigure it with Postgres load
+# balancing. Adding 5s lag to 1 of the replicas to validate robustness of
+# the load balancer.
+gdk-instance-with-load-balancer:
+  extends: gdk-instance
+  variables:
+    WITH_LOAD_BALANCER: "true"
+  rules:
+    - !reference [".rules:test:never-schedule-pipeline", rules]
+    - !reference [".rules:test:gdk-load-balancer-changes", rules]
+
+# Run E2E tests for Secrets Manager (requires OpenBao)
+gdk-instance-secrets-manager:
+  extends:
+    - .gdk-qa-base
+  variables:
+    QA_SCENARIO: Test::Integration::SecretsManager
+    QA_RSPEC_TAGS: --tag secrets_manager
+    WITH_SECRETS_MANAGER: "true"
+    QA_FEATURE_FLAGS: "secrets_manager=enabled"
+  rules:
+    - when: on_success
+
+# ==========================================
+# Post test stage
+# ==========================================
+e2e-test-report:
+  extends: .rules:report:allure-report
+  variables:
+    ALLURE_REPORT_RESULTS_GLOB: "qa/tmp/allure-results"
+
+upload-test-runtime-data:
+  extends:
+    - .upload-test-runtime-data
+    - .rules:report:upload-test-runtime-data
+
+export-code-paths-mapping:
+  extends:
+    - .export-code-paths-mapping
+
+export-frontend-code-paths-mapping:
+  extends:
+    - .export-frontend-code-paths-mapping
+
+process-e2e-coverage:
+  extends:
+    - .process-e2e-coverage
+  needs:
+    - job: gdk-instance
+
+notify-slack:
+  extends:
+    - .notify-slack
+    - .rules:report:process-results

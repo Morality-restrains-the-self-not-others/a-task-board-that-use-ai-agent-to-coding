@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v89 变迁 (v88→v89) — ztree-exec-log-server-persist" id="id-v89els-diff01">
+  <folder name="Application" id="id-v89elsd-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v89elsd-fe" name="taskFE [MOD]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v89elsd-cloud" name="taskCloudService [MOD]"/>
+    <element xsi:type="archimate:DataObject" id="id-v89elsd-snap" name="cloud_layer_graph_snapshot [NEW]"/>
+  </folder>
+  <folder name="Technology" id="id-v89elsd-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v89elsd-ctr" name="Comment-scoped container [MOD]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v89elsd-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v89elsd-pl88" name="Plateau v88"/>
+    <element xsi:type="archimate:Plateau" id="id-v89elsd-pl89" name="Plateau v89"/>
+    <element xsi:type="archimate:Gap" id="id-v89elsd-gap" name="Gap: 层图仅 SSE 不落库；关容器 ztree 空"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v89elsd-wp" name="WP-ztree-exec-log-server-persist"/>
+  </folder>
+  <folder name="Relations" id="id-v89elsd-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v89elsd-rel-ctr-cloud" source="id-v89elsd-ctr" target="id-v89elsd-cloud" name="layer-graph-push persist"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v89elsd-rel-cloud-snap" source="id-v89elsd-cloud" target="id-v89elsd-snap" name="UPSERT snapshot"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v89elsd-rel-fe-cloud" source="id-v89elsd-fe" target="id-v89elsd-cloud" name="GET hydrate 层图 + job 步骤"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v89elsd-rel-pl85-gap" source="id-v89elsd-pl88" target="id-v89elsd-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v89elsd-rel-wp-gap" source="id-v89elsd-wp" target="id-v89elsd-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v89elsd-rel-wp-pl88" source="id-v89elsd-wp" target="id-v89elsd-pl89"/>
+  </folder>
+  <folder name="Views" id="id-v89elsd-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v89elsd-view-mig" name="架构变迁 v88→v89 — ztree-exec-log-server-persist">
+      <child xsi:type="archimate:DiagramObject" id="id-v89elsd-do-pl85" archimateElement="id-v89elsd-pl88">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89elsd-c-pl85-gap" source="id-v89elsd-do-pl85" target="id-v89elsd-do-gap" archimateRelationship="id-v89elsd-rel-pl85-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89elsd-do-gap" targetConnections="id-v89elsd-c-pl85-gap id-v89elsd-c-wp-gap" archimateElement="id-v89elsd-gap">
+        <bounds x="240" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89elsd-do-wp" archimateElement="id-v89elsd-wp">
+        <bounds x="240" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89elsd-c-wp-gap" source="id-v89elsd-do-wp" target="id-v89elsd-do-gap" archimateRelationship="id-v89elsd-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89elsd-c-wp-pl88" source="id-v89elsd-do-wp" target="id-v89elsd-do-pl88" archimateRelationship="id-v89elsd-rel-wp-pl88"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89elsd-do-pl88" targetConnections="id-v89elsd-c-wp-pl88" archimateElement="id-v89elsd-pl89">
+        <bounds x="620" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v89elsd-view-flow" name="v89 Target — 层图快照落库">
+      <child xsi:type="archimate:DiagramObject" id="id-v89elsd-d-ctr" archimateElement="id-v89elsd-ctr">
+        <bounds x="48" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89elsd-c-ctr-cloud" source="id-v89elsd-d-ctr" target="id-v89elsd-d-cloud" archimateRelationship="id-v89elsd-rel-ctr-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89elsd-d-cloud" targetConnections="id-v89elsd-c-ctr-cloud id-v89elsd-c-fe-cloud" archimateElement="id-v89elsd-cloud">
+        <bounds x="300" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89elsd-c-cloud-snap" source="id-v89elsd-d-cloud" target="id-v89elsd-d-snap" archimateRelationship="id-v89elsd-rel-cloud-snap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89elsd-d-snap" targetConnections="id-v89elsd-c-cloud-snap" archimateElement="id-v89elsd-snap">
+        <bounds x="560" y="48" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89elsd-d-fe" archimateElement="id-v89elsd-fe">
+        <bounds x="48" y="160" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89elsd-c-fe-cloud" source="id-v89elsd-d-fe" target="id-v89elsd-d-cloud" archimateRelationship="id-v89elsd-rel-fe-cloud"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

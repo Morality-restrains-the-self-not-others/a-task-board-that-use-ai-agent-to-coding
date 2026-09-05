@@ -1,0 +1,66 @@
+' @title: Git OAuth 换票路径按 site 寻址
+' @view: application-integration
+' @status: target
+' @version: 97
+' @iteration: gitsite-access-for-user-path
+' @author: cursor
+' @based_on: v96 (v96-application-integration-20260822-1405-cursor.puml)
+' @updated: 2026-08-22 16:32
+' @description: access-for-user 主路径改为 /api/internal/gitsite/{site}/；旧 github|gitlab 路径留别名
+
+@startuml
+!include <archimate/Archimate>
+
+title Git OAuth access-for-user by site — v97 Target (2026-08-22 16:32)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v97 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v97 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(proj, "taskProjectService")
+Application_Component(cred, "taskCredentialService")
+Application_Component(cloud, "taskCloudService")
+Application_Component(gitoauth, "taskGitOauth")
+note top of gitoauth
+  [MODIFIED v97] 换票主路径
+  POST /api/internal/gitsite/{site}/oauth/access-for-user/
+  {site}=host[:port] URL 编码
+  旧 /api/internal/{github|gitlab}/oauth/access-for-user/ 别名保留
+  @author: cursor @2026-08-22 16:32
+end note
+
+Application_Interface(ifaceSite, "gitsite access-for-user")
+note right of ifaceSite
+  [NEW v97] site 为审计同一键
+  解析 YAML website → provider_key
+  @author: cursor @2026-08-22 16:32
+end note
+
+Application_Interface(ifaceLegacy, "github|gitlab access-for-user")
+note right of ifaceLegacy
+  [MODIFIED v97] deprecated 别名
+  不得作为新调用方默认
+end note
+
+Application_DataObject(credRow, "git_oauth_appusercredential")
+Technology_Node(mysqlG, "MySQL git_oauth utf8mb4")
+
+Rel_Serving(ifaceSite, gitoauth)
+Rel_Serving(ifaceLegacy, gitoauth)
+Rel_Flow(proj, ifaceSite, "clone/branch 换票")
+Rel_Flow(cred, ifaceSite, "容器 clone 换票")
+Rel_Flow(cloud, ifaceSite, "layer push 换票")
+Rel_Flow(gitoauth, credRow, "FindActive by provider_key")
+Rel_Serving(mysqlG, credRow, "InnoDB")
+
+Implementation_Plateau(plateauV96, "Plateau v96")
+Implementation_Plateau(plateauV97, "Plateau v97 gitsite path")
+Implementation_Gap(gapPath, "Gap: 换票路径用产品族而非 Git site")
+Implementation_WorkPackage(wpPath, "WP-gitsite-access-for-user")
+Rel_Triggering(plateauV96, gapPath, "identifies")
+Rel_Realization(wpPath, gapPath, "closes")
+Rel_Realization(wpPath, plateauV97, "delivers")
+
+@enduml

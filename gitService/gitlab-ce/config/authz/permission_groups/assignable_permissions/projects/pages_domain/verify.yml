@@ -1,0 +1,7 @@
+---
+name: verify_pages_domain
+description: Grants the ability to verify pages domains
+boundaries:
+  - project
+permissions:
+  - verify_pages_domain

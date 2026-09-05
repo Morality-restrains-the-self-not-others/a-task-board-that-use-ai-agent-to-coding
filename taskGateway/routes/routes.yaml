@@ -1,0 +1,1358 @@
+# Declarative taskGateway routes. auth_mode: deny | public | machine | token
+version: "1"
+# Upstream host addressing (see routes-to-apisix.py):
+# - Public hosts for CORS / Host matching come from conf/base.yaml (${subdomains.*}).
+# - APISIX upstream nodes always use host below (loopback) or docker.upstreamHost when
+#   TASK_GATEWAY_APISIX_IN_DOCKER=1 — never public DNS from base.yaml.
+# - Prefer docker.upstreamHost=host.docker.internal (compose extra_hosts host-gateway);
+#   do not hardcode docker bridge IPs (they change per network recreate).
+# Do not hardcode public domains or legacy machine IPs as upstream hosts here.
+upstreams:
+  # OPT-049: Django saas-backend decommissioned (2026-07-30).
+  #         host: 127.0.0.1
+  #         port: 8001
+  # null-upstream: used for orphaned API routes → immediate 502 (no hang)
+  null-upstream:
+    host: 127.0.0.1
+    port: 1
+    docs: false
+  taskAuth:
+    host: 127.0.0.1
+    port: 8003
+    # OPT-20260811-008: APISIX active health check — 多副本/扩容时自动摘除坏节点；
+    # 单节点开发机配合监控暴露 Connection-refused 502（不提供 failover）。
+    healthCheck:
+      http_path: /api/health/
+      healthy_interval: 5
+      successes: 2
+      unhealthy_interval: 5
+      http_failures: 3
+      timeout: 3
+    docs:
+      uiPath: /api/swagger/
+      schemaPath: /api/schema/
+    # 运维门户 /gateway/ops/docs/ 使用；不进入公开 /gateway/docs/
+    docsInternal:
+      uiPath: /api/swagger-internal/
+      schemaPath: /api/schema-internal/
+  taskReferral:
+    host: 127.0.0.1
+    port: 8025
+    docs:
+      uiPath: /api/swagger/
+      schemaPath: /api/schema/
+    # 运维门户 /gateway/ops/docs/ 使用；不进入公开 /gateway/docs/
+    docsInternal:
+      uiPath: /api/swagger-internal/
+      schemaPath: /api/schema-internal/
+  gitOauth:
+    host: 127.0.0.1
+    port: 8002
+    docs:
+      uiPath: /api/swagger/
+      schemaPath: /api/schema/
+  taskSse:
+    host: 127.0.0.1
+    port: 8798
+    docs: false
+    # OPT-20260827-039: 精准编译重启无监听间隙时 connection-refused 短重试；
+    # retry_timeout 单位秒（APISIX balancer 与 ngx.now() 相加作重试截止）。
+    retry:
+      retries: 2
+      retry_timeout: 3
+  taskContainerGateway:
+    host: 127.0.0.1
+    port: 8014
+    docs: false
+  taskProjectService:
+    host: 127.0.0.1
+    port: 8016
+    docs:
+      uiPath: /api/swagger/
+      schemaPath: /api/schema/
+  taskTenantService:
+    host: 127.0.0.1
+    port: 8020
+    docs: false
+  taskTaskService:
+    host: 127.0.0.1
+    port: 8017
+    docs:
+      uiPath: /api/swagger/
+      schemaPath: /api/schema/
+  taskCloudService:
+    host: 127.0.0.1
+    port: 8018
+    docs:
+      uiPath: /api/swagger/
+      schemaPath: /api/schema/
+    docsInternal:
+      uiPath: /api/swagger-internal/
+      schemaPath: /api/schema-internal/
+    # OPT-20260827-039: Fork 拉 feature-params / 多租户 compute API 在重启窗口
+    # 撞 connection-refused → 502。retry_timeout 窗口内 APISIX 短重试吸收。
+    retry:
+      retries: 2
+      retry_timeout: 3
+  taskAIComment:
+    host: 127.0.0.1
+    port: 8019
+    docs:
+      uiPath: /api/swagger/
+      schemaPath: /api/schema/
+  taskAiProvider:
+    host: 127.0.0.1
+    port: 8010
+    docs:
+      uiPath: /api/swagger/
+      schemaPath: /api/schema/
+  taskAgentSupport:
+    host: 127.0.0.1
+    port: 8011
+    docs: false
+    # OPT-20260827-039: 容器入站/运行时事件同族，重启窗口短重试吸收 502。
+    retry:
+      retries: 2
+      retry_timeout: 3
+  taskBill:
+    host: 127.0.0.1
+    port: 8004
+    docs:
+      uiPath: /api/swagger/
+      schemaPath: /api/schema/
+    docsInternal:
+      uiPath: /api/swagger-internal/
+      schemaPath: /api/schema-internal/
+  # taskGateway 统管所有路径 — SPA 前端页面直接由 Gateway 路由至 taskFE
+  # 开发：Vite HMR（须先 stop 容器释放 :4000）；生产：Docker nginx 静态文件容器 (:4000)
+  taskFE:
+    host: 127.0.0.1
+    port: 4000
+    docs: false
+
+routes:
+  - id: deny-internal
+    priority: 1000
+    uri: /api/internal/*
+    auth_mode: deny
+
+  # Container inbound + userdata — routed through /api/container/* convention
+
+  # /api/workspace/* 遗留路径 — WorkspaceSettings.vue（GET info + POST settings）
+  # taskProjectService 实现（workspace_settings.go）；缺失时 502 → 页面加载/保存全挂
+  - id: task-workspace-settings
+    priority: 867
+    uris:
+      - /api/workspace/settings
+      - /api/workspace/settings/
+      - /api/workspace/settings/*
+      - /api/workspace/info
+      - /api/workspace/info/
+      - /api/workspace/info/*
+    upstream: taskProjectService
+    auth_mode: token
+
+  # taskSSE — 浏览器 SSE 事件流（recharge-events / work-panel-events / server-startup-status）
+  # 须 forward-auth（token）注入 X-User-Id；token 路由 proxy-rewrite 自动注入
+  # X-TaskGateway-Internal-Secret（taskSSE fail-closed 校验，见 server.mjs gatewayInternalSecretOk）。
+  # 缺失此路由时 /api/sse/* 落入 api-orphaned-not-found → 502，前端 SSE 全部连不上。
+  - id: task-sse
+    priority: 872
+    uris:
+      - /api/sse/*
+    upstream: taskSse
+    auth_mode: token
+
+  # Git OAuth convention routes
+  - id: git-oauth-callbacks
+    priority: 879
+    uris:
+      - /api/git-oauth/github-callback/*
+      - /api/git-oauth/gitlab-callback/*
+    upstream: gitOauth
+    auth_mode: public
+
+  - id: git-oauth-token
+    priority: 875
+    uris:
+      - /api/git-oauth/*
+    upstream: gitOauth
+    auth_mode: token
+
+  # Git OAuth v2 浏览器回调契约 — SSOT redirect_uri 指向
+  # ${scheme}://${subdomains.base}/redirect/gitsite/<gitsite>/oauth/callback/（2026-08-07）。
+  # base 域路径须先于 spa-catch-all（priority 10）命中 gitOauth。
+  - id: git-oauth-redirect-callbacks
+    priority: 878
+    uris:
+      - /redirect/gitsite/*
+    upstream: gitOauth
+    auth_mode: public
+
+  # Git OAuth legacy 回调契约 — /api/accounts/<sp>/oauth/callback/（租户 GitLab 连接
+  # 默认 redirect_uri 与旧式回调仍用该路径，落在 base 域）。优先级须低于 taskAuth
+  # /api/accounts/* 路由（840+）以保 taskAuth 先命中，高于 api-orphaned（15）。
+  - id: git-oauth-accounts-callbacks
+    priority: 830
+    uris:
+      - /api/accounts/*/oauth/callback/
+    upstream: gitOauth
+    auth_mode: public
+
+  # AI Provider convention routes
+  - id: ai-provider-public
+    priority: 878
+    uris:
+      - /api/ai-provider/public-*
+      - /api/ai-provider/sso-exchange/*
+      - /api/ai-provider/oidc-authorize/*
+      - /api/ai-provider/oidc-callback/*
+      - /api/public/image-groups/*
+    upstream: taskAiProvider
+    auth_mode: public
+
+  - id: ai-provider-auth
+    priority: 876
+    uris:
+      - /api/ai-provider/*
+    upstream: taskAiProvider
+    auth_mode: token
+
+  # taskAuth logout — returns 204 No Content; frontend handles SLO redirect gracefully
+  # (falls back to local state clear + login redirect when no slo_redirect_url).
+  # OPT-049: Django saas-backend decommissioned 2026-07-30.
+  - id: taskauth-logout
+    priority: 851
+    uris:
+      - /api/accounts/users/logout/
+      - /api/accounts/users/logout/*
+    methods: [POST]
+    upstream: taskAuth
+    auth_mode: token
+
+  # 登录态绑定登录方式（个人资料页身份绑定面板，POST；须显式路由：
+  # taskauth-get-user 仅承接 GET，非 profile POST 会落入 null-upstream → 502）。
+  # bind_phone 此前即因此 502（OPT-20260806-066 一并修复）；bind_email 为新增
+  # 邮箱绑定端点（厂商门户前置，验证码确认后 upsert 到当前账号）。
+  - id: taskauth-users-bind-login-methods
+    priority: 848
+    uris:
+      - /api/accounts/users/bind_phone/
+      - /api/accounts/users/bind_phone/*
+      - /api/accounts/users/bind_email/
+      - /api/accounts/users/bind_email/*
+    methods: [POST]
+    upstream: taskAuth
+    auth_mode: token
+
+  # 镜像市场 SSO 桥（浏览器导航；须 forward-auth + Cookie，勿挂非 /api 路径）
+  # OPT-049: Django saas-backend decommissioned (2026-07-30) — route disabled
+
+  # 镜像市场 SSO 桥（浏览器导航；须 forward-auth + Cookie，勿挂非 /api 路径）
+#   - id: django-accounts-sso
+#     priority: 848
+#     uris:
+#       - /api/accounts/sso/*
+#       - /api/accounts/sso
+#     upstream: django
+#     auth_mode: token
+
+  # SSO bridge for AI provider — browser navigation href links.
+  # OPT-049: Migrated from Django sso_bridge_token.py to taskAuth 2026-07-30.
+  # OPT-20260901-021: public（无 forward-auth）—— handleSSOBridge 自己按 Cookie
+  # 解析登录态，无会话 302 登录页；若挂 forward-auth，无 Cookie 时直接 401 JSON，
+  # 浏览器点 SSO 看到 raw JSON 而非登录页。
+  - id: taskauth-accounts-sso
+    priority: 847
+    uris:
+      - /api/accounts/sso
+      - /api/accounts/sso/
+      - /api/accounts/sso/*
+    upstream: taskAuth
+    auth_mode: public
+
+  # v63/v72 RBAC 管理 API：须 forward-auth 注入 X-User-Roles / X-Tenant-Perms
+  # （authz.RequirePlatformPerm / RequirePerm / HasRegion 读取网关头）。须高于 taskauth-login
+  # （/api/auth/* public），否则管理端点永远拿不到权限头 → 恒 403。
+  # resource-groups 目录（v72）不在 /api/auth/roles/* 下，必须显式列入，否则访问管理页
+  # 会误报「请确认已执行 dataMigrate 032」。
+  # GET /api/auth/user-roles/ 与 /user-permissions/ 是已登录会话读接口：必须高于
+  # taskauth-login，否则落入 loginPerMinute=30（limit-req 0.5/s）漏桶，Navbar 与
+  # usePermissions 并行请求会把第二条拖到 ~2s（Tempo 显示 task-auth 仅 1.5ms）。
+  - id: taskauth-rbac-admin
+    priority: 852
+    uris:
+      - /api/auth/user-roles/
+      - /api/auth/user-roles
+      - /api/auth/user-roles/user_id/*
+      - /api/auth/user-permissions/
+      - /api/auth/user-permissions
+      - /api/auth/role-users/*
+      - /api/auth/roles/*
+      - /api/auth/resource-groups/
+      - /api/auth/resource-groups/*
+    upstream: taskAuth
+    auth_mode: token
+
+  # GET /api/auth/verify 是已登录会话读接口（Go 微服务回退鉴权）：必须高于
+  # taskauth-login（/api/auth/* public + 0.5/s），否则并行校验请求被漏桶拖到 ~2s。
+  - id: taskauth-verify
+    priority: 852
+    methods: [GET]
+    uris:
+      - /api/auth/verify
+    upstream: taskAuth
+    auth_mode: token
+
+  # 模拟登录退出/状态：必须高于 taskauth-login（/api/auth/* public + 0.5/s），
+  # 否则无 forward-auth 且会被登录限流。ADR-0037。
+  - id: taskauth-wechat-mp-callback
+    priority: 860
+    methods: [GET, POST]
+    uris:
+      - /api/auth/wechat/mp/callback/
+      - /api/auth/wechat/mp/callback
+      - /api/auth/wechat/mp/callback/*
+    upstream: taskAuth
+    auth_mode: public
+
+  - id: taskauth-wechat-mp-follow-status
+    priority: 852
+    methods: [GET]
+    uris:
+      - /api/auth/wechat/mp/follow-status/
+      - /api/auth/wechat/mp/follow-status
+      - /api/auth/wechat/mp/follow-status/*
+    upstream: taskAuth
+    auth_mode: token
+
+  - id: taskauth-wechat-mp-follow-qr
+    priority: 852
+    methods: [POST]
+    uris:
+      - /api/auth/wechat/mp/follow-qr/
+      - /api/auth/wechat/mp/follow-qr
+      - /api/auth/wechat/mp/follow-qr/*
+    upstream: taskAuth
+    auth_mode: token
+
+  - id: taskauth-impersonation
+    priority: 853
+    uris:
+      - /api/auth/impersonation/stop/
+      - /api/auth/impersonation/status/
+      - /api/auth/inbox/
+      - /api/auth/inbox/*
+      - /api/auth/login-history/
+      - /api/auth/login-history/*
+    upstream: taskAuth
+    auth_mode: token
+
+  - id: taskauth-login
+    priority: 850
+    uris:
+      - /api/auth/
+      - /api/auth/*
+      - /api/accounts/users/login/
+      - /api/accounts/users/email_register/
+      - /api/accounts/users/phone_register/
+      - /api/accounts/users/resend_activation_email/
+      - /api/accounts/users/send_password_reset_link/
+      - /api/accounts/users/send_password_reset_code/
+      - /api/accounts/users/reset_password_with_code/
+      - /api/accounts/users/send_verification_code/
+      - /api/accounts/users/login-with-access-token/
+    upstream: taskAuth
+    auth_mode: public
+
+  # 多账号切换：独立路由，避免与 login 共用 limit-req（0.5/s）导致切换 429
+  - id: taskauth-activate-session
+    priority: 851
+    uris:
+      - /api/accounts/users/activate-session/
+      - /api/accounts/users/activate-session/*
+    upstream: taskAuth
+    auth_mode: public
+
+  # 访问令牌 CRUD（须高于 django-default；勿落入仅 GET 的 taskauth-get-user）
+  # 前端个人资料走 /profile/access-tokens/（Django 代理）；直连 taskAuth 路径供插件/脚本经网关使用
+  - id: taskauth-access-tokens
+    priority: 851
+    uris:
+      - /api/accounts/users/access-tokens/
+      - /api/accounts/users/access-tokens/*
+    upstream: taskAuth
+    auth_mode: token
+
+  # 账号注销（删除权）：GET precheck/status + POST request/cancel 全承接。
+  # 修复生产 502：此前无 POST 路由 → 落 api-orphaned(priority 15) → null-upstream。
+  # 须高于仅 GET 的 taskauth-get-user(840) 与 django-default 通配
+  - id: taskauth-account-deletion
+    priority: 851
+    uris:
+      - /api/accounts/users/me/account-deletion/
+      - /api/accounts/users/me/account-deletion/*
+    methods: [GET, POST]
+    upstream: taskAuth
+    auth_mode: token
+
+  # 个人信息导出（PIPL「导出权」）：POST request + GET status/download。
+  # 同上，须高于 taskauth-get-user(840)
+  - id: taskauth-personal-data-export
+    priority: 851
+    uris:
+      - /api/accounts/users/me/personal-data-export/
+      - /api/accounts/users/me/personal-data-export/*
+    methods: [GET, POST]
+    upstream: taskAuth
+    auth_mode: token
+
+  # 导航栏展示调用方公网 IP（须高于 taskauth-get-user 的 /users/*，避免被当成 user_id）
+  - id: taskauth-client-ip
+    priority: 851
+    uris:
+      - /api/accounts/users/client-ip/
+      - /api/accounts/users/client-ip/*
+    upstream: taskAuth
+    auth_mode: public
+
+  - id: taskauth-activation-reset-prefix
+    priority: 849
+    uris:
+      - /api/accounts/users/confirm_activation/*
+      - /api/accounts/users/reset-password-with-link/*
+      - /api/accounts/users/get-reset-user-info/*
+    upstream: taskAuth
+    auth_mode: public
+
+  # /api/user/* 端点仍在 Django（django-legacy）；须显式路由避免落入 spa-catch-all
+  # OPT-049: Django saas-backend decommissioned (2026-07-30) — 由 Go 服务细分路由承接：
+  #   - taskAuth  legacy /api/user/{user_id}/accounts/users/me/  (auth_users.go handleGetUserLegacyPath)
+  #   - taskReferral legacy /api/user/{userId}/profile/referral-stats/  (见 taskauth-referral-stats-legacy)
+  #   - taskTaskService legacy /api/user/{userId}/profile/git-identities/  + /api/user/ 分发器
+  # 各 legacy 子路径须显式注册，避免落入 spa-catch-all → 502 HTML
+
+  # taskAuth legacy bridge — 历史路径 /api/user/{user_id}/accounts/users/me/
+  - id: taskauth-user-accounts-users-me-legacy
+    priority: 848
+    uris:
+      - /api/user/*/accounts/users/me
+      - /api/user/*/accounts/users/me/
+      - /api/user/*/accounts/users/me/*
+    upstream: taskAuth
+    auth_mode: token
+
+  # taskTaskService legacy — /api/user/ 分发器（git-identities legacy 路径 + catch-all 404 JSON）
+  - id: taskservice-user-legacy
+    priority: 847
+    uris:
+      - /api/user/*
+      - /api/user/*/profile/git-identities
+      - /api/user/*/profile/git-identities/
+      - /api/user/*/profile/git-identities/*
+    upstream: taskTaskService
+    auth_mode: token
+
+  # OPT-043: profile write path → taskAuth (handlePublicUpsertProfile)
+  # DELETE: 各公司的设置页「移除头像」→ /api/accounts/users/profile/company-avatar/
+  - id: taskauth-users-profile
+    priority: 848
+    uri: /api/accounts/users/profile/*
+    methods: [POST, PUT, PATCH, DELETE]
+    upstream: taskAuth
+    auth_mode: token
+
+  # OPT-049: Django saas-backend decommissioned (2026-07-30) — route disabled
+
+#   - id: django-users-profile
+#     priority: 845
+#     uri: /api/accounts/users/profile/*
+#     upstream: django
+#     auth_mode: token
+    # GET-only fallback for legacy profile reads
+
+  - id: taskauth-get-user
+    priority: 840
+    uri: /api/accounts/users/*
+    methods: [GET]
+    upstream: taskAuth
+    auth_mode: token
+
+  - id: billing-webhook
+    priority: 830
+    uris:
+      - /api/billing/*/webhook/*
+      - /api/billing/*/webhook
+    upstream: taskBill
+    auth_mode: machine
+
+  - id: billing-wechat-notify
+    priority: 831
+    uris:
+      - /api/billing/wechat/notify/
+      - /api/billing/wechat/notify
+      - /api/billing/wechat/notify/*
+    upstream: taskBill
+    auth_mode: machine
+
+  - id: billing-wechat-fapiao-notify
+    priority: 832
+    uris:
+      - /api/billing/wechat/fapiao/notify/
+      - /api/billing/wechat/fapiao/notify
+      - /api/billing/wechat/fapiao/notify/*
+    upstream: taskBill
+    auth_mode: machine
+
+  - id: billing-profitsharing-notify
+    priority: 830
+    uris:
+      - /api/billing/profitsharing/notify/
+      - /api/billing/profitsharing/notify
+      - /api/billing/profitsharing/notify/*
+      - /api/billing/profitsharing/change-notify/
+      - /api/billing/profitsharing/change-notify
+      - /api/billing/profitsharing/change-notify/*
+    upstream: taskBill
+    auth_mode: machine
+
+  # Billing convention routes
+  - id: billing-convention
+    priority: 868
+    uris:
+      - /api/billing/*
+    upstream: taskBill
+    auth_mode: token
+
+  # 租户计费直连 taskBill（44efa06 移除后 1508f24 前端改回 /api/tenant/{tid}/billing/* 位置式路径，
+  # 但该路径被 task-tenant-service(863) 兜底捕获 → 404 not found。taskBill 处理器依赖
+  # parseTenantID("/api/tenant/...") 位置式解析，故恢复此路由，优先级须高于 863）
+  - id: billing-tenant-direct
+    priority: 868
+    uris:
+      - /api/tenant/*/billing/*
+    upstream: taskBill
+    auth_mode: token
+
+  # 租户自建 GitLab 平台 OIDC SSO 签发（ADR-0043）须高于 task-tenant-service(863)
+  - id: tenant-gitlab-oidc-sso
+    priority: 868
+    uris:
+      - /api/tenant/*/gitlab-oidc-sso
+      - /api/tenant/*/gitlab-oidc-sso/
+      - /api/tenant/*/gitlab-oidc-sso/*
+    upstream: taskAuth
+    auth_mode: token
+
+  # 工作空间级排队调度直连 taskTaskService（OPT-20260824-005 配套）。
+  # 前端 GET/PUT /api/tenant/{tid}/workspace/{wid}/queue-schedule/，后端在
+  # taskTaskService/src/queued_schedule_workspace_handlers.go（main.go parts 分发）。
+  # 该路径被 task-tenant-service(863) 兜底捕获 → 404 not found（排队调度页
+  # schedule-error「not found」），故直连路由优先级须高于 863（先例：billing-tenant-direct 868）。
+  - id: workspace-queue-schedule-direct
+    priority: 868
+    uris:
+      - /api/tenant/*/workspace/*/queue-schedule
+      - /api/tenant/*/workspace/*/queue-schedule/*
+    upstream: taskTaskService
+    auth_mode: token
+
+  # 任务详情「加入/离开自动执行队列」PATCH 与队列快照 GET 走位置式路径
+  # /api/tenant/{tid}/workspace/{wid}/todos/...，会被 task-tenant-service(863) 兜底
+  # 捕获 → 404 not found（queued-auto-run-save-error 显示「not found」）。TTS 自身
+  # 支持该路径（main.go parts 分发 + handleTaskRoutes 后缀分发），故直连路由优先级
+  # 须高于 863（先例：billing-tenant-direct 868 / workspace-queue-schedule-direct 868）。
+  - id: task-todos-tenant-direct
+    priority: 868
+    uris:
+      - /api/tenant/*/workspace/*/todos
+      - /api/tenant/*/workspace/*/todos/
+      - /api/tenant/*/workspace/*/todos/*
+    upstream: taskTaskService
+    auth_mode: token
+
+  - id: api-privacy-policy-public
+    priority: 815
+    uri: /api/privacy-policy/public/*
+    upstream: taskBill
+    auth_mode: public
+
+  - id: api-privacy-policy-consent
+    priority: 816
+    uri: /api/privacy-policy/consent/*
+    upstream: taskBill
+    auth_mode: token
+
+  # OPT-036: system-admin dashboard + user management migrated from Django to taskAuth 2026-07-30
+  - id: api-system-admin-dashboard
+    priority: 855
+    uris:
+      - /api/system-admin/dashboard/*
+      - /api/system-admin/dashboard
+    upstream: taskAuth
+    auth_mode: token
+
+  - id: api-system-admin-users
+    priority: 854
+    uris:
+      - /api/system-admin/users/*
+      - /api/system-admin/users
+    upstream: taskAuth
+    auth_mode: token
+
+  # OPT-028: plugin OIDC extension ID whitelist management (taskAuth GET/PUT)
+  - id: api-system-admin-oidc-extension
+    priority: 853
+    uris:
+      - /api/system-admin/oidc-extension/*
+      - /api/system-admin/oidc-extension
+    upstream: taskAuth
+    auth_mode: token
+
+  # Tenant membership JWT endpoint for frontend router guard
+  - id: taskauth-tenant-memberships
+    priority: 860
+    uris:
+      - /api/auth/tenant-memberships
+      - /api/auth/tenant-memberships/
+      - /api/auth/tenant-memberships/*
+    methods: [GET]
+    upstream: taskAuth
+    auth_mode: token
+
+  # OPT-037: system-admin cloud management migrated from Django to taskCloudService 2026-07-30
+  - id: api-system-admin-cloud
+    priority: 860
+    uris:
+      - /api/system-admin/cloud/*
+    upstream: taskCloudService
+    auth_mode: token
+
+
+  # OPT-20260730-001: sub-token-providers — migrated from Django to taskCloudService
+  - id: api-system-admin-sub-token-providers
+    priority: 858
+    uris:
+      - /api/system-admin/sub-token-providers
+      - /api/system-admin/sub-token-providers/
+      - /api/system-admin/sub-token-providers/*
+    upstream: taskCloudService
+    auth_mode: token
+
+  - id: api-sub-token-providers
+    priority: 820
+    uris:
+      - /api/sub-token-providers
+      - /api/sub-token-providers/
+      - /api/sub-token-providers/*
+    upstream: taskCloudService
+    auth_mode: token
+
+  # OPT-20260730-001: recommended-llm-providers — migrated from Django to taskCloudService
+  - id: api-system-admin-recommended-llm-providers
+    priority: 858
+    uris:
+      - /api/system-admin/recommended-llm-providers
+      - /api/system-admin/recommended-llm-providers/
+      - /api/system-admin/recommended-llm-providers/*
+    upstream: taskCloudService
+    auth_mode: token
+
+  - id: api-system-admin-step-full-cos
+    priority: 859
+    uris:
+      - /api/system-admin/step-full-cos
+      - /api/system-admin/step-full-cos/
+      - /api/system-admin/step-full-cos/*
+    upstream: taskCloudService
+    auth_mode: token
+
+  - id: api-recommended-llm-providers
+    priority: 820
+    uris:
+      - /api/recommended-llm-providers
+      - /api/recommended-llm-providers/
+      - /api/recommended-llm-providers/*
+    upstream: taskCloudService
+    auth_mode: token
+
+  # 个人功能参数配置（PersonalFeatureParamsConfigs.vue）— taskCloudService handlePersonalAPIRoutes
+  # 缺失此路由时 /api/personal/* 落入 api-orphaned-not-found → 502，前端报「加载个人配置失败」
+  - id: api-personal-feature-params
+    priority: 820
+    uris:
+      - /api/personal/*
+    upstream: taskCloudService
+    auth_mode: token
+
+  # /api/system_admin/* 通用端点仍在 Django（django-legacy）；须显式路由避免落入 spa-catch-all
+  # 优先级低于上方 taskAuth/taskBill 特定路由（860+），仅作为回退
+  # OPT-049: Django saas-backend decommissioned (2026-07-30) — route disabled
+
+  # /api/system_admin/* 通用端点仍在 Django（django-legacy）；须显式路由避免落入 spa-catch-all
+  # 优先级低于上方 taskAuth/taskBill 特定路由（860+），仅作为回退
+#   - id: django-system-admin-api
+#     priority: 842
+#     uris:
+#       - /api/system_admin/*
+#       - /api/system-admin/*
+#     upstream: django
+#     auth_mode: token
+
+  # system-admin legal routes — migrated from Django to taskBill 2026-07-26
+  # FE 统一使用连字符 (system-admin)；taskBill 后端双挂载 (handlers.go Convention alias)，
+  # 网关须同时暴露两种写法，否则 FE 请求落入 spa-catch-all → 502 HTML → 前端兜底文案
+  - id: api-system-admin-privacy-policy
+    priority: 860
+    uris:
+      - /api/system_admin/privacy-policy/*
+      - /api/system-admin/privacy-policy/*
+    upstream: taskBill
+    auth_mode: token
+
+  # License agreement admin CRUD — taskBill handler exists (OPT-049 reactivation 2026-07-30)
+  - id: api-system-admin-license-agreement
+    priority: 858
+    uris:
+      - /api/system_admin/license-agreement/*
+      - /api/system-admin/license-agreement/*
+    upstream: taskBill
+    auth_mode: token
+
+  # System-admin orders list — OPT-049 reactivation 2026-07-30
+  - id: api-system-admin-orders
+    priority: 857
+    uris:
+      - /api/system_admin/orders/
+      - /api/system_admin/orders
+      - /api/system_admin/orders/*
+      - /api/system-admin/orders/
+      - /api/system-admin/orders
+      - /api/system-admin/orders/*
+    upstream: taskBill
+    auth_mode: token
+
+  - id: api-system-admin-profit-sharing
+    priority: 857
+    uris:
+      - /api/system_admin/profit-sharing/
+      - /api/system_admin/profit-sharing
+      - /api/system_admin/profit-sharing/*
+      - /api/system-admin/profit-sharing/
+      - /api/system-admin/profit-sharing
+      - /api/system-admin/profit-sharing/*
+    upstream: taskBill
+    auth_mode: token
+
+  # System-admin GitLab regions management — OPT-049 2026-08-02
+  - id: api-system-admin-gitlab-regions
+    priority: 856
+    uris:
+      - /api/system_admin/gitlab-regions/
+      - /api/system_admin/gitlab-regions
+      - /api/system_admin/gitlab-regions/*
+      - /api/system-admin/gitlab-regions/
+      - /api/system-admin/gitlab-regions
+      - /api/system-admin/gitlab-regions/*
+    upstream: taskBill
+    auth_mode: token
+
+  # 管理端粘贴订单号解析 — OPT-20260819-012
+  - id: api-system-admin-order-number-parse
+    priority: 856
+    uris:
+      - /api/system-admin/order-number/parse
+      - /api/system-admin/order-number/parse/
+      - /api/system-admin/order-number/parse/*
+    upstream: taskBill
+    auth_mode: token
+
+  # 管理端幂等审计记录 — OPT-20260824-058 (taskBill admin_grant 幂等键落库，平台员工可查)
+  # 缺失时 /api/system-admin/idempotency-records/ 落入 api-orphaned-not-found → 502。
+  # taskBill handlers.go 双挂载连字符/下划线两种写法（system_admin legacy alias）。
+  - id: api-system-admin-idempotency-records
+    priority: 856
+    uris:
+      - /api/system-admin/idempotency-records
+      - /api/system-admin/idempotency-records/
+      - /api/system-admin/idempotency-records/*
+      - /api/system_admin/idempotency-records
+      - /api/system_admin/idempotency-records/
+      - /api/system_admin/idempotency-records/*
+    upstream: taskBill
+    auth_mode: token
+
+  # System-admin tenant/company search dropdown — OPT-049 2026-07-30
+  # FE 统一使用连字符 (system-admin)；taskTenantService 后端双挂载（main.go legacy alias），
+  # 网关须同时暴露两种写法，否则 FE 请求落入 spa-catch-all → 502 HTML
+  - id: api-system-admin-tenant-options
+    priority: 856
+    uris:
+      - /api/system_admin/accounts/admin/tenant-options
+      - /api/system_admin/accounts/admin/tenant-options/
+      - /api/system_admin/accounts/admin/tenant-options/*
+      - /api/system-admin/accounts/admin/tenant-options
+      - /api/system-admin/accounts/admin/tenant-options/
+      - /api/system-admin/accounts/admin/tenant-options/*
+    upstream: taskTenantService
+    auth_mode: token
+
+  # System-admin tenant directory (users page 租户 tab)
+  - id: api-system-admin-tenants
+    priority: 856
+    uris:
+      - /api/system_admin/accounts/admin/tenants
+      - /api/system_admin/accounts/admin/tenants/
+      - /api/system_admin/accounts/admin/tenants/*
+      - /api/system-admin/accounts/admin/tenants
+      - /api/system-admin/accounts/admin/tenants/
+      - /api/system-admin/accounts/admin/tenants/*
+    upstream: taskTenantService
+    auth_mode: token
+
+  - id: api-system-admin-tenant-quotas
+    priority: 856
+    uris:
+      - /api/system-admin/tenant-quotas
+      - /api/system-admin/tenant-quotas/
+      - /api/system-admin/tenant-quotas/*
+      - /api/system_admin/tenant-quotas
+      - /api/system_admin/tenant-quotas/
+      - /api/system_admin/tenant-quotas/*
+    upstream: taskBill
+    auth_mode: token
+
+  - id: api-system-admin-tenant-workspaces
+    priority: 856
+    uris:
+      - /api/system-admin/tenant-workspaces
+      - /api/system-admin/tenant-workspaces/
+      - /api/system-admin/tenant-workspaces/*
+      - /api/system_admin/tenant-workspaces
+      - /api/system_admin/tenant-workspaces/
+      - /api/system_admin/tenant-workspaces/*
+    upstream: taskProjectService
+    auth_mode: token
+
+  # System-admin user recharge history — OPT-049 2026-07-30
+  # FE 统一使用连字符 (system-admin)；taskBill 后端双挂载（handlers.go Convention alias），
+  # 网关须同时暴露两种写法，否则 FE 请求落入 spa-catch-all → 502 HTML
+  - id: api-system-admin-user-recharges
+    priority: 856
+    uris:
+      - /api/system_admin/users/*/recharges
+      - /api/system_admin/users/*/recharges/
+      - /api/system_admin/users/*/recharges/*
+      - /api/system-admin/users/*/recharges
+      - /api/system-admin/users/*/recharges/
+      - /api/system-admin/users/*/recharges/*
+    upstream: taskBill
+    auth_mode: token
+
+  # Public product pricing — migrated from Django to taskBill 2026-07-30
+  - id: api-public-product-pricing
+    priority: 819
+    uris:
+      - /api/public/product-pricing
+      - /api/public/product-pricing/
+      - /api/public/product-pricing/*
+    upstream: taskBill
+    auth_mode: public
+
+  # Public resource pricing (with tiers & thresholds) — taskBill
+  - id: api-public-resource-pricing
+    priority: 818
+    uris:
+      - /api/public/resource-pricing
+      - /api/public/resource-pricing/
+      - /api/public/resource-pricing/*
+    upstream: taskBill
+    auth_mode: public
+
+  # OPT-049: Django saas-backend decommissioned (2026-07-30)
+
+#   - id: api-system-admin-product-pricing
+#     priority: 859
+#     uris:
+#       - /api/system-admin/product-pricing
+#       - /api/system-admin/product-pricing/
+#       - /api/system-admin/product-pricing/*
+#     upstream: django
+#     auth_mode: token
+
+  # OPT-040: resource-pricing migrated from Django to taskBill 2026-07-30
+  - id: api-system-admin-resource-pricing
+    priority: 859
+    uris:
+      - /api/system-admin/resource-pricing
+      - /api/system-admin/resource-pricing/
+      - /api/system-admin/resource-pricing/*
+    upstream: taskBill
+    auth_mode: token
+
+  # OPT-040: user-recharge-consumption migrated from Django to taskBill 2026-07-30
+  - id: api-system-admin-user-recharge-consumption
+    priority: 858
+    uris:
+      - /api/system-admin/user-recharge-consumption
+      - /api/system-admin/user-recharge-consumption/
+      - /api/system-admin/user-recharge-consumption/*
+    upstream: taskBill
+    auth_mode: token
+
+  # OPT-040: system-admin refund-applications migrated from Django to taskBill 2026-07-30
+  - id: api-system-admin-refund-applications
+    priority: 858
+    uris:
+      - /api/system-admin/refund-applications
+      - /api/system-admin/refund-applications/
+      - /api/system-admin/refund-applications/*
+    upstream: taskBill
+    auth_mode: token
+
+  - id: api-system-admin-invoice-applications
+    priority: 859
+    uris:
+      - /api/system-admin/invoice-applications
+      - /api/system-admin/invoice-applications/
+      - /api/system-admin/invoice-applications/*
+    upstream: taskBill
+    auth_mode: token
+
+  - id: api-system-admin-feedback-link-groups
+    priority: 859
+    uris:
+      - /api/system-admin/feedback-link-groups
+      - /api/system-admin/feedback-link-groups/
+      - /api/system-admin/feedback-link-groups/*
+    upstream: taskBill
+    auth_mode: token
+
+  - id: api-system-admin-feedback-resource-kinds
+    priority: 859
+    uris:
+      - /api/system-admin/feedback-resource-kinds
+      - /api/system-admin/feedback-resource-kinds/
+      - /api/system-admin/feedback-resource-kinds/*
+    upstream: taskBill
+    auth_mode: token
+
+  # OPT-040 follow-up: system-admin refund-policy migrated from Django to taskBill 2026-08-02
+  - id: api-system-admin-refund-policy
+    priority: 857
+    uris:
+      - /api/system-admin/refund-policy
+      - /api/system-admin/refund-policy/
+      - /api/system-admin/refund-policy/*
+    upstream: taskBill
+    auth_mode: token
+
+  - id: api-license-agreement-public
+    priority: 814
+    uri: /api/license-agreement/public/*
+    upstream: taskBill
+    auth_mode: public
+
+  # OPT-049: license-agreement consent — reactivated 2026-08-02 (Go handler exists at taskBill)
+  - id: api-license-agreement-consent
+    priority: 817
+    uris:
+      - /api/license-agreement/consent/
+      - /api/license-agreement/consent
+      - /api/license-agreement/consent/*
+    upstream: taskBill
+    auth_mode: token
+
+  # OPT-049: system feature policy — migrated from Django to taskAuth 2026-07-30.
+  # Public endpoint: login/register pages read enable_phone_login, enable_email_register, phone_country_options.
+  - id: api-public-system-feature-policy
+    priority: 813
+    uris:
+      - /api/public/system-feature-policy
+      - /api/public/system-feature-policy/
+      - /api/public/system-feature-policy/*
+    upstream: taskAuth
+    auth_mode: public
+
+  # Admin CRUD: system-admin page manages all feature policy fields.
+  - id: api-system-admin-system-feature-policy
+    priority: 857
+    uris:
+      - /api/system-admin/system-feature-policy
+      - /api/system-admin/system-feature-policy/
+      - /api/system-admin/system-feature-policy/*
+    upstream: taskAuth
+    auth_mode: token
+
+  # 平台注册邀请码（taskAuth owner；须高于 django system-admin / users 通配）
+  - id: taskauth-registration-invite-public
+    priority: 814
+    uris:
+      - /api/public/registration-invite-policy/
+      - /api/public/registration-invite-policy
+      - /api/public/registration-invite-policy/*
+    upstream: taskAuth
+    auth_mode: public
+
+  - id: taskauth-registration-invite-admin
+    priority: 860
+    uris:
+      - /api/system-admin/registration-invite-policy/
+      - /api/system-admin/registration-invite-policy/*
+      - /api/system-admin/registration-invite-relations/
+      - /api/system-admin/registration-invite-relations/*
+    upstream: taskAuth
+    auth_mode: token
+
+  # 邮箱注册邀请（管理员发起；taskAuth owner；须高于 django system-admin 通配 priority 842）
+  - id: taskauth-email-invitations
+    priority: 860
+    uris:
+      - /api/system-admin/email-invitations/
+      - /api/system-admin/email-invitations
+      - /api/system-admin/email-invitations/*
+    upstream: taskAuth
+    auth_mode: token
+
+  # 邮箱邀请公开校验（未登录用户点击邀请链接时验证；taskAuth owner）
+  - id: taskauth-email-invitation-public
+    priority: 814
+    uris:
+      - /api/public/email-invitation/
+      - /api/public/email-invitation
+      - /api/public/email-invitation/*
+    upstream: taskAuth
+    auth_mode: public
+
+  # 邮件邀请退订（HMAC token；未登录 GET 落地 / POST RFC 8058 one-click）
+  - id: taskauth-email-unsubscribe-public
+    priority: 815
+    uris:
+      - /api/public/email-unsubscribe/
+      - /api/public/email-unsubscribe
+      - /api/public/email-unsubscribe/*
+    upstream: taskAuth
+    auth_mode: public
+
+  - id: taskauth-email-resubscribe-public
+    priority: 815
+    uris:
+      - /api/public/email-resubscribe/
+      - /api/public/email-resubscribe
+      - /api/public/email-resubscribe/*
+    upstream: taskAuth
+    auth_mode: public
+
+  - id: taskauth-registration-invite-user
+    priority: 852
+    uris:
+      - /api/accounts/users/registration-invite-codes/
+      - /api/accounts/users/registration-invite-codes/*
+    upstream: taskAuth
+    auth_mode: token
+
+  # 推荐码管理（taskAuth owner；须高于 django-default 通配）
+  - id: taskauth-referral-user
+    priority: 851
+    uris:
+      - /api/accounts/users/referral-codes/
+      - /api/accounts/users/referral-codes/*
+    upstream: taskReferral
+    auth_mode: token
+
+  - id: taskauth-referral-admin
+    priority: 861
+    uris:
+      - /api/system-admin/referral/applications/
+      - /api/system-admin/referral/applications/*
+      - /api/system-admin/referral/share-code/lookup/
+      - /api/system-admin/referral/policy/
+      - /api/system-admin/referral/policy/*
+      - /api/system-admin/referral/config/
+      - /api/system-admin/referral/config/*
+    upstream: taskReferral
+    auth_mode: token
+
+  # 推荐绩效（管理员按用户查看；taskReferral owner）
+  - id: taskauth-referral-performance
+    priority: 862
+    uris:
+      - /api/system-admin/users/*/referral-performance/
+      - /api/system-admin/users/*/referral-performance
+      - /api/system-admin/users/*/referral-performance/*
+    upstream: taskReferral
+    auth_mode: token
+
+  # 推荐统计（用户侧旧 Django 路径 /api/user/{userId}/profile/referral-stats/；taskReferral owner）
+  # FE 新路径 /api/accounts/users/referral-stats/ 已有路由；此处保留 legacy 双写覆盖
+  - id: taskauth-referral-stats-legacy
+    priority: 857
+    uris:
+      - /api/user/*/profile/referral-stats
+      - /api/user/*/profile/referral-stats/
+      - /api/user/*/profile/referral-stats/*
+    upstream: taskReferral
+    auth_mode: token
+
+  - id: taskauth-referral
+    priority: 843
+    uris:
+      - /api/referral/*
+    upstream: taskReferral
+    auth_mode: token
+
+  - id: api-health
+    priority: 820
+    uri: /api/health/*
+    upstream: taskAuth
+    auth_mode: public
+
+  # OIDC Provider 端点（taskAuth SSO — gitService OmniAuth 使用）
+  - id: oidc-health
+    priority: 822
+    uri: /api/health/oidc
+    methods: [GET]
+    upstream: taskAuth
+    auth_mode: public
+
+  - id: oidc-discovery
+    priority: 810
+    uri: /.well-known/openid-configuration
+    methods: [GET]
+    upstream: taskAuth
+    auth_mode: public
+
+  # ADR-0044: tenant-scoped OIDC protocol paths (GitLab OmniAuth explicit endpoints)
+  - id: oidc-tenant-authorize
+    priority: 809
+    uri: /api/oidc/*/authorize
+    methods: [GET]
+    upstream: taskAuth
+    auth_mode: public
+
+  - id: oidc-tenant-token
+    priority: 809
+    uri: /api/oidc/*/token
+    methods: [POST]
+    upstream: taskAuth
+    auth_mode: public
+
+  - id: oidc-tenant-userinfo
+    priority: 809
+    uri: /api/oidc/*/userinfo
+    methods: [GET, POST]
+    upstream: taskAuth
+    auth_mode: public
+
+  - id: oidc-tenant-jwks
+    priority: 809
+    uri: /api/oidc/*/jwks
+    methods: [GET]
+    upstream: taskAuth
+    auth_mode: public
+
+  - id: oidc-jwks
+    priority: 808
+    uri: /api/oidc/jwks
+    methods: [GET]
+    upstream: taskAuth
+    auth_mode: public
+
+  - id: oidc-authorize
+    priority: 806
+    uri: /api/oidc/authorize
+    methods: [GET]
+    upstream: taskAuth
+    auth_mode: public
+
+  - id: oidc-token
+    priority: 804
+    uri: /api/oidc/token
+    methods: [POST]
+    upstream: taskAuth
+    auth_mode: public
+
+  - id: oidc-endsession
+    priority: 803
+    uri: /api/oidc/endsession
+    methods: [GET]
+    upstream: taskAuth
+    auth_mode: public
+
+  # OPT-049: Django saas-backend decommissioned (2026-07-30)
+
+  - id: oidc-userinfo
+    priority: 802
+    uri: /api/oidc/userinfo
+    methods: [GET, POST]
+    upstream: taskAuth
+    auth_mode: public
+
+  # [DEPRECATED v55] auth-login-page — 被下方 spa-catch-all 替代（priority 10, /* [GET,HEAD] → taskFE）
+  # - id: auth-login-page
+  #   priority: 800
+  #   uris:
+  #     - /auth/login
+  #     - /auth/login/
+  #   methods: [GET]
+  #   upstream: django
+  #   auth_mode: public
+
+  # 云平台授权 CRUD / toggle / active-list → taskCloudService（Phase 3g）
+  # cloud-platform/*/cloud/* 查询 API → taskCloudService（Phase 3h）
+
+  # OPT-049: Django saas-backend decommissioned (2026-07-30)
+
+#   - id: django-cloud-tenant-config
+#     priority: 865
+#     uris:
+#       - /api/tenant/*/cloud/server-config-default
+#       - /api/tenant/*/cloud/server-config-default/
+#       - /api/tenant/*/cloud/server-config-default/*
+#     upstream: django
+#     auth_mode: token
+
+  # workspaces/{id}/ 下仍由 Django 提供的子资源（Go taskProjectService 仅处理 CRUD）
+  # 注：progress-system / column-system 已迁移至 Go taskProjectService，
+  # 交由 task-project-service（priority 864）路由；此处不再转发到 Django。
+  # OPT-049: Django saas-backend decommissioned (2026-07-30)
+
+  # workspaces/{id}/ 下仍由 Django 提供的子资源（Go taskProjectService 仅处理 CRUD）
+  # 注：progress-system / column-system 已迁移至 Go taskProjectService，
+  # 交由 task-project-service（priority 864）路由；此处不再转发到 Django。
+#   - id: django-workspace-subresources
+#     priority: 866
+#     uris:
+#       - /api/tenant/*/workspaces/*/cloud/platforms
+#       - /api/tenant/*/workspaces/*/cloud/platforms/
+#       - /api/tenant/*/workspaces/*/cloud/platforms/*
+#     upstream: django
+#     auth_mode: token
+
+  - id: task-project-service
+    priority: 864
+    uris:
+      - /api/projects/*
+      - /api/system-admin/progress-systems/*
+      - /api/system-admin/deliverable-systems/*
+      - /api/system/progress-systems/*
+      - /api/switch-workspace/*
+      - /api/v1/tenants/*/projects/*
+      - /api/system-admin/projects/*
+    upstream: taskProjectService
+    auth_mode: token
+
+  # KYC endpoints migrated from Django proxy to taskAuth (2026-07-26)
+  - id: kyc-admin
+    priority: 859
+    uris:
+      - /api/kyc/admin/users/*
+    upstream: taskAuth
+    auth_mode: token
+
+  - id: kyc-me
+    priority: 858
+    uris:
+      - /api/kyc/me/
+      - /api/kyc/me
+      - /api/kyc/me/*
+    upstream: taskAuth
+    auth_mode: token
+
+  - id: task-tenant-service
+    priority: 863
+    uris:
+      - /api/tenant/*
+    upstream: taskTenantService
+    auth_mode: token
+
+  # 容器 inbound：access_token 在 JSON body，不走浏览器 JWT forward-auth。
+  # 44efa06 约定迁移误删本路由且 /api/container/* 替换路由从未落地 → 容器
+  # exchange-refresh/register-reachability 全部 401「无法解析登录凭据」→ TOKEN_BOOTSTRAP_FAILED
+  # fail-closed 卡 pending（OPT-20260809-024 修复）；taskAgentSupport 按 action 分发
+  # 令牌动作→taskCredentialService(:8015)、回调动作→taskCloudService(:8018)。
+  - id: container-inbound-token
+    priority: 895
+    uris:
+      - /api/tenant/*/workspace/*/task/*/comment/*/cloud/server-container-token/*
+      - /api/tenant/*/workspace/*/task/*/comment/*/cloud/server-container-token
+      - /api/tenant/*/workspace/*/task/*/comment/*/cloud/model-budget-usage*
+      - /api/tenant/*/workspace/*/task/*/comment/*/cloud/model-budget-usage
+      - /api/tenant/*/workspace/*/task/*/comment/*/cloud/relay-to-trae/status-push*
+      - /api/tenant/*/workspace/*/task/*/comment/*/cloud/relay-to-trae/status-push
+    upstream: taskAgentSupport
+    auth_mode: machine
+
+  # onioning 公司创建 / 其他 accounts 端点仍在 Django；低于 task-tenant-service 避免拦截 members/groups
+  # OPT-049: Django saas-backend decommissioned (2026-07-30) — route disabled
+
+  # onioning 公司创建 / 其他 accounts 端点仍在 Django；低于 task-tenant-service 避免拦截 members/groups
+#   - id: django-tenant-accounts
+#     priority: 856
+#     uris:
+#       - /api/tenant/*/accounts/*
+#     upstream: django
+#     auth_mode: token
+
+  - id: task-task-service
+    priority: 862
+    uris:
+      - /api/tasks/*
+      - /api/git-identities/*
+      - /api/tenant_id/*/workspaceId/*/tasks/*/comments/*
+    upstream: taskTaskService
+    auth_mode: token
+
+  - id: task-ai-comment
+    priority: 861
+    uris:
+      - /api/ai-comment/*
+    upstream: taskAIComment
+    auth_mode: token
+
+  - id: task-cloud-service
+    priority: 868
+    uris:
+      - /api/cloud/*
+      - /callback/cloudplatform/oauth2.0/aliyun
+    upstream: taskCloudService
+    auth_mode: token
+
+  # UserData 首启验证回调：secret 在 URL（GET，ECS 上 userdata 脚本直接 curl），
+  # 无浏览器 JWT → 必须 machine 模式且优先于 task-cloud-service(868) 的 forward-auth。
+  # 44efa06 约定迁移误删本路由（legacy 形态）；现恢复为 /api/cloud/ 约定形态
+  # （kv-last scope，OPT-20260809-024 同批），与 taskCloudService 仅挂约定路径一致。
+  - id: server-userdata-verify
+    priority: 894
+    uris:
+      - /api/cloud/server-userdata-verify/*
+    upstream: taskCloudService
+    auth_mode: machine
+
+  # [DEPRECATED v55] django-default — 被下方 spa-catch-all 替代（priority 10, /* [GET,HEAD] → taskFE）
+  # - id: django-default
+  #   priority: 0
+  #   uri: /*
+  #   upstream: django
+  #   auth_mode: token
+
+  # OPT-049: Orphaned API routes (formerly Django) — return immediate 502 instead of
+  # falling through to spa-catch-all which would hang (Vue dev server timeout).
+  - id: api-orphaned-not-found
+    priority: 15
+    uri: /api/*
+    upstream: null-upstream
+    auth_mode: public
+
+  # SPA shell catch-all — 所有非 API GET/HEAD 请求 → taskFE（Vue Router 处理客户端路由与认证）
+  # ⚠️ 禁止绑定 hosts（2026-08-09 修复回归，回归点 8f6194c 08-03）：hosts 绑定
+  # [daydaymoney.com, www.daydaymoney.com] 会劫持该域名下全部 GET/HEAD——包括 /api/* ——
+  # priority 10 的兜底路由在 host 匹配分支下压过 priority 850 的 taskauth-login，
+  # 导致 www.daydaymoney.com/api/auth/wechat/login/ 被转发到 taskFE(4000) → 500/502。
+  # 不绑 hosts 时由 priority 排序兜底：/api/* → api-orphaned(15)/业务路由，非 API → 本路由。
+  - id: spa-catch-all
+    priority: 10
+    uri: /*
+    methods: [GET, HEAD]
+    upstream: taskFE
+    auth_mode: public

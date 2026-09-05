@@ -1,0 +1,7 @@
+# daydaymoney.yaml — service identity (do NOT put workspace_id / project_id / company_id)
+version: 1
+service_id: ram-work
+display_name: RAM Work Monorepo
+tags:
+  - svc:ram-work
+  - domain:platform

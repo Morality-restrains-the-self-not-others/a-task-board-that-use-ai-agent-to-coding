@@ -1,0 +1,52 @@
+' @title: Application Integration — Work Panel 任务状态 SSE
+' @view: application-integration
+' @status: archived
+' @version: 37
+' @author: claude
+' @based_on: v36 current (v36-application-integration-20260718-1605-claude.puml)
+' @updated: 2026-07-18 18:30
+' @description: WorkPanel 初载 HTTP 拉 todos；后续 workspace SSE 推送 task_status_changed
+' @iteration: work-panel-task-status-sse
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v37 — Work Panel Task Status SSE (2026-07-18 18:30)
+
+rectangle "Motivation" {
+  Motivation_Constraint(pullThenPush, "Constraint\n初载拉取\n后续推送")
+  Motivation_Principle(noSyncSse, "Principle\n业务路径不直接SSE\n经 MQ/Redis")
+}
+
+rectangle "Application" {
+  Application_Component(vueWp, "Vue WorkPanel\n初载 todos + EventSource")
+  Application_Component(gw, "task-gateway\nJWT + tenant")
+  Application_Component(tts, "taskTaskService\ntodos + TASK_STATUS_CHANGED")
+  Application_Component(te, "taskEvents\n2_fanout_work_panel_sse")
+  Application_Component(sse, "taskSSE\nwork-panel-events-sse")
+  Application_DataObject(tasksTbl, "tasks\n(progress_column_id)")
+}
+
+rectangle "Technology" {
+  Technology_Node(kafka, "Kafka\ntask-status-changed")
+  Technology_Node(redis, "Redis\nsse:workspace:{ws}")
+}
+
+note top of vueWp
+  GET todos → open SSE
+  on task_status_changed → patch card
+end note
+
+Rel_Flow(vueWp, gw, "GET todos\nGET work-panel-events-sse\nPATCH todos")
+Rel_Flow(gw, tts, "todos CRUD")
+Rel_Flow(gw, sse, "SSE long-poll")
+Rel_Access_W(tts, tasksTbl, "R/W")
+Rel_Flow(tts, kafka, "TASK_STATUS_CHANGED")
+Rel_Flow(kafka, te, "consume")
+Rel_Flow(te, redis, "PUBLISH workspace hub")
+Rel_Flow(redis, sse, "pSubscribe")
+Rel_Flow(sse, vueWp, "task_status_changed")
+Rel_Influence(pullThenPush, vueWp, "UX mode")
+Rel_Influence(noSyncSse, te, "fan-out only")
+
+@enduml

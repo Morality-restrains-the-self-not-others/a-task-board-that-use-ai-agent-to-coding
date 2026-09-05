@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v102 变迁 (v101→v102)" id="id-v102aidiff01">
+  <folder name="Application" id="id-v102aid-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v102-app-fe" name="taskFE SPA"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v102-app-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v102-app-auth" name="taskAuth"/>
+    <element xsi:type="archimate:DataObject" id="id-v102-data-imp" name="auth_impersonation_session"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v102-ev-start" name="UserImpersonationStarted"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v102-ev-stop" name="UserImpersonationStopped"/>
+  </folder>
+  <folder name="Technology" id="id-v102aid-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v102-tech-kafka" name="Kafka"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v102aid-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v102-pl-v101" name="Plateau v101"/>
+    <element xsi:type="archimate:Plateau" id="id-v102-pl-v102" name="Plateau v102"/>
+    <element xsi:type="archimate:Gap" id="id-v102-gap" name="Gap: user:impersonate 无执行点"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v102-wp" name="WP-admin-user-impersonation"/>
+  </folder>
+  <folder name="Relations" id="id-v102aid-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v102-rel-fe-gw" source="id-v102-app-fe" target="id-v102-app-gw" name="POST impersonate / stop"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v102-rel-gw-auth" source="id-v102-app-gw" target="id-v102-app-auth" name="token + forward-auth"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v102-rel-auth-t" source="id-v102-app-auth" target="id-v102-data-imp" name="write session"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v102-rel-auth-es" source="id-v102-app-auth" target="id-v102-ev-start" name="publish"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v102-rel-auth-eo" source="id-v102-app-auth" target="id-v102-ev-stop" name="publish"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v102-rel-es-k" source="id-v102-ev-start" target="id-v102-tech-kafka" name="user-impersonation-started"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v102-rel-eo-k" source="id-v102-ev-stop" target="id-v102-tech-kafka" name="user-impersonation-stopped"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v102-rel-pl101-gap" source="id-v102-pl-v101" target="id-v102-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v102-rel-wp-gap" source="id-v102-wp" target="id-v102-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v102-rel-wp-pl102" source="id-v102-wp" target="id-v102-pl-v102"/>
+  </folder>
+  <folder name="Views" id="id-v102aid-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v102-view-mig" name="架构变迁 v101→v102 — admin-user-impersonation">
+      <child xsi:type="archimate:DiagramObject" id="id-v102-do-pl101" archimateElement="id-v102-pl-v101">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102-c-pl101-gap" source="id-v102-do-pl101" target="id-v102-do-gap" archimateRelationship="id-v102-rel-pl101-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102-do-gap" targetConnections="id-v102-c-pl101-gap id-v102-c-wp-gap" archimateElement="id-v102-gap">
+        <bounds x="240" y="48" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102-do-wp" archimateElement="id-v102-wp">
+        <bounds x="240" y="160" width="360" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102-c-wp-gap" source="id-v102-do-wp" target="id-v102-do-gap" archimateRelationship="id-v102-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102-c-wp-pl102" source="id-v102-do-wp" target="id-v102-do-pl102" archimateRelationship="id-v102-rel-wp-pl102"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102-do-pl102" targetConnections="id-v102-c-wp-pl102" archimateElement="id-v102-pl-v102">
+        <bounds x="640" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v102-view-flow" name="v102 Target — 模拟登录数据流">
+      <child xsi:type="archimate:DiagramObject" id="id-v102-d-fe" archimateElement="id-v102-app-fe">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102-c-fe-gw" source="id-v102-d-fe" target="id-v102-d-gw" archimateRelationship="id-v102-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102-d-gw" targetConnections="id-v102-c-fe-gw" archimateElement="id-v102-app-gw">
+        <bounds x="260" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102-c-gw-auth" source="id-v102-d-gw" target="id-v102-d-auth" archimateRelationship="id-v102-rel-gw-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102-d-auth" targetConnections="id-v102-c-gw-auth" archimateElement="id-v102-app-auth">
+        <bounds x="500" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102-c-auth-t" source="id-v102-d-auth" target="id-v102-d-t" archimateRelationship="id-v102-rel-auth-t"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102-c-auth-es" source="id-v102-d-auth" target="id-v102-d-es" archimateRelationship="id-v102-rel-auth-es"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102-c-auth-eo" source="id-v102-d-auth" target="id-v102-d-eo" archimateRelationship="id-v102-rel-auth-eo"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102-d-t" targetConnections="id-v102-c-auth-t" archimateElement="id-v102-data-imp">
+        <bounds x="500" y="160" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102-d-es" targetConnections="id-v102-c-auth-es" archimateElement="id-v102-ev-start">
+        <bounds x="48" y="280" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102-c-es-k" source="id-v102-d-es" target="id-v102-d-k" archimateRelationship="id-v102-rel-es-k"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102-d-eo" targetConnections="id-v102-c-auth-eo" archimateElement="id-v102-ev-stop">
+        <bounds x="320" y="280" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102-c-eo-k" source="id-v102-d-eo" target="id-v102-d-k" archimateRelationship="id-v102-rel-eo-k"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102-d-k" targetConnections="id-v102-c-es-k id-v102-c-eo-k" archimateElement="id-v102-tech-kafka">
+        <bounds x="600" y="280" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

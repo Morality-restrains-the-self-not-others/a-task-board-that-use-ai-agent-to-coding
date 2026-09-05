@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v19-ai-20260713-1537">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v19 Target</name>
+  <purpose>Workspace machine policy, idle recycle, prefer idle reuse, work-panel summary</purpose>
+
+  <folder name="Application" id="id-v19-f-app" type="application"/>
+  <folder name="Technology" id="id-v19-f-tech" type="technology"/>
+  <folder name="Relations" id="id-v19-f-rel" type="relations"/>
+  <folder name="Implementation" id="id-v19-f-impl" type="implementation_migration"/>
+
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue WorkspaceSettingsTaskPanel [MODIFIED v19]" id="id-v19-vue-settings"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue WorkPanel [MODIFIED v19]" id="id-v19-vue-work"/>
+  <element xsi:type="archimate:ApplicationComponent" name="task-gateway APISIX" id="id-v19-gw"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 taskCloudService [MODIFIED v19]" id="id-v19-tcs"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟢 taskEvents idle_recycle [NEW v19]" id="id-v19-tev"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskContainerGateway" id="id-v19-cgw"/>
+  <element xsi:type="archimate:ApplicationComponent" name="cloudserverstopped handler" id="id-v19-css"/>
+  <element xsi:type="archimate:DataObject" name="🟢 workspace_machine_policies [NEW v19]" id="id-v19-policy"/>
+  <element xsi:type="archimate:DataObject" name="🟡 cloud_server_configs +idle_since [MODIFIED v19]" id="id-v19-csc"/>
+  <element xsi:type="archimate:Node" name="Kafka cloud-server-stopped" id="id-v19-kafka-stop"/>
+
+  <element xsi:type="archimate:FlowRelationship" id="id-v19-flow-settings-gw" source="id-v19-vue-settings" target="id-v19-gw" name="GET/PUT policy"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v19-flow-work-gw" source="id-v19-vue-work" target="id-v19-gw" name="GET summary"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v19-flow-gw-tcs" source="id-v19-gw" target="id-v19-tcs" name="compute APIs"/>
+  <element xsi:type="archimate:AccessRelationship" id="id-v19-acc-tcs-policy" source="id-v19-tcs" target="id-v19-policy" name="RW"/>
+  <element xsi:type="archimate:AccessRelationship" id="id-v19-acc-tcs-csc" source="id-v19-tcs" target="id-v19-csc" name="RW idle_since"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v19-flow-tev-tcs" source="id-v19-tev" target="id-v19-tcs" name="list idle / clear"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v19-flow-tev-kstop" source="id-v19-tev" target="id-v19-kafka-stop" name="CLOUD_SERVER_STOPPED"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v19-flow-kstop-css" source="id-v19-kafka-stop" target="id-v19-css" name="DeleteInstance"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v19-flow-tev-cgw" source="id-v19-tev" target="id-v19-cgw" name="relay/mock stop"/>
+
+  <element xsi:type="archimate:Plateau" name="Plateau v17 — task terminal release servers" id="id-v19-plat-v17"/>
+  <element xsi:type="archimate:Plateau" name="🎯 Plateau v19 — workspace machine idle policy" id="id-v19-plat-v19"/>
+  <element xsi:type="archimate:Gap" name="Gap: 无 workspace 级启用节点/闲置回收/优先复用/面板汇总" id="id-v19-gap"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-v19-workspace-machine-idle-policy" id="id-v19-wp"/>
+  <element xsi:type="archimate:AssociationRelationship" id="id-v19-rel-plat17-gap" source="id-v19-plat-v17" target="id-v19-gap"/>
+  <element xsi:type="archimate:RealizationRelationship" id="id-v19-rel-wp-gap" source="id-v19-wp" target="id-v19-gap"/>
+  <element xsi:type="archimate:RealizationRelationship" id="id-v19-rel-wp-plat19" source="id-v19-wp" target="id-v19-plat-v19"/>
+  <element xsi:type="archimate:CompositionRelationship" id="id-v19-rel-plat19-tcs" source="id-v19-plat-v19" target="id-v19-tcs"/>
+  <element xsi:type="archimate:CompositionRelationship" id="id-v19-rel-plat19-tev" source="id-v19-plat-v19" target="id-v19-tev"/>
+
+  <folder name="Views" id="id-v19-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v17→v19 — 工作空间机器闲置策略" id="id-v19-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-plat-v17" archimateElement="id-v19-plat-v17">
+        <bounds x="48" y="120" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-plat17-gap"
+          source="id-v19-do-plat-v17" target="id-v19-do-gap"
+          archimateRelationship="id-v19-rel-plat17-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-gap" archimateElement="id-v19-gap"
+        targetConnections="id-v19-conn-plat17-gap id-v19-conn-wp-gap">
+        <bounds x="380" y="120" width="360" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-wp" archimateElement="id-v19-wp">
+        <bounds x="780" y="80" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-wp-gap"
+          source="id-v19-do-wp" target="id-v19-do-gap"
+          archimateRelationship="id-v19-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-wp-plat19"
+          source="id-v19-do-wp" target="id-v19-do-plat-v19"
+          archimateRelationship="id-v19-rel-wp-plat19"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-plat-v19" archimateElement="id-v19-plat-v19"
+        targetConnections="id-v19-conn-wp-plat19">
+        <bounds x="780" y="180" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-plat19-tcs"
+          source="id-v19-do-plat-v19" target="id-v19-do-tcs-m"
+          archimateRelationship="id-v19-rel-plat19-tcs"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-plat19-tev"
+          source="id-v19-do-plat-v19" target="id-v19-do-tev-m"
+          archimateRelationship="id-v19-rel-plat19-tev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-tcs-m" archimateElement="id-v19-tcs"
+        targetConnections="id-v19-conn-plat19-tcs">
+        <bounds x="780" y="280" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-tev-m" archimateElement="id-v19-tev"
+        targetConnections="id-v19-conn-plat19-tev">
+        <bounds x="960" y="280" width="160" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v19 Target — 机器策略与闲置回收数据流" id="id-v19-view-flow">
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-settings" archimateElement="id-v19-vue-settings">
+        <bounds x="40" y="40" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-settings-gw"
+          source="id-v19-do-settings" target="id-v19-do-gw"
+          archimateRelationship="id-v19-flow-settings-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-work" archimateElement="id-v19-vue-work">
+        <bounds x="40" y="120" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-work-gw"
+          source="id-v19-do-work" target="id-v19-do-gw"
+          archimateRelationship="id-v19-flow-work-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-gw" archimateElement="id-v19-gw"
+        targetConnections="id-v19-conn-settings-gw id-v19-conn-work-gw">
+        <bounds x="260" y="80" width="120" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-gw-tcs"
+          source="id-v19-do-gw" target="id-v19-do-tcs"
+          archimateRelationship="id-v19-flow-gw-tcs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-tcs" archimateElement="id-v19-tcs"
+        targetConnections="id-v19-conn-gw-tcs id-v19-conn-tev-tcs">
+        <bounds x="440" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-tcs-policy"
+          source="id-v19-do-tcs" target="id-v19-do-policy"
+          archimateRelationship="id-v19-acc-tcs-policy"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-tcs-csc"
+          source="id-v19-do-tcs" target="id-v19-do-csc"
+          archimateRelationship="id-v19-acc-tcs-csc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-policy" archimateElement="id-v19-policy"
+        targetConnections="id-v19-conn-tcs-policy">
+        <bounds x="440" y="180" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-csc" archimateElement="id-v19-csc"
+        targetConnections="id-v19-conn-tcs-csc">
+        <bounds x="640" y="180" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-tev" archimateElement="id-v19-tev">
+        <bounds x="680" y="40" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-tev-tcs"
+          source="id-v19-do-tev" target="id-v19-do-tcs"
+          archimateRelationship="id-v19-flow-tev-tcs"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-tev-kstop"
+          source="id-v19-do-tev" target="id-v19-do-kstop"
+          archimateRelationship="id-v19-flow-tev-kstop"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-tev-cgw"
+          source="id-v19-do-tev" target="id-v19-do-cgw"
+          archimateRelationship="id-v19-flow-tev-cgw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-kstop" archimateElement="id-v19-kafka-stop"
+        targetConnections="id-v19-conn-tev-kstop">
+        <bounds x="880" y="40" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v19-conn-kstop-css"
+          source="id-v19-do-kstop" target="id-v19-do-css"
+          archimateRelationship="id-v19-flow-kstop-css"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-css" archimateElement="id-v19-css"
+        targetConnections="id-v19-conn-kstop-css">
+        <bounds x="1080" y="40" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v19-do-cgw" archimateElement="id-v19-cgw"
+        targetConnections="id-v19-conn-tev-cgw">
+        <bounds x="880" y="120" width="160" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

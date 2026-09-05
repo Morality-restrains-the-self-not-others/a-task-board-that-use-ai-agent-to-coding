@@ -1,0 +1,14 @@
+# 用于本地/CI 冒烟：路径相对本文件 (valueStream/testdata/)
+version: "1"
+runall_config: ../../config.yaml
+runner:
+  working_dir: ../../task2app/Saas_project
+  pytest_bin: pytest
+value_streams:
+  - name: smoke
+    description: 占位流（需存在对应 test_file 才能启动服务）
+    steps:
+      - name: placeholder
+        test_file: accounts/view_test/UserViewSet_email_register_test.py
+        fields:
+          - name: saas-backend.accounts_user.email

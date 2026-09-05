@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v122 变迁 (v121→v122)" id="id-v122aidiff01">
+  <folder name="Application" id="id-v122ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122-app-ci" name="源码仓 CI"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122-app-sync" name="deploy-sync"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122-app-confload" name="confload FindConfigRoot"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122-app-runall" name="runAll"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122-app-svc" name="Go 服务 / taskEvents / taskFE nginx"/>
+    <element xsi:type="archimate:DataObject" id="id-v122-data-pin" name="releases.yaml"/>
+    <element xsi:type="archimate:DataObject" id="id-v122-data-srcconf" name="monorepo conf/ 运行时"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v122ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v122-pl-v121" name="Plateau v121 消耗门槛链接"/>
+    <element xsi:type="archimate:Plateau" id="id-v122-pl-v122" name="Plateau v122 二进制+配置仓"/>
+    <element xsi:type="archimate:Gap" id="id-v122-gap" name="Gap: 部署机必须 clone 源码仓"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v122-wp" name="WP-binary-deploy-config-repo"/>
+  </folder>
+  <folder name="Relations" id="id-v122ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v122-rel-ci-pin" source="id-v122-app-ci" target="id-v122-data-pin" name="发布后运维钉版本"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122-rel-pin-sync" source="id-v122-data-pin" target="id-v122-app-sync" name="读取"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122-rel-sync-svc" source="id-v122-app-sync" target="id-v122-app-svc" name="原子 rename last-good"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v122-rel-runall-cl" source="id-v122-app-runall" target="id-v122-app-confload" name="定位 CONF_ROOT"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122-rel-runall-svc" source="id-v122-app-runall" target="id-v122-app-svc" name="start 无编译"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v122-rel-srcconf-cl" source="id-v122-data-srcconf" target="id-v122-app-confload" name="旧 FindMonorepoRoot"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v122-rel-pl-gap" source="id-v122-pl-v121" target="id-v122-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v122-rel-wp-gap" source="id-v122-wp" target="id-v122-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v122-rel-wp-pl" source="id-v122-wp" target="id-v122-pl-v122"/>
+  </folder>
+  <folder name="Views" id="id-v122ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v122-view-mig" name="架构变迁 v121→v122 — binary-deploy-config-repo">
+      <child xsi:type="archimate:DiagramObject" id="id-v122-do-pl121" archimateElement="id-v122-pl-v121">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-c-pl-gap" source="id-v122-do-pl121" target="id-v122-do-gap" archimateRelationship="id-v122-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-do-gap" targetConnections="id-v122-c-pl-gap id-v122-c-wp-gap" archimateElement="id-v122-gap">
+        <bounds x="340" y="48" width="400" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-do-wp" archimateElement="id-v122-wp">
+        <bounds x="340" y="140" width="400" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-c-wp-gap" source="id-v122-do-wp" target="id-v122-do-gap" archimateRelationship="id-v122-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-c-wp-pl" source="id-v122-do-wp" target="id-v122-do-pl122" archimateRelationship="id-v122-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-do-pl122" targetConnections="id-v122-c-wp-pl" archimateElement="id-v122-pl-v122">
+        <bounds x="780" y="140" width="260" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v122-view-topo" name="v122 Target — 产物钉版本与 CONF_ROOT">
+      <child xsi:type="archimate:DiagramObject" id="id-v122-do-ci" archimateElement="id-v122-app-ci">
+        <bounds x="48" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-c-ci-pin" source="id-v122-do-ci" target="id-v122-do-pin" archimateRelationship="id-v122-rel-ci-pin"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-do-pin" targetConnections="id-v122-c-ci-pin" archimateElement="id-v122-data-pin">
+        <bounds x="240" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-c-pin-sync" source="id-v122-do-pin" target="id-v122-do-sync" archimateRelationship="id-v122-rel-pin-sync"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-do-sync" targetConnections="id-v122-c-pin-sync" archimateElement="id-v122-app-sync">
+        <bounds x="440" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-c-sync-svc" source="id-v122-do-sync" target="id-v122-do-svc" archimateRelationship="id-v122-rel-sync-svc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-do-svc" targetConnections="id-v122-c-sync-svc id-v122-c-runall-svc" archimateElement="id-v122-app-svc">
+        <bounds x="640" y="80" width="280" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-do-runall" archimateElement="id-v122-app-runall">
+        <bounds x="240" y="200" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-c-runall-cl" source="id-v122-do-runall" target="id-v122-do-cl" archimateRelationship="id-v122-rel-runall-cl"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-c-runall-svc" source="id-v122-do-runall" target="id-v122-do-svc" archimateRelationship="id-v122-rel-runall-svc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-do-cl" targetConnections="id-v122-c-runall-cl id-v122-c-srcconf-cl" archimateElement="id-v122-app-confload">
+        <bounds x="440" y="200" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-do-srcconf" archimateElement="id-v122-data-srcconf">
+        <bounds x="48" y="200" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-c-srcconf-cl" source="id-v122-do-srcconf" target="id-v122-do-cl" archimateRelationship="id-v122-rel-srcconf-cl"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

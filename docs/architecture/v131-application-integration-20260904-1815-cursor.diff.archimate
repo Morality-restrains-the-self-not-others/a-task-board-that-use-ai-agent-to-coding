@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v131 变迁 (v130→v131)" id="id-v131aidiff01">
+  <folder name="Application" id="id-v131ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v131-ai-task" name="taskTaskService [MODIFIED v131]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v131-ai-ev" name="taskEvents sse_message/1_send"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v131-ai-sse" name="taskSSE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v131-ai-fe" name="taskFE TaskDetail [MODIFIED v131]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v131ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v131-ai-pl130" name="Plateau v130"/>
+    <element xsi:type="archimate:Plateau" id="id-v131-ai-pl131" name="Plateau v131"/>
+    <element xsi:type="archimate:Gap" id="id-v131-ai-gap" name="Gap: git_pr 回复需刷新才可见"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v131-ai-wp" name="WP-git-pr-reply-sse-fanout"/>
+  </folder>
+  <folder name="Relations" id="id-v131ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v131-ai-rel-task-ev" source="id-v131-ai-task" target="id-v131-ai-ev" name="SSE_MESSAGE via Kafka"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v131-ai-rel-ev-sse" source="id-v131-ai-ev" target="id-v131-ai-sse" name="Redis PUBLISH"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v131-ai-rel-sse-fe" source="id-v131-ai-sse" target="id-v131-ai-fe" name="EventSource"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v131-ai-rel-pl-gap" source="id-v131-ai-pl130" target="id-v131-ai-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v131-ai-rel-wp-gap" source="id-v131-ai-wp" target="id-v131-ai-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v131-ai-rel-wp-pl" source="id-v131-ai-wp" target="id-v131-ai-pl131"/>
+  </folder>
+  <folder name="Views" id="id-v131ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v131-ai-view-mig" name="架构变迁 v130→v131 — git_pr SSE">
+      <child xsi:type="archimate:DiagramObject" id="id-v131-ai-do-pl130" archimateElement="id-v131-ai-pl130">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v131-ai-c-pl-gap" source="id-v131-ai-do-pl130" target="id-v131-ai-do-gap" archimateRelationship="id-v131-ai-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v131-ai-do-gap" targetConnections="id-v131-ai-c-pl-gap id-v131-ai-c-wp-gap" archimateElement="id-v131-ai-gap">
+        <bounds x="280" y="48" width="320" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v131-ai-do-wp" archimateElement="id-v131-ai-wp">
+        <bounds x="280" y="140" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v131-ai-c-wp-gap" source="id-v131-ai-do-wp" target="id-v131-ai-do-gap" archimateRelationship="id-v131-ai-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v131-ai-c-wp-pl" source="id-v131-ai-do-wp" target="id-v131-ai-do-pl131" archimateRelationship="id-v131-ai-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v131-ai-do-pl131" targetConnections="id-v131-ai-c-wp-pl" archimateElement="id-v131-ai-pl131">
+        <bounds x="640" y="140" width="200" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v131-ai-view-topo" name="v131 Target — git_pr SSE fanout">
+      <child xsi:type="archimate:DiagramObject" id="id-v131-ai-do-task" archimateElement="id-v131-ai-task">
+        <bounds x="48" y="80" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v131-ai-c-task-ev" source="id-v131-ai-do-task" target="id-v131-ai-do-ev" archimateRelationship="id-v131-ai-rel-task-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v131-ai-do-ev" targetConnections="id-v131-ai-c-task-ev" archimateElement="id-v131-ai-ev">
+        <bounds x="300" y="80" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v131-ai-c-ev-sse" source="id-v131-ai-do-ev" target="id-v131-ai-do-sse" archimateRelationship="id-v131-ai-rel-ev-sse"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v131-ai-do-sse" targetConnections="id-v131-ai-c-ev-sse" archimateElement="id-v131-ai-sse">
+        <bounds x="560" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v131-ai-c-sse-fe" source="id-v131-ai-do-sse" target="id-v131-ai-do-fe" archimateRelationship="id-v131-ai-rel-sse-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v131-ai-do-fe" targetConnections="id-v131-ai-c-sse-fe" archimateElement="id-v131-ai-fe">
+        <bounds x="760" y="80" width="200" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

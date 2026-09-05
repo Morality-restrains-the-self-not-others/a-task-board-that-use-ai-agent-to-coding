@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Application settings for the CI/CD domain",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "ci_job_live_trace_enabled": {
+      "type": "boolean",
+      "description": "Enable cloud native architecture for storing job logs."
+    },
+    "ci_partitions_in_seconds_limit": {
+      "type": "integer",
+      "description": "Time window, in seconds, before new partitions are created and the system switches to the next set of partitions."
+    },
+    "ci_delete_pipelines_in_seconds_limit": {
+      "type": "integer",
+      "description": "Maximum value allowed for configuring pipeline retention."
+    }
+  }
+}

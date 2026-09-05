@@ -1,0 +1,55 @@
+' @title: ztree step_full COS 归档
+' @view: application-integration
+' @status: current
+' @version: 104
+' @iteration: ztree-step-full-cos-archive
+' @author: cursor
+' @based_on: v103 (v103-application-integration-20260823-0720-cursor.puml)
+' @updated: 2026-08-23 14:00
+' @description: 层图 MySQL 快照保持；job 终态 step_full 入 COS；GET 优先 COS；管理员配 COS
+
+@startuml
+!include <archimate/Archimate>
+
+title v104 — ztree step_full COS archive 2026-08-23 14:00
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  执行日志 hydrate
+  系统管理 COS 页 🟢
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(cloud, "taskCloudService")
+Application_Component(osjs, "onlineServiceJS")
+Application_Component(events, "taskEvents")
+
+Application_DataObject(snap, "cloud_layer_graph_snapshot")
+Application_DataObject(ptr, "cloud_job_step_full_object 🟢")
+Application_Event(evArch, "JobStepFullArchived 🟢")
+Application_Event(evCfg, "StepFullCOSConfigUpdated 🟢")
+
+Technology_Node(mysql, "MySQL task_cloud")
+Technology_Node(cos, "Tencent COS 🟢")
+Technology_Node(kafka, "Kafka")
+
+Rel_Flow(osjs, cloud, "job-step-full-push 🟢")
+Rel_Flow(taskFE, gw, "GET exec-log / PATCH COS 🟢")
+Rel_Flow(gw, cloud, "forward")
+Rel_Access_w(cloud, snap, "UPSERT graph")
+Rel_Access_w(cloud, ptr, "UPSERT pointer")
+Rel_Flow(cloud, cos, "PutObject/GetObject 🟢")
+Rel_Flow(cloud, evArch, "publish")
+Rel_Flow(cloud, evCfg, "publish")
+Rel_Flow(evArch, kafka, "job-step-full-archived")
+Rel_Access_r(cloud, mysql, "hydrate")
+
+Implementation_Plateau(plateauV103, "Plateau v103")
+Implementation_Plateau(plateauV104, "Plateau v104 COS archive")
+Implementation_Gap(gapQ, "Gap: step_full 随容器释放丢失")
+Implementation_WorkPackage(wpQ, "WP-ztree-step-full-cos")
+Rel_Triggering(plateauV103, gapQ, "identifies")
+Rel_Realization(wpQ, gapQ, "closes")
+Rel_Realization(wpQ, plateauV104, "delivers")
+
+@enduml

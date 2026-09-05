@@ -1,0 +1,78 @@
+---
+stage: AI-powered
+group: Editor Extensions
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see <https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments>
+title: Using the VS Code extension with self-signed certificates
+---
+
+You can still use the GitLab for VS Code extension even if your GitLab instance uses a self-signed SSL certificate.
+
+If you also use a proxy to connect to your GitLab instance, let us know in
+[issue 314](https://gitlab.com/gitlab-org/gitlab-vscode-extension/-/issues/314). If you still have connection problems
+after completing these steps, review [epic 6244](https://gitlab.com/groups/gitlab-org/-/epics/6244), which links to
+all existing SSL issues for the GitLab for VS Code extension.
+
+## Use the extension with a self-signed CA
+
+Prerequisites:
+
+- Your GitLab instance uses a certificate signed with a self-signed certificate authority (CA).
+- Your GitLab for VS Code version is 6.51.1 or later.
+- Your VS Code version is 1.101.2 (May 2025) or later.
+- The `gitlab.ca` VS Code setting is **not** in use.
+
+1. Ensure your CA certificate is correctly added to your system for the extension to work. VS Code reads
+   the system certificate store, and changes all node `http` requests to trust the certificates:
+
+   ```mermaid
+   %%{init: { "fontFamily": "GitLab Sans" }}%%
+   graph LR
+      accTitle: Self-signed certificate chain
+      accDescr: Shows a self-signed CA that signs the GitLab instance certificate.
+
+      A[Self-signed CA] -- signed --> B[Your GitLab instance certificate]
+   ```
+
+   The GitLab instance certificate's CA must be explicitly specified as a trusted CA. If intermediate certificates are in use, these must be available on the system. If the entire chain does not validate successfully, network connections within the extension fail to authenticate.
+
+   For more information, see [Self-signed certificate error when installing Python support in WSL](https://github.com/microsoft/vscode/issues/131836#issuecomment-909983815) in the Visual Studio Code issue tracker.
+
+1. In your VS Code `settings.json`, set `"http.systemCertificates": true`. The default value is `true`, so you might not need to change this value.
+1. Complete the instructions in the following sections for your operating system.
+
+### Windows
+
+> [!note]
+> These instructions were tested on Windows 10 and VS Code 1.60.0.
+
+Make sure you can see your self-signed CA in your certificate store:
+
+1. Open the command prompt.
+1. Run `certmgr`.
+1. Make sure you see your certificate in **Trusted Root Certification Authorities** > **Certificates**.
+
+### Linux
+
+> [!note]
+> These instructions were tested on Arch Linux `5.14.3-arch1-1` and VS Code 1.60.0.
+
+1. Use your operating system's tools to confirm you can add our self-signed CA to your system:
+   - `update-ca-trust` (Fedora, RHEL, CentOS)
+   - `update-ca-certificates` (Ubuntu, Debian, OpenSUSE, SLES)
+   - `trust` (Arch)
+1. Confirm the CA certificate is in `/etc/ssl/certs/ca-certificates.crt` or `/etc/ssl/certs/ca-bundle.crt`.
+   VS Code [checks this location](https://github.com/microsoft/vscode/issues/131836#issuecomment-909983815).
+
+### MacOS
+
+> [!note]
+> These instructions were tested on macOS Tahoe 26, VS Code 1.101.2, and GitLab for VS Code 6.51.1.
+
+Make sure you see the self-signed CA in your keychain:
+
+1. Go to **Finder** > **Applications** > **Utilities** > **Keychain Access**.
+1. In the left-hand column, select **System**.
+1. Find your self-signed CA certificate in the list.
+1. Right-click the certificate and select **Get Info**.
+1. Expand the **Trust** section.
+1. Ensure the **Secure Sockets Layer (SSL)** option is set to 'Always Trust'.

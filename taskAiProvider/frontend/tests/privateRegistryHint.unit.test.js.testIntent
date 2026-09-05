@@ -1,0 +1,18 @@
+# privateRegistryHint.unit.test.js 测试意图
+
+## 1. 测试目标
+- 对应功能意图：厂商门户解析镜像架构时，云厂商 VPC/内网 Registry 须提示本平台无法触及。
+- 验证目标：从真实超时文案与 image_url 识别内网主机，富化错误且不重复；公网地址保持原文。
+
+## 2. 关键断言
+- 阿里云 `registry-vpc.cn-qingdao.aliyuncs.com` 超时串判定为内网。
+- 富化后包含「无法触及」与公网 `registry.cn-qingdao.aliyuncs.com` 示例。
+- 二次富化不重复附加。
+- `api.js` 对 `resolve-target-architectures` 调用富化函数。
+
+## 3. 典型破坏信号
+- VPC 超时仍只显示 `context deadline exceeded`。
+- 公网 docker.io 错误被误加内网提示。
+
+## 4. 回归验证要点
+- 运行 `npm run test:unit -- privateRegistryHint.unit.test.js` 应全部通过。

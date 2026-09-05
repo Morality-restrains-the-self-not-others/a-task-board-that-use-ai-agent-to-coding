@@ -1,0 +1,666 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v128 全量 (post-change, views-inherited)" id="id-v125aifull01">
+  <folder name="Application" id="id-v122ai-app-f" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122f-app-fe" name="taskFE SPA"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122f-app-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122f-app-bill" name="taskBill"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122f-app-ev" name="taskEvents"/>
+    <element xsi:type="archimate:DataObject" id="id-v122f-data-grp" name="billing_feedback_link_group"/>
+    <element xsi:type="archimate:DataObject" id="id-v122f-data-thr" name="billing_feedback_link_threshold"/>
+    <element xsi:type="archimate:DataObject" id="id-v122f-data-lnk" name="billing_feedback_link"/>
+    <element xsi:type="archimate:DataObject" id="id-v122f-data-kind" name="billing_feedback_resource_kind"/>
+    <element xsi:type="archimate:DataObject" id="id-v122f-data-usage" name="billing grant/usage/account"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122f-app-ci" name="源码仓 CI"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122f-app-sync" name="deploy-sync"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122f-app-confload" name="confload FindConfigRoot"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122f-app-runall" name="runAll"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122f-app-svc" name="Go 服务 / taskEvents / taskFE nginx"/>
+    <element xsi:type="archimate:DataObject" id="id-v122f-data-pin" name="releases.yaml"/>
+    <element xsi:type="archimate:DataObject" id="id-v122f-data-srcconf" name="monorepo conf/ 运行时 [DEPRECATED v122]"/>
+    <element xsi:type="archimate:DataObject" id="id-v123f-data-conflocal" name="conf-local/rel [NEW v123]"/>
+    <element xsi:type="archimate:DataObject" id="id-v123f-data-localov" name="config.local.yaml [DEPRECATED v123]"/>
+    <element xsi:type="archimate:DataObject" id="id-v123f-data-pwdmd" name="gitLabRootPwd.md [DEPRECATED v123]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v123f-app-cigate" name="check_conf_local_secrets.py"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v124f-app-up" name="scripts/up.sh [MODIFIED v124]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v124f-app-gw" name="taskGateway [MODIFIED v124]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v124f-app-auth" name="taskAuth [MODIFIED v124]"/>
+    <element xsi:type="archimate:DataObject" id="id-v124f-data-pins" name="releases.yaml 新 tag [NEW v124]"/>
+    <element xsi:type="archimate:DataObject" id="id-v124f-data-old" name="secrets/taskGateway db overlay [DEPRECATED v124]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v125f-app-fe-im" name="taskFE ImageMarket"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v125f-app-aip" name="taskAiProvider"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v125f-app-portal" name="provider SPA"/>
+    <element xsi:type="archimate:DataObject" id="id-v125f-data-vendor" name="ai_provider_vendor"/>
+    <element xsi:type="archimate:DataObject" id="id-v125f-data-settings" name="marketplace_settings"/>
+  
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126f-app-fe-proj" name="taskFE ProjectDetail"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126f-app-fe-create" name="taskFE CreateTask/Fork [MODIFIED v126]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126f-app-gw" name="taskGateway APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126f-app-gitoauth" name="taskGitOauth"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126f-app-proj" name="taskProjectService [MODIFIED v126]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126f-app-task" name="taskTaskService [MODIFIED v126]"/>
+    <element xsi:type="archimate:DataObject" id="id-v126f-data-l1" name="git_oauth_appusercredential"/>
+    <element xsi:type="archimate:DataObject" id="id-v126f-data-pgrant" name="project_git_oauth_grant"/>
+    <element xsi:type="archimate:DataObject" id="id-v126f-data-cgrant" name="comment repo_identities oauth [MODIFIED v126]"/>
+    <element xsi:type="archimate:DataObject" id="id-v126f-data-ticket" name="git_oauth_grant_ticket"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126-app-fe-create" name="taskFE CreateTask/Fork [MODIFIED v126]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126-app-gw" name="taskGateway APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126-app-proj" name="taskProjectService [MODIFIED v126]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126-app-task" name="taskTaskService [MODIFIED v126]"/>
+    <element xsi:type="archimate:DataObject" id="id-v126-data-pgrant" name="project_git_oauth_grant"/>
+    <element xsi:type="archimate:DataObject" id="id-v126-data-cgrant" name="comment repo_identities oauth [MODIFIED v126]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127f-app-fe-proj" name="taskFE ProjectDetail"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127f-app-fe-create" name="taskFE CreateTask/Fork"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127f-app-gw" name="taskGateway APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127f-app-gitoauth" name="taskGitOauth"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127f-app-proj" name="taskProjectService"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127f-app-task" name="taskTaskService"/>
+    <element xsi:type="archimate:DataObject" id="id-v127f-data-l1" name="git_oauth_appusercredential"/>
+    <element xsi:type="archimate:DataObject" id="id-v127f-data-pgrant" name="project_git_oauth_grant"/>
+    <element xsi:type="archimate:DataObject" id="id-v127f-data-cgrant" name="comment repo_identities oauth"/>
+    <element xsi:type="archimate:DataObject" id="id-v127f-data-ticket" name="git_oauth_grant_ticket"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127f-app-ui" name="runAll status UI :9999 [MODIFIED v127]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127f-app-runall" name="runAll Runner [MODIFIED v127]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127f-app-compile" name="precise-compile.sh [NEW v127]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127f-app-svc" name="业务进程 last-good ELF"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127f-app-upd" name="update.sh [DEPRECATED v127]"/>
+    <element xsi:type="archimate:DataObject" id="id-v127f-data-reg" name="precise_restart_services.txt [NEW v127]"/>
+    <element xsi:type="archimate:DataObject" id="id-v127f-data-bins" name="deploy-binaries / artifacts"/>
+    <element xsi:type="archimate:DataObject" id="id-v127f-data-cl" name="conf-local/ [NEW v127]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127-app-ui" name="runAll status UI :9999 [MODIFIED v127]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127-app-runall" name="runAll Runner [MODIFIED v127]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127-app-compile" name="precise-compile.sh [NEW v127]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127-app-svc" name="业务进程 last-good ELF"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127-app-upd" name="update.sh [DEPRECATED v127]"/>
+    <element xsi:type="archimate:DataObject" id="id-v127-data-reg" name="precise_restart_services.txt [NEW v127]"/>
+    <element xsi:type="archimate:DataObject" id="id-v127-data-bins" name="deploy-binaries / artifacts"/>
+    <element xsi:type="archimate:DataObject" id="id-v127-data-cl" name="conf-local/ [NEW v127]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v128-ai-fe" name="taskFE OrderCreate [MODIFIED v128]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v128-ai-bill" name="taskBill [MODIFIED v128]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v128-ai-gl" name="GitLab Admin API"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v128-ai-kfk" name="Kafka [NEW v128 events]"/>
+    <element xsi:type="archimate:DataObject" id="id-v128-ai-reg" name="billing_gitlab_region [MODIFIED v128]"/>
+    <element xsi:type="archimate:DataObject" id="id-v128-ai-quota" name="billing_tenant_gitlab_resource"/></folder>
+  <folder name="Motivation" id="id-v123ai-mot-f" type="motivation">
+    <element xsi:type="archimate:Constraint" id="id-v123f-mot-empty" name="加载器不读 *.local.yaml"/>
+  </folder>
+  <folder name="Business" id="id-v122ai-biz-f" type="business">
+    <element xsi:type="archimate:BusinessEvent" id="id-v122f-ev-c" name="FEEDBACK_LINK_GROUP_CREATED"/>
+    <element xsi:type="archimate:BusinessEvent" id="id-v122f-ev-u" name="FEEDBACK_LINK_GROUP_UPDATED"/>
+    <element xsi:type="archimate:BusinessEvent" id="id-v122f-ev-d" name="FEEDBACK_LINK_GROUP_DELETED"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v122ai-im-f" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v122f-pl-v121" name="Plateau v121 消耗门槛链接"/>
+    <element xsi:type="archimate:Plateau" id="id-v122f-pl-v122" name="Plateau v122 二进制+配置仓"/>
+    <element xsi:type="archimate:Gap" id="id-v122f-gap" name="Gap: 部署机必须 clone 源码仓"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v122f-wp" name="WP-binary-deploy-config-repo"/>
+    <element xsi:type="archimate:Plateau" id="id-v123f-pl-v123" name="Plateau v123 conf-local 唯一 overlay"/>
+    <element xsi:type="archimate:Gap" id="id-v123f-gap" name="Gap closed: loaders no longer merge *.local.yaml"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v123f-wp" name="WP-conf-local-secrets-completion"/>
+    <element xsi:type="archimate:Plateau" id="id-v124f-pl-v124" name="Plateau v124 clone-run"/>
+    <element xsi:type="archimate:Gap" id="id-v124f-gap" name="Gap: PEM 树外 + 旧 ELF + seed 漂移"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v124f-wp" name="WP-daydaymoney-deploy-new-node-clone"/>
+    <element xsi:type="archimate:Plateau" id="id-v125f-pl-v125" name="Plateau v125 ImageMarket apply"/>
+    <element xsi:type="archimate:Gap" id="id-v125f-gap" name="Gap: 申请在门户、镜像市场无 SSO 漏斗"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v125f-wp" name="WP-imagemarket-vendor-apply-restore"/>
+  
+    <element xsi:type="archimate:Plateau" id="id-v126f-pl-v125" name="Plateau v125 ImageMarket"/>
+    <element xsi:type="archimate:Plateau" id="id-v126f-pl-v126" name="Plateau v126 项目 L2 seed"/>
+    <element xsi:type="archimate:Gap" id="id-v126f-gap" name="Gap: 创建任务只认 session grant_ticket"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v126f-wp" name="WP-project-l2-seed-autorun-comment"/>
+    <element xsi:type="archimate:Plateau" id="id-v126-pl-v125" name="Plateau v125 ImageMarket"/>
+    <element xsi:type="archimate:Plateau" id="id-v126-pl-v126" name="Plateau v126 项目 L2 seed"/>
+    <element xsi:type="archimate:Gap" id="id-v126-gap" name="Gap: 创建任务只认 session grant_ticket"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v126-wp" name="WP-project-l2-seed-autorun-comment"/>
+    <element xsi:type="archimate:Plateau" id="id-v127f-pl-v126" name="Plateau v126 项目 L2 seed"/>
+    <element xsi:type="archimate:Plateau" id="id-v127f-pl-v127" name="Plateau v127 部署 9999 源码编译"/>
+    <element xsi:type="archimate:Gap" id="id-v127f-gap" name="Gap: DEPLOY_MODE 清空 build_command"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v127f-wp" name="WP-deploy-9999-source-compile-restart"/>
+    <element xsi:type="archimate:Plateau" id="id-v127-pl-v126" name="Plateau v126 项目 L2 seed"/>
+    <element xsi:type="archimate:Plateau" id="id-v127-pl-v127" name="Plateau v127 部署 9999 源码编译"/>
+    <element xsi:type="archimate:Gap" id="id-v127-gap" name="Gap: DEPLOY_MODE 清空 build_command"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v127-wp" name="WP-deploy-9999-source-compile-restart"/>
+    <element xsi:type="archimate:Plateau" id="id-v128-ai-pl127" name="Plateau v127"/>
+    <element xsi:type="archimate:Plateau" id="id-v128-ai-pl128" name="Plateau v128"/>
+    <element xsi:type="archimate:Gap" id="id-v128-ai-gap" name="Gap: 无阿里云可售区"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v128-ai-wp" name="WP-aliyun-gitlab-region-manual-node"/></folder>
+  <folder name="Relations" id="id-v122ai-rel-f" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v122f-rel-fe-gw" source="id-v122f-app-fe" target="id-v122f-app-gw" name="超管 CRUD / 租户 GET"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122f-rel-gw-bill" source="id-v122f-app-gw" target="id-v122f-app-bill" name="system-admin + tenant billing"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v122f-rel-bill-grp" source="id-v122f-app-bill" target="id-v122f-data-grp" name="R/W"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v122f-rel-bill-thr" source="id-v122f-app-bill" target="id-v122f-data-thr" name="R/W"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v122f-rel-bill-lnk" source="id-v122f-app-bill" target="id-v122f-data-lnk" name="R/W"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v122f-rel-bill-kind" source="id-v122f-app-bill" target="id-v122f-data-kind" name="R"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v122f-rel-bill-usage" source="id-v122f-app-bill" target="id-v122f-data-usage" name="R 求值"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122f-rel-bill-evc" source="id-v122f-app-bill" target="id-v122f-ev-c" name="after POST"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122f-rel-bill-evu" source="id-v122f-app-bill" target="id-v122f-ev-u" name="after PUT"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122f-rel-bill-evd" source="id-v122f-app-bill" target="id-v122f-ev-d" name="after DELETE"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122f-rel-bill-ev" source="id-v122f-app-bill" target="id-v122f-app-ev" name="publish Kafka"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122f-rel-ci-pin" source="id-v122f-app-ci" target="id-v122f-data-pin" name="发布后运维钉版本"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122f-rel-pin-sync" source="id-v122f-data-pin" target="id-v122f-app-sync" name="读取"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122f-rel-sync-svc" source="id-v122f-app-sync" target="id-v122f-app-svc" name="原子 rename last-good"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v122f-rel-runall-cl" source="id-v122f-app-runall" target="id-v122f-app-confload" name="定位 CONF_ROOT"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122f-rel-runall-svc" source="id-v122f-app-runall" target="id-v122f-app-svc" name="start 无编译"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v122f-rel-srcconf-cl" source="id-v122f-data-srcconf" target="id-v122f-app-confload" name="旧 FindMonorepoRoot"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v122f-rel-pl-gap" source="id-v122f-pl-v121" target="id-v122f-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v122f-rel-wp-gap" source="id-v122f-wp" target="id-v122f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v122f-rel-wp-pl" source="id-v122f-wp" target="id-v122f-pl-v122"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v123f-rel-cl-loc" source="id-v122f-app-confload" target="id-v123f-data-conflocal" name="2 合并"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v123f-rel-cl-ov" source="id-v123f-data-localov" target="id-v122f-app-confload" name="不再 merge"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v123f-rel-ci-pwd" source="id-v123f-data-pwdmd" target="id-v123f-app-cigate" name="须失败"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v123f-rel-empty-cl" source="id-v123f-mot-empty" target="id-v122f-app-confload" name="约束"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v123f-rel-pl-gap" source="id-v122f-pl-v122" target="id-v123f-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v123f-rel-wp-gap" source="id-v123f-wp" target="id-v123f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v123f-rel-wp-pl" source="id-v123f-wp" target="id-v123f-pl-v123"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v124f-rel-up-sync" source="id-v124f-app-up" target="id-v122f-app-sync" name="deploy-sync"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v124f-rel-sync-pin" source="id-v122f-app-sync" target="id-v124f-data-pins" name="读新钉"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v124f-rel-gw-loc" source="id-v124f-app-gw" target="id-v123f-data-conflocal" name="staging PEM"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v124f-rel-auth-loc" source="id-v124f-app-auth" target="id-v123f-data-conflocal" name="签名钥"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v124f-rel-old-up" source="id-v124f-data-old" target="id-v124f-app-up" name="不再 rsync"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v124f-rel-pl-gap" source="id-v123f-pl-v123" target="id-v124f-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v124f-rel-wp-gap" source="id-v124f-wp" target="id-v124f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v124f-rel-wp-pl" source="id-v124f-wp" target="id-v124f-pl-v124"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v125f-rel-fe-gw" source="id-v125f-app-fe-im" target="id-v122f-app-gw" name="vendor-status / vendor-application"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v125f-rel-gw-aip" source="id-v122f-app-gw" target="id-v125f-app-aip" name="token + gateway secret"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v125f-rel-fe-auth" source="id-v125f-app-fe-im" target="id-v124f-app-auth" name="SSO vendor_bridge"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v125f-rel-auth-aip" source="id-v124f-app-auth" target="id-v125f-app-aip" name="sso-exchange"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v125f-rel-aip-vendor" source="id-v125f-app-aip" target="id-v125f-data-vendor" name="申请/审核写"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v125f-rel-aip-set" source="id-v125f-app-aip" target="id-v125f-data-settings" name="审核开关"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v125f-rel-pl-gap" source="id-v124f-pl-v124" target="id-v125f-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v125f-rel-wp-gap" source="id-v125f-wp" target="id-v125f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v125f-rel-wp-pl" source="id-v125f-wp" target="id-v125f-pl-v125"/>
+  
+    <element xsi:type="archimate:FlowRelationship" name="OAuth start grant_kind=project" id="id-v126f-rel-feproj-gw" source="id-v126f-app-fe-proj" target="id-v126f-app-gw"/>
+    <element xsi:type="archimate:FlowRelationship" name="github/gitlab-start" id="id-v126f-rel-gw-gitoauth" source="id-v126f-app-gw" target="id-v126f-app-gitoauth"/>
+    <element xsi:type="archimate:AccessRelationship" name="upsert L1" id="id-v126f-rel-gitoauth-l1" source="id-v126f-app-gitoauth" target="id-v126f-data-l1"/>
+    <element xsi:type="archimate:AccessRelationship" name="MarkGrant" id="id-v126f-rel-gitoauth-pgrant" source="id-v126f-app-gitoauth" target="id-v126f-data-pgrant"/>
+    <element xsi:type="archimate:FlowRelationship" name="pending fallback" id="id-v126f-rel-gitoauth-ticket" source="id-v126f-app-gitoauth" target="id-v126f-data-ticket"/>
+    <element xsi:type="archimate:FlowRelationship" name="validate-git-repos + create task" id="id-v126f-rel-fecreate-gw" source="id-v126f-app-fe-create" target="id-v126f-app-gw"/>
+    <element xsi:type="archimate:FlowRelationship" name="validate with project_id" id="id-v126f-rel-gw-proj" source="id-v126f-app-gw" target="id-v126f-app-proj"/>
+    <element xsi:type="archimate:FlowRelationship" name="POST task auto_run" id="id-v126f-rel-gw-task" source="id-v126f-app-gw" target="id-v126f-app-task"/>
+    <element xsi:type="archimate:FlowRelationship" name="GET internal grant [NEW v126]" id="id-v126f-rel-task-proj" source="id-v126f-app-task" target="id-v126f-app-proj"/>
+    <element xsi:type="archimate:AccessRelationship" name="lookup" id="id-v126f-rel-proj-pgrant" source="id-v126f-app-proj" target="id-v126f-data-pgrant"/>
+    <element xsi:type="archimate:AccessRelationship" name="stamp L2 seed" id="id-v126f-rel-task-cgrant" source="id-v126f-app-task" target="id-v126f-data-cgrant"/>
+    <element xsi:type="archimate:FlowRelationship" name="consume if present" id="id-v126f-rel-task-ticket" source="id-v126f-app-task" target="id-v126f-data-ticket"/>
+    <element xsi:type="archimate:TriggeringRelationship" name="identifies" id="id-v126f-rel-pl-gap" source="id-v126f-pl-v125" target="id-v126f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v126f-rel-wp-gap" source="id-v126f-wp" target="id-v126f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v126f-rel-wp-pl" source="id-v126f-wp" target="id-v126f-pl-v126"/>
+    <element xsi:type="archimate:FlowRelationship" name="validate-git-repos + create task" id="id-v126-rel-fe-gw" source="id-v126-app-fe-create" target="id-v126-app-gw"/>
+    <element xsi:type="archimate:FlowRelationship" name="validate with project_id" id="id-v126-rel-gw-proj" source="id-v126-app-gw" target="id-v126-app-proj"/>
+    <element xsi:type="archimate:FlowRelationship" name="POST task auto_run" id="id-v126-rel-gw-task" source="id-v126-app-gw" target="id-v126-app-task"/>
+    <element xsi:type="archimate:FlowRelationship" name="GET internal grant [NEW v126]" id="id-v126-rel-task-proj" source="id-v126-app-task" target="id-v126-app-proj"/>
+    <element xsi:type="archimate:AccessRelationship" name="lookup" id="id-v126-rel-proj-pgrant" source="id-v126-app-proj" target="id-v126-data-pgrant"/>
+    <element xsi:type="archimate:AccessRelationship" name="stamp L2 seed" id="id-v126-rel-task-cgrant" source="id-v126-app-task" target="id-v126-data-cgrant"/>
+    <element xsi:type="archimate:TriggeringRelationship" name="identifies" id="id-v126-rel-pl-gap" source="id-v126-pl-v125" target="id-v126-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v126-rel-wp-gap" source="id-v126-wp" target="id-v126-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v126-rel-wp-pl" source="id-v126-wp" target="id-v126-pl-v126"/>
+    <element xsi:type="archimate:FlowRelationship" name="OAuth start grant_kind=project" id="id-v127f-rel-feproj-gw" source="id-v127f-app-fe-proj" target="id-v127f-app-gw"/>
+    <element xsi:type="archimate:FlowRelationship" name="github/gitlab-start" id="id-v127f-rel-gw-gitoauth" source="id-v127f-app-gw" target="id-v127f-app-gitoauth"/>
+    <element xsi:type="archimate:AccessRelationship" name="upsert L1" id="id-v127f-rel-gitoauth-l1" source="id-v127f-app-gitoauth" target="id-v127f-data-l1"/>
+    <element xsi:type="archimate:AccessRelationship" name="MarkGrant" id="id-v127f-rel-gitoauth-pgrant" source="id-v127f-app-gitoauth" target="id-v127f-data-pgrant"/>
+    <element xsi:type="archimate:FlowRelationship" name="pending fallback" id="id-v127f-rel-gitoauth-ticket" source="id-v127f-app-gitoauth" target="id-v127f-data-ticket"/>
+    <element xsi:type="archimate:FlowRelationship" name="validate-git-repos + create task" id="id-v127f-rel-fecreate-gw" source="id-v127f-app-fe-create" target="id-v127f-app-gw"/>
+    <element xsi:type="archimate:FlowRelationship" name="validate with project_id" id="id-v127f-rel-gw-proj" source="id-v127f-app-gw" target="id-v127f-app-proj"/>
+    <element xsi:type="archimate:FlowRelationship" name="POST task auto_run" id="id-v127f-rel-gw-task" source="id-v127f-app-gw" target="id-v127f-app-task"/>
+    <element xsi:type="archimate:FlowRelationship" name="GET internal grant" id="id-v127f-rel-task-proj" source="id-v127f-app-task" target="id-v127f-app-proj"/>
+    <element xsi:type="archimate:AccessRelationship" name="lookup" id="id-v127f-rel-proj-pgrant" source="id-v127f-app-proj" target="id-v127f-data-pgrant"/>
+    <element xsi:type="archimate:AccessRelationship" name="stamp L2 seed" id="id-v127f-rel-task-cgrant" source="id-v127f-app-task" target="id-v127f-data-cgrant"/>
+    <element xsi:type="archimate:FlowRelationship" name="consume if present" id="id-v127f-rel-task-ticket" source="id-v127f-app-task" target="id-v127f-data-ticket"/>
+    <element xsi:type="archimate:FlowRelationship" name="POST precise-restart / build-all" id="id-v127f-rel-ui-runall" source="id-v127f-app-ui" target="id-v127f-app-runall"/>
+    <element xsi:type="archimate:AccessRelationship" name="读登记" id="id-v127f-rel-runall-reg" source="id-v127f-app-runall" target="id-v127f-data-reg"/>
+    <element xsi:type="archimate:FlowRelationship" name="exec unset DEPLOY_MODE" id="id-v127f-rel-runall-compile" source="id-v127f-app-runall" target="id-v127f-app-compile"/>
+    <element xsi:type="archimate:FlowRelationship" name="collect incremental" id="id-v127f-rel-compile-bins" source="id-v127f-app-compile" target="id-v127f-data-bins"/>
+    <element xsi:type="archimate:FlowRelationship" name="rsync after compile ok" id="id-v127f-rel-runall-cl" source="id-v127f-app-runall" target="id-v127f-data-cl"/>
+    <element xsi:type="archimate:FlowRelationship" name="install_over copy-then-mv" id="id-v127f-rel-runall-bins" source="id-v127f-app-runall" target="id-v127f-data-bins"/>
+    <element xsi:type="archimate:FlowRelationship" name="精准 restartService" id="id-v127f-rel-runall-svc" source="id-v127f-app-runall" target="id-v127f-app-svc"/>
+    <element xsi:type="archimate:TriggeringRelationship" name="identifies" id="id-v127f-rel-pl-gap" source="id-v127f-pl-v126" target="id-v127f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v127f-rel-wp-gap" source="id-v127f-wp" target="id-v127f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v127f-rel-wp-pl" source="id-v127f-wp" target="id-v127f-pl-v127"/>
+    <element xsi:type="archimate:FlowRelationship" name="POST precise-restart / build-all" id="id-v127-rel-ui-runall" source="id-v127-app-ui" target="id-v127-app-runall"/>
+    <element xsi:type="archimate:AccessRelationship" name="读登记" id="id-v127-rel-runall-reg" source="id-v127-app-runall" target="id-v127-data-reg"/>
+    <element xsi:type="archimate:FlowRelationship" name="exec unset DEPLOY_MODE" id="id-v127-rel-runall-compile" source="id-v127-app-runall" target="id-v127-app-compile"/>
+    <element xsi:type="archimate:FlowRelationship" name="collect incremental" id="id-v127-rel-compile-bins" source="id-v127-app-compile" target="id-v127-data-bins"/>
+    <element xsi:type="archimate:FlowRelationship" name="rsync after compile ok" id="id-v127-rel-runall-cl" source="id-v127-app-runall" target="id-v127-data-cl"/>
+    <element xsi:type="archimate:FlowRelationship" name="install_over copy-then-mv" id="id-v127-rel-runall-bins" source="id-v127-app-runall" target="id-v127-data-bins"/>
+    <element xsi:type="archimate:FlowRelationship" name="精准 restartService" id="id-v127-rel-runall-svc" source="id-v127-app-runall" target="id-v127-app-svc"/>
+    <element xsi:type="archimate:TriggeringRelationship" name="identifies" id="id-v127-rel-pl-gap" source="id-v127-pl-v126" target="id-v127-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v127-rel-wp-gap" source="id-v127-wp" target="id-v127-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v127-rel-wp-pl" source="id-v127-wp" target="id-v127-pl-v127"/>
+    <element xsi:type="archimate:FlowRelationship" name="GET regions / POST orders" id="id-v128-ai-rel-fe-bill" source="id-v128-ai-fe" target="id-v128-ai-bill"/>
+    <element xsi:type="archimate:AccessRelationship" name="list sellable" id="id-v128-ai-rel-bill-reg" source="id-v128-ai-bill" target="id-v128-ai-reg"/>
+    <element xsi:type="archimate:AccessRelationship" name="pending_admin on pay" id="id-v128-ai-rel-bill-quota" source="id-v128-ai-bill" target="id-v128-ai-quota"/>
+    <element xsi:type="archimate:FlowRelationship" name="ensure iff ready" id="id-v128-ai-rel-bill-gl" source="id-v128-ai-bill" target="id-v128-ai-gl"/>
+    <element xsi:type="archimate:FlowRelationship" name="Queued / InfraMarkedReady" id="id-v128-ai-rel-bill-kfk" source="id-v128-ai-bill" target="id-v128-ai-kfk"/>
+    <element xsi:type="archimate:TriggeringRelationship" name="identifies" id="id-v128-ai-rel-pl-gap" source="id-v128-ai-pl127" target="id-v128-ai-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v128-ai-rel-wp-gap" source="id-v128-ai-wp" target="id-v128-ai-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v128-ai-rel-wp-pl" source="id-v128-ai-wp" target="id-v128-ai-pl128"/></folder>
+  <folder name="Views" id="id-v122ai-views-f" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v122f-view-topo-biz" name="v122 全量拓扑 — 意见与建议链接（未改）">
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-fe" archimateElement="id-v122f-app-fe">
+        <bounds x="48" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-fe-gw" source="id-v122f-do-fe" target="id-v122f-do-gw" archimateRelationship="id-v122f-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-gw" targetConnections="id-v122f-c-fe-gw" archimateElement="id-v122f-app-gw">
+        <bounds x="240" y="80" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-gw-bill" source="id-v122f-do-gw" target="id-v122f-do-bill" archimateRelationship="id-v122f-rel-gw-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-bill" targetConnections="id-v122f-c-gw-bill" archimateElement="id-v122f-app-bill">
+        <bounds x="460" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-bill-grp" source="id-v122f-do-bill" target="id-v122f-do-grp" archimateRelationship="id-v122f-rel-bill-grp"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-bill-thr" source="id-v122f-do-bill" target="id-v122f-do-thr" archimateRelationship="id-v122f-rel-bill-thr"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-bill-lnk" source="id-v122f-do-bill" target="id-v122f-do-lnk" archimateRelationship="id-v122f-rel-bill-lnk"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-bill-kind" source="id-v122f-do-bill" target="id-v122f-do-kind" archimateRelationship="id-v122f-rel-bill-kind"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-bill-usage" source="id-v122f-do-bill" target="id-v122f-do-usage" archimateRelationship="id-v122f-rel-bill-usage"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-bill-evc" source="id-v122f-do-bill" target="id-v122f-do-evc" archimateRelationship="id-v122f-rel-bill-evc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-bill-evu" source="id-v122f-do-bill" target="id-v122f-do-evu" archimateRelationship="id-v122f-rel-bill-evu"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-bill-evd" source="id-v122f-do-bill" target="id-v122f-do-evd" archimateRelationship="id-v122f-rel-bill-evd"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-bill-ev" source="id-v122f-do-bill" target="id-v122f-do-ev" archimateRelationship="id-v122f-rel-bill-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-ev" targetConnections="id-v122f-c-bill-ev" archimateElement="id-v122f-app-ev">
+        <bounds x="460" y="200" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-grp" targetConnections="id-v122f-c-bill-grp" archimateElement="id-v122f-data-grp">
+        <bounds x="680" y="16" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-thr" targetConnections="id-v122f-c-bill-thr" archimateElement="id-v122f-data-thr">
+        <bounds x="680" y="64" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-lnk" targetConnections="id-v122f-c-bill-lnk" archimateElement="id-v122f-data-lnk">
+        <bounds x="680" y="112" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-kind" targetConnections="id-v122f-c-bill-kind" archimateElement="id-v122f-data-kind">
+        <bounds x="680" y="160" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-usage" targetConnections="id-v122f-c-bill-usage" archimateElement="id-v122f-data-usage">
+        <bounds x="680" y="208" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-evc" targetConnections="id-v122f-c-bill-evc" archimateElement="id-v122f-ev-c">
+        <bounds x="680" y="256" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-evu" targetConnections="id-v122f-c-bill-evu" archimateElement="id-v122f-ev-u">
+        <bounds x="680" y="304" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-evd" targetConnections="id-v122f-c-bill-evd" archimateElement="id-v122f-ev-d">
+        <bounds x="680" y="352" width="280" height="40"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v122f-view-topo-dep" name="v122 全量拓扑 — 二进制部署">
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-ci" archimateElement="id-v122f-app-ci">
+        <bounds x="48" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-ci-pin" source="id-v122f-do-ci" target="id-v122f-do-pin" archimateRelationship="id-v122f-rel-ci-pin"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-pin" targetConnections="id-v122f-c-ci-pin" archimateElement="id-v122f-data-pin">
+        <bounds x="240" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-pin-sync" source="id-v122f-do-pin" target="id-v122f-do-sync" archimateRelationship="id-v122f-rel-pin-sync"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-sync" targetConnections="id-v122f-c-pin-sync" archimateElement="id-v122f-app-sync">
+        <bounds x="440" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-sync-svc" source="id-v122f-do-sync" target="id-v122f-do-svc" archimateRelationship="id-v122f-rel-sync-svc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-svc" targetConnections="id-v122f-c-sync-svc id-v122f-c-runall-svc" archimateElement="id-v122f-app-svc">
+        <bounds x="640" y="80" width="280" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-runall" archimateElement="id-v122f-app-runall">
+        <bounds x="240" y="200" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-runall-cl" source="id-v122f-do-runall" target="id-v122f-do-cl" archimateRelationship="id-v122f-rel-runall-cl"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-runall-svc" source="id-v122f-do-runall" target="id-v122f-do-svc" archimateRelationship="id-v122f-rel-runall-svc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-cl" targetConnections="id-v122f-c-runall-cl id-v122f-c-srcconf-cl" archimateElement="id-v122f-app-confload">
+        <bounds x="440" y="200" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-srcconf" archimateElement="id-v122f-data-srcconf">
+        <bounds x="48" y="200" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-srcconf-cl" source="id-v122f-do-srcconf" target="id-v122f-do-cl" archimateRelationship="id-v122f-rel-srcconf-cl"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v122f-view-mig" name="架构变迁 v121→v122 — binary-deploy-config-repo">
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-pl121" archimateElement="id-v122f-pl-v121">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-pl-gap" source="id-v122f-do-pl121" target="id-v122f-do-gap" archimateRelationship="id-v122f-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-gap" targetConnections="id-v122f-c-pl-gap id-v122f-c-wp-gap" archimateElement="id-v122f-gap">
+        <bounds x="340" y="48" width="400" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-wp" archimateElement="id-v122f-wp">
+        <bounds x="340" y="140" width="400" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-wp-gap" source="id-v122f-do-wp" target="id-v122f-do-gap" archimateRelationship="id-v122f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122f-c-wp-pl" source="id-v122f-do-wp" target="id-v122f-do-pl122" archimateRelationship="id-v122f-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122f-do-pl122" targetConnections="id-v122f-c-wp-pl" archimateElement="id-v122f-pl-v122">
+        <bounds x="780" y="140" width="260" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v123f-view-mig" name="架构变迁 v122→v123 — conf-local-secrets-completion">
+      <child xsi:type="archimate:DiagramObject" id="id-v123f-do-pl122" archimateElement="id-v122f-pl-v122">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123f-c-pl-gap" source="id-v123f-do-pl122" target="id-v123f-do-gap" archimateRelationship="id-v123f-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123f-do-gap" targetConnections="id-v123f-c-pl-gap id-v123f-c-wp-gap" archimateElement="id-v123f-gap">
+        <bounds x="340" y="48" width="420" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123f-do-wp" archimateElement="id-v123f-wp">
+        <bounds x="340" y="140" width="420" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123f-c-wp-gap" source="id-v123f-do-wp" target="id-v123f-do-gap" archimateRelationship="id-v123f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123f-c-wp-pl" source="id-v123f-do-wp" target="id-v123f-do-pl123" archimateRelationship="id-v123f-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123f-do-pl123" targetConnections="id-v123f-c-wp-pl" archimateElement="id-v123f-pl-v123">
+        <bounds x="800" y="140" width="280" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v123f-view-secrets" name="v123 全量拓扑 — conf-local 加载链">
+      <child xsi:type="archimate:DiagramObject" id="id-v123f-do-cl" targetConnections="id-v123f-c-empty-cl id-v123f-c-cl-ov" archimateElement="id-v122f-app-confload">
+        <bounds x="240" y="80" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123f-c-cl-loc" source="id-v123f-do-cl" target="id-v123f-do-loc" archimateRelationship="id-v123f-rel-cl-loc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123f-do-loc" targetConnections="id-v123f-c-cl-loc" archimateElement="id-v123f-data-conflocal">
+        <bounds x="480" y="80" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123f-do-ov" archimateElement="id-v123f-data-localov">
+        <bounds x="48" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123f-c-cl-ov" source="id-v123f-do-ov" target="id-v123f-do-cl" archimateRelationship="id-v123f-rel-cl-ov"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123f-do-empty" archimateElement="id-v123f-mot-empty">
+        <bounds x="240" y="180" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123f-c-empty-cl" source="id-v123f-do-empty" target="id-v123f-do-cl" archimateRelationship="id-v123f-rel-empty-cl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123f-do-pwd" archimateElement="id-v123f-data-pwdmd">
+        <bounds x="48" y="180" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v123f-c-pwd-ci" source="id-v123f-do-pwd" target="id-v123f-do-ci" archimateRelationship="id-v123f-rel-ci-pwd"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v123f-do-ci" targetConnections="id-v123f-c-pwd-ci" archimateElement="id-v123f-app-cigate">
+        <bounds x="480" y="180" width="200" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v124f-view-mig" name="架构变迁 v123→v124 — daydaymoney-deploy-new-node-clone">
+      <child xsi:type="archimate:DiagramObject" id="id-v124f-do-pl123" archimateElement="id-v123f-pl-v123">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124f-c-pl-gap" source="id-v124f-do-pl123" target="id-v124f-do-gap" archimateRelationship="id-v124f-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124f-do-gap" targetConnections="id-v124f-c-pl-gap id-v124f-c-wp-gap" archimateElement="id-v124f-gap">
+        <bounds x="340" y="48" width="420" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124f-do-wp" archimateElement="id-v124f-wp">
+        <bounds x="340" y="140" width="420" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124f-c-wp-gap" source="id-v124f-do-wp" target="id-v124f-do-gap" archimateRelationship="id-v124f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124f-c-wp-pl" source="id-v124f-do-wp" target="id-v124f-do-pl124" archimateRelationship="id-v124f-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124f-do-pl124" targetConnections="id-v124f-c-wp-pl" archimateElement="id-v124f-pl-v124">
+        <bounds x="800" y="140" width="280" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v124f-view-topo" name="v124 全量拓扑 — clone-run 加载链">
+      <child xsi:type="archimate:DiagramObject" id="id-v124f-do-up" archimateElement="id-v124f-app-up">
+        <bounds x="48" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124f-c-up-sync" source="id-v124f-do-up" target="id-v124f-do-sync" archimateRelationship="id-v124f-rel-up-sync"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124f-do-sync" targetConnections="id-v124f-c-up-sync" archimateElement="id-v122f-app-sync">
+        <bounds x="240" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124f-c-sync-pin" source="id-v124f-do-sync" target="id-v124f-do-pin" archimateRelationship="id-v124f-rel-sync-pin"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124f-do-pin" targetConnections="id-v124f-c-sync-pin" archimateElement="id-v124f-data-pins">
+        <bounds x="440" y="80" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124f-do-gw" archimateElement="id-v124f-app-gw">
+        <bounds x="48" y="180" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124f-c-gw-loc" source="id-v124f-do-gw" target="id-v124f-do-loc" archimateRelationship="id-v124f-rel-gw-loc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124f-do-auth" archimateElement="id-v124f-app-auth">
+        <bounds x="240" y="180" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124f-c-auth-loc" source="id-v124f-do-auth" target="id-v124f-do-loc" archimateRelationship="id-v124f-rel-auth-loc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124f-do-loc" targetConnections="id-v124f-c-gw-loc id-v124f-c-auth-loc" archimateElement="id-v123f-data-conflocal">
+        <bounds x="440" y="180" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124f-do-old" archimateElement="id-v124f-data-old">
+        <bounds x="48" y="280" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124f-c-old-up" source="id-v124f-do-old" target="id-v124f-do-up" archimateRelationship="id-v124f-rel-old-up"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v125f-view-mig" name="架构变迁 v124→v125 — ImageMarket 恢复厂商申请入口">
+      <child xsi:type="archimate:DiagramObject" id="id-v125f-do-pl124" archimateElement="id-v124f-pl-v124">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125f-c-pl-gap" source="id-v125f-do-pl124" target="id-v125f-do-gap" archimateRelationship="id-v125f-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125f-do-gap" targetConnections="id-v125f-c-pl-gap id-v125f-c-wp-gap" archimateElement="id-v125f-gap">
+        <bounds x="340" y="48" width="480" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125f-do-wp" archimateElement="id-v125f-wp">
+        <bounds x="340" y="140" width="480" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125f-c-wp-gap" source="id-v125f-do-wp" target="id-v125f-do-gap" archimateRelationship="id-v125f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125f-c-wp-pl" source="id-v125f-do-wp" target="id-v125f-do-pl125" archimateRelationship="id-v125f-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125f-do-pl125" targetConnections="id-v125f-c-wp-pl" archimateElement="id-v125f-pl-v125">
+        <bounds x="860" y="140" width="280" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v125f-view-topo" name="v125 全量拓扑 — 镜像市场申请与 SSO">
+      <child xsi:type="archimate:DiagramObject" id="id-v125f-do-fe" archimateElement="id-v125f-app-fe-im">
+        <bounds x="48" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125f-c-fe-gw" source="id-v125f-do-fe" target="id-v125f-do-gw" archimateRelationship="id-v125f-rel-fe-gw"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125f-c-fe-auth" source="id-v125f-do-fe" target="id-v125f-do-auth" archimateRelationship="id-v125f-rel-fe-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125f-do-gw" targetConnections="id-v125f-c-fe-gw" archimateElement="id-v122f-app-gw">
+        <bounds x="280" y="80" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125f-c-gw-aip" source="id-v125f-do-gw" target="id-v125f-do-aip" archimateRelationship="id-v125f-rel-gw-aip"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125f-do-auth" targetConnections="id-v125f-c-fe-auth" archimateElement="id-v124f-app-auth">
+        <bounds x="48" y="180" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125f-c-auth-aip" source="id-v125f-do-auth" target="id-v125f-do-aip" archimateRelationship="id-v125f-rel-auth-aip"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125f-do-aip" targetConnections="id-v125f-c-gw-aip id-v125f-c-auth-aip" archimateElement="id-v125f-app-aip">
+        <bounds x="520" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125f-c-aip-vendor" source="id-v125f-do-aip" target="id-v125f-do-vendor" archimateRelationship="id-v125f-rel-aip-vendor"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125f-c-aip-set" source="id-v125f-do-aip" target="id-v125f-do-set" archimateRelationship="id-v125f-rel-aip-set"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125f-do-vendor" targetConnections="id-v125f-c-aip-vendor" archimateElement="id-v125f-data-vendor">
+        <bounds x="760" y="48" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125f-do-set" targetConnections="id-v125f-c-aip-set" archimateElement="id-v125f-data-settings">
+        <bounds x="760" y="120" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125f-do-portal" archimateElement="id-v125f-app-portal">
+        <bounds x="280" y="200" width="280" height="55"/>
+      </child>
+    </element>
+  
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v126f-view-topo" name="v126 全量拓扑 — 项目 L2 种下自动运行评论">
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-feproj" archimateElement="id-v126f-app-fe-proj">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-feproj-gw" source="id-v126f-do-feproj" target="id-v126f-do-gw" archimateRelationship="id-v126f-rel-feproj-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-fecreate" archimateElement="id-v126f-app-fe-create">
+        <bounds x="48" y="140" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-fecreate-gw" source="id-v126f-do-fecreate" target="id-v126f-do-gw" archimateRelationship="id-v126f-rel-fecreate-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-gw" targetConnections="id-v126f-c-feproj-gw id-v126f-c-fecreate-gw" archimateElement="id-v126f-app-gw">
+        <bounds x="300" y="92" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-gw-gitoauth" source="id-v126f-do-gw" target="id-v126f-do-gitoauth" archimateRelationship="id-v126f-rel-gw-gitoauth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-gw-proj" source="id-v126f-do-gw" target="id-v126f-do-proj" archimateRelationship="id-v126f-rel-gw-proj"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-gw-task" source="id-v126f-do-gw" target="id-v126f-do-task" archimateRelationship="id-v126f-rel-gw-task"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-gitoauth" targetConnections="id-v126f-c-gw-gitoauth" archimateElement="id-v126f-app-gitoauth">
+        <bounds x="500" y="24" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-gitoauth-l1" source="id-v126f-do-gitoauth" target="id-v126f-do-l1" archimateRelationship="id-v126f-rel-gitoauth-l1"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-gitoauth-pgrant" source="id-v126f-do-gitoauth" target="id-v126f-do-pgrant" archimateRelationship="id-v126f-rel-gitoauth-pgrant"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-gitoauth-ticket" source="id-v126f-do-gitoauth" target="id-v126f-do-ticket" archimateRelationship="id-v126f-rel-gitoauth-ticket"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-proj" targetConnections="id-v126f-c-gw-proj id-v126f-c-task-proj" archimateElement="id-v126f-app-proj">
+        <bounds x="500" y="92" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-proj-pgrant" source="id-v126f-do-proj" target="id-v126f-do-pgrant" archimateRelationship="id-v126f-rel-proj-pgrant"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-task" targetConnections="id-v126f-c-gw-task" archimateElement="id-v126f-app-task">
+        <bounds x="500" y="160" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-task-proj" source="id-v126f-do-task" target="id-v126f-do-proj" archimateRelationship="id-v126f-rel-task-proj"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-task-cgrant" source="id-v126f-do-task" target="id-v126f-do-cgrant" archimateRelationship="id-v126f-rel-task-cgrant"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-task-ticket" source="id-v126f-do-task" target="id-v126f-do-ticket" archimateRelationship="id-v126f-rel-task-ticket"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-l1" targetConnections="id-v126f-c-gitoauth-l1" archimateElement="id-v126f-data-l1">
+        <bounds x="760" y="16" width="240" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-pgrant" targetConnections="id-v126f-c-gitoauth-pgrant id-v126f-c-proj-pgrant" archimateElement="id-v126f-data-pgrant">
+        <bounds x="760" y="80" width="240" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-ticket" targetConnections="id-v126f-c-gitoauth-ticket id-v126f-c-task-ticket" archimateElement="id-v126f-data-ticket">
+        <bounds x="760" y="144" width="240" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-cgrant" targetConnections="id-v126f-c-task-cgrant" archimateElement="id-v126f-data-cgrant">
+        <bounds x="760" y="208" width="280" height="45"/>
+      </child>
+    </element>
+  
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v126f-view-mig" name="架构变迁 v125→v126 — 项目 L2 种下自动运行评论">
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-pl125" archimateElement="id-v126f-pl-v125">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-pl-gap" source="id-v126f-do-pl125" target="id-v126f-do-gap" archimateRelationship="id-v126f-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-gap" targetConnections="id-v126f-c-pl-gap id-v126f-c-wp-gap" archimateElement="id-v126f-gap">
+        <bounds x="340" y="48" width="480" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-wp" archimateElement="id-v126f-wp">
+        <bounds x="340" y="140" width="480" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-wp-gap" source="id-v126f-do-wp" target="id-v126f-do-gap" archimateRelationship="id-v126f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126f-c-wp-pl" source="id-v126f-do-wp" target="id-v126f-do-pl126" archimateRelationship="id-v126f-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126f-do-pl126" targetConnections="id-v126f-c-wp-pl" archimateElement="id-v126f-pl-v126">
+        <bounds x="860" y="140" width="280" height="50"/>
+      </child>
+    </element>
+  
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v127f-view-topo" name="v127 全量拓扑 — OAuth L2 + 部署 9999 编译编排">
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-feproj" archimateElement="id-v127f-app-fe-proj">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-feproj-gw" source="id-v127f-do-feproj" target="id-v127f-do-gw" archimateRelationship="id-v127f-rel-feproj-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-fecreate" archimateElement="id-v127f-app-fe-create">
+        <bounds x="48" y="140" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-fecreate-gw" source="id-v127f-do-fecreate" target="id-v127f-do-gw" archimateRelationship="id-v127f-rel-fecreate-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-gw" targetConnections="id-v127f-c-feproj-gw id-v127f-c-fecreate-gw" archimateElement="id-v127f-app-gw">
+        <bounds x="300" y="92" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-gw-gitoauth" source="id-v127f-do-gw" target="id-v127f-do-gitoauth" archimateRelationship="id-v127f-rel-gw-gitoauth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-gw-proj" source="id-v127f-do-gw" target="id-v127f-do-proj" archimateRelationship="id-v127f-rel-gw-proj"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-gw-task" source="id-v127f-do-gw" target="id-v127f-do-task" archimateRelationship="id-v127f-rel-gw-task"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-gitoauth" targetConnections="id-v127f-c-gw-gitoauth" archimateElement="id-v127f-app-gitoauth">
+        <bounds x="500" y="24" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-gitoauth-l1" source="id-v127f-do-gitoauth" target="id-v127f-do-l1" archimateRelationship="id-v127f-rel-gitoauth-l1"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-gitoauth-pgrant" source="id-v127f-do-gitoauth" target="id-v127f-do-pgrant" archimateRelationship="id-v127f-rel-gitoauth-pgrant"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-gitoauth-ticket" source="id-v127f-do-gitoauth" target="id-v127f-do-ticket" archimateRelationship="id-v127f-rel-gitoauth-ticket"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-proj" targetConnections="id-v127f-c-gw-proj id-v127f-c-task-proj" archimateElement="id-v127f-app-proj">
+        <bounds x="500" y="92" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-proj-pgrant" source="id-v127f-do-proj" target="id-v127f-do-pgrant" archimateRelationship="id-v127f-rel-proj-pgrant"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-task" targetConnections="id-v127f-c-gw-task" archimateElement="id-v127f-app-task">
+        <bounds x="500" y="160" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-task-proj" source="id-v127f-do-task" target="id-v127f-do-proj" archimateRelationship="id-v127f-rel-task-proj"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-task-cgrant" source="id-v127f-do-task" target="id-v127f-do-cgrant" archimateRelationship="id-v127f-rel-task-cgrant"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-task-ticket" source="id-v127f-do-task" target="id-v127f-do-ticket" archimateRelationship="id-v127f-rel-task-ticket"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-l1" targetConnections="id-v127f-c-gitoauth-l1" archimateElement="id-v127f-data-l1">
+        <bounds x="760" y="16" width="240" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-pgrant" targetConnections="id-v127f-c-gitoauth-pgrant id-v127f-c-proj-pgrant" archimateElement="id-v127f-data-pgrant">
+        <bounds x="760" y="80" width="240" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-ticket" targetConnections="id-v127f-c-gitoauth-ticket id-v127f-c-task-ticket" archimateElement="id-v127f-data-ticket">
+        <bounds x="760" y="144" width="240" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-cgrant" targetConnections="id-v127f-c-task-cgrant" archimateElement="id-v127f-data-cgrant">
+        <bounds x="760" y="208" width="280" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-ui" archimateElement="id-v127f-app-ui">
+        <bounds x="48" y="300" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-ui-runall" source="id-v127f-do-ui" target="id-v127f-do-runall" archimateRelationship="id-v127f-rel-ui-runall"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-runall" targetConnections="id-v127f-c-ui-runall" archimateElement="id-v127f-app-runall">
+        <bounds x="280" y="300" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-runall-reg" source="id-v127f-do-runall" target="id-v127f-do-reg" archimateRelationship="id-v127f-rel-runall-reg"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-runall-compile" source="id-v127f-do-runall" target="id-v127f-do-compile" archimateRelationship="id-v127f-rel-runall-compile"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-runall-cl" source="id-v127f-do-runall" target="id-v127f-do-cl" archimateRelationship="id-v127f-rel-runall-cl"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-runall-bins" source="id-v127f-do-runall" target="id-v127f-do-bins" archimateRelationship="id-v127f-rel-runall-bins"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-runall-svc" source="id-v127f-do-runall" target="id-v127f-do-svc" archimateRelationship="id-v127f-rel-runall-svc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-reg" targetConnections="id-v127f-c-runall-reg" archimateElement="id-v127f-data-reg">
+        <bounds x="500" y="268" width="240" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-compile" targetConnections="id-v127f-c-runall-compile" archimateElement="id-v127f-app-compile">
+        <bounds x="500" y="324" width="200" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-compile-bins" source="id-v127f-do-compile" target="id-v127f-do-bins" archimateRelationship="id-v127f-rel-compile-bins"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-cl" targetConnections="id-v127f-c-runall-cl" archimateElement="id-v127f-data-cl">
+        <bounds x="500" y="380" width="200" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-bins" targetConnections="id-v127f-c-runall-bins id-v127f-c-compile-bins" archimateElement="id-v127f-data-bins">
+        <bounds x="760" y="300" width="240" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-svc" targetConnections="id-v127f-c-runall-svc" archimateElement="id-v127f-app-svc">
+        <bounds x="760" y="360" width="240" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-upd" archimateElement="id-v127f-app-upd">
+        <bounds x="48" y="380" width="200" height="45"/>
+      </child>
+    </element>
+  
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v127f-view-mig" name="架构变迁 v126→v127 — 部署 9999 源码编译编排">
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-pl126" archimateElement="id-v127f-pl-v126">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-pl-gap" source="id-v127f-do-pl126" target="id-v127f-do-gap" archimateRelationship="id-v127f-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-gap" targetConnections="id-v127f-c-pl-gap id-v127f-c-wp-gap" archimateElement="id-v127f-gap">
+        <bounds x="340" y="48" width="480" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-wp" archimateElement="id-v127f-wp">
+        <bounds x="340" y="140" width="480" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-wp-gap" source="id-v127f-do-wp" target="id-v127f-do-gap" archimateRelationship="id-v127f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127f-c-wp-pl" source="id-v127f-do-wp" target="id-v127f-do-pl127" archimateRelationship="id-v127f-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127f-do-pl127" targetConnections="id-v127f-c-wp-pl" archimateElement="id-v127f-pl-v127">
+        <bounds x="860" y="140" width="300" height="50"/>
+      </child>
+    </element>
+  
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v128-ai-view-mig" name="架构变迁 v127→v128 — 阿里云 GitLab pending_node">
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-pl127" archimateElement="id-v128-ai-pl127">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-pl-gap" source="id-v128-ai-do-pl127" target="id-v128-ai-do-gap" archimateRelationship="id-v128-ai-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-gap" targetConnections="id-v128-ai-c-pl-gap id-v128-ai-c-wp-gap" archimateElement="id-v128-ai-gap">
+        <bounds x="280" y="48" width="280" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-wp" archimateElement="id-v128-ai-wp">
+        <bounds x="280" y="140" width="360" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-wp-gap" source="id-v128-ai-do-wp" target="id-v128-ai-do-gap" archimateRelationship="id-v128-ai-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-wp-pl" source="id-v128-ai-do-wp" target="id-v128-ai-do-pl128" archimateRelationship="id-v128-ai-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-pl128" targetConnections="id-v128-ai-c-wp-pl" archimateElement="id-v128-ai-pl128">
+        <bounds x="680" y="140" width="200" height="50"/>
+      </child>
+    </element>
+  
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v128-ai-view-topo" name="v128 Target — OrderCreate 到 pending_node 门闩">
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-fe" archimateElement="id-v128-ai-fe">
+        <bounds x="48" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-fe-bill" source="id-v128-ai-do-fe" target="id-v128-ai-do-bill" archimateRelationship="id-v128-ai-rel-fe-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-bill" targetConnections="id-v128-ai-c-fe-bill" archimateElement="id-v128-ai-bill">
+        <bounds x="280" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-bill-reg" source="id-v128-ai-do-bill" target="id-v128-ai-do-reg" archimateRelationship="id-v128-ai-rel-bill-reg"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-bill-quota" source="id-v128-ai-do-bill" target="id-v128-ai-do-quota" archimateRelationship="id-v128-ai-rel-bill-quota"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-bill-gl" source="id-v128-ai-do-bill" target="id-v128-ai-do-gl" archimateRelationship="id-v128-ai-rel-bill-gl"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-bill-kfk" source="id-v128-ai-do-bill" target="id-v128-ai-do-kfk" archimateRelationship="id-v128-ai-rel-bill-kfk"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-reg" targetConnections="id-v128-ai-c-bill-reg" archimateElement="id-v128-ai-reg">
+        <bounds x="480" y="16" width="240" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-quota" targetConnections="id-v128-ai-c-bill-quota" archimateElement="id-v128-ai-quota">
+        <bounds x="480" y="80" width="260" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-gl" targetConnections="id-v128-ai-c-bill-gl" archimateElement="id-v128-ai-gl">
+        <bounds x="480" y="144" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-kfk" targetConnections="id-v128-ai-c-bill-kfk" archimateElement="id-v128-ai-kfk">
+        <bounds x="480" y="208" width="240" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

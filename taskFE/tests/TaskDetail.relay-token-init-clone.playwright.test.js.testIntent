@@ -1,0 +1,21 @@
+# 测试意图：relay token-init 路由修复 → 容器项目克隆
+
+## 目标
+验证任务详情页 `?relayToTrae=true` 点击「启动」时：
+1. `POST .../relay-to-trae/token-init/` **不得**返回 501 `compute action not yet ported to taskCloudService`
+2. 请求经 taskGateway → taskContainerGateway 成功（200 + `token_initialized`）
+3. 后续 `repo-credentials-precheck` 与 `start` 成功
+4. 最终出现容器内项目克隆完成信号（UI 文案「任务引导完成」/「克隆完成」或 listening）
+5. 页面日志不得出现 `INTERNAL_DISPATCH_ERROR`（csc_* pk int 崩溃）或启动阶段「无效的 access_token」
+
+## 前置
+- 前端 :4000、网关 :18081、TCG :8014、CRED :8015、go-relay :8797 可用
+- saas-backend 已加载 `relay_status_push_cfg_cache` 的 `pk=str(...)` 修复
+- `PLAYWRIGHT_TEST_EMAIL` / `PLAYWRIGHT_TEST_PASSWORD`
+- 默认任务：`task_12675381068363715869` / workspace `861623708318031872`
+
+## 反例
+- token-init 501 / body 含 `not yet ported`
+- validate_session 因缺少 CloudServerConfig 对 relay 路径 403（应仅校验租户成员）
+- status push 500 `INTERNAL_DISPATCH_ERROR` / 启动后短时间「无效的 access_token」
+- start 202 后长时间无「任务引导完成」等引导信号

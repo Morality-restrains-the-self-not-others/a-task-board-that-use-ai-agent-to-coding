@@ -1,0 +1,17 @@
+# api.unit.test.js 测试意图
+
+## 1. 测试目标
+- 对应缺陷：镜像市场弹层 `p.err` 展示 `Failed to fetch` 时缺少 `data-traceId`。
+- 验证目标：`api()` 在 `fetch` 网络失败时仍把本端已发出的 `X-Trace-Id` 挂到 Error.traceId；HTTP 错误优先用响应头。
+
+## 2. 关键断言
+- `fetch` 抛 `TypeError("Failed to fetch")` 时，拒绝的 Error.message 仍为该文案。
+- 同一 Error.traceId 等于请求头 `X-Trace-Id`。
+- HTTP 500 且响应带 `X-Trace-Id` 时，Error.traceId 为响应头值。
+
+## 3. 典型破坏信号
+- 网络失败 Error 无 `traceId`，Vue `p.err` 省略 `data-traceId`。
+- 用 `"unknown"` 占位伪造 traceId。
+
+## 4. 回归验证要点
+- 运行 `./tests/api.unit.test.sh` 应全部通过。

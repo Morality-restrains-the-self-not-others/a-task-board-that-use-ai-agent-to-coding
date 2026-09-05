@@ -1,0 +1,17 @@
+---
+description: Python 辅助 Web 侧车并发与锁 - relayToTrae、mock_run_container 等
+globs: "relayToTrae/**/*.py,mock_run_container/**/*.py,**/server.py"
+alwaysApply: false
+---
+
+# Python 辅助 Web 侧车
+
+修改 `relayToTrae/`、`mock_run_container/` 或同模式 Flask + `threading` 侧车时，**必须**读取并遵循：
+
+- `.ai/03_technical_implementation/10_python_sidecar_web_concurrency.md`
+
+要点：
+
+- `*_locked()` = 调用方已持锁，禁止函数体内再次 `with _lock`
+- 持锁时禁止网络、子进程等待、`join`；后台线程锁内快照、锁外 I/O
+- 变更 API 序列时增补死锁回归单测（参考 `relayToTrae/test_server_register_start.py`）

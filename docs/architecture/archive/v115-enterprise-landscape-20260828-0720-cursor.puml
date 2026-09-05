@@ -1,0 +1,40 @@
+' @title: 工作空间排队调度历史（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 115
+' @iteration: queue-schedule-history
+' @author: cursor
+' @based_on: v114 (v114-enterprise-landscape-20260827-0200-cursor.puml)
+' @updated: 2026-08-28 07:30
+' @description: 用户在自动调度安排页查看调度历史
+
+@startuml
+!include <archimate/Archimate>
+
+title v115 — 企业景观 排队调度历史 2026-08-28 07:30
+
+Business_Actor(user, "工作空间成员")
+Business_Process(viewNow, "查看当前时段与槽位")
+note right of viewNow
+  状态栏保留当前态
+end note
+Business_Process(viewHist, "查看调度历史")
+
+Application_Component(fe, "taskFE 工作台")
+Application_Component(tts, "taskTaskService")
+
+Rel_Assignment(user, viewNow)
+Rel_Assignment(user, viewHist)
+Rel_Flow(user, fe, "云端开发 / 自动调度安排")
+Rel_Flow(fe, tts, "queue-schedule")
+Rel_Flow(tts, viewHist, "recent_history / history page")
+
+Implementation_Plateau(p114, "Plateau v114")
+Implementation_Plateau(p115, "Plateau v115")
+Implementation_Gap(g, "Gap: 无调度历史")
+Implementation_WorkPackage(wp, "WP-queue-schedule-history")
+Rel_Triggering(p114, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p115, "delivers")
+
+@enduml

@@ -1,0 +1,47 @@
+' @title: Application Integration — 人员组织 API 迁 taskTenantService
+' @view: application-integration
+' @status: archived
+' @version: 39
+' @author: claude
+' @based_on: v38 current (v38-application-integration-20260718-2340-claude.puml)
+' @updated: 2026-07-19 16:30
+' @description: 新建 taskTenantService；members/invite/groups 公网与四表迁出 Django
+' @iteration: people-member-group-go-migration
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v39 — People Member/Group Go Migration (2026-07-19 05:10)
+
+rectangle "Motivation" {
+  Motivation_Constraint(goFirst, "Constraint\n新增接口默认 Go")
+  Motivation_Principle(singleOwner, "Principle\n单表单服务所有权")
+}
+
+rectangle "Application" {
+  Application_Component(vuePeople, "Vue People*\ninvite/manage/groups")
+  Application_Component(gw, "task-gateway\nmembers/groups 路由")
+  Application_Component(tts, "taskTenantService\nmembers/invite/groups")
+  Application_Component(django, "saas-backend\nCompany only + internal")
+  Application_Component(tps, "taskProjectService\nworkspace access")
+  Application_Component(te, "taskEvents\nINVITATION_CREATED")
+  Application_DataObject(tenantDB, "task_tenant.db\nmember/invite/group")
+  Application_DataObject(saasDB, "saas.sqlite3\naccounts_company")
+}
+
+rectangle "Technology" {
+  Technology_Node(kafka, "Kafka")
+}
+
+Rel_Flow(vuePeople, gw, "accounts/members|groups")
+Rel_Flow(gw, tts, "JWT tenant")
+Rel_Access_W(tts, tenantDB, "R/W")
+Rel_Flow(tts, django, "company exists/creator")
+Rel_Access_R(django, saasDB, "R company")
+Rel_Flow(tts, tps, "workspace access on join")
+Rel_Flow(tts, kafka, "INVITATION_CREATED\nMEMBER_JOINED")
+Rel_Flow(kafka, te, "consume")
+Rel_Influence(goFirst, tts, "落点")
+Rel_Influence(singleOwner, tenantDB, "owner")
+
+@enduml

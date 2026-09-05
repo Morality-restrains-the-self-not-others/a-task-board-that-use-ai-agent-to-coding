@@ -1,0 +1,8 @@
+query projectGenerateDescriptionPermissions($fullPath: ID!) {
+  namespace: project(fullPath: $fullPath) {
+    id
+    userPermissions {
+      generateDescription
+    }
+  }
+}

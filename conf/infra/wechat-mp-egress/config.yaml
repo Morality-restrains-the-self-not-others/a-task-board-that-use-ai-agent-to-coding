@@ -1,0 +1,5 @@
+# wechat-mp-egress on Host sh (ADR-0059)
+# Secrets: conf-local/infra/wechat-mp-egress/config.yaml → internalSecret
+host: "0.0.0.0"
+port: 8030
+internalSecret: ""

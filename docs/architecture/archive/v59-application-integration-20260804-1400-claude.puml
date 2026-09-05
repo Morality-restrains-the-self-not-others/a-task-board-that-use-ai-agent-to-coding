@@ -1,0 +1,272 @@
+' @title: 身份角色权限体系 — Application Integration
+' @view: application-integration
+' @status: target
+' @version: 59
+' @iteration: identity-role-permission-system
+' @author: claude
+' @based_on: v57 (v57-application-integration-20260730-0229-claude.puml)
+' @updated: 2026-08-04 14:00
+' @description: 新增两级四角色 RBAC 权限体系 — taskAuth 平台角色 (super_admin/employee) + taskTenantService 租户角色 (tenant_admin/member)；新增 shareLib/authz 权限中间件；租户隔离强制
+
+@startuml
+!include <archimate/Archimate>
+
+title v59 Application Integration — 身份角色权限体系 (Target, 2026-08-04 14:00)
+
+' ═══════════════════════════════════════
+' Change Legend — v59 变更图例
+' ═══════════════════════════════════════
+legend right
+  |<#LightGreen>  </>| 🟢 [NEW] v59 — 本次新增 |
+  |<#LightYellow> </>| 🟡 [MODIFIED] v59 — 本次修改 |
+  |<#LightPink>   </>| 🔴 [DEPRECATED] v59 — 本次废弃 |
+  |<#White>       </>| 无标记 — 已有组件，本次未变 |
+endlegend
+
+' ═══════════════════════════════════════
+' v59 Target — RBAC 角色权限体系
+' ═══════════════════════════════════════
+
+' --- Go Services ---
+Application_Component(taskAuth, "taskAuth\n(:8003)")
+note right of taskAuth
+  [CURRENT v57]
+  users CRUD, profiles,
+  SSO/OIDC bridge,
+  session store, logout
+  🟡 [MODIFIED v59] 新增:
+  + auth_role / auth_permission
+  + auth_role_permission
+  + auth_user_role
+  + 角色 CRUD API
+  + 权限查询 API
+  + 平台角色管理 (/api/system-admin/*)
+end note
+
+Application_Component(taskGitOauth, "taskGitOauth\n(:8002)")
+note right of taskGitOauth
+  [UNCHANGED v59]
+  git identities store,
+  GitHub/GitLab OAuth flow
+end note
+
+Application_Component(taskTenant, "taskTenantService\n(:8020)")
+note right of taskTenant
+  [CURRENT v57]
+  companies, members,
+  groups, tenant-options,
+  workspace-access
+  🟡 [MODIFIED v59] 新增:
+  + tenant_member_role
+  + 租户角色管理 API
+  + is_admin → role 迁移
+  + 角色筛选/批量邀请
+end note
+
+Application_Component(taskProject, "taskProjectService\n(:8016)")
+note right of taskProject
+  [UNCHANGED v59]
+  projects CRUD,
+  deliverable/progress systems,
+  workspace ACL, GitLab 集成
+end note
+
+Application_Component(taskTask, "taskTaskService\n(:8021)")
+note right of taskTask
+  [UNCHANGED v59]
+  todos CRUD,
+  task field validation
+end note
+
+Application_Component(taskAIComment, "taskAIComment\n(:8022)")
+note right of taskAIComment
+  [UNCHANGED v59]
+  comment import 直写
+end note
+
+Application_Component(taskCloud, "taskCloudService\n(:8018)")
+note right of taskCloud
+  [UNCHANGED v59]
+  cloud platforms,
+  VPC/VSwitch/SG/images,
+  regions/zones/bandwidth,
+  aliyun OAuth 完整闭环,
+  server-userdata-verify,
+  repo-reclone,
+  feature-params 全量
+end note
+
+Application_Component(taskBill, "taskBill\n(:8004)")
+note right of taskBill
+  [UNCHANGED v59]
+  APISIX 直连 (无代理),
+  订阅/支付回调,
+  product-pricing, refund
+end note
+
+Application_Component(taskEvents, "taskEvents\n(:8023)")
+note right of taskEvents
+  [UNCHANGED v59]
+  16 intent consumers
+  (Kafka → Go 直消费),
+  SSE realtime dispatch
+end note
+
+' --- NEW: Permission Middleware ---
+Application_Component(shareLibAuthz, "shareLib/authz\n(Permission Middleware)")
+note right of shareLibAuthz
+  🟢 [NEW v59]
+  RequirePlatformRole()
+  RequireTenantRole()
+  HasPermission()
+  GetUserRoles()
+  租户隔离中间件
+end note
+
+' --- Kafka Consumers ---
+Application_Component(kafkaConsumers, "Kafka Consumers (Go)\n16 intent handlers")
+note right of kafkaConsumers
+  [UNCHANGED v59]
+  company-by-creator → taskTenant
+  create-company → taskTenant
+  upsert-user-profile → taskAuth
+  set-default-deliverable → taskProject
+  set-default-progress → taskProject
+  create-default-workspace → taskProject
+  handle-workspace-created → taskProject
+  create-access-key-iam → taskCloud
+  latest-pending-start-event → taskCloud
+  update-cloud-server-event-status → taskCloud
+  update-cloud-server-event-data → taskCloud
+  init-tenant-feature-params → taskCloud
+  grant-initial-resources → taskCloud
+  mark-user-tenant → taskTenant
+  realtime/dispatch → taskEvents
+end note
+
+' --- APISIX Gateway ---
+Application_Component(gateway, "APISIX Gateway\n(:18081)")
+note right of gateway
+  🟡 [MODIFIED v59]
+  forward-auth 增强:
+  + X-User-Roles header
+  + X-User-Permissions header
+  + 平台角色路由隔离
+end note
+
+' --- Infrastructure ---
+Application_DataObject(kafkaBroker, "Kafka\nDomain Events Bus")
+
+' --- Databases ---
+Application_DataObject(taskAuthDB, "taskAuth DB")
+note bottom of taskAuthDB
+  🟡 [MODIFIED v59]
+  + auth_role
+  + auth_permission
+  + auth_role_permission
+  + auth_user_role
+end note
+
+Application_DataObject(taskGitOauthDB, "taskGitOauth DB")
+Application_DataObject(taskTenantDB, "taskTenant DB")
+note bottom of taskTenantDB
+  🟡 [MODIFIED v59]
+  + tenant_member_role
+end note
+
+Application_DataObject(taskProjectDB, "taskProject DB")
+Application_DataObject(taskTaskDB, "taskTask DB")
+Application_DataObject(taskCloudDB, "taskCloud DB")
+Application_DataObject(taskBillDB, "taskBill DB")
+
+' --- NEW: Domain Events ---
+Application_Event(evtRoleAssigned, "PlatformRoleAssigned")
+note right of evtRoleAssigned
+  🟢 [NEW v59]
+  taskAuth 发布
+end note
+
+Application_Event(evtRoleRevoked, "PlatformRoleRevoked")
+note right of evtRoleRevoked
+  🟢 [NEW v59]
+  taskAuth 发布
+end note
+
+Application_Event(evtTenantRole, "TenantRoleChanged")
+note right of evtTenantRole
+  🟢 [NEW v59]
+  taskTenantService 发布
+end note
+
+' ═══════════════════════════════════════
+' DEPRECATED — old auth patterns
+' ═══════════════════════════════════════
+Application_Component(oldIsAdmin, "旧 is_admin 直接鉴权\n[DEPRECATED v59]")
+note bottom of oldIsAdmin
+  🔴 [DEPRECATED v59]
+  requireCompanyAdmin(is_admin==1)
+  → 改为 HasTenantRole(tenant_admin)
+end note
+
+Application_Component(oldIsSuperuser, "旧 is_superuser 直接鉴权\n[DEPRECATED v59]")
+note bottom of oldIsSuperuser
+  🔴 [DEPRECATED v59]
+  requireSuperuser()
+  → 改为 HasPlatformRole(super_admin)
+end note
+
+' ═══════════════════════════════════════
+' Relationships — v59 Data Flows
+' ═══════════════════════════════════════
+
+' Gateway routing (all Go, zero Django upstream)
+Rel_Flow(gateway, taskAuth, "/api/auth/*, /api/accounts/*\n🟡 + /api/system-admin/roles/*\n🟡 + /api/auth/user/permissions")
+Rel_Flow(gateway, taskGitOauth, "/api/accounts/*/oauth/*")
+Rel_Flow(gateway, taskTenant, "/api/tenant/*/companies/*\n🟡 + /api/tenant/*/members/*/role")
+Rel_Flow(gateway, taskProject, "/api/tenant/*/projects/*")
+Rel_Flow(gateway, taskTask, "/api/tenant/*/todos/*, /api/tasks/*")
+Rel_Flow(gateway, taskAIComment, "/api/tenant/*/ai-comments/*")
+Rel_Flow(gateway, taskCloud, "/api/tenant/*/cloud/*, /api/system-admin/*")
+Rel_Flow(gateway, taskBill, "/api/billing/*, /api/system-admin/resource-pricing/*")
+
+' Gateway injects auth context
+Rel_Flow(gateway, shareLibAuthz, "forward-auth → X-User-Roles, X-User-Permissions")
+
+' Services consume permission middleware
+Rel_Serving(shareLibAuthz, taskAuth, "platform role check")
+Rel_Serving(shareLibAuthz, taskTenant, "tenant role check")
+Rel_Serving(shareLibAuthz, taskCloud, "platform role check")
+Rel_Serving(shareLibAuthz, taskBill, "platform role check")
+Rel_Serving(shareLibAuthz, taskProject, "tenant role check")
+Rel_Serving(shareLibAuthz, taskTask, "tenant role check")
+
+' Kafka event consumers
+Rel_Flow(kafkaBroker, kafkaConsumers, "consume domain events")
+Rel_Flow(kafkaConsumers, taskTenant, "company/user events")
+Rel_Flow(kafkaConsumers, taskAuth, "user profile events")
+Rel_Flow(kafkaConsumers, taskProject, "workspace/deliverable events")
+Rel_Flow(kafkaConsumers, taskCloud, "cloud/IAM/feature-params events")
+Rel_Flow(kafkaConsumers, taskEvents, "SSE dispatch")
+
+' Service data ownership
+Rel_Access_w(taskAuth, taskAuthDB, "users, profiles, sessions\n🟡 + roles, permissions, user_roles")
+Rel_Access_w(taskGitOauth, taskGitOauthDB, "git identities, OAuth tokens")
+Rel_Access_w(taskTenant, taskTenantDB, "companies, members, groups\n🟡 + member_roles")
+Rel_Access_w(taskProject, taskProjectDB, "projects, workspaces, ACL")
+Rel_Access_w(taskTask, taskTaskDB, "todos, task fields")
+Rel_Access_w(taskCloud, taskCloudDB, "platforms, VPCs, images, CSC")
+Rel_Access_w(taskBill, taskBillDB, "billing, subscriptions, pricing")
+
+' New domain events
+Rel_Flow(taskAuth, evtRoleAssigned, "publish → Kafka")
+Rel_Flow(taskAuth, evtRoleRevoked, "publish → Kafka")
+Rel_Flow(taskTenant, evtTenantRole, "publish → Kafka")
+Rel_Flow(evtRoleAssigned, kafkaBroker, "→ Domain Events Bus")
+Rel_Flow(evtRoleRevoked, kafkaBroker, "→ Domain Events Bus")
+Rel_Flow(evtTenantRole, kafkaBroker, "→ Domain Events Bus")
+
+' Deprecated patterns
+Rel_Flow(oldIsAdmin, taskTenant, "[DEPRECATED] is_admin==1 check")
+Rel_Flow(oldIsSuperuser, taskAuth, "[DEPRECATED] is_superuser check")
+
+@enduml

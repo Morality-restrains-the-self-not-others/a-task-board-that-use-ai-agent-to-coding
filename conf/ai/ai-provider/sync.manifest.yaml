@@ -1,0 +1,8 @@
+version: "1"
+fragments:
+  # taskAuth 内部密钥（SMS gate 换票/厂商申请联系方式门禁同源，见 OPT-20260810-017）。
+  # 与 conf/billing/task-bill/config.yaml 的 taskAuthInternalSecret 同源；本片段经 conf-sync
+  # 生成 task-auth.yaml，LoadConfig 读本目录片段（规则 29：服务仅读本目录配置）。
+  - from: ../../auth/task-auth/config.yaml
+    to: task-auth.yaml
+    pick: [internalSecret]

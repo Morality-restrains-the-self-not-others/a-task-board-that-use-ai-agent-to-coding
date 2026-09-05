@@ -1,0 +1,9 @@
+---
+name: delete_page
+description: Grants the ability to delete pages
+boundaries:
+  - project
+permissions:
+  - delete_page
+  - delete_page_deployment
+  - restore_page_deployment

@@ -1,0 +1,17 @@
+- @can_bulk_update = can?(current_user, :admin_merge_request, @project)
+
+- page_title _("Merge requests")
+- add_page_specific_style 'page_bundles/issuable_list'
+- add_page_specific_style 'page_bundles/merge_request'
+
+= content_for :meta_tags do
+  = auto_discovery_link_tag(:atom, safe_params.merge(rss_url_options).to_h, title: "#{@project.name} merge requests")
+
+%h1.gl-sr-only= page_title
+
+= render 'projects/last_push'
+= render_if_exists 'shared/projects/premium_message_during_trial/mrs'
+
+.js-merge-request-list-root{ data: project_merge_requests_list_data(@project, current_user) }
+- if @can_bulk_update
+  = render 'bulk_update_sidebar', type: :merge_requests

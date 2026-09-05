@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="AI Dev Platform Architecture v4 Target" id="model-v4-app-integration-20260705" version="5.0.0">
+  <folder name="Strategy" id="id-folder-strategy-v4" type="strategy"/>
+  <folder name="Business" id="id-folder-business-v4" type="business">
+    <element xsi:type="archimate:BusinessService" name="在云平台运行容器服务" id="bs-cloud-run-container"/>
+    <element xsi:type="archimate:BusinessService" name="与AI互动评论任务" id="bs-ai-interact"/>
+    <element xsi:type="archimate:BusinessService" name="将交付物推送到仓库服务" id="bs-git-push"/>
+  </folder>
+  <folder name="Application" id="id-folder-application-v4" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Vue Frontend (:4000)" id="app-vue-frontend"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway APISIX (:18081)" id="app-gateway"/>
+    <element xsi:type="archimate:ApplicationComponent" name="saas-backend Django (:8001) [CRUD+internal]" id="app-saas-backend"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-container-gateway Go (:8014) [outbound SSOT]" id="app-container-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-agent-support Go (:8011) [inbound]" id="app-agent-support"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-credential-service Go (:8015)" id="app-credential-svc"/>
+    <element xsi:type="archimate:ApplicationComponent" name="go-relay Go (:8797) [relay 公网入口]" id="app-go-relay"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-sse Node.js (:8007)" id="app-task-sse"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-ai-endpoint Go (:8013)" id="app-ai-endpoint"/>
+    <element xsi:type="archimate:ApplicationComponent" name="onlineServiceJS (:8765)" id="app-online-service-js"/>
+    <element xsi:type="archimate:ApplicationComponent" name="[DEPRECATED v4] Django inline SSE" id="app-deprecated-django-sse"/>
+    <element xsi:type="archimate:ApplicationComponent" name="[DEPRECATED v4] relay_to_trae_proxy (Django)" id="app-deprecated-relay-proxy"/>
+    <element xsi:type="archimate:ApplicationService" name="Container Proxy API (outbound)" id="svc-container-proxy-out"/>
+    <element xsi:type="archimate:ApplicationService" name="Container Inbound API" id="svc-container-inbound"/>
+    <element xsi:type="archimate:ApplicationService" name="Relay Lifecycle API" id="svc-relay-lifecycle"/>
+    <element xsi:type="archimate:ApplicationService" name="Django Internal API (session/target/snapshot)" id="svc-django-internal"/>
+    <element xsi:type="archimate:ApplicationService" name="前端SSE服务" id="svc-frontend-sse"/>
+  </folder>
+  <folder name="Technology &amp; Physical" id="id-folder-technology-v4" type="technology">
+    <element xsi:type="archimate:TechnologyService" name="onlineServiceJS Container HTTP" id="tech-online-service-js"/>
+  </folder>
+  <folder name="Motivation" id="id-folder-motivation-v4" type="motivation">
+    <element xsi:type="archimate:Driver" name="Django runserver 单线程拥塞" id="drv-single-thread"/>
+    <element xsi:type="archimate:Driver" name="进程内 self-call 死锁" id="drv-self-call"/>
+    <element xsi:type="archimate:Goal" name="容器交互流量与 CRUD 隔离" id="goal-traffic-isolation"/>
+    <element xsi:type="archimate:Requirement" name="120s git-push 期间 heartbeat 仍 &lt;1s 响应" id="req-heartbeat-sla"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-folder-implementation-v4" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v1 — Current Baseline (Django 全量 API)" id="plateau-v1"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v4 — Target (Container Go Split)" id="plateau-v4"/>
+    <element xsi:type="archimate:Gap" name="Gap: compute outbound 仍在 Django requests" id="gap-outbound-django"/>
+    <element xsi:type="archimate:Gap" name="Gap: relay precheck HTTP self-call" id="gap-relay-selfcall"/>
+    <element xsi:type="archimate:Gap" name="Gap: Django 内联 SSE threading" id="gap-django-sse"/>
+    <element xsi:type="archimate:WorkPackage" name="WP Phase 0 — Emergency (SSE + in-process precheck)" id="wp-phase0"/>
+    <element xsi:type="archimate:WorkPackage" name="WP Phase 1 — taskContainerGateway L0/L2 + relay 直路由" id="wp-phase1"/>
+    <element xsi:type="archimate:WorkPackage" name="WP Phase 2 — taskAgentSupport inbound 业务下沉" id="wp-phase2"/>
+    <element xsi:type="archimate:Deliverable" name="Deliverable: v4 application-integration 架构文件" id="deliv-v4-arch"/>
+  </folder>
+  <folder name="Other" id="id-4c07de0f34e14eeba6b6676342e83bda" type="other"/>
+  <folder name="Relations" id="id-folder-relations-v4" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="rel-v4-vue-cgw" source="app-vue-frontend" target="app-container-gw"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v4-gw-relay" source="app-gateway" target="app-go-relay"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v4-cgw-be" source="app-container-gw" target="app-saas-backend"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v4-cgw-osjs" source="app-container-gw" target="app-online-service-js"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v4-osjs-agt" source="app-online-service-js" target="app-agent-support"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v4-osjs-cred" source="app-online-service-js" target="app-credential-svc"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v4-agt-be" source="app-agent-support" target="app-saas-backend"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v4-agt-sse" source="app-agent-support" target="app-task-sse"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v4-relay-osjs" source="app-go-relay" target="app-online-service-js"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-v4-cgw-svc-out" source="app-container-gw" target="svc-container-proxy-out"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-v4-agt-svc-in" source="app-agent-support" target="svc-container-inbound"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-v4-relay-svc" source="app-go-relay" target="svc-relay-lifecycle"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-v4-be-svc-int" source="app-saas-backend" target="svc-django-internal"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-v4-sse-svc" source="app-task-sse" target="svc-frontend-sse"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-v4-svc-cloud" source="svc-container-proxy-out" target="bs-cloud-run-container"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-plateau-v1-gap-out" source="plateau-v1" target="gap-outbound-django"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-plateau-v1-gap-relay" source="plateau-v1" target="gap-relay-selfcall"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-plateau-v1-gap-sse" source="plateau-v1" target="gap-django-sse"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp0-gap-relay" source="wp-phase0" target="gap-relay-selfcall"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp0-gap-sse" source="wp-phase0" target="gap-django-sse"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp1-gap-out" source="wp-phase1" target="gap-outbound-django"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp1-plateau-v4" source="wp-phase1" target="plateau-v4"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp2-plateau-v4" source="wp-phase2" target="plateau-v4"/>
+    <element xsi:type="archimate:CompositionRelationship" id="rel-plateau-v4-cgw" source="plateau-v4" target="app-container-gw"/>
+    <element xsi:type="archimate:CompositionRelationship" id="rel-plateau-v4-relay" source="plateau-v4" target="app-go-relay"/>
+    <element xsi:type="archimate:CompositionRelationship" id="rel-plateau-v4-agt" source="plateau-v4" target="app-agent-support"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-drv-goal" source="drv-single-thread" target="goal-traffic-isolation"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-drv2-goal" source="drv-self-call" target="goal-traffic-isolation"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="rel-goal-req" source="goal-traffic-isolation" target="req-heartbeat-sla"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp1-deliv" source="wp-phase1" target="deliv-v4-arch"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-dep-sse-from-be" source="app-saas-backend" target="app-deprecated-django-sse"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-dep-relay-from-be" source="app-saas-backend" target="app-deprecated-relay-proxy"/>
+  </folder>
+  <folder name="Views" id="id-folder-views-v4" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v1→v4 — task2app Go 拆分" id="diagram-v4-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-plateau-v1" archimateElement="plateau-v1">
+        <bounds x="360" y="36" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-p1-gout" source="do-plateau-v1" target="do-gap-out" archimateRelationship="rel-plateau-v1-gap-out"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-p1-grelay" source="do-plateau-v1" target="do-gap-relay" archimateRelationship="rel-plateau-v1-gap-relay"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-plateau-v4" targetConnections="conn-wp1-p4 conn-wp2-p4" archimateElement="plateau-v4">
+        <bounds x="897" y="36" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap-out" targetConnections="conn-p1-gout conn-wp1-gout" archimateElement="gap-outbound-django">
+        <bounds x="602" y="192" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap-relay" targetConnections="conn-p1-grelay conn-wp0-grelay" archimateElement="gap-relay-selfcall">
+        <bounds x="313" y="192" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp0" archimateElement="wp-phase0">
+        <bounds x="303" y="336" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp0-grelay" source="do-wp0" target="do-gap-relay" archimateRelationship="rel-wp0-gap-relay"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp1" archimateElement="wp-phase1">
+        <bounds x="657" y="336" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp1-gout" source="do-wp1" target="do-gap-out" archimateRelationship="rel-wp1-gap-out"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp1-p4" source="do-wp1" target="do-plateau-v4" archimateRelationship="rel-wp1-plateau-v4"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp2" archimateElement="wp-phase2">
+        <bounds x="936" y="336" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp2-p4" source="do-wp2" target="do-plateau-v4" archimateRelationship="rel-wp2-plateau-v4"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-vue" archimateElement="app-vue-frontend">
+        <bounds x="252" y="516" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-vue-cgw" source="do-vue" target="do-cgw" archimateRelationship="rel-v4-vue-cgw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-cgw" targetConnections="conn-vue-cgw" archimateElement="app-container-gw">
+        <bounds x="444" y="516" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cgw-be" source="do-cgw" target="do-be" archimateRelationship="rel-v4-cgw-be"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cgw-osjs" source="do-cgw" target="do-osjs" archimateRelationship="rel-v4-cgw-osjs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-be" targetConnections="conn-cgw-be conn-agt-be conn-dep-sse conn-dep-relay" archimateElement="app-saas-backend">
+        <bounds x="432" y="732" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-dep-sse" source="do-be" target="do-dep-sse" archimateRelationship="rel-dep-sse-from-be"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-dep-relay" source="do-be" target="do-dep-relay" archimateRelationship="rel-dep-relay-from-be"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-osjs" targetConnections="conn-cgw-osjs conn-relay-osjs" archimateElement="app-online-service-js">
+        <bounds x="672" y="540" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-osjs-agt" source="do-osjs" target="do-agt" archimateRelationship="rel-v4-osjs-agt"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-osjs-cred" source="do-osjs" target="do-cred" archimateRelationship="rel-v4-osjs-cred"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-cred" targetConnections="conn-osjs-cred" archimateElement="app-credential-svc">
+        <bounds x="876" y="660" width="140" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-agt" targetConnections="conn-osjs-agt" archimateElement="app-agent-support">
+        <bounds x="684" y="684" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-agt-be" source="do-agt" target="do-be" archimateRelationship="rel-v4-agt-be"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-agt-sse" source="do-agt" target="do-sse" archimateRelationship="rel-v4-agt-sse"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-sse" targetConnections="conn-agt-sse" archimateElement="app-task-sse">
+        <bounds x="886" y="756" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-relay" archimateElement="app-go-relay">
+        <bounds x="924" y="552" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-relay-osjs" source="do-relay" target="do-osjs" archimateRelationship="rel-v4-relay-osjs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-dep-sse" targetConnections="conn-dep-sse" archimateElement="app-deprecated-django-sse">
+        <bounds x="783" y="876" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-dep-relay" targetConnections="conn-dep-relay" archimateElement="app-deprecated-relay-proxy">
+        <bounds x="396" y="864" width="180" height="55"/>
+      </child>
+      <documentation>展示 Plateau/Gap/WorkPackage 与 v4 目标数据流。实线=Relations 层已声明的关系；视图通过 sourceConnection 渲染。</documentation>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v4 Target — 容器双向流量" id="diagram-v4-container-flow">
+      <child xsi:type="archimate:DiagramObject" id="do2-vue" archimateElement="app-vue-frontend">
+        <bounds x="48" y="120" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn2-vue-cgw" source="do2-vue" target="do2-cgw" archimateRelationship="rel-v4-vue-cgw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do2-cgw" targetConnections="conn2-vue-cgw" archimateElement="app-container-gw">
+        <bounds x="240" y="120" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn2-cgw-osjs" source="do2-cgw" target="do2-osjs" archimateRelationship="rel-v4-cgw-osjs"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn2-cgw-be" source="do2-cgw" target="do2-be" archimateRelationship="rel-v4-cgw-be"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do2-osjs" targetConnections="conn2-cgw-osjs" archimateElement="app-online-service-js">
+        <bounds x="480" y="120" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn2-osjs-agt" source="do2-osjs" target="do2-agt" archimateRelationship="rel-v4-osjs-agt"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn2-osjs-cred" source="do2-osjs" target="do2-cred" archimateRelationship="rel-v4-osjs-cred"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do2-agt" targetConnections="conn2-osjs-agt" archimateElement="app-agent-support">
+        <bounds x="480" y="240" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn2-agt-be" source="do2-agt" target="do2-be" archimateRelationship="rel-v4-agt-be"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do2-be" targetConnections="conn2-cgw-be conn2-agt-be" archimateElement="app-saas-backend">
+        <bounds x="240" y="240" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do2-cred" targetConnections="conn2-osjs-cred" archimateElement="app-credential-svc">
+        <bounds x="672" y="240" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

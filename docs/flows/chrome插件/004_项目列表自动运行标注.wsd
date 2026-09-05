@@ -1,0 +1,14 @@
+@startuml
+title Chrome插件-项目列表自动运行标注
+|普通用户|
+start
+:打开浮窗或 DevTools 并选择工作空间;
+:GET 工作空间项目列表;
+:每个项目名称旁显示可自动运行或不可自动运行;
+note right
+  判定：server_run_template.default_auto_run === true
+  测试：taskChromePlugin/test/project-auto-run-label.test.js
+  意图：frontend/task_chrome_plugin_project_auto_run_label
+end note
+stop
+@enduml

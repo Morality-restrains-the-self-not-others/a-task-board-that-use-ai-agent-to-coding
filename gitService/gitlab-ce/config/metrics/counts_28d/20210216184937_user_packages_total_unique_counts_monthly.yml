@@ -1,0 +1,45 @@
+---
+data_category: operational
+key_path: redis_hll_counters.user_packages.user_packages_total_unique_counts_monthly
+description: Count of distinct users that have interacted with packages in the package registry in the last 28 days
+product_group: package_registry
+product_categories:
+- package_registry
+value_type: number
+status: active
+time_frame: 28d
+data_source: redis_hll
+instrumentation_class: RedisHLLMetric
+events:
+- name: i_package_composer_user
+  unique: user.id
+- name: i_package_conan_user
+  unique: user.id
+- name: i_package_generic_user
+  unique: user.id
+- name: i_package_helm_user
+  unique: user.id
+- name: i_package_maven_user
+  unique: user.id
+- name: i_package_npm_user
+  unique: user.id
+- name: i_package_nuget_user
+  unique: user.id
+- name: i_package_pypi_user
+  unique: user.id
+- name: i_package_rubygems_user
+  unique: user.id
+- name: i_package_terraform_module_user
+  unique: user.id
+- name: i_package_ml_model_user
+  unique: user.id
+tiers:
+- free
+- premium
+- ultimate
+performance_indicator_type:
+- smau
+- gmau
+- customer_health_score
+milestone: "<13.9"
+introduced_by_url: https://gitlab.com/gitlab-org/gitlab/-/merge_requests/54332

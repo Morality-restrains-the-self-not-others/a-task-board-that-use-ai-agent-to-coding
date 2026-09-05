@@ -1,0 +1,56 @@
+groups:
+  - name: log-collection
+    interval: 60s
+    rules:
+      # Fires when the log-collection-status reporter detects at least one
+      # service whose most recent log is older than the dead threshold (default 30 min).
+      # The reporter writes a Prometheus textfile consumed by node_exporter.
+      - alert: LogSourceDead
+        expr: log_collection_services_total{status="dead"} > 0
+        for: 3m
+        labels:
+          severity: warning
+          component: log-collection
+          category: observability
+        annotations:
+          summary: "Dead log source detected ({{ $value }} service(s))"
+          description: >
+            The log-collection-status reporter detected {{ $value }} service(s)
+            whose most recent log entry is older than the dead threshold.
+            This means Promtail may have stopped shipping logs or the service
+            itself is down. Check the "Log Collection Status" dashboard in
+            Grafana for per-service details.
+
+      # Warns when ALL services are dead — indicates the reporter itself may be
+      # broken or Promtail/Loki is completely down.
+      - alert: LogCollectionAllDead
+        expr: |
+          log_collection_services_total{status="dead"} > 0
+          and
+          log_collection_services_total{status="healthy"} == 0
+        for: 3m
+        labels:
+          severity: critical
+          component: log-collection
+          category: observability
+        annotations:
+          summary: "All log sources dead — possible Loki/Promtail outage"
+          description: >
+            All services are reporting as dead/stale/unknown with zero healthy
+            services. This likely indicates a Loki or Promtail outage rather
+            than individual service failures. Check Loki/Promtail health.
+
+      # Reporter health check — fires if the textfile hasn't been updated
+      # recently (node_exporter textfile collector).
+      - alert: LogCollectionReporterDown
+        expr: absent(log_collection_services_total) or log_collection_lines_total == 0
+        for: 5m
+        labels:
+          severity: warning
+          component: log-collection
+          category: observability
+        annotations:
+          summary: "Log collection status reporter is not running"
+          description: >
+            The log-collection-status reporter has not updated its Prometheus
+            textfile. Check: AiMonitor/scripts/log_collection_status_reporter.py

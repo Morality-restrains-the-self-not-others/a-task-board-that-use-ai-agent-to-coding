@@ -1,0 +1,59 @@
+' @title: 工作空间排队调度历史（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 115
+' @iteration: queue-schedule-history
+' @author: cursor
+' @based_on: v114 (v114-application-integration-20260827-0200-cursor.puml)
+' @updated: 2026-08-28 07:30
+' @description: 调度状态变化写入 task_queued_schedule_history；GET history 分页
+
+@startuml
+!include <archimate/Archimate>
+
+title v115 — 排队调度历史 2026-08-28 07:30
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  状态栏下调度历史卡
+  @author: cursor @2026-08-28 07:30
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(tts, "taskTaskService")
+note right of tts
+  GET history + recent_history
+  状态变化 fail-open append
+  @author: cursor @2026-08-28 07:30
+end note
+
+Application_DataObject(hist, "task_queued_schedule_history")
+note right of hist
+  月分区 append-only
+  @author: cursor @2026-08-28 07:30
+end note
+
+Application_DataObject(rhythm, "workspace_schedule_rhythms")
+note right of rhythm
+  last_in_window 窗口翻转去重
+end note
+
+Business_Event(evIn, "WorkspaceScheduleWindowEntered")
+Business_Event(evOut, "WorkspaceScheduleWindowExited")
+
+Rel_Flow(taskFE, gw, "queue-schedule / history")
+Rel_Flow(gw, tts, "GET/PUT queue-schedule*")
+Rel_Access(tts, hist, "INSERT/SELECT")
+Rel_Access(tts, rhythm, "UPDATE last_in_window")
+Rel_Flow(tts, evIn, "window flip in")
+Rel_Flow(tts, evOut, "window flip out")
+
+Implementation_Plateau(plateauV114, "Plateau v114 仅当前态快照")
+Implementation_Plateau(plateauV115, "Plateau v115 可读调度历史")
+Implementation_Gap(gapHist, "Gap: 状态栏无调度轨迹")
+Implementation_WorkPackage(wpHist, "WP-queue-schedule-history")
+Rel_Triggering(plateauV114, gapHist, "identifies")
+Rel_Realization(wpHist, gapHist, "closes")
+Rel_Realization(wpHist, plateauV115, "delivers")
+
+@enduml

@@ -1,0 +1,54 @@
+# CreateProject GitLab OAuth 完整授权流程 — 测试意图
+
+## 目标
+验证从创建项目页面输入自建 GitLab 私有仓库 → OAuth 授权 → 仓库可访问的完整端到端流程。
+
+## 背景
+用户在创建项目时，输入自建 GitLab（synology-gitlab @ 183.250.1.132:8012）私有仓库地址。
+系统调用 validate-git-repo API 校验，因未授权返回 is_accessible=false。
+用户点击 OAuth 授权按钮，跳转到 GitLab 完成授权后回到主站，仓库变为可访问。
+
+## 参与者
+- 主站用户: contact@daydaymoney.com (租户 850256677331562496)
+- GitLab 用户: contact@daydaymoney.com (同一账号)
+- GitLab 实例: synology-gitlab @ http://183.250.1.132:8012
+
+## 前置条件
+- 主站 (183.250.1.132:4000) 可访问
+- GitLab (183.250.1.132:8012) 可访问
+- gitOauth 服务 (127.0.0.1:8002) 运行中
+- 用户未绑定 GitLab OAuth（或可重新授权）
+- Playwright Chromium headless shell 可用
+
+## 测试场景
+
+### 场景 1: 完整 OAuth 授权流程
+1. 登录主站 → 验证登录成功
+2. 进入创建项目页 → 选择工作空间
+3. 输入 GitLab 私有仓库 URL → 触发校验
+4. 校验返回无法访问 → 显示"该仓库无法访问"提示
+5. 显示"OAuth 授权"按钮 → 点击
+6. 跳转到 GitLab 登录页 → 填写凭据登录
+7. GitLab OAuth 授权页 → 点击 Authorize
+8. 回调到主站 → 仓库校验更新为可访问
+9. API 验证 GitLab 连接状态为已绑定
+
+### 场景 2: Smoke — 校验 + 按钮显示
+1. 登录 → 创建项目页 → 输入仓库 URL
+2. 验证校验 API 被触发
+3. 验证错误提示和 OAuth 按钮正确显示
+4. 截图保存状态
+
+## 相关 API
+- GET  /api/tenant/{id}/projects/validate-git-repo/?url=...
+- GET  /api/accounts/gitlab/oauth/start-from-gateway/?next=...&repo_url=...&service_provider=...
+- GET  /api/accounts/gitlab/app/connection/
+- POST /api/internal/gitlab/oauth/access-for-user/ (gitOauth 内部)
+
+## 相关文件
+- 前端: front_project/app/src/views/CreateProject.vue
+- 前端: front_project/app/src/utils/repoOAuthAuthorizeUtils.js
+- 后端: Saas_project/projects/views/utility_views.py (validate_git_repo_view)
+- 后端: Saas_project/projects/git_utils.py (_check_gitlab_repo)
+- 后端: Saas_project/accounts/github_app_views.py (GitlabAppAuthorizeStartView)
+- 配置: conf/auth/git-oauth/providers/http-183-250-1-132-8012.yaml

@@ -1,0 +1,52 @@
+' @title: Application Integration — 多账号切换私有资源隔离
+' @view: application-integration
+' @status: target
+' @version: 28
+' @author: claude
+' @based_on: v27 (v27-application-integration-20260715-1010-claude.puml)
+' @updated: 2026-07-15 11:40
+' @description: Token>Session 鉴权；切换清 sessionid；离开租户 URL；me() path 校验
+' @iteration: multi-account-isolation-fix
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v28 — Multi-Account Isolation (2026-07-15 11:40)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v28 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v28 |
+  | <#White>       </> | 无标记 — 未变 |
+endlegend
+
+Application_Component(vue, "🟡 Vue Frontend\nactivate + resolveSwitchHref\n[MODIFIED v28]")
+Application_Component(gw, "task-gateway\nToken>Cookie")
+Application_Component(django, "🟡 saas-backend\nDRF Token>Session\n[MODIFIED v28]")
+Application_Component(taskAuth, "taskAuth\nactivate-session")
+
+Application_DataObject(sessionCookie, "🔴 sessionid cookie\ncleared on switch [MODIFIED v28]")
+Application_DataObject(activeCreds, "authToken + userId")
+
+Motivation_Constraint(tokFirst, "🟢 Constraint\nToken precedence over Session\n[NEW v28]")
+
+note top of vue
+  [MODIFIED v28] 切换成功：clearCookie(sessionid)
+  离开 /tenant/... → /user/{id}/profile/
+  strip workspace_id
+end note
+
+note top of django
+  [MODIFIED v28] DEFAULT + 显式 classes
+  CustomTokenAuthentication 在前
+  me() path user_id 必须匹配
+end note
+
+Rel_Flow(vue, gw, "API + activate-session")
+Rel_Flow(gw, django, "business API")
+Rel_Flow(gw, taskAuth, "activate-session")
+Rel_Access_W(vue, sessionCookie, "clear on switch")
+Rel_Access_RW(vue, activeCreds, "RW active")
+Rel_Association(tokFirst, django, "enforces")
+Rel_Association(tokFirst, gw, "aligned")
+
+@enduml

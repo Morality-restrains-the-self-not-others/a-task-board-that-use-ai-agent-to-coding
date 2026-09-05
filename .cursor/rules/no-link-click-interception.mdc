@@ -1,0 +1,21 @@
+---
+description: 禁止链接点击拦截 — 真实 a[href]、禁止 preventDefault+push 静默回弹
+alwaysApply: true
+---
+
+# 禁止链接点击拦截（元规则）
+
+细则：`.ai/01_project_constraints/49_no_link_click_interception.md`；约束索引第 44 条。
+
+## 强制要求
+
+- 导航控件必须是带真实 `href` 的 `<a>`（或整页 `location.href`）。
+- **禁止** `@click.prevent` + `router.push`/`replace` 冒充链接跳转。
+- Navbar 等跨壳入口优先原生 `<a href>`，避免 `router-link` 左键拦截与守卫回弹打架。
+- 鉴权/租户失败时**禁止**静默 `replace` 回用户来源页；须 `modalService.confirm` 后由用户选择。
+
+## 验收样例
+
+```bash
+rg -n 'router\.replace\(.*profile' taskFE/app/src/views/WorkPanel.vue && echo FAIL || echo PASS
+```

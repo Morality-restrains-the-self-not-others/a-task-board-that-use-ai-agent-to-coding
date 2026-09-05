@@ -1,0 +1,31 @@
+services:
+  mysql:
+    image: mysql:8.0
+    pull_policy: if_not_present
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ''
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+    volumes:
+      - ./data:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot123456"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: "no"
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      # SSOT: conf/infra/mysql/config.yaml（run.sh 导出下列 MYSQL_*）
+      - --max_connections=${MYSQL_MAX_CONNECTIONS:-500}
+      - --innodb_buffer_pool_size=${MYSQL_INNODB_BUFFER_POOL_SIZE:-256M}
+      - --innodb_log_file_size=${MYSQL_INNODB_LOG_FILE_SIZE:-128M}
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb_flush_log_at_trx_commit=${MYSQL_INNODB_FLUSH_LOG_AT_TRX_COMMIT:-2}
+      - --sync_binlog=${MYSQL_SYNC_BINLOG:-0}
+      - --skip-log-bin

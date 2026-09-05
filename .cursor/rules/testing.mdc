@@ -1,0 +1,19 @@
+---
+description: 测试与质量规则 - 引用 .ai/05_testing_quality；Playwright 经 9222 CDP 连接非沙盒 Chrome
+globs: "**/*.test.*,**/*test*.py,**/tests/**/*,**/*.playwright.test.*"
+alwaysApply: false
+---
+
+# 测试与质量保障
+
+编写或修改测试时，必须读取并遵循：
+
+- `.ai/05_testing_quality/00_testing_quality.md`（索引）
+- `.ai/05_testing_quality/01_core_testing_rules.md`
+- `.ai/05_testing_quality/02_test_management_rules.md`
+
+包含：测试文件位置、命名、Playwright 使用、DDD 测试原则等。
+
+**提交随机单测**：每次 commit 须跑 `db/scripts/ci/run_commit_random_unit_tests.py`；遗留失败同次至少修复发现集合的 10%。见 `.ai/01_project_constraints/28_commit_random_unit_test_debt_fix.md` 与 `.cursor/rules/commit-random-unit-test-debt-fix.mdc`。
+
+**Playwright**：须通过 **9222** 端口的 CDP（`connectOverCDP`）连接外部已启动的 Chrome（非沙盒/非默认隔离 `launch()`）；详见 `01_core_testing_rules.md` 中「Playwright 通过 9222 端口连接非沙盒 Chrome 规则」；工作区根目录可参考 `runDebugChrome.sh`。

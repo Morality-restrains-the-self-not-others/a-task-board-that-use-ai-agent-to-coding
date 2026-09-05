@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v12-ai-20260709-2015">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v11 Target</name>
+  <purpose>厂商云平台测试密钥 — taskCloudService vendor_cloud_platform_credentials SSOT + ai-provider 反代与 internal lookup</purpose>
+
+  <folder name="Application" id="f-app" type="application"/>
+  <folder name="Relations" id="f-rel" type="relations"/>
+  <folder name="Implementation" id="f-impl" type="implementation_migration"/>
+
+  <element xsi:type="archimate:ApplicationComponent" name="VendorPortal SPA (ai-provider :8010)" id="VPORT"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 ai-provider Django (:8010) [MODIFIED v11]" id="AIP"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 task-cloud-service Go (:8018) Vendor Credential SSOT [MODIFIED v11]" id="TCS"/>
+  <element xsi:type="archimate:ApplicationComponent" name="Aliyun ECS/STS API" id="ALI"/>
+  <element xsi:type="archimate:DataObject" name="vendor_cloud_platform_credentials [NEW v11]" id="VCRED"/>
+  <element xsi:type="archimate:DataObject" name="SQLite task_cloud.db" id="SQLITE"/>
+
+  <element xsi:type="archimate:FlowRelationship" id="ra1" source="VPORT" target="AIP"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra2" source="AIP" target="TCS"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra3" source="AIP" target="ALI"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra4" source="TCS" target="ALI"/>
+  <element xsi:type="archimate:AccessRelationship" id="ra5" source="TCS" target="VCRED"/>
+  <element xsi:type="archimate:AccessRelationship" id="ra6" source="TCS" target="SQLITE"/>
+
+  <element xsi:type="archimate:Plateau" name="Plateau v10 — Cloud CPA + Aliyun Query SSOT" id="platV10"/>
+  <element xsi:type="archimate:Plateau" name="🎯 Plateau v11 — relay clear-logs path scope" id="platV11"/>
+  <element xsi:type="archimate:Gap" name="Gap: 厂商无法自配云测试密钥" id="gapVendorCred"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-v11-vendor-cloud-credentials" id="wpV11"/>
+  <element xsi:type="archimate:RealizationRelationship" id="ra7" source="wpV11" target="gapVendorCred"/>
+  <element xsi:type="archimate:RealizationRelationship" id="ra8" source="wpV11" target="platV11"/>
+  <element xsi:type="archimate:CompositionRelationship" id="ra9" source="platV11" target="TCS"/>
+  <element xsi:type="archimate:CompositionRelationship" id="ra10" source="platV11" target="AIP"/>
+  <element xsi:type="archimate:AssociationRelationship" id="ra11" source="platV10" target="gapVendorCred"/>
+
+  <folder name="Views" id="f-views" type="diagrams">
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v11 Target — Vendor Credential Flow" id="view-topo">
+      <child xsi:type="archimate:DiagramObject" id="do-VPORT" archimateElement="VPORT">
+        <bounds x="48" y="200" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-vport-aip" source="do-VPORT" target="do-AIP" archimateRelationship="ra1"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-AIP" archimateElement="AIP" targetConnections="conn-vport-aip conn-aip-tcs conn-aip-ali">
+        <bounds x="280" y="200" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-aip-tcs" source="do-AIP" target="do-TCS" archimateRelationship="ra2"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-aip-ali" source="do-AIP" target="do-ALI" archimateRelationship="ra3"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-TCS" archimateElement="TCS" targetConnections="conn-aip-tcs conn-tcs-ali conn-tcs-vcred">
+        <bounds x="520" y="200" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tcs-ali" source="do-TCS" target="do-ALI" archimateRelationship="ra4"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tcs-vcred" source="do-TCS" target="do-VCRED" archimateRelationship="ra5"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-ALI" archimateElement="ALI" targetConnections="conn-aip-ali conn-tcs-ali">
+        <bounds x="780" y="280" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-VCRED" archimateElement="VCRED" targetConnections="conn-tcs-vcred">
+        <bounds x="520" y="120" width="220" height="45"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v10→v11 — 厂商测试密钥" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-platV10" archimateElement="platV10">
+        <bounds x="48" y="120" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v10-gap" source="do-platV10" target="do-gapVendorCred" archimateRelationship="ra11"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gapVendorCred" archimateElement="gapVendorCred" targetConnections="conn-v10-gap conn-wp-gap">
+        <bounds x="300" y="120" width="240" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wpV11" archimateElement="wpV11">
+        <bounds x="580" y="80" width="240" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wpV11" target="do-gapVendorCred" archimateRelationship="ra7"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-v11" source="do-wpV11" target="do-platV11" archimateRelationship="ra8"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-platV11" archimateElement="platV11" targetConnections="conn-wp-v11 conn-v11-tcs conn-v11-aip">
+        <bounds x="580" y="180" width="240" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v11-tcs" source="do-platV11" target="do-TCS-m" archimateRelationship="ra9"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v11-aip" source="do-platV11" target="do-AIP-m" archimateRelationship="ra10"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-TCS-m" archimateElement="TCS" targetConnections="conn-v11-tcs">
+        <bounds x="520" y="280" width="220" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-AIP-m" archimateElement="AIP" targetConnections="conn-v11-aip">
+        <bounds x="760" y="280" width="200" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

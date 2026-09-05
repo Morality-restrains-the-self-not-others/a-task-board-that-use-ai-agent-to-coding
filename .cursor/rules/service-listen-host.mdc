@@ -1,0 +1,23 @@
+---
+description: 全服务禁止仅绑 127.0.0.1；须 0.0.0.0，否则 Docker APISIX/边缘 nginx 踩坑
+alwaysApply: true
+---
+
+# 服务监听地址（元规则）
+
+适用于整个 monorepo **所有** HTTP/TCP 服务。细则见 `.ai/01_project_constraints/22_service_listen_host_not_localhost_only.md`；根摘要见 `.ai.md`。
+
+## 强制要求
+
+- 进程 listen / conf `host` **必须**为 **`0.0.0.0`**（或等价全网卡，如 Go `":PORT"`）。
+- **禁止**将服务默认或配置改为仅 **`127.0.0.1` / `localhost`** 监听。
+- **禁止**以「安全加固」为由把 APISIX（`host.docker.internal`）、边缘 nginx、Docker host-gateway 依赖的上游改回 loopback-only。
+- 同机**客户端** URL 仍可用 `http://127.0.0.1:PORT`；不得为此把被调服务改成只听 loopback。
+
+## 验收
+
+```bash
+ss -ltnp | rg ':<PORT>\b'   # 应为 *:PORT / 0.0.0.0，而非仅 127.0.0.1
+docker run --rm --add-host=host.docker.internal:host-gateway curlimages/curl:8.5.0 \
+  -sf "http://host.docker.internal:<PORT><health_path>"
+```

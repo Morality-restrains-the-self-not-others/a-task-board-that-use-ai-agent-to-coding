@@ -1,0 +1,43 @@
+' @title: Application Integration — 工作面板过滤选项持久化（Go）
+' @view: application-integration
+' @status: archived
+' @version: 20
+' @author: claude
+' @based_on: v19 (v19-application-integration-20260713-1537-claude.puml)
+' @updated: 2026-07-13 20:12
+' @description: 用户×工作空间 work-panel 过滤偏好表 + GET/PUT API（taskProjectService）；WorkPanel 拉取/保存
+' @iteration: work-panel-filter-persistence
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v20 — 工作面板过滤选项持久化 (2026-07-13 20:05)
+
+Application_Component(vueWork, "Vue WorkPanel")
+Application_Component(gw, "task-gateway\nAPISIX")
+Application_Component(tps, "taskProjectService\n:8016")
+
+Application_DataObject(pref, "user_workspace_work_panel_filters")
+
+note top of vueWork
+  init GET filters；debounce PUT
+  切换 workspace 加载对应偏好
+  @author: claude @2026-07-13 20:05
+end note
+
+note top of tps
+  GET/PUT /workspaces/{id}/work-panel-filters/
+  OpenAPI /api/schema/
+  @author: claude @2026-07-13 20:05
+end note
+
+note bottom of pref
+  SSOT in task_project.db
+  PK (user_id, company_id, workspace_id)
+end note
+
+Rel_Flow(vueWork, gw, "GET/PUT work-panel-filters")
+Rel_Flow(gw, tps, "workspaces API")
+Rel_Access_RW(tps, pref, "RW upsert")
+
+@enduml

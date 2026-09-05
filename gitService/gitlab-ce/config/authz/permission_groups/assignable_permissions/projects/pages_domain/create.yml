@@ -1,0 +1,7 @@
+---
+name: create_pages_domain
+description: Grants the ability to create pages domains
+boundaries:
+  - project
+permissions:
+  - create_pages_domain

@@ -1,0 +1,131 @@
+version: "2"
+
+# Shared MySQL connection parameters.
+# mysql.password stays empty in git. Overlay conf-local/db/registry.yaml or MYSQL_PASSWORD.
+mysql:
+  host: 127.0.0.1
+  port: 3306
+  user: taskapp
+  password: ""
+
+# 路径均相对 monorepo 根（conf/base.yaml 锚点；OPT-20260806-057: django 目录退役）
+databases:
+  task-auth:
+    driver: mysql
+    database: task_auth
+    path: db/task-auth/auth.sqlite3      # legacy SQLite（MySQL 迁移后仅用于清理）
+    owner: task-auth
+    order: 9
+    migrate_script: db/task-auth/migrate.sh
+    init_script: db/task-auth/init.sh
+    description: taskAuth Go + Django router 只读库
+
+  task-bill:
+    driver: mysql
+    database: task_bill
+    path: db/task-bill/billing.sqlite3   # legacy SQLite（MySQL 迁移后仅用于清理）
+    owner: task-bill
+    order: 20
+    migrate_script: db/task-bill/migrate.sh
+    init_script: db/task-bill/init.sh
+    description: taskBill Go 计费库
+
+  git-oauth:
+    driver: mysql
+    database: git_oauth
+    path: db/git-oauth/git-oauth.sqlite3 # legacy SQLite（MySQL 迁移后仅用于清理）
+    owner: git-oauth
+    order: 30
+    migrate_script: db/git-oauth/migrate.sh
+    init_script: db/git-oauth/init.sh
+    description: gitOauth 服务
+
+  ai-provider:
+    driver: mysql
+    database: ai_provider
+    path: db/ai-provider/ai-provider.sqlite3  # legacy SQLite（MySQL 迁移后仅用于清理）
+    owner: ai-provider
+    order: 30
+    migrate_script: db/ai-provider/migrate.sh
+    init_script: db/ai-provider/init.sh
+    description: taskAiProvider (Go; formerly Saas_Ai_Provider)
+
+  container:
+    driver: mysql
+    database: container
+    path: db/container/tokens.sqlite3    # legacy SQLite（MySQL 迁移后仅用于清理）
+    owner: task-credential-service
+    order: 25
+    migrate_script: db/container/migrate.sh
+    init_script: db/container/init.sh
+    description: Go taskCredentialService 容器令牌库
+
+  task-budget:
+    driver: mysql
+    database: task_budget
+    path: db/task_budget/task_budget.db  # legacy SQLite（MySQL 迁移后仅用于清理）
+    owner: task-cloud-service
+    order: 15
+    migrate_script: db/task_budget/migrate.sh
+    init_script: db/task_budget/init.sh
+    description: LLM Budget 账本（usage / task budget / workspace default）
+
+  task-project:
+    driver: mysql
+    database: task_project
+    path: data/task_project.db           # legacy SQLite（MySQL 迁移后仅用于清理）
+    owner: task-project-service
+    order: 12
+    migrate_script: db/task-project/migrate.sh
+    init_script: db/task-project/init.sh
+    description: Go taskProjectService 项目/工作空间 SSOT
+
+  task-task:
+    driver: mysql
+    database: task_task
+    path: data/task_task.db              # legacy SQLite（MySQL 迁移后仅用于清理）
+    owner: task-task-service
+    order: 13
+    migrate_script: db/task-task/migrate.sh
+    init_script: db/task-task/init.sh
+    description: Go taskTaskService 任务域 SSOT
+
+  task-cloud:
+    driver: mysql
+    database: task_cloud
+    path: data/task_cloud.db             # legacy SQLite（MySQL 迁移后仅用于清理）
+    owner: task-cloud-service
+    order: 14
+    migrate_script: db/task-cloud/migrate.sh
+    init_script: db/task-cloud/init.sh
+    description: Go taskCloudService 云资源 SSOT
+
+  task-ai-comment:
+    driver: mysql
+    database: task_ai_comment
+    path: db/task-ai-comment/task_ai_comment.db  # legacy SQLite（MySQL 迁移后仅用于清理）
+    owner: task-ai-comment
+    order: 16
+    migrate_script: db/task-ai-comment/migrate.sh
+    init_script: db/task-ai-comment/init.sh
+    description: Go taskAIComment AI 评论库
+
+  task-tenant:
+    driver: mysql
+    database: task_tenant
+    path: data/task_tenant.db            # legacy SQLite（MySQL 迁移后仅用于清理）
+    owner: task-tenant-service
+    order: 11
+    migrate_script: db/task-tenant/migrate.sh
+    init_script: db/task-tenant/init.sh
+    description: Go taskTenantService 组织成员/邀请/分组 SSOT
+
+  task-referral:
+    driver: mysql
+    database: task_referral
+    path: db/task-referral/referral.sqlite3  # legacy SQLite（MySQL 迁移后仅用于清理）
+    owner: task-referral
+    order: 17
+    migrate_script: db/task-referral/migrate.sh
+    init_script: db/task-referral/init.sh
+    description: Go taskReferral 推荐奖励库

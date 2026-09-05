@@ -1,0 +1,92 @@
+' @title: 意见与建议链接按租户累计消耗可见（应用集成）
+' @view: application-integration
+' @status: current
+' @version: 121
+' @iteration: tenant-feedback-links-by-consumption
+' @author: cursor
+' @based_on: v120 (v120-application-integration-20260830-0040-cursor.puml)
+' @updated: 2026-08-30 10:05
+' @description: 超管配置链接组；租户 GET 按累计消耗 ≥ AND 过滤；taskBill 持有表与求值
+
+@startuml
+!include <archimate/Archimate>
+
+title v121 Current — 意见与建议链接 2026-08-30 10:05
+
+Application_Component(fe, "taskFE SPA")
+note right of fe
+  侧栏「意见与建议」按组分段
+  超管运营页 CRUD
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(bill, "taskBill")
+note right of bill
+  配置聚合 + 租户可见性求值
+  消耗 map 来自既有账本/用量
+end note
+
+Application_Component(ev, "taskEvents")
+
+Application_DataObject(grp, "billing_feedback_link_group")
+note right of grp
+  聚合根 name/sort/enabled
+end note
+
+Application_DataObject(thr, "billing_feedback_link_threshold")
+note right of thr
+  UNIQUE group+kind
+  min_quantity DECIMAL
+end note
+
+Application_DataObject(lnk, "billing_feedback_link")
+note right of lnk
+  https URL + title
+end note
+
+Application_DataObject(kind, "billing_feedback_resource_kind")
+note right of kind
+  可扩展目录
+end note
+
+Application_DataObject(usage, "billing grant/usage/account")
+note right of usage
+  既有累计消耗投影
+end note
+
+Business_Event(evC, "FEEDBACK_LINK_GROUP_CREATED")
+note right of evC
+  新建链接组
+end note
+
+Business_Event(evU, "FEEDBACK_LINK_GROUP_UPDATED")
+note right of evU
+  更新链接组
+end note
+
+Business_Event(evD, "FEEDBACK_LINK_GROUP_DELETED")
+note right of evD
+  删除链接组
+end note
+
+Rel_Flow(fe, gw, "超管 CRUD / 租户 GET 🟡")
+Rel_Flow(gw, bill, "system-admin + tenant billing 🟡")
+Rel_Access(bill, grp, "R/W 🟢")
+Rel_Access(bill, thr, "R/W 🟢")
+Rel_Access(bill, lnk, "R/W 🟢")
+Rel_Access(bill, kind, "R 🟢")
+Rel_Access(bill, usage, "R 求值")
+Rel_Flow(bill, evC, "after POST 🟢")
+Rel_Flow(bill, evU, "after PUT 🟢")
+Rel_Flow(bill, evD, "after DELETE 🟢")
+Rel_Flow(bill, ev, "publish Kafka 🟡")
+
+Implementation_Plateau(plateauV121src, "Plateau v120 任务项目修订")
+Implementation_Plateau(plateauV121, "Plateau v121 消耗门槛链接")
+Implementation_Gap(gapFb, "Gap: 侧栏无法按租户消耗分层展示外链")
+Implementation_WorkPackage(wpFb, "WP-tenant-feedback-links")
+Rel_Triggering(plateauV121src, gapFb, "identifies")
+Rel_Realization(wpFb, gapFb, "closes")
+Rel_Realization(wpFb, plateauV121, "delivers")
+
+@enduml

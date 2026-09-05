@@ -1,0 +1,44 @@
+' @title: Application Integration — 创建任务可选字段工作区显隐
+' @view: application-integration
+' @status: archived
+' @version: 35
+' @author: claude
+' @based_on: v34 current (v34-application-integration-20260716-1430-claude.puml)
+' @updated: 2026-07-18 01:10
+' @description: taskProjectService 新增 create-task-field-settings；settings 配置驱动 work-panel 创建表单可选字段显隐
+' @iteration: create-task-field-settings
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v35 — Create Task Field Settings (2026-07-18 01:00)
+
+rectangle "Motivation" {
+  Motivation_Constraint(defaultAllOn, "Constraint\n无记录默认全 true\n兼容现网全展示")
+}
+
+rectangle "Application" {
+  Application_Component(vueSettings, "🟡 Vue WorkspaceSettings\nCreateTaskFieldSettingsModal")
+  Application_Component(vueWork, "🟡 Vue WorkPanel\nCreateTaskModal fieldSettings")
+  Application_Component(gw, "task-gateway\nJWT + tenant")
+  Application_Component(project, "🟡 taskProjectService\ncreate-task-field-settings")
+  Application_DataObject(settingsTbl, "🟢 workspace_create_task_field_settings")
+}
+
+note top of vueSettings
+  settings/task-panel「创建字段」
+  PUT fields map of booleans
+end note
+
+note top of vueWork
+  GET on init；v-if 可选区块
+  feature_params=false 跳过必填门禁
+end note
+
+Rel_Flow(vueSettings, gw, "GET/PUT field-settings")
+Rel_Flow(vueWork, gw, "GET field-settings")
+Rel_Flow(gw, project, "tenant + user auth")
+Rel_Access_W(project, settingsTbl, "R/W fields_json")
+Rel_Influence(defaultAllOn, project, "缺省全开")
+
+@enduml

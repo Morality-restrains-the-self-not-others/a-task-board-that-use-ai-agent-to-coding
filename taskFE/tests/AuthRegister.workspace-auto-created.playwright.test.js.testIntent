@@ -1,0 +1,38 @@
+AuthRegister.workspace-auto-created.playwright.test.js 的测试意图
+
+意图：验证注册新用户时，事件链自动执行并创建默认工作空间
+
+背景：
+- 用户通过邮箱注册页面提交注册
+- Django 发布 USER_CREATED 事件到 Redis Streams
+- Go taskEvents 消费者 user_created/0_create_company 消费 USER_CREATED → 创建 Company → 发布 COMPANY_CREATED
+- Go taskEvents 消费者 company_created/3_create_default_workspace 消费 COMPANY_CREATED → 创建默认 Workspace → 发布 WORKSPACE_CREATED
+- Go taskEvents 消费者 workspace_created/1_process_workspace_creation 消费 WORKSPACE_CREATED → 设置工作空间管理员权限
+
+前置条件：
+1. Redis 运行中
+2. Kafka 运行中
+3. taskEvents Go 消费者全部运行中（user_created/*, company_created/*, workspace_created/*）
+4. Django saas-backend 运行中
+5. taskAuth 运行中
+
+测试场景：
+1. 邮箱注册 → 成功提交 → 验证 USER_CREATED 事件出现在 Redis Streams
+2. 验证 COMPANY_CREATED 由 Go 消费者生成（含 creator_id 一致性）
+3. 验证 WORKSPACE_CREATED 由 Go 消费者生成（is_default=true, 名称格式为 "{用户名}的工作空间"）
+4. 事件链完整性：user_id → company_id → workspace_id 递归一致，且 is_default=true
+
+断言：
+- USER_CREATED 事件存在且包含 email/user_id
+- COMPANY_CREATED 事件存在且 creator_id 匹配 user_id
+- WORKSPACE_CREATED 事件存在且 is_default=true, company_id 匹配
+- 工作空间名称格式正确（"{用户名}的工作空间"）
+
+失败情景：
+- 超时未找到事件（消费者未运行或 Redis 不可达）
+- 事件链中断（company 创建失败不发布 WORKSPACE_CREATED）
+- 竞态条件导致 intent 3 先于 intent 1 执行（已通过 WorkspaceIntent 自包含修复）
+
+修复记录：
+- 2026-06-25: WorkspaceIntent.Dispatch 现在在创建工作空间前 idempotent 调用 IntentSetDefaultDeliverable 和 IntentSetDefaultProgress，消除与 intent 1/2 的竞态条件
+- 2026-06-25: RedisStreamBroker 添加 recoverPending goroutine，定期 XAUTOCLAIM 恢复 PEL 中滞留的失败消息

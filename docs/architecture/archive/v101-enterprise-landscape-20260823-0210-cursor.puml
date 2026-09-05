@@ -1,0 +1,40 @@
+' @title: runAll 编排器独立（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 101
+' @iteration: runall-orchestrator-independence
+' @author: cursor
+' @based_on: v100 (v100-enterprise-landscape-20260823-0125-cursor.puml)
+' @updated: 2026-08-23 02:10
+' @description: 编排器故障不中断业务能力
+
+@startuml
+!include <archimate/Archimate>
+
+title v101 landscape — orchestrator independence 2026-08-23 02:10
+
+Business_Actor(ops, "本机操作员")
+Business_Service(supervise, "进程监督 / Status UI")
+note right of supervise
+  🟢 监督器可消失
+  业务面继续
+end note
+Business_Service(biz, "已启动业务能力")
+
+Application_Component(runAll, "runAll :9999")
+Application_Component(stack, "托管服务栈")
+
+Rel_Assignment(ops, supervise)
+Rel_Serving(runAll, supervise)
+Rel_Serving(stack, biz)
+Rel_Flow(supervise, stack, "adopt / 显式 stop-all")
+
+Implementation_Plateau(p100, "v100")
+Implementation_Plateau(p101, "v101")
+Implementation_Gap(g, "9999 挂掉则整栈不可用")
+Implementation_WorkPackage(wp, "WP-runall-orchestrator-independence")
+Rel_Triggering(p100, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p101, "delivers")
+
+@enduml

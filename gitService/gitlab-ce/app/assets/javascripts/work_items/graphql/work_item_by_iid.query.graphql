@@ -1,0 +1,10 @@
+#import "ee_else_ce/work_items/graphql/work_item.fragment.graphql"
+
+query namespaceWorkItem($fullPath: ID!, $iid: String!, $useWorkItemFeatures: Boolean = false) {
+  namespace(fullPath: $fullPath) {
+    id
+    workItem(iid: $iid) {
+      ...WorkItem
+    }
+  }
+}

@@ -1,0 +1,16 @@
+# progress_done.test.js 测试意图
+
+## 测试范围
+9999 进度面板完成后不得自动隐藏；仅 `dismissProgressPanel` 关闭。
+
+## 关键业务断言
+- `shouldAutoHideProgressPanel` 对成功/失败/中断/idle 均为 false
+- 02/03/08/11/14.js 不得再 `setTimeout` 写入 `_progressAutoHideTimer`
+- idle 处理不得 `classList.remove('is-active')`
+- index.html 含 `#prog-clear-logs-btn` 且 onclick 调用 `dismissProgressPanel`
+
+## 破坏信号
+重启完成后进度条数秒内淡出，或 SSE idle 直接关掉面板。
+
+## 回归验证
+`node --test runAll/src/status_ui/js/progress_done.test.js`

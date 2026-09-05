@@ -1,0 +1,35 @@
+意图：验证 synology-gitlab OAuth 绑定的端到端流程
+====================================================
+
+背景：
+  synology-gitlab 是一个 GitLab OAuth provider，其配置文件
+  (http-synology-gitlab.yaml) 在合并到 gitlab-local 时被误删。
+  导致 GitLab Doorkeeper 中对应的 OAuth Application 未注册，
+  用户点击「OAuth 绑定」后看到 "Client authentication failed" 错误。
+
+被测行为：
+  1. GitLab Doorkeeper 预检：直接请求 /oauth/authorize 验证
+     synology-gitlab 的 client_id 能正常被识别
+  2. 端到端流程：从任务详情页点击「OAuth 绑定」按钮，
+     经过 GitLab 登录页 → taskAuth SSO → /oauth/authorize 授权页，
+     全程不出现 "unknown client" 错误
+  3. 配置一致性：验证 client_id、redirect_uri、scope 参数
+     与 YAML 配置文件对齐
+
+测试环境要求：
+  - PLAYWRIGHT_INTEGRATION=1（需要运行中服务）
+  - GitLab 容器运行在 8012 端口
+  - 主站运行在 4000 端口
+  - 网关运行在 18081 端口
+  - synology-gitlab Doorkeeper Application 已在 GitLab 中注册
+
+测试数据：
+  - Tenant: 850256677331562496
+  - Workspace: 857903329669984256
+  - Task: 860371538948571136
+  - User: contact@daydaymoney.com
+
+预期结果：
+  - 所有预检测试通过
+  - E2E 测试到达 /oauth/authorize 页面，无 "unknown client" 错误
+  - authorize URL 参数与配置文件一致

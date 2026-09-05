@@ -1,0 +1,91 @@
+# frozen_string_literal: true
+
+class CommitStatusPresenter < Gitlab::View::Presenter::Delegated
+  CALLOUT_FAILURE_MESSAGES = {
+    unknown_failure: 'There is an unknown failure, please try again',
+    script_failure: nil,
+    api_failure: 'There has been an API failure, please try again',
+    stuck_or_timeout_failure: 'There has been a timeout failure or the job got stuck. Check your timeout limits or try again',
+    runner_system_failure: 'There has been a runner system failure, please try again',
+    missing_dependency_failure: 'There has been a missing dependency failure',
+    runner_unsupported: 'No runners support the requirements to run this job.',
+    stale_schedule: 'Delayed job could not be executed by some reason, please try again',
+    job_execution_timeout: 'The script exceeded the maximum execution time set for the job',
+    job_execution_server_timeout: 'The script exceeded the maximum execution time set for the job',
+    archived_failure: 'The job is archived and cannot be run',
+    unmet_prerequisites: 'The job failed to complete prerequisite tasks',
+    scheduler_failure: 'The scheduler failed to assign job to the runner, please try again or contact system administrator',
+    data_integrity_failure: 'There has been an unknown job problem, please contact your system administrator with the job ID to review the logs',
+    forward_deployment_failure: 'The deployment job is older than the previously succeeded deployment job, and therefore cannot be run',
+    pipeline_loop_detected: 'This job could not be executed because it would create infinitely looping pipelines',
+    insufficient_upstream_permissions: 'This job could not be executed because of insufficient permissions to track the upstream project.',
+    upstream_bridge_project_not_found: 'This job could not be executed because upstream bridge project could not be found.',
+    invalid_bridge_trigger: 'This job could not be executed because downstream pipeline trigger definition is invalid',
+    downstream_bridge_project_not_found: 'This job could not be executed because downstream bridge project could not be found',
+    protected_environment_failure: 'The environment this job is deploying to is protected. Only users with permission may successfully run this job.',
+    insufficient_bridge_permissions: 'This job could not be executed because of insufficient permissions to create a downstream pipeline',
+    bridge_pipeline_is_child_pipeline: 'This job belongs to a child pipeline and cannot create further child pipelines',
+    downstream_pipeline_creation_failed: 'The downstream pipeline could not be created',
+    secrets_provider_not_found: 'The secrets provider can not be found. Check your CI/CD variables and try again.',
+    reached_max_descendant_pipelines_depth: 'You reached the maximum depth of child pipelines',
+    reached_max_pipeline_hierarchy_size: 'The downstream pipeline tree is too large',
+    project_deleted: 'The job belongs to a deleted project',
+    user_blocked: 'The user who created this job is blocked',
+    ci_quota_exceeded: 'No more compute minutes available',
+    no_matching_runner: 'No matching runner available',
+    trace_size_exceeded: 'The job log size limit was reached',
+    builds_disabled: 'The CI/CD is disabled for this project',
+    environment_creation_failure: 'This job could not be executed because it would create an environment with an invalid parameter.',
+    deployment_rejected: 'This deployment job was rejected.',
+    ip_restriction_failure: "This job could not be executed because group IP address restrictions are enabled, and the runner's IP address is not in the allowed range.",
+    duo_workflow_not_allowed: "Duo Agent Platform cannot run on this runner. Duo jobs can only run on instance wide or top level group runners. Be sure to remove the gitlab--duo tag from this runner to avoid it picking these jobs.",
+    failed_outdated_deployment_job: 'The deployment job is older than the latest deployment, and therefore failed.',
+    reached_downstream_pipeline_trigger_rate_limit: 'Too many downstream pipelines triggered in the last minute. Try again later.',
+    job_router_failure: 'The Job Router failed to run this job.',
+    job_token_expired: 'The CI job token has expired. The job may have exceeded the maximum time limit.'
+  }.freeze
+
+  private_constant :CALLOUT_FAILURE_MESSAGES
+
+  presents ::CommitStatus
+
+  def self.callout_failure_messages
+    CALLOUT_FAILURE_MESSAGES
+  end
+
+  def callout_failure_message
+    failure_reason.to_sym.then do |failure_reason|
+      message = self.class.callout_failure_messages.fetch(failure_reason)
+
+      # Include custom error message from job_messages only for job_router_failure
+      message = "#{message} #{job_router_failure_msg}" if failure_reason == :job_router_failure
+
+      if doc_link = troubleshooting_doc[failure_reason]
+        message += " #{help_page_link(doc_link)}"
+      end
+
+      message
+    end
+  end
+
+  private
+
+  def job_router_failure_msg
+    if respond_to?(:error_job_messages) && error_job_messages.any?
+      error_job_messages.first.content
+    else
+      "Please contact your administrator."
+    end
+  end
+
+  def troubleshooting_doc
+    {
+      environment_creation_failure: help_page_path('ci/environments/_index.md', anchor: 'error-job-would-create-an-environment-with-an-invalid-parameter'),
+      failed_outdated_deployment_job: help_page_path('ci/environments/deployment_safety.md', anchor: 'prevent-outdated-deployment-jobs')
+    }.freeze
+  end
+
+  def help_page_link(doc_link)
+    ActionController::Base.helpers.link_to('How do I fix it?', doc_link)
+  end
+end

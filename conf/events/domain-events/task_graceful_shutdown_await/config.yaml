@@ -1,0 +1,7 @@
+intents:
+  1_hard_release_on_timeout:
+    host: 0.0.0.0
+    port: 18047
+    groupId: task-events-task-graceful-shutdown-await-1-hard-release-on-timeout
+    events:
+    - TASK_GRACEFUL_SHUTDOWN_AWAIT

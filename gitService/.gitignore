@@ -1,0 +1,29 @@
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+# Python (if any scripts are added)
+__pycache__/
+*.py[cod]
+# Docker
+docker-compose.override.yml
+# Playwright dependencies (install via npm ci in playwright/)
+playwright/node_modules/
+# Playwright test results
+playwright/test-results/
+gitlab_home/
+.bootstrap_marks/
+/bin/
+# Secret env files (meta gitignore parity — OPT-20260827-017)
+.env.*
+!.env.example
+!.env.sample
+!.env.template

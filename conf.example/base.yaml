@@ -1,0 +1,5 @@
+# Schema only — runtime SSOT is github.com/task2money/daydaymoney-deploy (ADR-0052).
+# Copy into envs/<env>/conf/base.yaml and replace placeholders.
+scheme: https
+baseDomain: REPLACE_WITH_BASE_DOMAIN
+subdomains: {}

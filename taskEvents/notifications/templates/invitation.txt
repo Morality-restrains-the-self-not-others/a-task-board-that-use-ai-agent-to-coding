@@ -1,0 +1,22 @@
+尊敬的用户：
+
+您收到了来自 {{.CompanyName}} 公司的邀请，邀请您加入他们的SaaS平台团队。
+
+请点击以下链接接受邀请：
+{{.InvitationURL}}
+
+该链接将在 {{.ExpirationDays}} 天后失效。
+{{if .Message}}
+邀请人留言：
+{{.Message}}
+
+{{end}}
+如果您没有收到此邀请，请忽略此邮件。
+
+祝好！
+SaaS平台团队
+{{if .UnsubscribeURL}}
+
+退订邮件邀请：
+{{.UnsubscribeURL}}
+{{end}}

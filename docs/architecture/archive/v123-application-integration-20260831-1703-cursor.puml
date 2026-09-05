@@ -1,0 +1,48 @@
+' @title: conf-local 主机机密平面（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 123
+' @iteration: conf-local-secrets-completion
+' @author: cursor
+' @based_on: v122 (v122-application-integration-20260830-1531-cursor.puml)
+' @updated: 2026-08-31 17:35
+' @description: confload 只合 config.yaml + conf-local；不再读 config.local.yaml
+
+@startuml
+!include <archimate/Archimate>
+
+title conf-local 加载链 — v123 Current Architecture (2026-08-31 17:35)
+
+Application_Component(confload, "confload / conf_loader")
+note right of confload
+  只合两层:
+  1. conf/<app>/config.yaml
+  2. conf-local/<app>/config.yaml
+  不读 config.local.yaml
+  @author: cursor @2026-08-31 17:35
+end note
+
+Application_Component(svc, "Go 服务 / taskEvents / taskFE")
+Application_Component(ciGate, "check_conf_local_secrets.py")
+note right of ciGate
+  拒跟踪 *Pwd.md 与非空机密 YAML
+end note
+
+Application_DataObject(skel, "conf/<rel> 骨架")
+Application_DataObject(conflocal, "conf-local/<rel>")
+note right of conflocal
+  唯一 overlay：机密 + 本机非机密
+end note
+
+Rel_Access_r(confload, skel, "1 读")
+Rel_Access_r(confload, conflocal, "2 合并")
+Rel_Flow(confload, svc, "注入配置")
+Rel_Association(ciGate, skel, "扫描已跟踪")
+
+Implementation_Plateau(p122, "Plateau v122 二进制+配置仓")
+Implementation_Plateau(p123, "Plateau v123 conf-local 唯一 overlay")
+Implementation_WorkPackage(wp, "WP-conf-local-secrets-completion")
+Rel_Realization(wp, p123, "delivers")
+Rel_Triggering(p122, wp, "feeds")
+
+@enduml

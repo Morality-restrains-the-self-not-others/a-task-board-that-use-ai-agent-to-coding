@@ -1,0 +1,7 @@
+---
+name: create_pipeline
+description: Grants the ability to create pipelines
+permissions:
+  - create_pipeline
+boundaries:
+  - project

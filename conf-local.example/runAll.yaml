@@ -1,0 +1,86 @@
+groups:
+- {}
+- {}
+- services:
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - env:
+      TASK2APP_SSO_JWT_SECRET: ''
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+- services:
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - env:
+      TASK_BILL_INTERNAL_SECRET: ''
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - env:
+      TASK_BILL_INTERNAL_SECRET: ''
+  - {}
+  - env:
+      SHARED_INTERNAL_SECRET: ''
+  - env:
+      SHARED_INTERNAL_SECRET: ''
+  - env:
+      SHARED_INTERNAL_SECRET: ''
+  - env:
+      SHARED_INTERNAL_SECRET: ''
+  - {}
+  - {}
+  - env:
+      TASK_BILL_INTERNAL_SECRET: ''
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+- {}
+- {}

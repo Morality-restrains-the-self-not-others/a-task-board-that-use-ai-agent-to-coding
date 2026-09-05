@@ -1,0 +1,24 @@
+provider: github
+service_provider: github-official-daydaymoney
+target:
+  website: https://github.com
+  client_id: ''
+  client_secret: ""
+  redirect_uri: ${scheme}://${subdomains.base}/redirect/gitsite/github.com/oauth/callback/
+  scope: repo read:user
+service:
+  allowedHost: ${scheme}://${subdomains.base}
+  # gitoauth_base：taskProjectService 换票桥接内网地址（显式字段优先于
+  # allowedHost，后者为公网域名，误用会致 access-for-user 被网关拦截 →
+  # token_error，见 OPT-20260807-071）。taskGitOauth 自身忽略此字段。
+  gitoauth_base: http://127.0.0.1:8002
+  host: 0.0.0.0
+  port: 8002
+  # outbound_proxy 已移除（2026-08-07）：socks5://127.0.0.1:1080 为本机 ssh -D
+  # 开发代理，生产未运行导致换票必失败（dial tcp 127.0.0.1:1080 refused）。
+  # 2026-08-11：本机 DNS 的 github.com（如 20.205.243.166）常 TCP 不可达，而
+  # api.github.com 可达。taskGitOauth 内置 dial fallback IP（见 outbound_github_dial.go），
+  # 无需再配 outbound_proxy。覆盖：GITOAUTH_GITHUB_DIAL_FALLBACK_IPS=ip1,ip2
+  # 2026-08-18：部分 fallback IP「TCP 通但 HTTP 挂起」时，taskGitOauth 会 demote
+  # 该 endpoint（2min）并多轮重试换票；见 outbound_github_dial.go。
+  # 如确需出站代理须为可达公网地址并文档化（禁止 127.0.0.1 开发代理）。

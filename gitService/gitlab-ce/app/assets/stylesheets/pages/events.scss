@@ -1,0 +1,160 @@
+/**
+ * Dashboard events feed
+ *
+ */
+.event-item {
+  font-size: $gl-font-size;
+  padding: $gl-padding 0 $gl-padding $gl-spacing-scale-8;
+  border-bottom: 1px solid $gray-50;
+  @apply gl-text-subtle;
+  position: relative;
+  line-height: $gl-line-height-20;
+
+  .system-note-image {
+    position: absolute;
+    left: 0;
+
+    svg {
+      @apply gl-fill-icon-subtle;
+    }
+  }
+
+  .system-note-image-inline {
+    svg {
+      @apply gl-fill-icon-subtle;
+    }
+  }
+
+  .system-note-image,
+  .system-note-image-inline {
+    &.opened-icon,
+    &.created-icon {
+      svg {
+        @apply gl-fill-status-success;
+      }
+    }
+
+    &.closed-icon svg {
+      @apply gl-fill-status-danger;
+    }
+
+    &.accepted-icon svg,
+    &.commented-on-icon svg {
+      @apply gl-fill-status-info;
+    }
+  }
+
+  .event-user-info {
+    margin-bottom: $gl-padding-4;
+
+    .author-name {
+      a {
+        @apply gl-text-default;
+        font-weight: $gl-font-weight-bold;
+      }
+    }
+  }
+
+  .event-title {
+    @apply gl-wrap-anywhere;
+
+    .event-title-block::first-letter {
+      text-transform: capitalize;
+    }
+  }
+
+
+  .event-body {
+    margin-top: $gl-padding-4;
+    @apply gl-text-default;
+
+    .event-note {
+      word-wrap: break-word;
+
+      .md {
+        font-size: $gl-font-size;
+      }
+
+      code {
+        white-space: pre-wrap;
+      }
+
+      pre {
+        border: 0;
+        border-radius: 0;
+        @apply gl-text-subtle;
+        @apply gl-bg-subtle;
+        overflow: hidden;
+      }
+
+      .note-image-attach {
+        margin-top: $gl-padding-4;
+        margin-left: 0;
+        max-width: 200px;
+        float: none;
+      }
+
+      p:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  &:last-child {
+    border: 0;
+  }
+
+  .event-commits {
+    li {
+      &.commit {
+        background: transparent;
+        padding: 0;
+        border: 0;
+
+        .commit-row-title {
+          font-size: $gl-font-size;
+        }
+      }
+
+      &.commits-stat {
+        display: block;
+        padding: 0 3px 0 0;
+
+        &:hover {
+          background: none;
+        }
+
+        a {
+          @apply gl-text-link;
+        }
+      }
+    }
+  }
+
+  .event-item-timestamp {
+    @include gl-container-width-up(sm, panel) {
+      float: right;
+    }
+  }
+}
+
+// hide event scope (namespace + project) where it is not necessary
+.project-activity {
+  .event-scope {
+    display: none;
+  }
+}
+
+.project-activity-item:not(:last-of-type) {
+  position: relative;
+
+  &::before {
+    // Avatar width is 32px, connecting line width is 2px.
+    // To center the line relatively to the avatar it should be positioned 15px from the left:
+    // (32px (avatar size) - 2px (line thickness)) / 2 = 15px
+    // stylelint-disable length-zero-no-unit
+    @include vertical-line(0px, 15px);
+    top: auto; // Override top to auto align
+    @apply gl-bg-strong;
+  }
+}

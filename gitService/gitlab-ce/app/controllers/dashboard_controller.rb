@@ -1,0 +1,152 @@
+# frozen_string_literal: true
+
+class DashboardController < Dashboard::ApplicationController
+  include IssuableCollectionsAction
+  include FiltersEvents
+  include HomepageData
+  include ::Gitlab::InternalEventsTracking
+
+  prepend_before_action(only: [:issues, :work_items]) { authenticate_sessionless_user!(:rss) }
+  prepend_before_action(only: [:issues_calendar, :work_items_calendar]) { authenticate_sessionless_user!(:ics) }
+
+  before_action :event_filter, only: :activity
+  before_action :projects, only: [:issues, :merge_requests, :search_merge_requests, :work_items, :work_items_calendar]
+  before_action :set_show_full_reference,
+    only: [:issues, :merge_requests, :search_merge_requests, :work_items, :work_items_calendar]
+
+  before_action only: [:issues] do
+    redirect_to_work_items_dashboard
+  end
+
+  before_action only: [:issues_calendar] do
+    redirect_to_work_items_dashboard(format: :ics)
+  end
+
+  before_action :check_filters_presence!, only: [:issues, :merge_requests, :search_merge_requests, :work_items]
+
+  before_action only: [:merge_requests] do
+    if request.query_string.present?
+      redirect_to merge_requests_search_dashboard_path(params: request.query_parameters), status: :moved_permanently
+    end
+  end
+
+  before_action only: [:activity] do
+    push_frontend_feature_flag(:global_time_tracking_report)
+  end
+
+  respond_to :html
+
+  feature_category :notifications, [:home]
+  feature_category :user_profile, [:activity]
+  feature_category :portfolio_management, [:issues, :issues_calendar, :work_items, :work_items_calendar]
+  feature_category :code_review_workflow, [:merge_requests, :search_merge_requests]
+
+  urgency :low, [:merge_requests, :activity, :search_merge_requests]
+  urgency :low, [:issues, :issues_calendar, :work_items, :work_items_calendar]
+
+  def home
+    if Feature.enabled?(:personal_homepage, current_user)
+      track_internal_event('user_views_homepage', user: current_user)
+      @homepage_app_data = homepage_app_data(current_user)
+      render('root/index')
+    else
+      not_found
+    end
+  end
+
+  def activity
+    respond_to do |format|
+      format.html
+
+      format.json do
+        load_events
+        pager_json('events/_events', @events.count { |event| event.visible_to_user?(current_user) })
+      end
+    end
+  end
+
+  def search_merge_requests
+    render_merge_requests
+  end
+
+  protected
+
+  def load_events
+    @events =
+      case params[:filter]
+      when "your_projects", "projects", "starred"
+        load_project_events
+      when "followed"
+        load_user_events(current_user.followees)
+      else
+        load_user_events(current_user)
+      end
+
+    Events::RenderService.new(current_user).execute(@events)
+  end
+
+  def load_user_events(user)
+    UserRecentEventsFinder.new(current_user, user, event_filter, params).execute
+  end
+
+  def load_project_events
+    projects =
+      if params[:filter] == "starred"
+        ProjectsFinder.new(current_user: current_user, params: { starred: true }).execute
+      else
+        current_user.authorized_projects
+      end
+
+    finder_params = { filter: event_filter }
+    finder_params[:offset] = [params[:offset].to_i, 0].max
+
+    if params[:limit].present?
+      limit = params[:limit].to_i
+      finder_params[:limit] = limit if limit > 0
+    end
+
+    EventCollection
+      .new(projects, **finder_params)
+      .to_a
+      .map(&:present)
+  end
+
+  def set_show_full_reference
+    @show_full_reference = true
+  end
+
+  def check_filters_presence!
+    no_scalar_filters_set = finder_type.scalar_params.none? { |k| params[k].present? }
+    no_array_filters_set = finder_type.array_params.none? { |k, _| params[k].present? }
+
+    # The `in` param is a modifier of `search`. If it's present while the `search`
+    # param isn't, the finder won't use the `in` param. We consider this as a no
+    # filter scenario.
+    no_search_filter_set = params[:in].present? && params[:search].blank?
+
+    @no_filters_set = (no_scalar_filters_set && no_array_filters_set) || no_search_filter_set
+
+    return unless @no_filters_set
+
+    # Call to set selected `state` and `sort` options in view
+    finder_options
+
+    respond_to do |format|
+      format.html { render(action_name == 'work_items' ? :issues : action_name) }
+      format.atom { head :bad_request }
+    end
+  end
+
+  def redirect_to_work_items_dashboard(format: nil)
+    format ||= request.format.symbol unless request.format.html?
+    params = request.query_parameters
+
+    if format
+      redirect_to work_items_dashboard_path(format, params), status: :moved_permanently
+    else
+      redirect_to work_items_dashboard_path(params), status: :moved_permanently
+    end
+  end
+end
+
+DashboardController.prepend_mod_with('DashboardController')

@@ -1,0 +1,44 @@
+# Golden fixtures: traceId detection must be case-insensitive (brainstorming §1).
+# CI: db/scripts/ci/check_trace_id_detection_fixtures.py
+# Rule: .ai/01_project_constraints/24_frontend_error_data_trace_id.md
+
+fixtures:
+  - id: json-snake
+    carrier: json
+    input: '{"trace_id": "abc123def456"}'
+    expected: abc123def456
+
+  - id: json-camel-lower
+    carrier: json
+    input: '{"traceid": "abc123def456"}'
+    expected: abc123def456
+
+  - id: json-camel-mixed
+    carrier: json
+    input: '{"TraceId": "abc123def456"}'
+    expected: abc123def456
+
+  - id: dom-data-traceid
+    carrier: dom
+    input: '<p class="text-danger" data-traceId="abc123def456">failed</p>'
+    expected: abc123def456
+
+  - id: dom-data-traceid-lowercase
+    carrier: dom
+    input: '<p class="text-danger" data-traceid="abc123def456">failed</p>'
+    expected: abc123def456
+
+  - id: http-header
+    carrier: http
+    input: 'X-Trace-Id: abc123def456'
+    expected: abc123def456
+
+  - id: http-header-lowercase
+    carrier: http
+    input: 'x-trace-id: abc123def456'
+    expected: abc123def456
+
+  - id: prose-prefix
+    carrier: text
+    input: '请求失败 traceId=abc123def456 请重试'
+    expected: abc123def456

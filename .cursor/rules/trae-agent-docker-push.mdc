@@ -1,0 +1,30 @@
+---
+description: trae-agent 镜像相关变更提交后须在 onlineServiceJS 执行 DOCKER_PUSH=1 ./buildDocker.sh（元规则 46）
+alwaysApply: true
+---
+
+# trae-agent onlineServiceJS Docker 推送（元规则）
+
+适用于整个 monorepo。细则见 `.ai/01_project_constraints/46_trae_agent_online_service_docker_push.md`；约束索引第 41 条；目录 companion：`trae-agent/ai.md`。
+
+## 强制要求
+
+- 修改并 **git commit** `trae-agent` 中影响 online 镜像的内容后，**必须**在目录 `/tmp/ram-work/trae-agent/onlineServiceJS`（或 `<仓库根>/trae-agent/onlineServiceJS`）执行：
+
+```bash
+DOCKER_PUSH=1 ./buildDocker.sh
+```
+
+- **禁止**只提交不推送导致 registry 镜像落后于源码。
+- 仅文档 / 纯测试 / 不影响镜像的改动可跳过，须在交付说明写明原因。
+- Agent 在 commit / ship / 交付后须**同步执行**（可用 `scripts/trae-agent-docker-push.sh`）；不得仅提醒用户。
+- Stop/SessionEnd 会自动登记 pending，并在 SessionEnd 以后台兜底推送；Agent 仍应优先前台执行。
+
+## 验收
+
+```bash
+bash scripts/lib/trae-agent-docker-push-scan.sh
+test -f .runall/trae_agent_docker_push_pending   # 有镜像相关变更时
+cd trae-agent/onlineServiceJS && DOCKER_PUSH=1 ./buildDocker.sh
+# 或: bash scripts/trae-agent-docker-push.sh
+```

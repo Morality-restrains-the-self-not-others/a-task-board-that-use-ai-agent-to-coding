@@ -1,0 +1,15 @@
+wechat:
+  apps:
+    mp:
+      token: ''
+      encodingAESKey: ''
+      appSecret: ''
+      appId: ''
+    web:
+      appSecret: ''
+oidc:
+  bootstrapClients:
+  - clientSecret: ''
+  - clientSecret: ''
+  - clientSecret: ''
+  - clientSecret: ''

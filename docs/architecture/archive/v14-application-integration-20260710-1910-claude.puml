@@ -1,0 +1,62 @@
+' @title: AI Dev Platform — Application Component Architecture
+' @view: application-integration
+' @status: target
+' @version: 14
+' @iteration: relayToTrae Token 生命周期云主机对齐
+' @author: claude
+' @based_on: v13 (v13-application-integration-20260710-1505-claude.puml)
+' @updated: 2026-07-10 19:10
+' @description: 模拟启动换票责任与云主机一致：OSJS 首次 exchange；go_relay 仅 sync
+
+@startuml
+title AI Dev Platform — Application Component Architecture v14 Target (2026-07-10 19:10)
+
+legend right
+  |<#LightGreen>  </> | 🟢 [NEW v14] 本次新增 |
+  |<#LightYellow> </> | 🟡 [MODIFIED v14] 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED v14] 本次废弃 |
+  |<#White>       </> | 无标记 — v13 及更早 |
+endlegend
+
+component "Vue Frontend\n(:4000)" as VUE
+component "task-gateway\nAPISIX (:18081)" as GW
+component "task-container-gateway\nGo (:8014)" as CGW
+component "task-credential-service\nGo (:8015)" as CRED
+component "go_relayToTrae\n(:8766)" as RELAY #LightYellow
+component "onlineServiceJS\n(:8765)" as OSJS #LightYellow
+component "Cloud VM UserData\ncontainer" as CLOUD
+
+note right of RELAY
+  [MODIFIED v14]
+  启动：注入 bootstrap ACCESS_TOKEN
+  不再父进程 performTokenExchange
+  不再 TRAE_SKIP=1
+  等 child 落盘后 sync state
+  @author: claude @2026-07-10 19:10
+end note
+
+note right of OSJS
+  [MODIFIED v14]
+  模拟与云主机同路径：
+  exchange-refresh + refresh-access
+  写 container_refresh_token.json
+  （含 access_token）
+end note
+
+note bottom of RELAY
+  🔴 [DEPRECATED v14]
+  父进程首次 exchange
+  + TRAE_SKIP 子进程跳过
+end note
+
+VUE --> GW : relay-to-trae/start
+GW --> CGW
+CGW --> CRED : /v1/token/init
+CGW --> RELAY : start env (bootstrap token)
+RELAY --> OSJS : spawn run.sh\n(no TRAE_SKIP)
+OSJS -[#green]-> CRED : 🟢 exchange-refresh\n+ refresh-access
+OSJS -[#green]-> RELAY : 🟢 container_refresh_token.json
+RELAY --> CRED : refresh-access\n(仅近过期续期)
+CLOUD -[#green]-> CRED : 🟢 同路径换票
+
+@enduml

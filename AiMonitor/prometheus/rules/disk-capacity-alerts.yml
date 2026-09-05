@@ -1,0 +1,73 @@
+groups:
+  - name: repo-disk-capacity
+    interval: 60s
+    rules:
+      # ============================================================
+      # 仓库承载文件系统容量告警（OPT-20260823-066）
+      # 指标来源：AiMonitor/scripts/disk_capacity_reporter.py 宿主 cron 写
+      # textfile → node-exporter textfile collector 采集。
+      # 背景：node-exporter 容器内仅见 /rootfs，看不到宿主 /tmp/ram-work tmpfs；
+      # 发票文件（data/taskbill_invoice_files）与整个仓库跑在 tmpfs 上，
+      # 打满会导致上传/构建静默失败（08-18 曾 tmpfs 96% 阻塞 meta 门禁）。
+      # ============================================================
+
+      # tmpfs/RAM 使用率超过 85% — 仓库承载文件系统接近打满
+      - alert: RepoTmpfsUsageHigh
+        expr: |
+          repo_tmpfs_used_bytes / repo_tmpfs_size_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          component: repo-disk
+          category: infrastructure
+        annotations:
+          summary: "仓库承载文件系统使用率过高: {{ $labels.path }} = {{ printf \"%.1f\" $value | humanizePercentage }}"
+          description: >
+            承载路径 {{ $labels.path }}（{{ $labels.instance }}）使用率已达
+            {{ printf "%.1f" $value | humanizePercentage }}。若为 /tmp/ram-work tmpfs，
+            检查 ramsync 是否正常落盘、清理大文件（docker save 包 / chrome-profile 等）；
+            发票文件目录增长也可能推高用量（见 InvoiceFilesDirSizeHigh）。
+
+      # 超过 95% — 即将打满，写操作随时可能 ENOSPC
+      - alert: RepoTmpfsUsageCritical
+        expr: |
+          repo_tmpfs_used_bytes / repo_tmpfs_size_bytes > 0.95
+        for: 3m
+        labels:
+          severity: critical
+          component: repo-disk
+          category: infrastructure
+        annotations:
+          summary: "仓库承载文件系统即将打满: {{ $labels.path }} = {{ printf \"%.1f\" $value | humanizePercentage }}"
+          description: >
+            承载路径 {{ $labels.path }} 使用率已超 95%，上传发票 / 构建产物可能 ENOSPC。
+            立即释放空间：清理 logs/、tmp/、docker save 缓存，或扩 tmpfs 容量。
+
+      # 发票文件目录增长 — 票面业务数据占空间，触发治理（归档/清理）
+      - alert: InvoiceFilesDirSizeHigh
+        expr: repo_data_dir_size_bytes > 2147483648
+        for: 15m
+        labels:
+          severity: warning
+          component: invoice-files
+          category: data-retention
+        annotations:
+          summary: "发票文件目录超 2GB: {{ $labels.path }} = {{ $value }} 字节"
+          description: >
+            {{ $labels.path }} 已达 {{ $value | humanize1024 }}B。租户票面文件只增不减，
+            需评估按发票 id 归档过期文件，或纳入容量规划。
+
+      # reporter 本身失联 — 指标缺失则上述告警全部失效
+      - alert: DiskCapacityReporterDown
+        expr: absent(repo_tmpfs_used_bytes)
+        for: 10m
+        labels:
+          severity: warning
+          component: repo-disk
+          category: observability
+        annotations:
+          summary: "disk_capacity_reporter 未上报指标"
+          description: >
+            最近 10 分钟没有 repo_tmpfs_used_bytes 指标，容量告警全部失效。
+            检查宿主 cron：python3 AiMonitor/scripts/disk_capacity_reporter.py
+            --output /home/ljy/ramwork-recovery/node-exporter-textfiles/disk_capacity.prom

@@ -1,0 +1,69 @@
+' @title: conf-local 主机机密平面（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 123
+' @iteration: conf-local-secrets-completion
+' @author: cursor
+' @based_on: v122 (v122-enterprise-landscape-20260830-1531-cursor.puml)
+' @updated: 2026-08-31 17:35
+' @description: 部署机 conf-local 为唯一 overlay；加载器不读 config.local.yaml；废弃 *Pwd.md
+
+@startuml
+!include <archimate/Archimate>
+
+title conf-local 机密收口 — v123 Current Architecture (2026-08-31 17:35)
+
+rectangle "Business" {
+  Business_Actor(ops, "平台运维")
+  note right of ops
+    新机器只拷 conf-local
+    @author: cursor @2026-08-31 17:35
+  end note
+  Business_Process(rotate, "废弃已泄露凭据并签发")
+  note right of rotate
+    第 56 条；禁止 filter-repo
+  end note
+}
+
+rectangle "Application" {
+  Application_Component(runAll, "runAll :9999")
+  Application_Component(confload, "confload / conf_loader")
+  note top of confload
+    config.yaml → conf-local
+    不读 config.local.yaml
+    @author: cursor @2026-08-31 17:35
+  end note
+}
+
+rectangle "Technology" {
+  Technology_Node(host, "部署机 DEPLOY_ROOT")
+  Technology_Artifact(cfgRepo, "daydaymoney-deploy")
+  note right of cfgRepo
+    运行时 conf 非机密骨架
+  end note
+  Technology_Artifact(conflocal, "conf-local/")
+  note right of conflocal
+    gitignore 唯一 overlay
+    机密 + 本机非机密
+    @author: cursor @2026-08-31 17:35
+  end note
+  Technology_Artifact(example, "conf-local.example")
+  note bottom of example
+    键名骨架无真值
+  end note
+}
+
+Rel_Assignment(ops, rotate)
+Rel_Flow(cfgRepo, host, "git pull 非机密 conf")
+Rel_Serving(host, runAll, "exec")
+Rel_Access_r(confload, conflocal, "唯一 overlay")
+Rel_Association(example, conflocal, "冷启动拷贝")
+Rel_Serving(confload, runAll, "读 CONF_ROOT")
+
+Implementation_Plateau(p122, "Plateau v122 二进制+配置仓")
+Implementation_Plateau(p123, "Plateau v123 conf-local 唯一 overlay")
+Implementation_WorkPackage(wp, "WP-conf-local-secrets-completion")
+Rel_Realization(wp, p123, "delivers")
+Rel_Triggering(p122, wp, "feeds")
+
+@enduml

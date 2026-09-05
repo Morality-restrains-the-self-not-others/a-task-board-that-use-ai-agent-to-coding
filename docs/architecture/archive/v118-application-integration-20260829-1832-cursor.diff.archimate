@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v118 变迁 (v117→v118)" id="id-v118aidiff01">
+  <folder name="Application" id="id-v118ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v118-app-fe" name="taskFE SPA [MODIFIED v118]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v118-app-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v118-app-goauth" name="taskGitOauth [MODIFIED v118]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v118-app-proj" name="taskProjectService [MODIFIED v118]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v118-app-task" name="taskTaskService [MODIFIED v118]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v118-app-cred" name="taskCredentialService [MODIFIED v118]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v118-app-ev" name="taskEvents"/>
+    <element xsi:type="archimate:DataObject" id="id-v118-data-cred" name="git_oauth_appusercredential"/>
+    <element xsi:type="archimate:DataObject" id="id-v118-data-pgrant" name="project_git_oauth_grant [NEW v118]"/>
+    <element xsi:type="archimate:DataObject" id="id-v118-data-cgrant" name="task_comments.oauth_grant [MODIFIED v118]"/>
+  </folder>
+  <folder name="Business" id="id-v118ai-biz" type="business">
+    <element xsi:type="archimate:BusinessEvent" id="id-v118-ev-p" name="PROJECT_GIT_OAUTH_GRANTED [NEW v118]"/>
+    <element xsi:type="archimate:BusinessEvent" id="id-v118-ev-c" name="COMMENT_GIT_OAUTH_GRANTED [NEW v118]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v118ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v118-pl-v117" name="Plateau v117 有票即可用"/>
+    <element xsi:type="archimate:Plateau" id="id-v118-pl-v118" name="Plateau v118 资源 L2 标记"/>
+    <element xsi:type="archimate:Gap" id="id-v118-gap" name="Gap: L1 connected 冒充资源已授权"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v118-wp" name="WP-git-oauth-resource-grant"/>
+  </folder>
+  <folder name="Relations" id="id-v118ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-rel-fe-gw" source="id-v118-app-fe" target="id-v118-app-gw" name="OAuth start / 资源页"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-rel-gw-go" source="id-v118-app-gw" target="id-v118-app-goauth" name="start-from-gateway / callback"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v118-rel-go-cred" source="id-v118-app-goauth" target="id-v118-data-cred" name="upsert L1"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-rel-go-proj" source="id-v118-app-goauth" target="id-v118-app-proj" name="internal MarkGrant"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-rel-go-task" source="id-v118-app-goauth" target="id-v118-app-task" name="internal MarkGrant / ConsumeTicket"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v118-rel-proj-pg" source="id-v118-app-proj" target="id-v118-data-pgrant" name="upsert"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v118-rel-task-cg" source="id-v118-app-task" target="id-v118-data-cgrant" name="upsert"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-rel-proj-evp" source="id-v118-app-proj" target="id-v118-ev-p" name="after grant"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-rel-task-evc" source="id-v118-app-task" target="id-v118-ev-c" name="after grant"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-rel-proj-ev" source="id-v118-app-proj" target="id-v118-app-ev" name="publish Kafka"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-rel-task-ev" source="id-v118-app-task" target="id-v118-app-ev" name="publish Kafka"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-rel-cred-task" source="id-v118-app-cred" target="id-v118-app-task" name="check comment L2"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-rel-cred-go" source="id-v118-app-cred" target="id-v118-app-goauth" name="access-for-user if granted"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v118-rel-pl117-gap" source="id-v118-pl-v117" target="id-v118-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v118-rel-wp-gap" source="id-v118-wp" target="id-v118-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v118-rel-wp-pl118" source="id-v118-wp" target="id-v118-pl-v118"/>
+  </folder>
+  <folder name="Views" id="id-v118ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v118-view-mig" name="架构变迁 v117→v118 — git-oauth-resource-grant">
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-pl117" archimateElement="id-v118-pl-v117">
+        <bounds x="48" y="48" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-pl117-gap" source="id-v118-do-pl117" target="id-v118-do-gap" archimateRelationship="id-v118-rel-pl117-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-gap" targetConnections="id-v118-c-pl117-gap id-v118-c-wp-gap" archimateElement="id-v118-gap">
+        <bounds x="320" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-wp" archimateElement="id-v118-wp">
+        <bounds x="320" y="160" width="420" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-wp-gap" source="id-v118-do-wp" target="id-v118-do-gap" archimateRelationship="id-v118-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-wp-pl118" source="id-v118-do-wp" target="id-v118-do-pl118" archimateRelationship="id-v118-rel-wp-pl118"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-pl118" targetConnections="id-v118-c-wp-pl118" archimateElement="id-v118-pl-v118">
+        <bounds x="780" y="160" width="240" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v118-view-topo" name="v118 Target — Git OAuth 资源使用标记">
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-fe" archimateElement="id-v118-app-fe">
+        <bounds x="48" y="48" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-fe-gw" source="id-v118-do-fe" target="id-v118-do-gw" archimateRelationship="id-v118-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-gw" targetConnections="id-v118-c-fe-gw" archimateElement="id-v118-app-gw">
+        <bounds x="220" y="48" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-gw-go" source="id-v118-do-gw" target="id-v118-do-go" archimateRelationship="id-v118-rel-gw-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-go" targetConnections="id-v118-c-gw-go id-v118-c-cred-go" archimateElement="id-v118-app-goauth">
+        <bounds x="440" y="48" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-go-cred" source="id-v118-do-go" target="id-v118-do-credrow" archimateRelationship="id-v118-rel-go-cred"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-go-proj" source="id-v118-do-go" target="id-v118-do-proj" archimateRelationship="id-v118-rel-go-proj"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-go-task" source="id-v118-do-go" target="id-v118-do-task" archimateRelationship="id-v118-rel-go-task"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-credrow" targetConnections="id-v118-c-go-cred" archimateElement="id-v118-data-cred">
+        <bounds x="660" y="16" width="280" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-proj" targetConnections="id-v118-c-go-proj" archimateElement="id-v118-app-proj">
+        <bounds x="440" y="140" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-proj-pg" source="id-v118-do-proj" target="id-v118-do-pgrant" archimateRelationship="id-v118-rel-proj-pg"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-proj-evp" source="id-v118-do-proj" target="id-v118-do-evp" archimateRelationship="id-v118-rel-proj-evp"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-proj-ev" source="id-v118-do-proj" target="id-v118-do-ev" archimateRelationship="id-v118-rel-proj-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-task" targetConnections="id-v118-c-go-task id-v118-c-cred-task" archimateElement="id-v118-app-task">
+        <bounds x="440" y="220" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-task-cg" source="id-v118-do-task" target="id-v118-do-cgrant" archimateRelationship="id-v118-rel-task-cg"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-task-evc" source="id-v118-do-task" target="id-v118-do-evc" archimateRelationship="id-v118-rel-task-evc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-task-ev" source="id-v118-do-task" target="id-v118-do-ev" archimateRelationship="id-v118-rel-task-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-pgrant" targetConnections="id-v118-c-proj-pg" archimateElement="id-v118-data-pgrant">
+        <bounds x="660" y="140" width="280" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-cgrant" targetConnections="id-v118-c-task-cg" archimateElement="id-v118-data-cgrant">
+        <bounds x="660" y="220" width="280" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-evp" targetConnections="id-v118-c-proj-evp" archimateElement="id-v118-ev-p">
+        <bounds x="660" y="280" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-evc" targetConnections="id-v118-c-task-evc" archimateElement="id-v118-ev-c">
+        <bounds x="660" y="328" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-ev" targetConnections="id-v118-c-proj-ev id-v118-c-task-ev" archimateElement="id-v118-app-ev">
+        <bounds x="48" y="220" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-do-cred" archimateElement="id-v118-app-cred">
+        <bounds x="48" y="140" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-cred-task" source="id-v118-do-cred" target="id-v118-do-task" archimateRelationship="id-v118-rel-cred-task"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-c-cred-go" source="id-v118-do-cred" target="id-v118-do-go" archimateRelationship="id-v118-rel-cred-go"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

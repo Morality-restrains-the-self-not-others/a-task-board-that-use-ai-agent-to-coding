@@ -1,0 +1,21 @@
+version: "1"
+fragments:
+  # OPT-20260806-057: django 目录退役；host/port/internalApiBase 为死字段（Django 退役）不再同步
+  # sms：验证码由 taskAuth 发送；真源 conf/core/sms.yaml
+  - from: ../../core/sms/config.yaml
+    to: sms.yaml
+    pick: [sms]
+  # email：EMAIL_SENT Kafka 失败时 SMTP 回退；真源 conf/core/email/config.yaml
+  # （与 events/domain-events/email.yaml 同源，避免 taskAuth 只读 EMAIL_* 环境变量导致 empty from address）
+  - from: ../../core/email/config.yaml
+    to: email.yaml
+    pick: [email, email2]
+  # OPT-20260821-026: taskBill 内部密钥。taskAuth 调 taskBill 内部接口须带
+  # X-TaskBill-Internal-Secret；规则 29：运行时只读本目录片段，禁止直读 conf/billing/task-bill。
+  - from: ../../billing/task-bill/config.yaml
+    to: task-bill.yaml
+    pick: [internalSecret]
+  # Path A 连接查询：taskGitOauth 内部 API 使用与 SSO 同源的 bridge secret
+  - from: ../git-oauth/django.yaml
+    to: git-oauth.yaml
+    pick: [ssoJwtSecret]

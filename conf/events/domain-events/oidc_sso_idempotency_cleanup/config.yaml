@@ -1,0 +1,7 @@
+intents:
+  1_cleanup:
+    host: 0.0.0.0
+    port: 18069
+    groupId: task-events-oidc-sso-idempotency-cleanup-1-cleanup
+    events:
+    - OIDC_SSO_IDEMPOTENCY_CLEANUP

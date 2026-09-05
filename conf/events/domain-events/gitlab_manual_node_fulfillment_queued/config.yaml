@@ -1,0 +1,7 @@
+intents:
+  1_ops_alert:
+    host: 0.0.0.0
+    port: 18075
+    groupId: task-events-gitlab-manual-node-fulfillment-queued-1-ops-alert
+    events:
+    - GITLAB_MANUAL_NODE_FULFILLMENT_QUEUED

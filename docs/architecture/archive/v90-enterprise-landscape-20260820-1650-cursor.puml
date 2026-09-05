@@ -1,0 +1,37 @@
+' @title: 容器→SaaS 接口契约版本（企业景观）
+' @view: enterprise-landscape
+' @status: target
+' @version: 90
+' @iteration: saas-inbound-skill-version
+' @author: cursor
+' @based_on: v88 (v88-enterprise-landscape-20260820-1520-cursor.puml)
+' @updated: 2026-08-20 16:50
+' @description: 厂商对照已发布 inbound 契约实现容器镜像
+
+@startuml
+!include <archimate/Archimate>
+
+title v90 Target — inbound skill 版本企业景观 2026-08-20 16:50
+
+Business_Actor(vendor, "镜像厂商")
+Business_Process(publish, "登记容器镜像")
+Application_Component(aip, "taskAiProvider")
+Application_DataObject(img, "vendorcontainerimage + skill version")
+Motivation_Constraint(c1, "镜像必须声明已发布契约版本")
+Motivation_Principle(p1, "单活 HTTP 面；版本是标签不是 URL 分叉")
+
+Rel_Triggering(vendor, publish, "添加镜像版本")
+Rel_Flow(publish, aip, "saas_inbound_skill_version")
+Rel_Access(aip, img, "W")
+Rel_Association(img, c1, "ADR-0024")
+Rel_Association(aip, p1, "One-Version")
+
+Implementation_Plateau(p88, "Plateau v88")
+Implementation_Gap(gap, "Gap: skill 无版本")
+Implementation_WorkPackage(wp, "WP-saas-inbound-skill-version")
+Implementation_Plateau(p90, "Plateau v90")
+Rel_Triggering(p88, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p90, "delivers")
+
+@enduml

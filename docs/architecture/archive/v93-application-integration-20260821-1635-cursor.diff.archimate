@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v93 diff (v92→v93)" id="id-v93aidiff01">
+  <folder name="Application" id="id-v93aid-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v93-app-fe" name="taskFE Vue SPA [MODIFIED v93]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v93-app-prov" name="taskAiProvider [MODIFIED v93]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v93-app-cloud" name="taskCloudService [MODIFIED v93]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v93-app-task" name="taskTaskService [MODIFIED v93]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v93-app-portal" name="provider SPA skill 页"/>
+    <element xsi:type="archimate:DataObject" id="id-v93-do-img" name="ai_provider_vendorcontainerimage [MODIFIED v93]"/>
+    <element xsi:type="archimate:DataObject" id="id-v93-do-inst" name="cloud_tenant_installed_images [MODIFIED v93]"/>
+  </folder>
+  <folder name="Technology" id="id-v93aid-tech" type="technology">
+    <element xsi:type="archimate:Artifact" id="id-v93-art-yaml" name="/app/imageSkills.yaml [NEW v93]"/>
+    <element xsi:type="archimate:Node" id="id-v93-tech-mysqlp" name="MySQL ai_provider utf8mb4"/>
+    <element xsi:type="archimate:Node" id="id-v93-tech-mysqlc" name="MySQL task_cloud utf8mb4"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v93aid-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v93-pl-v92" name="Plateau v92"/>
+    <element xsi:type="archimate:Plateau" id="id-v93-pl-v93" name="Plateau v93"/>
+    <element xsi:type="archimate:Gap" id="id-v93-gap" name="Gap: 镜像无技能目录约定"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v93-wp" name="WP-image-container-skill-list"/>
+  </folder>
+  <folder name="Relations" id="id-v93aid-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v93-rel-fe-prov" source="id-v93-app-fe" target="id-v93-app-prov" name="catalog image_skills"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v93-rel-fe-cloud" source="id-v93-app-fe" target="id-v93-app-cloud" name="installed images"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v93-rel-fe-task" source="id-v93-app-fe" target="id-v93-app-task" name="mentions.skill"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v93-rel-prov-yaml" source="id-v93-app-prov" target="id-v93-art-yaml" name="OCI extract"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v93-rel-prov-img" source="id-v93-app-prov" target="id-v93-do-img" name="bind JSON"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v93-rel-cloud-inst" source="id-v93-app-cloud" target="id-v93-do-inst" name="copy/re-extract"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v93-rel-portal-yaml" source="id-v93-app-portal" target="id-v93-art-yaml" name="规范文档"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v93-rel-mysql-img" source="id-v93-tech-mysqlp" target="id-v93-do-img" name="InnoDB"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v93-rel-mysql-inst" source="id-v93-tech-mysqlc" target="id-v93-do-inst" name="InnoDB"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v93-rel-pl92-gap" source="id-v93-pl-v92" target="id-v93-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v93-rel-wp-gap" source="id-v93-wp" target="id-v93-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v93-rel-wp-pl93" source="id-v93-wp" target="id-v93-pl-v93"/>
+  </folder>
+  <folder name="Views" id="id-v93aid-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v93-view-mig" name="架构变迁 v92→v93 — image-container-skill-list">
+      <child xsi:type="archimate:DiagramObject" id="id-v93-do-pl92" archimateElement="id-v93-pl-v92">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v93-c-pl92-gap" source="id-v93-do-pl92" target="id-v93-do-gap" archimateRelationship="id-v93-rel-pl92-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v93-do-gap" targetConnections="id-v93-c-pl92-gap id-v93-c-wp-gap" archimateElement="id-v93-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v93-do-wp" archimateElement="id-v93-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v93-c-wp-gap" source="id-v93-do-wp" target="id-v93-do-gap" archimateRelationship="id-v93-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v93-c-wp-pl93" source="id-v93-do-wp" target="id-v93-do-pl93" archimateRelationship="id-v93-rel-wp-pl93"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v93-do-pl93" targetConnections="id-v93-c-wp-pl93" archimateElement="id-v93-pl-v93">
+        <bounds x="560" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v93-view-flow" name="v93 Target — 镜像技能抽取与引用">
+      <child xsi:type="archimate:DiagramObject" id="id-v93-d-fe" archimateElement="id-v93-app-fe">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v93-c-fe-prov" source="id-v93-d-fe" target="id-v93-d-prov" archimateRelationship="id-v93-rel-fe-prov"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v93-c-fe-cloud" source="id-v93-d-fe" target="id-v93-d-cloud" archimateRelationship="id-v93-rel-fe-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v93-c-fe-task" source="id-v93-d-fe" target="id-v93-d-task" archimateRelationship="id-v93-rel-fe-task"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v93-d-prov" targetConnections="id-v93-c-fe-prov" archimateElement="id-v93-app-prov">
+        <bounds x="280" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v93-c-prov-yaml" source="id-v93-d-prov" target="id-v93-d-yaml" archimateRelationship="id-v93-rel-prov-yaml"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v93-c-prov-img" source="id-v93-d-prov" target="id-v93-d-img" archimateRelationship="id-v93-rel-prov-img"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v93-d-cloud" targetConnections="id-v93-c-fe-cloud" archimateElement="id-v93-app-cloud">
+        <bounds x="280" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v93-c-cloud-inst" source="id-v93-d-cloud" target="id-v93-d-inst" archimateRelationship="id-v93-rel-cloud-inst"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v93-d-task" targetConnections="id-v93-c-fe-task" archimateElement="id-v93-app-task">
+        <bounds x="280" y="230" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v93-d-yaml" targetConnections="id-v93-c-prov-yaml id-v93-c-portal-yaml" archimateElement="id-v93-art-yaml">
+        <bounds x="500" y="48" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v93-d-img" targetConnections="id-v93-c-prov-img id-v93-c-mysql-img" archimateElement="id-v93-do-img">
+        <bounds x="500" y="140" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v93-d-inst" targetConnections="id-v93-c-cloud-inst id-v93-c-mysql-inst" archimateElement="id-v93-do-inst">
+        <bounds x="500" y="230" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v93-d-portal" archimateElement="id-v93-app-portal">
+        <bounds x="48" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v93-c-portal-yaml" source="id-v93-d-portal" target="id-v93-d-yaml" archimateRelationship="id-v93-rel-portal-yaml"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v93-d-mysqlp" archimateElement="id-v93-tech-mysqlp">
+        <bounds x="780" y="140" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v93-c-mysql-img" source="id-v93-d-mysqlp" target="id-v93-d-img" archimateRelationship="id-v93-rel-mysql-img"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v93-d-mysqlc" archimateElement="id-v93-tech-mysqlc">
+        <bounds x="780" y="230" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v93-c-mysql-inst" source="id-v93-d-mysqlc" target="id-v93-d-inst" archimateRelationship="id-v93-rel-mysql-inst"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

@@ -1,0 +1,7 @@
+intents:
+  1_persist_assistant_reply:
+    host: 0.0.0.0
+    port: 18033
+    groupId: task-events-ai-assistant-reply-completed-1-persist-assistant-reply
+    events:
+    - AI_ASSISTANT_REPLY_COMPLETED

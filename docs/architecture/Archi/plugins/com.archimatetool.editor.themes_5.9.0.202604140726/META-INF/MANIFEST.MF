@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Created-By: Maven Archiver 3.6.6
+Build-Jdk-Spec: 21
+Bundle-ManifestVersion: 2
+Bundle-Name: Themes for Archi
+Bundle-SymbolicName: com.archimatetool.editor.themes;singleton:=true
+Bundle-Version: 5.9.0.202604140726
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-Localization: plugin
+Bundle-Vendor: Archi
+Eclipse-BundleShape: dir
+Automatic-Module-Name: com.archimatetool.editor.themes
+Require-Bundle: org.eclipse.e4.ui.css.swt.theme,org.eclipse.ui
+

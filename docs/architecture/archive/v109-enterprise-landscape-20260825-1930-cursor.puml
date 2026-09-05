@@ -1,0 +1,39 @@
+' @title: 系统管理租户详情（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 109
+' @iteration: system-admin-tenant-detail
+' @author: cursor
+' @based_on: v108 (v108-enterprise-landscape-20260825-1735-cursor.puml)
+' @updated: 2026-08-25 19:55
+' @description: 平台员工从租户目录进入只读租户详情（剩余资源、工作空间、订单）
+
+@startuml
+!include <archimate/Archimate>
+
+title v109 — 企业景观 系统管理租户详情 2026-08-25 19:55
+
+Business_Actor(staff, "平台员工 / 超管")
+Business_Process(browse, "浏览租户目录")
+Business_Process(detail, "查看租户详情")
+Application_Component(fe, "taskFE 系统管理")
+Application_Component(tenant, "taskTenantService")
+Application_Component(bill, "taskBill")
+Application_Component(proj, "taskProjectService")
+
+Rel_Assignment(staff, browse)
+Rel_Assignment(staff, detail)
+Rel_Flow(staff, fe, "点击公司名称")
+Rel_Flow(fe, tenant, "GET tenant header")
+Rel_Flow(fe, bill, "GET quotas + orders")
+Rel_Flow(fe, proj, "GET workspaces")
+
+Implementation_Plateau(p108, "Plateau v108")
+Implementation_Plateau(p109, "Plateau v109")
+Implementation_Gap(g, "Gap: 租户名纯文本，无详情页")
+Implementation_WorkPackage(wp, "WP-system-admin-tenant-detail")
+Rel_Triggering(p108, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p109, "delivers")
+
+@enduml

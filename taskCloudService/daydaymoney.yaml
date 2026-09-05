@@ -1,0 +1,7 @@
+# daydaymoney.yaml — service identity (do NOT put workspace_id / project_id / company_id)
+version: 1
+service_id: taskCloudService
+display_name: Task Cloud Service
+tags:
+  - svc:taskCloudService
+  - domain:cloud

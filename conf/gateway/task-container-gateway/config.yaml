@@ -1,0 +1,33 @@
+host: 0.0.0.0
+port: 8014
+logging:
+  log_file: logs/task-container-gateway/gateway.log
+enabled: true
+internalSecret: ""
+forwardReadSec: 120
+forwardConnectSec: 15
+relayToTrae:
+  # 同机 loopback，避免经公网 nginx 502（上游曾仅绑 127.0.0.1）
+  url: http://127.0.0.1:8797
+  secret: ""
+  readSec: 30
+credentialService:
+  # 与 Django taskCredentialServiceBase 一致：同机 loopback，避免经公网 nginx 502
+  url: http://127.0.0.1:8015
+relayRuntime:
+  # TASK：注入容器的公网 Origin（须经 agentsupport 子域，勿改 loopback）
+  taskApiEndpointOrigin: ${scheme}://${subdomains.agentsupport}
+  # BUSINESS：注入容器的公网 Origin
+  businessApiEndpointOrigin: ${scheme}://${subdomains.businessapi}
+domainEvents:
+  # 本机 Docker Kafka（9093）；勿用 ${subdomains.kafka} 公网主机——
+  # 同机服务 dial 公网 advertised 地址会 i/o timeout，导致 container_job_stream SSE 全失败。
+  kafkaBootstrapServers: localhost:9093
+taskCloudService:
+  url: http://127.0.0.1:8018
+  # empty = Cloud requireInternalSecret allows when InternalSecret unset
+  internalSecret: ""
+taskAuth:
+  url: http://127.0.0.1:8003
+  # empty = taskAuth requireInternalSecret allows when InternalSecret unset
+  internalSecret: ""

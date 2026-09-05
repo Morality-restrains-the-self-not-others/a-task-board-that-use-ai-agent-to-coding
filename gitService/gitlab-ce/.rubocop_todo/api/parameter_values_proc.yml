@@ -1,0 +1,5 @@
+---
+API/ParameterValuesProc:
+  Details: grace period
+  Exclude:
+    - 'ee/lib/api/admin/data_management.rb'

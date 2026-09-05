@@ -1,0 +1,39 @@
+---
+description: 子仓库优先提交 — 先提交推送子仓库再提交推送主仓库
+globs:
+  - "**/.git/**"
+  - ".gitmodules"
+  - ".ai/01_project_constraints/32_submodule_commit_order.md"
+alwaysApply: true
+---
+
+# 子仓库优先提交（元规则）
+
+适用于整个 monorepo。详细条文见 `.ai/01_project_constraints/32_submodule_commit_order.md`。
+
+## 强制要求
+
+- 本仓库为 meta-repo，包含 34 个 git submodule（`git submodule status` 可列）。
+- 当一次变更同时涉及子仓库（submodule 目录内）和主仓库时，**必须先提交并推送子仓库，再提交并推送主仓库**。
+- 禁止在子仓库未推送的情况下提交/推送主仓库。
+
+## 提交前检查（Agent 必须执行）
+
+每次 `git commit` 前，Agent 必须：
+
+1. 执行任一检测命令确认无遗漏子仓库变更：
+   - `git submodule foreach --quiet 'git status --porcelain'`（检测未提交）
+   - `git submodule foreach --quiet 'git rev-list --count @{u}..HEAD'`（检测未推送）
+2. 对于每个有变更的子仓库，进入其目录独立执行 `git add` → `git commit` → `git push`
+3. 所有子仓库处理完毕后，回到 meta-repo 根目录提交主仓库变更
+4. **快捷脚本**：`python3 runAll/scripts/commit_with_submodules.py --apply`
+
+## 自动化拦截（Git Hooks）
+
+- **pre-commit** (`.githooks/pre-commit`)：`git submodule foreach` 检测未提交 → 阻断
+- **pre-push** (`.githooks/pre-push`)：`git submodule foreach` 检测未推送 → 阻断
+- hooks 在 `git commit` / `git push` 时自动触发
+
+## 原因
+
+若先提交主仓库，则主仓库记录的 submodule commit 指针指向尚未推送到远端的子仓库 commit，导致其他开发者或 CI 拉取后 submodule 处于无法解析引用的状态。正确性 > 便利性。

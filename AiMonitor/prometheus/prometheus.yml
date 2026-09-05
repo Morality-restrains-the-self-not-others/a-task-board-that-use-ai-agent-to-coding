@@ -1,0 +1,238 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alerting rules — evaluated at evaluation_interval.
+rule_files:
+  - /etc/prometheus/rules/oidc-alerts.yml
+  - /etc/prometheus/rules/log-collection-alerts.yml
+  - /etc/prometheus/rules/database-archive-alerts.yml
+  - /etc/prometheus/rules/gitlab-edge-alerts.yml
+  - /etc/prometheus/rules/www-edge-alerts.yml
+  - /etc/prometheus/rules/provider-edge-alerts.yml
+  - /etc/prometheus/rules/disk-capacity-alerts.yml
+  - /etc/prometheus/rules/task-events-timer-alerts.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Application HTTP RED metrics (tracelog MetricsMiddleware).
+  # host.docker.internal resolves to the Docker host from inside the bridge
+  # network (requires extra_hosts: "host.docker.internal:host-gateway").
+  # service= label is the Grafana dashboard grouping key (job names stay stable
+  # so existing alerts like up{job="taskauth-metrics"} keep working).
+  - job_name: taskauth-metrics
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["host.docker.internal:8003"]
+        labels:
+          service: task-auth
+
+  - job_name: task-bill-metrics
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["host.docker.internal:8004"]
+        labels:
+          service: task-bill
+
+  # v6 Go services — /api/metrics on project / task / cloud
+  - job_name: v6-go-services
+    scrape_interval: 30s
+    metrics_path: /api/metrics
+    static_configs:
+      - targets: ["host.docker.internal:8016"]
+        labels:
+          group: v6-django-split
+          service: task-project-service
+      - targets: ["host.docker.internal:8017"]
+        labels:
+          group: v6-django-split
+          service: task-task-service
+      - targets: ["host.docker.internal:8018"]
+        labels:
+          group: v6-django-split
+          service: task-cloud-service
+
+  # Probe runAll health_check.url endpoints using blackbox exporter.
+  - job_name: runall-health
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/runall-health-targets.json
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Public gitlab.daydaymoney.com edge probe — 期望 302 → /users/sign_in（200）。
+  # 2026-08-07 该域名 502 持续数小时无监控告警，补此探活（OPT-20260807-007）。
+  - job_name: gitlab-public
+    scrape_interval: 30s
+    metrics_path: /probe
+    params:
+      module: [http_redirect_ok]
+    static_configs:
+      - targets:
+          - "https://gitlab.daydaymoney.com/"
+        labels:
+          service: gitlab-public
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # github.com OAuth 端点出站探活（OPT-20260810-050）— 私有仓换票/refresh 依赖
+  # github.com/login/oauth/access_token，与 api.github.com 不同域名，曾直连超时。
+  # 任一 HTTP 状态（404/405 均正常）即视为可达；探针超时/连接失败 → probe_success=0 告警。
+  - job_name: github-oauth-public
+    scrape_interval: 30s
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - "https://github.com/login/oauth/access_token"
+        labels:
+          service: github-oauth-public
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # www.daydaymoney.com SPA 首页探活（OPT-20260811-090）— 期望最终 200 且 body 含 <!DOCTYPE html>。
+  # 2026-08-11 故障：dist 被并发 build 抹掉后首页 302 → 空 /static/assets/ → 404，
+  # 而 /health 仍 200 掩盖故障；此探活断言 SPA HTML 而非任意 2xx/3xx。
+  - job_name: www-public
+    scrape_interval: 30s
+    metrics_path: /probe
+    params:
+      module: [http_2xx_html]
+    static_configs:
+      - targets:
+          - "https://www.daydaymoney.com/"
+        labels:
+          service: www-public
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # www 首页断链捕获：不跟随重定向，Location 指向空 /static/assets/ 即告警（不随最终码误判）。
+  - job_name: www-public-redirect
+    scrape_interval: 30s
+    metrics_path: /probe
+    params:
+      module: [http_redirect_no_assets]
+    static_configs:
+      - targets:
+          - "https://www.daydaymoney.com/"
+        labels:
+          service: www-public-redirect
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # www 登录页探活 — 登录页同为 SPA HTML（网关 forward-auth 前置），200 + HTML 断言。
+  - job_name: www-login
+    scrape_interval: 30s
+    metrics_path: /probe
+    params:
+      module: [http_2xx_html]
+    static_configs:
+      - targets:
+          - "https://www.daydaymoney.com/auth/login/"
+        labels:
+          service: www-login
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # provider.daydaymoney.com 镜像市场公网探活（RT-20260901-0126）— SH 反向隧道 8010 半开时
+  # TLS 通但 HTTP 0 字节超时，浏览器表现为「打不开」；断言最终 200 + HTML doctype。
+  - job_name: provider-public
+    scrape_interval: 30s
+    metrics_path: /probe
+    params:
+      module: [http_2xx_html]
+    static_configs:
+      - targets:
+          - "https://provider.daydaymoney.com/"
+        labels:
+          service: provider-public
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # 本机 taskAiProvider :8010 探活（RT-20260901-0126）— 区分「服务本身挂」与「SH 隧道半开」：
+  # provider-public 挂而此处正常 → 故障在 SH 反向隧道；此处也挂 → 先查本机 taskAiProvider。
+  # host.docker.internal 需要 blackbox-exporter 的 extra_hosts host-gateway（见 docker-compose.yaml）。
+  - job_name: provider-local-8010
+    scrape_interval: 30s
+    metrics_path: /probe
+    params:
+      module: [http_2xx_html]
+    static_configs:
+      - targets:
+          - "http://host.docker.internal:8010/"
+        labels:
+          service: provider-local-8010
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Host system metrics via node_exporter
+  - job_name: node-exporter
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # MySQL instance metrics via mysqld_exporter
+  # Provides table sizes, connection counts, query performance for archive monitoring.
+  - job_name: mysqld-exporter
+    scrape_interval: 60s
+    static_configs:
+      - targets: ["mysqld-exporter:9104"]
+        labels:
+          instance: "mysql-main"
+
+  # APISIX gateway metrics (OPT-20260827-003): user-perceived HTTP latency/status
+  # includes gateway routing / forward-auth / upstream queueing. Exported on the
+  # loopback-published 19091 (container-internal 0.0.0.0:9091 privileged_agent).
+  - job_name: apisix-gateway
+    scrape_interval: 15s
+    metrics_path: /apisix/prometheus/metrics
+    static_configs:
+      - targets: ["host.docker.internal:19091"]
+        labels:
+          instance: "taskgateway-apisix"

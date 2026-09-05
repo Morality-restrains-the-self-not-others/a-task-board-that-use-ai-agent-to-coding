@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v92 全量 (post-change)" id="id-v92elfull01">
+  <folder name="Business" id="id-v92elf-biz" type="business">
+    <element xsi:type="archimate:BusinessService" id="id-v92ef-biz-ref" name="用户推荐 [MODIFIED v92]"/>
+  </folder>
+  <folder name="Application" id="id-v92elf-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v92ef-app-fe" name="taskFE [MODIFIED v92]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v92ef-app-ref" name="taskReferral [MODIFIED v92]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v92ef-app-bill" name="taskBill [MODIFIED v92]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v92elf-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v92ef-pl-v91" name="Plateau v91"/>
+    <element xsi:type="archimate:Plateau" id="id-v92ef-pl-v92" name="Plateau v92"/>
+    <element xsi:type="archimate:Gap" id="id-v92ef-gap" name="Gap: 推荐无法按渠道拆分"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v92ef-wp" name="WP-referral-channel-codes"/>
+  </folder>
+  <folder name="Relations" id="id-v92elf-rel" type="relations">
+    <element xsi:type="archimate:ServingRelationship" id="id-v92ef-rel-fe-bs" source="id-v92ef-app-fe" target="id-v92ef-biz-ref" name="SPA"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v92ef-rel-ref-fe" source="id-v92ef-app-ref" target="id-v92ef-app-fe" name="channels/stats API"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v92ef-rel-bill-ref" source="id-v92ef-app-bill" target="id-v92ef-app-ref" name="edge/accrual"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v92ef-rel-pl91-gap" source="id-v92ef-pl-v91" target="id-v92ef-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v92ef-rel-wp-gap" source="id-v92ef-wp" target="id-v92ef-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v92ef-rel-wp-pl92" source="id-v92ef-wp" target="id-v92ef-pl-v92"/>
+  </folder>
+  <folder name="Views" id="id-v92elf-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v92ef-view-mig" name="架构变迁 v91→v92 — 推荐渠道可见性">
+      <child xsi:type="archimate:DiagramObject" id="id-v92ef-do-pl91" archimateElement="id-v92ef-pl-v91">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92ef-c-pl91-gap" source="id-v92ef-do-pl91" target="id-v92ef-do-gap" archimateRelationship="id-v92ef-rel-pl91-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92ef-do-gap" targetConnections="id-v92ef-c-pl91-gap id-v92ef-c-wp-gap" archimateElement="id-v92ef-gap">
+        <bounds x="240" y="48" width="380" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92ef-do-wp" archimateElement="id-v92ef-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92ef-c-wp-gap" source="id-v92ef-do-wp" target="id-v92ef-do-gap" archimateRelationship="id-v92ef-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92ef-c-wp-pl92" source="id-v92ef-do-wp" target="id-v92ef-do-pl92" archimateRelationship="id-v92ef-rel-wp-pl92"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92ef-do-pl92" targetConnections="id-v92ef-c-wp-pl92" archimateElement="id-v92ef-pl-v92">
+        <bounds x="560" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v92ef-view-flow" name="v92 Current — 推荐渠道">
+      <child xsi:type="archimate:DiagramObject" id="id-v92ef-d-bs" archimateElement="id-v92ef-biz-ref">
+        <bounds x="48" y="48" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92ef-d-fe" archimateElement="id-v92ef-app-fe">
+        <bounds x="48" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92ef-c-fe-bs" source="id-v92ef-d-fe" target="id-v92ef-d-bs" archimateRelationship="id-v92ef-rel-fe-bs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92ef-d-ref" archimateElement="id-v92ef-app-ref">
+        <bounds x="260" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92ef-c-ref-fe" source="id-v92ef-d-ref" target="id-v92ef-d-fe" archimateRelationship="id-v92ef-rel-ref-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92ef-d-bill" archimateElement="id-v92ef-app-bill">
+        <bounds x="470" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92ef-c-bill-ref" source="id-v92ef-d-bill" target="id-v92ef-d-ref" archimateRelationship="id-v92ef-rel-bill-ref"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

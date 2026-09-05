@@ -1,0 +1,26 @@
+- page_title _('No repository')
+- @skip_current_level_breadcrumb = true
+
+%h2.gl-flex
+  .gl-flex.gl-items-center.gl-justify-center
+    = sprite_icon('warning-solid', size: 24, css_class: 'gl-mr-2')
+  = _('No repository')
+
+%p.gl-mb-4.gl-leading-24
+  #{ _('The repository for this project does not exist.') }
+  %br
+  #{ _('This means you can not push code until you create an empty repository or import existing one.') }
+%hr
+
+.no-repo-actions
+  = link_button_to project_repository_path(@project), method: :post, variant: :confirm do
+    = _('Create empty repository')
+
+  %strong.gl-mx-3 or
+
+  = link_button_to new_project_import_path(@project) do
+    = _('Import repository')
+
+- if can? current_user, :remove_project, @project
+  .gl-mt-5
+    = link_button_to _('Delete project'), project_path(@project), data: { confirm: remove_project_message, confirm_btn_variant: 'danger' }, aria: { label: _('Delete project') }, method: :delete, class: 'gl-float-right', variant: :danger

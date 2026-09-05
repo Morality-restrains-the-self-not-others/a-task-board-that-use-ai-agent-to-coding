@@ -1,0 +1,23 @@
+# 边缘 nginx：gitlab-tencent-sh-1.daydaymoney.com → 本机 GitLab :8014
+# 2026-08-18 已写入 Host sh：/etc/nginx/conf.d/00-map-upstreams.conf 与 20-https.conf
+# 证书：wildcard *.daydaymoney.com（letsencrypt live/daydaymoney.com）
+# SSH clone：宿主机 2223 → 容器 22（勿占用 sshd :2222）
+
+# --- 00-map-upstreams.conf ---
+# upstream daydaymoney_gitlab_sh1  { server 127.0.0.1:8014; }
+
+# --- 20-https.conf ---
+# server {
+#     listen 443 ssl;
+#     listen [::]:443 ssl;
+#     http2 on;
+#     server_name gitlab-tencent-sh-1.daydaymoney.com;
+#     ssl_certificate     /etc/letsencrypt/live/daydaymoney.com/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/daydaymoney.com/privkey.pem;
+#     location / {
+#         proxy_pass http://daydaymoney_gitlab_sh1;
+#         proxy_set_header Host $host;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#     }
+# }

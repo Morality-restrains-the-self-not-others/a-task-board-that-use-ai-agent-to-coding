@@ -1,0 +1,26 @@
+---
+description: 结构化日志 level 仅允许小写 debug|info|warn|error；禁止 INFO/WARNING 等混用
+globs:
+  - "**/*.go"
+  - "**/*.py"
+  - "trae-agent/onlineServiceJS/**"
+  - "onlineServiceJS/**"
+alwaysApply: false
+---
+
+# 结构化日志 level 小写（元规则）
+
+适用于整个 monorepo **所有** 写入 Loki 的 JSON 日志。细则见 `.ai/01_project_constraints/23_log_level_lowercase.md`；采集总规范见 `.ai/03_technical_implementation/12_observability_log_shipping.md`。
+
+## 强制要求
+
+- `level` **必须**为小写：`debug` | `info` | `warn` | `error`。
+- **禁止**输出 `INFO` / `WARN` / `ERROR` / `WARNING` 等作为 `level` 字段或 Loki 标签。
+- `warning`→`warn`，`critical`/`fatal`→`error`，空→`info`。
+- 优先经共享封装：Go `shareLib/tracelog.NormalizeLevel` / slog `Init`；Python `normalize_log_level`；Node 日志封装须小写化。
+
+## 验收
+
+```bash
+rg '"level":"(INFO|WARN|ERROR|DEBUG|WARNING)"' logs/*.log
+```

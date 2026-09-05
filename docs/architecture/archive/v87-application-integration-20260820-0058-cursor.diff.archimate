@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v87 diff (v85→v87)" id="id-v87aidiff01">
+  <folder name="Application" id="id-v87aid-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v87-app-gw" name="API Gateway APISIX :18081"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v87-app-fe" name="taskFE Vue SPA [MODIFIED v87]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v87-app-preview" name="vite preview :4000 [DEPRECATED v87]"/>
+    <element xsi:type="archimate:DataObject" id="id-v87-do-html" name="public/html → releases/id [NEW v87]"/>
+  </folder>
+  <folder name="Technology" id="id-v87aid-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v87-tech-ngx" name="taskfe-nginx Docker [NEW v87]"/>
+    <element xsi:type="archimate:Node" id="id-v87-tech-edge" name="SH Edge nginx"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v87aid-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v87-pl-v85" name="Plateau v85"/>
+    <element xsi:type="archimate:Plateau" id="id-v87-pl-v87" name="Plateau v87"/>
+    <element xsi:type="archimate:Gap" id="id-v87-gap" name="Gap: SPA 绑 vite preview，stop 即 502"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v87-wp" name="WP-taskfe-nginx-static-resident"/>
+  </folder>
+  <folder name="Relations" id="id-v87aid-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v87-rel-edge-gw" source="id-v87-tech-edge" target="id-v87-app-gw" name="www :443"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87-rel-gw-ngx" source="id-v87-app-gw" target="id-v87-tech-ngx" name="spa-catch-all :4000"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v87-rel-ngx-html" source="id-v87-tech-ngx" target="id-v87-do-html" name="root 跟随 symlink"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87-rel-fe-html" source="id-v87-app-fe" target="id-v87-do-html" name="atomic-vite-build 切 symlink"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87-rel-gw-preview" source="id-v87-app-gw" target="id-v87-app-preview" name="[DEPRECATED] 不再转发"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v87-rel-pl85-gap" source="id-v87-pl-v85" target="id-v87-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v87-rel-wp-gap" source="id-v87-wp" target="id-v87-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v87-rel-wp-pl87" source="id-v87-wp" target="id-v87-pl-v87"/>
+  </folder>
+  <folder name="Views" id="id-v87aid-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v87-view-mig" name="架构变迁 v85→v87 — taskfe-nginx-static-resident">
+      <child xsi:type="archimate:DiagramObject" id="id-v87-do-pl85" archimateElement="id-v87-pl-v85">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87-c-pl85-gap" source="id-v87-do-pl85" target="id-v87-do-gap" archimateRelationship="id-v87-rel-pl85-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87-do-gap" targetConnections="id-v87-c-pl85-gap id-v87-c-wp-gap" archimateElement="id-v87-gap">
+        <bounds x="240" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87-do-wp" archimateElement="id-v87-wp">
+        <bounds x="240" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87-c-wp-gap" source="id-v87-do-wp" target="id-v87-do-gap" archimateRelationship="id-v87-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87-c-wp-pl87" source="id-v87-do-wp" target="id-v87-do-pl87" archimateRelationship="id-v87-rel-wp-pl87"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87-do-pl87" targetConnections="id-v87-c-wp-pl87" archimateElement="id-v87-pl-v87">
+        <bounds x="620" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v87-view-flow" name="v87 Target — Docker nginx 静态常驻 SPA">
+      <child xsi:type="archimate:DiagramObject" id="id-v87-d-edge" archimateElement="id-v87-tech-edge">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87-c-edge-gw" source="id-v87-d-edge" target="id-v87-d-gw" archimateRelationship="id-v87-rel-edge-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87-d-gw" targetConnections="id-v87-c-edge-gw" archimateElement="id-v87-app-gw">
+        <bounds x="260" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87-c-gw-ngx" source="id-v87-d-gw" target="id-v87-d-ngx" archimateRelationship="id-v87-rel-gw-ngx"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87-c-gw-preview" source="id-v87-d-gw" target="id-v87-d-preview" archimateRelationship="id-v87-rel-gw-preview"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87-d-ngx" targetConnections="id-v87-c-gw-ngx" archimateElement="id-v87-tech-ngx">
+        <bounds x="500" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87-c-ngx-html" source="id-v87-d-ngx" target="id-v87-d-html" archimateRelationship="id-v87-rel-ngx-html"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87-d-html" targetConnections="id-v87-c-ngx-html id-v87-c-fe-html" archimateElement="id-v87-do-html">
+        <bounds x="500" y="140" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87-d-fe" archimateElement="id-v87-app-fe">
+        <bounds x="260" y="140" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87-c-fe-html" source="id-v87-d-fe" target="id-v87-d-html" archimateRelationship="id-v87-rel-fe-html"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87-d-preview" targetConnections="id-v87-c-gw-preview" archimateElement="id-v87-app-preview">
+        <bounds x="260" y="240" width="220" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

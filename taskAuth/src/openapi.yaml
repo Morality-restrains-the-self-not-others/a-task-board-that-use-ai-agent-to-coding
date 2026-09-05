@@ -1,0 +1,1260 @@
+openapi: 3.0.3
+info:
+  title: taskAuth API
+  description: |
+    浏览器可见的身份与登录 API（经 taskGateway 转发）。
+    内部路径 `/api/internal/*`、OIDC 与 well-known 见运维规范
+    `openapi-internal.yaml`（`/api/swagger-internal/`），不混入本门户文档。
+  version: 1.0.0
+servers:
+  - url: https://127.0.0.1:8443
+    description: taskGateway publicBase（运行时由服务注入）
+paths:
+  /api/accounts/users/profile/company-avatar/:
+    post:
+      summary: 上传公司头像
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+    delete:
+      summary: 删除公司头像
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/accounts/users/profile/copy-personal-to-company/:
+    post:
+      summary: 从个人资料复制到公司资料
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/auth/resource-groups/:
+    get:
+      summary: 列出资源组
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/auth/roles/role_id/{rid}/resource-groups/:
+    get:
+      summary: 列出角色绑定的资源组
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+    put:
+      summary: 更新角色绑定的资源组
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/system-admin/oidc-extension/:
+    get:
+      summary: 读取 OIDC 扩展配置
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+    put:
+      summary: 更新 OIDC 扩展配置
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/user/{user_id}/accounts/users/me/:
+    get:
+      summary: endpoint (/api/user/{user_id}/accounts/users/me/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/system-admin/email-invitations/{id}/:
+    get:
+      summary: endpoint (/api/system-admin/email-invitations/{id}/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/accounts/users/me/account-deletion/:
+    get:
+      summary: 当前用户账号注销 precheck/status 查询
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+    post:
+      summary: 当前用户账号注销 request/cancel
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/kyc/admin/users/{user_id}/override/:
+    get:
+      summary: endpoint (/api/kyc/admin/users/{user_id}/override/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/kyc/admin/users/{user_id}/evaluate/:
+    get:
+      summary: endpoint (/api/kyc/admin/users/{user_id}/evaluate/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/kyc/admin/users/{user_id}/aml/:
+    get:
+      summary: endpoint (/api/kyc/admin/users/{user_id}/aml/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/kyc/admin/users/{user_id}/:
+    get:
+      summary: endpoint (/api/kyc/admin/users/{user_id}/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/user-roles/user_id/{uid}/role_name/{name}/:
+    get:
+      summary: endpoint (/api/auth/user-roles/user_id/{uid}/role_name/{name}/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/user-roles/user_id/{uid}/:
+    get:
+      summary: endpoint (/api/auth/user-roles/user_id/{uid}/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/roles/role_id/{rid}/:
+    get:
+      summary: endpoint (/api/auth/roles/role_id/{rid}/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/roles/company_id/{cid}/:
+    get:
+      summary: endpoint (/api/auth/roles/company_id/{cid}/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/role-users/role_name/{name}/:
+    get:
+      summary: endpoint (/api/auth/role-users/role_name/{name}/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/accounts/users/profile/:
+    get:
+      summary: endpoint (/api/accounts/users/profile/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/accounts/users/bind_phone/:
+    post:
+      summary: 登录态绑定手机号
+      tags: [auth]
+      security:
+        - tokenAuth: []
+      responses:
+        "200":
+          description: bound=true
+        "409":
+          description: phone_taken，可 reclaim
+  /api/accounts/users/profile/bind-phone/:
+    post:
+      summary: 资料页绑定手机号（与 bind_phone 同 handler）
+      tags: [auth]
+      security:
+        - tokenAuth: []
+      responses:
+        "200":
+          description: bound=true
+        "409":
+          description: phone_taken，可 reclaim
+  /api/accounts/users/profile/replace-phone/:
+    post:
+      summary: 资料页更换手机号（与 bind_phone 同 handler）
+      tags: [auth]
+      security:
+        - tokenAuth: []
+      responses:
+        "200":
+          description: bound=true
+        "409":
+          description: phone_taken，可 reclaim
+  /api/system-admin/users:
+    get:
+      summary: system-admin/users endpoint (/api/system-admin/users)
+      tags: [system-admin]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/system-admin/users/{id}/impersonate/:
+    post:
+      summary: Start impersonation session as target user
+      tags: [system-admin]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Login-shaped body plus impersonation metadata
+        "400":
+          description: Missing Idempotency-Key
+        "401":
+          description: Unauthorized
+        "403":
+          description: Missing user:impersonate or privilege escalation
+        "404":
+          description: User not found
+        "409":
+          description: Self or nested impersonation
+        "422":
+          description: Target cannot log in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  minLength: 8
+                  maxLength: 500
+  /api/system-admin/users/{id}/login-history/:
+    get:
+      summary: Superuser list of a user's login history (default success-only)
+      tags: [system-admin]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: include_failures
+          in: query
+          description: When 1, include failed login attempts (outcome != success)
+          schema:
+            type: string
+            enum: ["0", "1"]
+      responses:
+        "200":
+          description: results, total, limit, offset
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
+  /api/auth/impersonation/stop/:
+    post:
+      summary: End impersonation and restore actor session
+      tags: [auth]
+      responses:
+        "200":
+          description: Actor login-shaped body
+        "409":
+          description: Not impersonating
+  /api/auth/inbox/:
+    get:
+      summary: List current user's inbox messages
+      tags: [auth]
+      responses:
+        "200":
+          description: results array of inbox messages
+        "401":
+          description: Unauthorized
+  /api/auth/inbox/{id}/read/:
+    post:
+      summary: Mark an inbox message as read
+      tags: [auth]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+  /api/auth/admin-login/:
+    post:
+      summary: Superuser login entry (separate from public /api/auth/login/)
+      tags: [auth]
+      responses:
+        "200":
+          description: Login-shaped body
+        "400":
+          description: Invalid body
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/accounts/users/me/personal-data-export/:
+    get:
+      summary: Personal data export status/download router
+      tags: [accounts]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+    post:
+      summary: Personal data export request router
+      tags: [accounts]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+  /api/auth/login-history/:
+    get:
+      summary: List current user's login history (default success-only; include_failures=1 adds failed attempts)
+      tags: [auth]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: include_failures
+          in: query
+          description: When 1, include failed login attempts (outcome != success)
+          schema:
+            type: string
+            enum: ["0", "1"]
+      responses:
+        "200":
+          description: results, total, limit, offset
+        "401":
+          description: Unauthorized
+  /api/auth/impersonation/status/:
+    get:
+      summary: Current impersonation status for the caller token
+      tags: [auth]
+      responses:
+        "200":
+          description: impersonating flag and optional target metadata
+        "401":
+          description: Unauthorized
+  /api/system-admin/system-feature-policy:
+    get:
+      summary: system-admin/users endpoint (/api/system-admin/system-feature-policy)
+      tags: [system-admin]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/system-admin/email-invitations/resend:
+    get:
+      summary: invite endpoint (/api/system-admin/email-invitations/resend)
+      tags: [invite]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/system-admin/email-invitations/bulk-resend:
+    get:
+      summary: invite endpoint (/api/system-admin/email-invitations/bulk-resend)
+      tags: [invite]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/system-admin/email-invitations:
+    get:
+      summary: invite endpoint (/api/system-admin/email-invitations)
+      tags: [invite]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/system-admin/dashboard:
+    get:
+      summary: system-admin endpoint (/api/system-admin/dashboard)
+      tags: [system-admin]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/public/system-feature-policy:
+    get:
+      summary: public endpoint (/api/public/system-feature-policy)
+      tags: [public]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/public/email-invitation:
+    get:
+      summary: invite endpoint (/api/public/email-invitation)
+      tags: [invite]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/public/email-unsubscribe:
+    get:
+      summary: 邮件邀请退订（HMAC token；成功 302 前端确认页）
+      tags: [invite]
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "302":
+          description: Redirect to /auth/unsubscribe/?ok=1|0
+        "400":
+          description: Invalid token (JSON Accept)
+    post:
+      summary: RFC 8058 one-click 退订
+      tags: [invite]
+      parameters:
+        - name: token
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: '{ok:true}'
+        "400":
+          description: Invalid token
+  /api/public/email-resubscribe:
+    post:
+      summary: 重新接收邀请邮件（HMAC token；幂等删除 auth_email_unsubscription 行）
+      tags: [invite]
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: '{ok:true,resubscribed:true}'
+        "400":
+          description: Invalid token 或缺少 Idempotency-Key
+  /api/kyc/me:
+    get:
+      summary: kyc endpoint (/api/kyc/me)
+      tags: [kyc]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/wechat/web/callback:
+    get:
+      summary: wechat endpoint (/api/auth/wechat/web/callback)
+      tags: [wechat]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/wechat/unbind:
+    post:
+      summary: wechat endpoint (/api/auth/wechat/unbind)
+      tags: [wechat]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/wechat/login:
+    get:
+      summary: wechat endpoint (/api/auth/wechat/login)
+      tags: [wechat]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/wechat/inapp/callback:
+    get:
+      summary: wechat endpoint (/api/auth/wechat/inapp/callback)
+      tags: [wechat]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/wechat/callback:
+    get:
+      summary: wechat endpoint (/api/auth/wechat/callback)
+      tags: [wechat]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/wechat/bind/callback:
+    get:
+      summary: wechat endpoint (/api/auth/wechat/bind/callback)
+      tags: [wechat]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/wechat/bind:
+    post:
+      summary: wechat endpoint (/api/auth/wechat/bind)
+      tags: [wechat]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/wechat/mp/callback/:
+    get:
+      summary: WeChat MP server URL verification (echostr)
+      tags: [wechat]
+      responses:
+        "200":
+          description: echostr plaintext
+        "403":
+          description: invalid signature
+        "503":
+          description: MP token not configured
+    post:
+      summary: WeChat MP subscribe/SCAN callback
+      tags: [wechat]
+      responses:
+        "200":
+          description: success plaintext
+        "403":
+          description: invalid signature
+        "503":
+          description: MP token not configured
+  /api/auth/wechat/mp/follow-status/:
+    get:
+      summary: Whether current user has service-account (mp) openid bound
+      tags: [wechat]
+      responses:
+        "200":
+          description: '{ bound, has_unionid, ticket_status, conflict_code, message }; may bind via pending ticket qr_scene_str if callback POST was dropped'
+        "401":
+          description: Unauthorized
+  /api/auth/wechat/mp/follow-qr/:
+    post:
+      summary: Issue or reuse a parametric MP QR ticket for the current user
+      tags: [wechat]
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: '{ temp_id, qr_src, expires_at }'
+        "400":
+          description: missing Idempotency-Key
+        "401":
+          description: Unauthorized
+        "503":
+          description: MP not configured or WeChat qrcode/create failed
+  /api/auth/user-roles:
+    get:
+      summary: rbac endpoint (/api/auth/user-roles)
+      tags: [rbac]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/user-permissions:
+    get:
+      summary: rbac endpoint (/api/auth/user-permissions)
+      tags: [rbac]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/tenant/{tenant_id}/gitlab-oidc-sso/:
+    get:
+      summary: 租户自建 GitLab OIDC SSO 状态（不含 secret）
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+    put:
+      summary: 签发租户 GitLab OIDC SSO 客户端
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "400": { description: Bad Request }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+    delete:
+      summary: 吊销租户 GitLab OIDC SSO
+      tags: [api]
+      responses:
+        "204": { description: No Content }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/tenant/{tenant_id}/gitlab-oidc-sso/rotate/:
+    post:
+      summary: 轮换租户 GitLab OIDC SSO client_secret
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "400": { description: Bad Request }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/auth/tenant-memberships:
+    get:
+      summary: rbac endpoint (/api/auth/tenant-memberships)
+      tags: [rbac]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/auth/roles:
+    get:
+      summary: rbac endpoint (/api/auth/roles)
+      tags: [rbac]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/accounts/users/profile/avatar:
+    get:
+      summary: accounts endpoint (/api/accounts/users/profile/avatar)
+      tags: [accounts]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/accounts/sso:
+    get:
+      summary: accounts endpoint (/api/accounts/sso)
+      tags: [accounts]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/health/:
+    get:
+      summary: 健康检查
+      tags: [meta]
+      responses:
+        "200":
+          description: OK
+  /api/auth/verify:
+    get:
+      summary: 校验 Token/Bearer（Go 微服务直连兜底）
+      tags: [auth]
+      security:
+        - tokenAuth: []
+      responses:
+        "200":
+          description: 返回 user_id（tenant_id 由下游从 URL 解析）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  tenant_id:
+                    type: string
+        "401":
+          description: 未认证或用户不可用
+  /api/auth/:
+    post:
+      summary: 登录（主入口）
+      description: |
+        密码登录在 Go 校验 hash 后 enrich-login。
+        phone+code 在 Go 验码/自动注册后 enrich-login（不经 forward-login）。
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: 登录成功
+        "400":
+          description: 校验或 enrich 失败
+  /api/accounts/users/send_password_reset_code/:
+    post:
+      summary: 发送密码重置验证码
+      description: |
+        手机号：taskAuth 本地存码 + 原生 SMS（password_reset 模板）。
+        邮箱：仍委托 Django。
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                email:
+                  type: string
+      responses:
+        "200":
+          description: 已发送
+        "400":
+          description: 用户未注册或参数错误
+  /api/accounts/users/login/:
+    post:
+      summary: 登录（兼容路径）
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: 登录成功
+  /api/accounts/users/activate-session/:
+    post:
+      summary: 激活已保存账号会话（多账号切换）
+      description: |
+        使用目标账号的 Authorization Token 校验并调用 enrich-login，
+        用于导航栏多账号切换。不撤销其它账号的 token。
+      tags: [auth]
+      security:
+        - tokenAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                  description: 可选；若提供须与 token 所属 userId 一致
+      responses:
+        "200":
+          description: |
+            激活成功，返回 user + token（与登录响应同形）。
+            同时通过 Set-Cookie 写入 HttpOnly sessionid（Django session_key）；
+            JSON body 不含 session_key。
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: sessionid=<django-session-key>; HttpOnly; Path=/; SameSite=Lax
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                  token:
+                    type: string
+                  redirect_url:
+                    type: string
+        "400":
+          description: user_id 与 token 不匹配或 JSON 无效
+        "401":
+          description: 令牌缺失或无效
+        "403":
+          description: 账号已禁用
+        "502":
+          description: Django enrich-login 不可用
+  /api/accounts/users/client-ip/:
+    get:
+      summary: 查询当前请求的公网客户端 IP
+      description: |
+        从 X-Forwarded-For（从右跳过 RFC1918/Docker NAT）/ X-Real-IP / RemoteAddr
+        解析调用方公网 IP，供导航栏在用户昵称下方展示。无需鉴权。
+      tags: [meta]
+      responses:
+        "200":
+          description: 解析成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ip]
+                properties:
+                  ip:
+                    type: string
+                    description: 客户端公网 IP（IPv4 或 IPv6 文本）
+                    example: "203.0.113.10"
+        "405":
+          description: 方法不允许
+        "502":
+          description: 无法解析客户端 IP
+  /api/accounts/users/logout/:
+    post:
+      summary: 登出
+      tags: [auth]
+      security:
+        - tokenAuth: []
+      responses:
+        "200":
+          description: OK
+  /api/accounts/users/{user_id}/:
+    get:
+      summary: 获取用户（GET，需 Token）
+      tags: [users]
+      security:
+        - tokenAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 用户信息
+  /api/accounts/users/email_register/:
+    post:
+      summary: 邮箱注册
+      tags: [auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailRegisterRequest"
+      responses:
+        "201":
+          description: 已创建
+        "400":
+          description: 邀请码校验失败（invite_code_required / invite_code_invalid 等）
+  /api/accounts/users/phone_register/:
+    post:
+      summary: 手机号注册
+      tags: [auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhoneRegisterRequest"
+      responses:
+        "201":
+          description: 已创建
+        "400":
+          description: 邀请校验失败。错误码：invite_code_required / invite_code_invalid / invite_code_used / invite_code_revoked / access_code_invalid（邀请链接无效）/ invite_gate_unavailable（邀请验证服务不可达，fail-closed）
+  /api/public/registration-invite-policy/:
+    get:
+      summary: 公开读取注册邀请码策略
+      tags: [auth]
+      responses:
+        "200":
+          description: 策略与当日剩余配额
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistrationInvitePolicyPublic"
+  /api/system-admin/registration-invite-policy/:
+    get:
+      summary: 管理员读取注册邀请码策略
+      tags: [admin]
+      security:
+        - tokenAuth: []
+      responses:
+        "200":
+          description: 策略详情
+        "403":
+          description: 非超级管理员
+    put:
+      summary: 管理员更新注册邀请码策略
+      tags: [admin]
+      security:
+        - tokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrationInvitePolicyUpdate"
+      responses:
+        "200":
+          description: 已更新
+        "403":
+          description: 非超级管理员
+  /api/system-admin/registration-invite-relations/:
+    get:
+      summary: 管理员分页查看邀请关系
+      tags: [admin]
+      security:
+        - tokenAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 邀请关系列表
+  /api/accounts/users/registration-invite-codes/apply/:
+    post:
+      summary: 申请注册邀请码
+      tags: [users]
+      security:
+        - tokenAuth: []
+      responses:
+        "201":
+          description: 已发放
+        "400":
+          description: invite_feature_disabled / daily_quota_exhausted
+  /api/accounts/users/registration-invite-codes/:
+    get:
+      summary: 列出当前用户发出的邀请码
+      tags: [users]
+      security:
+        - tokenAuth: []
+      responses:
+        "200":
+          description: 邀请码列表
+  /api/accounts/users/send_verification_code/:
+    post:
+      summary: 发送验证码（手机码存 auth.db；邮箱仍委托 Django）
+      tags: [auth]
+      responses:
+        "200":
+          description: OK
+  /api/accounts/users/login-with-access-token/:
+    post:
+      summary: 访问令牌登录（账号 + 访问令牌，校验归属）
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccessTokenLoginRequest"
+      responses:
+        "200":
+          description: 登录成功，返回 session token
+        "401":
+          description: 令牌无效或账号与令牌不匹配
+        "400":
+          description: 缺少 access_token 或 username
+  /api/accounts/users/access-tokens/:
+    get:
+      summary: 列出当前用户访问令牌
+      tags: [users]
+      security:
+        - tokenAuth: []
+      responses:
+        "200":
+          description: 令牌列表
+    post:
+      summary: 创建访问令牌
+      tags: [users]
+      security:
+        - tokenAuth: []
+      responses:
+        "201":
+          description: 已创建
+  /api/accounts/users/access-tokens/{token_id}/:
+    delete:
+      summary: 撤销访问令牌
+      tags: [users]
+      security:
+        - tokenAuth: []
+      parameters:
+        - name: token_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: 已撤销
+  /api/accounts/users/confirm_activation/:
+    post:
+      summary: 确认邮箱激活
+      tags: [auth]
+      responses:
+        "200":
+          description: 已激活
+  /api/accounts/users/resend_activation_email/:
+    post:
+      summary: 重发激活邮件
+      tags: [auth]
+      responses:
+        "200":
+          description: 已发送
+  /api/accounts/users/send_password_reset_link/:
+    post:
+      summary: 发送密码重置链接（邮箱）
+      tags: [auth]
+      responses:
+        "200":
+          description: 已发送
+  /api/accounts/users/reset-password-with-link/:
+    post:
+      summary: 凭重置链接设置新密码
+      tags: [auth]
+      responses:
+        "200":
+          description: 已重置
+  /api/accounts/users/get-reset-user-info/:
+    get:
+      summary: 查询重置链接对应用户信息
+      tags: [auth]
+      responses:
+        "200":
+          description: 用户摘要
+  /api/accounts/users/reset_password_with_code/:
+    post:
+      summary: 凭短信验证码重置密码
+      tags: [auth]
+      responses:
+        "200":
+          description: 已重置
+components:
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: "格式：Token <key>"
+  schemas:
+    LoginRequest:
+      type: object
+      description: |
+        密码登录：username/email/phone + password。
+        手机验证码登录：phone + code（taskAuth 本地验码后 enrich-login，不再 forward-login）。
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        password:
+          type: string
+        code:
+          type: string
+          description: 手机短信验证码（与 password 二选一）
+        accepted_privacy_policy_id:
+          type: string
+        accepted_license_agreement_id:
+          type: string
+    AccessTokenLoginRequest:
+      type: object
+      required:
+        - access_token
+        - username
+      properties:
+        access_token:
+          type: string
+          description: 用户在账号中心生成的访问令牌（at_ 前缀）
+        username:
+          type: string
+          description: 用户名或邮箱，须与令牌所属账号一致
+        email:
+          type: string
+          description: 与 username 等价（二选一，至少提供一个）
+    EmailRegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        username:
+          type: string
+        invite_code:
+          type: string
+          description: 注册邀请码（策略开启时必填，8 位 A-HJ-NP-Z2-9）
+    PhoneRegisterRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+        phone_country_calling_code:
+          type: string
+        phone_national:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+        invite_code:
+          type: string
+          description: 注册邀请码（策略开启且未携带有效 access_code 时必填）
+        access_code:
+          type: string
+          description: 推荐分享码（分享链接 ?accessCode= 携带）；有效时豁免邀请码要求
+    RegistrationInvitePolicyPublic:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        daily_quota:
+          type: integer
+        remaining_today:
+          type: integer
+    RegistrationInvitePolicyUpdate:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        daily_quota:
+          type: integer
+          minimum: 0

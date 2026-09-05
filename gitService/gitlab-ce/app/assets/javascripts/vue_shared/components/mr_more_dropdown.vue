@@ -1,0 +1,335 @@
+<script>
+import {
+  GlLoadingIcon,
+  GlIcon,
+  GlDisclosureDropdown,
+  GlDisclosureDropdownItem,
+  GlDisclosureDropdownGroup,
+  GlTooltipDirective,
+} from '@gitlab/ui';
+import { __, s__ } from '~/locale';
+import api from '~/api';
+import axios from '~/lib/utils/axios_utils';
+import { createAlert } from '~/alert';
+import MergeRequest from '~/merge_request';
+import AbuseCategorySelector from '~/abuse_reports/components/abuse_category_selector.vue';
+
+export default {
+  i18n: {
+    edit: __('Edit'),
+    copyReferenceText: __('Copy reference'),
+    errorMessage: __('Something went wrong. Please try again.'),
+    issuableName: __('merge request'),
+    reportAbuse: __('Report abuse'),
+    markAsReady: __('Mark as ready'),
+    markAsDraft: __('Mark as draft'),
+    close: __('Close %{issuableType}'),
+    closing: __('Closing %{issuableType}…'),
+    reopen: __('Reopen %{issuableType}'),
+    reopening: __('Reopening %{issuableType}…'),
+    lock: __('Lock %{issuableType}'),
+    mergeRequestActions: __('Merge request actions'),
+  },
+  components: {
+    GlLoadingIcon,
+    GlIcon,
+    GlDisclosureDropdown,
+    GlDisclosureDropdownItem,
+    GlDisclosureDropdownGroup,
+    AbuseCategorySelector,
+  },
+  directives: {
+    GlTooltip: GlTooltipDirective,
+  },
+  inject: {
+    reportAbusePath: {
+      default: '',
+    },
+  },
+  props: {
+    mr: {
+      type: Object,
+      required: true,
+    },
+    url: {
+      type: String,
+      default: '',
+      required: false,
+    },
+    editUrl: {
+      type: String,
+      default: '',
+      required: false,
+    },
+    isCurrentUser: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+    canUpdateMergeRequest: {
+      type: Boolean,
+      default: false,
+      required: false,
+    },
+    open: {
+      type: Boolean,
+      default: false,
+      required: false,
+    },
+    isMerged: {
+      type: Boolean,
+      default: false,
+      required: false,
+    },
+    sourceProjectMissing: {
+      type: Boolean,
+      default: false,
+      required: false,
+    },
+    clipboardText: {
+      type: String,
+      default: '',
+      required: false,
+    },
+    reportedUserId: {
+      type: Number,
+      default: 0,
+      required: false,
+    },
+  },
+  data() {
+    return {
+      isOpen: this.open,
+      draft: this.mr.draft,
+      isLoading: false,
+      isLoadingDraft: false,
+      isReportAbuseDrawerOpen: false,
+      isDropdownVisible: false,
+    };
+  },
+  computed: {
+    draftLabel() {
+      return this.draft ? this.$options.i18n.markAsReady : this.$options.i18n.markAsDraft;
+    },
+    draftIcon() {
+      return this.draft ? 'check-circle' : 'review-list';
+    },
+    draftState() {
+      return this.draft ? 'ready' : 'draft';
+    },
+    editItem() {
+      return {
+        text: this.$options.i18n.edit,
+        href: this.editUrl,
+      };
+    },
+    showDropdownTooltip() {
+      return !this.isDropdownVisible ? this.$options.i18n.mergeRequestActions : '';
+    },
+  },
+  methods: {
+    draftAction() {
+      this.isLoadingDraft = true;
+
+      axios
+        .put(`${this.url}?merge_request[wip_event]=${this.draftState}`, null, {
+          params: { format: 'json' },
+        })
+        .then(({ data }) => {
+          MergeRequest.toggleDraftStatus(data.title, this.draft);
+        })
+        .catch(() => {
+          createAlert({
+            message: this.$options.i18n.errorMessage,
+          });
+        })
+        .finally(() => {
+          this.draft = !this.draft;
+          this.isLoadingDraft = false;
+          this.closeActionsDropdown();
+        });
+    },
+    stateAction(state) {
+      this.isLoading = true;
+
+      api
+        .updateMergeRequest(this.mr.target_project_id, this.mr.iid, { state_event: state })
+        .then(() => {
+          window.location.reload();
+        })
+        .catch(() => {
+          createAlert({
+            message: this.$options.i18n.errorMessage,
+          });
+        })
+        .finally(() => {
+          this.isOpen = !this.isOpen;
+          this.isLoading = false;
+          this.closeActionsDropdown();
+        });
+    },
+    copyClipboardAction() {
+      this.$toast.show(s__('MergeRequests|Reference copied'));
+      this.closeActionsDropdown();
+    },
+    reportAbuseAction(isOpen) {
+      if (isOpen) {
+        this.closeActionsDropdown();
+      }
+
+      this.isReportAbuseDrawerOpen = isOpen;
+    },
+    closeActionsDropdown() {
+      this.$refs.mrMoreActionsDropdown.close();
+    },
+    showReopenMergeRequestOption() {
+      return !this.sourceProjectMissing && !this.isOpen;
+    },
+    showDropdown() {
+      this.isDropdownVisible = true;
+    },
+    hideDropdown() {
+      this.isDropdownVisible = false;
+    },
+  },
+};
+</script>
+
+<template>
+  <div class="gl-self-start" data-testid="merge-request-actions">
+    <gl-disclosure-dropdown
+      id="new-actions-header-dropdown"
+      ref="mrMoreActionsDropdown"
+      v-gl-tooltip="showDropdownTooltip"
+      :title="$options.i18n.mergeRequestActions"
+      data-testid="dropdown-toggle"
+      placement="bottom-end"
+      block
+      class="gl-w-full"
+      :auto-close="false"
+      icon="ellipsis_v"
+      category="tertiary"
+      text-sr-only
+      no-caret
+      :toggle-text="$options.i18n.mergeRequestActions"
+      toggle-class="gl-flex"
+      @shown="showDropdown"
+      @hidden="hideDropdown"
+    >
+      <gl-disclosure-dropdown-group>
+        <gl-disclosure-dropdown-item
+          v-if="canUpdateMergeRequest"
+          class="@sm/panel:!gl-hidden"
+          data-testid="edit-merge-request"
+          :item="editItem"
+        >
+          <template #list-item>
+            <gl-icon name="pencil" class="gl-mr-2" variant="subtle" />
+            {{ $options.i18n.edit }}
+          </template>
+        </gl-disclosure-dropdown-item>
+
+        <gl-disclosure-dropdown-item
+          v-if="isOpen && canUpdateMergeRequest"
+          data-testid="ready-and-draft-action"
+          @action="draftAction"
+        >
+          <template #list-item>
+            <gl-loading-icon v-if="isLoadingDraft" inline size="sm" />
+            <gl-icon v-else :name="draftIcon" class="gl-mr-2" variant="subtle" />
+            {{ draftLabel }}
+          </template>
+        </gl-disclosure-dropdown-item>
+
+        <gl-disclosure-dropdown-item
+          v-if="isOpen && canUpdateMergeRequest"
+          @action="stateAction('close')"
+        >
+          <template #list-item>
+            <template v-if="isLoading">
+              <gl-loading-icon inline size="sm" />
+              {{
+                sprintf($options.i18n.closing, {
+                  issuableType: $options.i18n.issuableName,
+                })
+              }}
+            </template>
+            <template v-else>
+              <gl-icon name="merge-request-close" class="gl-mr-2" variant="subtle" />
+              {{ sprintf($options.i18n.close, { issuableType: $options.i18n.issuableName }) }}
+            </template>
+          </template>
+        </gl-disclosure-dropdown-item>
+
+        <gl-disclosure-dropdown-item
+          v-else-if="!isMerged && showReopenMergeRequestOption && canUpdateMergeRequest"
+          data-testid="reopen-merge-request"
+          @action="stateAction('reopen')"
+        >
+          <template #list-item>
+            <template v-if="isLoading">
+              <gl-loading-icon inline size="sm" />
+              {{
+                sprintf($options.i18n.reopening, {
+                  issuableType: $options.i18n.issuableName,
+                })
+              }}
+            </template>
+            <template v-else>
+              <gl-icon name="merge-request-open" class="gl-mr-2" variant="subtle" />
+              {{ sprintf($options.i18n.reopen, { issuableType: $options.i18n.issuableName }) }}
+            </template>
+          </template>
+        </gl-disclosure-dropdown-item>
+
+        <gl-disclosure-dropdown-item
+          v-if="canUpdateMergeRequest"
+          data-testid="lock-merge-request"
+          class="js-sidebar-lock-root"
+        >
+          <template #list-item>
+            <gl-icon name="lock" class="gl-mr-2" variant="subtle" />
+            {{ sprintf($options.i18n.lock, { issuableType: $options.i18n.issuableName }) }}
+          </template>
+        </gl-disclosure-dropdown-item>
+
+        <gl-disclosure-dropdown-item
+          class="js-copy-reference"
+          :data-clipboard-text="clipboardText"
+          data-testid="copy-reference"
+          @action="copyClipboardAction"
+        >
+          <template #list-item>
+            <gl-icon name="copy-to-clipboard" class="gl-mr-2" variant="subtle" />
+            {{ $options.i18n.copyReferenceText }}
+          </template>
+        </gl-disclosure-dropdown-item>
+      </gl-disclosure-dropdown-group>
+
+      <gl-disclosure-dropdown-group
+        v-if="!isCurrentUser"
+        bordered
+        :class="{ '!gl-mt-0 !gl-border-t-0 !gl-pt-0': !canUpdateMergeRequest }"
+      >
+        <gl-disclosure-dropdown-item
+          class="js-report-abuse-dropdown-item"
+          data-testid="report-abuse-option"
+          @action="reportAbuseAction(true)"
+        >
+          <template #list-item>
+            <gl-icon name="abuse" class="gl-mr-2" variant="subtle" />
+            {{ $options.i18n.reportAbuse }}
+          </template>
+        </gl-disclosure-dropdown-item>
+      </gl-disclosure-dropdown-group>
+    </gl-disclosure-dropdown>
+
+    <abuse-category-selector
+      v-if="!isCurrentUser && isReportAbuseDrawerOpen"
+      :reported-user-id="reportedUserId"
+      :reported-from-url="url"
+      :show-drawer="isReportAbuseDrawerOpen"
+      @close-drawer="reportAbuseAction(false)"
+    />
+  </div>
+</template>

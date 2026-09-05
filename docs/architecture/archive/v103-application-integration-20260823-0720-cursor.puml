@@ -1,0 +1,56 @@
+' @title: 模拟登录审计标识与用户收信箱
+' @view: application-integration
+' @status: archived
+' @version: 103
+' @iteration: impersonation-audit-inbox
+' @author: cursor
+' @based_on: v102 (v102-application-integration-20260823-0620-cursor.puml)
+' @updated: 2026-08-23 07:20
+' @description: tracelog/网关审计头；必填理由；taskAuth 用户收信箱
+
+@startuml
+!include <archimate/Archimate>
+
+title v103 — impersonation audit + inbox 2026-08-23 07:20
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  理由弹窗 + 账号中心收信箱
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+note right of gw
+  X-Impersonator-Id
+  X-Impersonation-Session-Id
+end note
+
+Application_Component(taskAuth, "taskAuth")
+Application_Component(tracelog, "shareLib/tracelog")
+
+Application_DataObject(impTable, "auth_impersonation_session")
+Application_DataObject(inboxTable, "auth_user_inbox_message")
+
+Application_Event(evStart, "UserImpersonationStarted")
+Application_Event(evInbox, "UserInboxMessageCreated")
+
+Technology_Node(kafka, "Kafka")
+
+Rel_Flow(taskFE, gw, "POST impersonate + GET inbox")
+Rel_Flow(gw, taskAuth, "token + forward-auth headers")
+Rel_Flow(gw, tracelog, "inject impersonation headers")
+Rel_Access_w(taskAuth, impTable, "session + reason")
+Rel_Access_w(taskAuth, inboxTable, "notice")
+Rel_Flow(taskAuth, evStart, "publish")
+Rel_Flow(taskAuth, evInbox, "publish")
+Rel_Flow(evStart, kafka, "user-impersonation-started")
+Rel_Flow(evInbox, kafka, "user-inbox-message-created")
+
+Implementation_Plateau(plateauV102, "Plateau v102 impersonation")
+Implementation_Plateau(plateauV103, "Plateau v103 audit+inbox")
+Implementation_Gap(gapQ, "Gap: 日志无操作者标识、无理由通知")
+Implementation_WorkPackage(wpQ, "WP-impersonation-audit-inbox")
+Rel_Triggering(plateauV102, gapQ, "identifies")
+Rel_Realization(wpQ, gapQ, "closes")
+Rel_Realization(wpQ, plateauV103, "delivers")
+
+@enduml

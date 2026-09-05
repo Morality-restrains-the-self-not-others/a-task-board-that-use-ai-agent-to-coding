@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v127 变迁 (v126→v127)" id="id-v127aidiff01">
+  <folder name="Application" id="id-v127ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127-app-ui" name="runAll status UI :9999 [MODIFIED v127]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127-app-runall" name="runAll Runner [MODIFIED v127]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127-app-compile" name="precise-compile.sh [NEW v127]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127-app-svc" name="业务进程 last-good ELF"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v127-app-upd" name="update.sh [DEPRECATED v127]"/>
+    <element xsi:type="archimate:DataObject" id="id-v127-data-reg" name="precise_restart_services.txt [NEW v127]"/>
+    <element xsi:type="archimate:DataObject" id="id-v127-data-bins" name="deploy-binaries / artifacts"/>
+    <element xsi:type="archimate:DataObject" id="id-v127-data-cl" name="conf-local/ [NEW v127]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v127ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v127-pl-v126" name="Plateau v126 项目 L2 seed"/>
+    <element xsi:type="archimate:Plateau" id="id-v127-pl-v127" name="Plateau v127 部署 9999 源码编译"/>
+    <element xsi:type="archimate:Gap" id="id-v127-gap" name="Gap: DEPLOY_MODE 清空 build_command"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v127-wp" name="WP-deploy-9999-source-compile-restart"/>
+  </folder>
+  <folder name="Relations" id="id-v127ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v127-rel-ui-runall" source="id-v127-app-ui" target="id-v127-app-runall" name="POST precise-restart / build-all"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v127-rel-runall-reg" source="id-v127-app-runall" target="id-v127-data-reg" name="读登记"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v127-rel-runall-compile" source="id-v127-app-runall" target="id-v127-app-compile" name="exec unset DEPLOY_MODE"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v127-rel-compile-bins" source="id-v127-app-compile" target="id-v127-data-bins" name="collect incremental"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v127-rel-runall-cl" source="id-v127-app-runall" target="id-v127-data-cl" name="rsync after compile ok"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v127-rel-runall-bins" source="id-v127-app-runall" target="id-v127-data-bins" name="install_over copy-then-mv"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v127-rel-runall-svc" source="id-v127-app-runall" target="id-v127-app-svc" name="精准 restartService"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v127-rel-pl-gap" source="id-v127-pl-v126" target="id-v127-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v127-rel-wp-gap" source="id-v127-wp" target="id-v127-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v127-rel-wp-pl" source="id-v127-wp" target="id-v127-pl-v127"/>
+  </folder>
+  <folder name="Views" id="id-v127ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v127-view-mig" name="架构变迁 v126→v127 — 部署 9999 源码编译编排">
+      <child xsi:type="archimate:DiagramObject" id="id-v127-do-pl126" archimateElement="id-v127-pl-v126">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127-c-pl-gap" source="id-v127-do-pl126" target="id-v127-do-gap" archimateRelationship="id-v127-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127-do-gap" targetConnections="id-v127-c-pl-gap id-v127-c-wp-gap" archimateElement="id-v127-gap">
+        <bounds x="340" y="48" width="480" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127-do-wp" archimateElement="id-v127-wp">
+        <bounds x="340" y="140" width="480" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127-c-wp-gap" source="id-v127-do-wp" target="id-v127-do-gap" archimateRelationship="id-v127-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127-c-wp-pl" source="id-v127-do-wp" target="id-v127-do-pl127" archimateRelationship="id-v127-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127-do-pl127" targetConnections="id-v127-c-wp-pl" archimateElement="id-v127-pl-v127">
+        <bounds x="860" y="140" width="300" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v127-view-topo" name="v127 Target — 9999 源码编译与增量安装">
+      <child xsi:type="archimate:DiagramObject" id="id-v127-do-ui" archimateElement="id-v127-app-ui">
+        <bounds x="48" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127-c-ui-runall" source="id-v127-do-ui" target="id-v127-do-runall" archimateRelationship="id-v127-rel-ui-runall"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127-do-runall" targetConnections="id-v127-c-ui-runall" archimateElement="id-v127-app-runall">
+        <bounds x="280" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127-c-runall-reg" source="id-v127-do-runall" target="id-v127-do-reg" archimateRelationship="id-v127-rel-runall-reg"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127-c-runall-compile" source="id-v127-do-runall" target="id-v127-do-compile" archimateRelationship="id-v127-rel-runall-compile"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127-c-runall-cl" source="id-v127-do-runall" target="id-v127-do-cl" archimateRelationship="id-v127-rel-runall-cl"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127-c-runall-bins" source="id-v127-do-runall" target="id-v127-do-bins" archimateRelationship="id-v127-rel-runall-bins"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127-c-runall-svc" source="id-v127-do-runall" target="id-v127-do-svc" archimateRelationship="id-v127-rel-runall-svc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127-do-reg" targetConnections="id-v127-c-runall-reg" archimateElement="id-v127-data-reg">
+        <bounds x="520" y="16" width="260" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127-do-compile" targetConnections="id-v127-c-runall-compile" archimateElement="id-v127-app-compile">
+        <bounds x="520" y="80" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v127-c-compile-bins" source="id-v127-do-compile" target="id-v127-do-bins" archimateRelationship="id-v127-rel-compile-bins"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127-do-cl" targetConnections="id-v127-c-runall-cl" archimateElement="id-v127-data-cl">
+        <bounds x="520" y="144" width="220" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127-do-bins" targetConnections="id-v127-c-runall-bins id-v127-c-compile-bins" archimateElement="id-v127-data-bins">
+        <bounds x="800" y="80" width="240" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127-do-svc" targetConnections="id-v127-c-runall-svc" archimateElement="id-v127-app-svc">
+        <bounds x="800" y="160" width="240" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v127-do-upd" archimateElement="id-v127-app-upd">
+        <bounds x="280" y="200" width="220" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

@@ -1,0 +1,437 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import {
+  buildHttpAuthFromRepoCredential,
+  buildRepoCloneCredentialsBootstrapError,
+  buildTaskDetailBootstrapError,
+  bootstrapCloneLogFailurePayload,
+  clearLastBootstrapFailure,
+  fetchBootstrapRepoInputs,
+  getLastBootstrapFailure,
+  isRepoCloneCredentialsIncompleteError,
+  noteBootstrapFailure,
+  repoCloneCredentialsRetryConfigFromEnv,
+  resolveRepoCloneCredential,
+} from './bootstrap.mjs';
+
+test('resolveRepoCloneCredential supports canonical repo key match', () => {
+  const repoUrl = 'http://localhost:8012/demo/repo-a.git';
+  const credRoot = {
+    'http://localhost:8012/demo/repo-a': {
+      ephemeral_oauth_access_token: 'token-a',
+    },
+  };
+  const got = resolveRepoCloneCredential(credRoot, repoUrl);
+  assert.equal(typeof got, 'object');
+  assert.equal(got.ephemeral_oauth_access_token, 'token-a');
+});
+
+test('resolveRepoCloneCredential falls back to unique path match across host aliases', () => {
+  const repoUrl = 'http://localhost:8012/demo/repo-a.git';
+  const credRoot = {
+    'http://gitlab.daydaymoney.com/demo/repo-a.git': {
+      ephemeral_oauth_access_token: 'token-alias',
+    },
+  };
+  const got = resolveRepoCloneCredential(credRoot, repoUrl);
+  assert.equal(typeof got, 'object');
+  assert.equal(got.ephemeral_oauth_access_token, 'token-alias');
+});
+
+test('resolveRepoCloneCredential does not guess when multiple credentials share same path', () => {
+  const repoUrl = 'http://localhost:8012/demo/repo-a.git';
+  const credRoot = {
+    'http://gitlab.daydaymoney.com/demo/repo-a.git': {
+      ephemeral_oauth_access_token: 'token-a',
+    },
+    'http://another-gitlab.example/demo/repo-a.git': {
+      ephemeral_oauth_access_token: 'token-b',
+    },
+  };
+  const got = resolveRepoCloneCredential(credRoot, repoUrl);
+  assert.equal(got, null);
+});
+
+test('buildHttpAuthFromRepoCredential returns null without password', () => {
+  assert.equal(buildHttpAuthFromRepoCredential(null), null);
+  assert.equal(buildHttpAuthFromRepoCredential({}), null);
+});
+
+test('buildHttpAuthFromRepoCredential returns null when repo path is missing', () => {
+  const auth = buildHttpAuthFromRepoCredential({
+    ephemeral_oauth_access_token: 'glpat-123',
+  });
+  assert.equal(auth, null);
+});
+
+test('buildHttpAuthFromRepoCredential extracts username from repo path when provider unknown', () => {
+  const auth = buildHttpAuthFromRepoCredential(
+    {
+      ephemeral_oauth_access_token: 'glpat-123',
+    },
+    'http://localhost:8012/demo/repo-a.git'
+  );
+  assert.deepEqual(auth, { username: 'demo', password: 'glpat-123' });
+});
+
+test('buildHttpAuthFromRepoCredential prefers git_http_username from credential', () => {
+  const auth = buildHttpAuthFromRepoCredential(
+    {
+      ephemeral_oauth_access_token: 'token-a',
+      provider: 'gitlab',
+      git_http_username: 'oauth2',
+    },
+    'http://localhost:8012/ljy/somanyad.git'
+  );
+  assert.deepEqual(auth, { username: 'oauth2', password: 'token-a' });
+});
+
+test('buildHttpAuthFromRepoCredential defaults gitlab provider to oauth2', () => {
+  const auth = buildHttpAuthFromRepoCredential(
+    {
+      ephemeral_oauth_access_token: 'token-a',
+      provider: 'gitlab',
+    },
+    'http://localhost:8012/ljy/somanyad.git'
+  );
+  assert.deepEqual(auth, { username: 'oauth2', password: 'token-a' });
+});
+
+test('prepareOauthHttpsGitClone: SSH + https_clone_url → HTTPS + askpass', async () => {
+  const { prepareOauthHttpsGitClone } = await import('./bootstrap.mjs');
+  const credRoot = {
+    'git@127.0.0.1:ljy/somanyad.git': {
+      ephemeral_oauth_access_token: 'tok-oauth',
+      provider: 'gitlab',
+      git_http_username: 'oauth2',
+      https_clone_url: 'http://127.0.0.1:8012/ljy/somanyad',
+    },
+  };
+  const got = prepareOauthHttpsGitClone('git@127.0.0.1:ljy/somanyad.git', credRoot);
+  assert.equal(got.cloneRemote, 'http://127.0.0.1:8012/ljy/somanyad');
+  assert.equal(got.normalizedFromSsh, true);
+  assert.ok(got.httpAuth);
+  assert.equal(got.httpAuth.username, 'oauth2');
+  assert.equal(got.envPatch.GIT_HTTP_PASSWORD, 'tok-oauth');
+  assert.ok(got.envPatch.GIT_ASKPASS);
+  got.cleanup();
+});
+
+test('prepareOauthHttpsGitClone: SSH without https_clone_url throws', async () => {
+  const { prepareOauthHttpsGitClone } = await import('./bootstrap.mjs');
+  const credRoot = {
+    'git@127.0.0.1:ljy/somanyad.git': {
+      ephemeral_oauth_access_token: 'tok-oauth',
+      provider: 'gitlab',
+      git_http_username: 'oauth2',
+    },
+  };
+  assert.throws(
+    () => prepareOauthHttpsGitClone('git@127.0.0.1:ljy/somanyad.git', credRoot),
+    /无法转为 HTTPS/
+  );
+});
+
+test('buildHttpAuthFromRepoCredential defaults github provider to x-access-token', () => {
+  const auth = buildHttpAuthFromRepoCredential(
+    {
+      ephemeral_oauth_access_token: 'gho_abc',
+      provider: 'github',
+    },
+    'https://github.com/org/repo.git'
+  );
+  assert.deepEqual(auth, { username: 'x-access-token', password: 'gho_abc' });
+});
+
+test('buildHttpAuthFromRepoCredential returns null when repo path cannot be parsed', () => {
+  const auth = buildHttpAuthFromRepoCredential(
+    {
+      ephemeral_oauth_access_token: 'glpat-123',
+    },
+    'not-a-valid-url'
+  );
+  assert.equal(auth, null);
+});
+
+test('buildRepoCloneCredentialsBootstrapError renders actionable message for incomplete credentials', () => {
+  const err = new Error('HTTP 409 http://api/repo-clone-credentials/: {"error_code":"REPO_CLONE_CREDENTIALS_INCOMPLETE","detail":"任务仓库克隆凭证不完整","missing_repo_credentials":["http://localhost:8012/demo/repo-a.git"]}');
+  const wrapped = buildRepoCloneCredentialsBootstrapError(err);
+  assert.ok(wrapped instanceof Error);
+  assert.match(wrapped.message, /repo-clone-credentials 未返回完整 repo_clone_credentials/);
+  assert.match(wrapped.message, /demo\/repo-a\.git/);
+});
+
+test('buildRepoCloneCredentialsBootstrapError keeps original error when error code is unrelated', () => {
+  const err = new Error('HTTP 401 http://api/repo-clone-credentials/: {"error_code":"TOKEN_ACCESS_INVALID"}');
+  const wrapped = buildRepoCloneCredentialsBootstrapError(err);
+  assert.equal(wrapped, err);
+});
+
+test('buildRepoCloneCredentialsBootstrapError parses payload when detail contains braces', () => {
+  const err = new Error(
+    'HTTP 409 http://api/repo-clone-credentials/: {"error_code":"REPO_CLONE_CREDENTIALS_INCOMPLETE","detail":"payload has braces {example}","missing_repo_credentials":["http://localhost:8012/demo/repo-a.git"]}'
+  );
+  const wrapped = buildRepoCloneCredentialsBootstrapError(err);
+  assert.match(wrapped.message, /repo-clone-credentials 未返回完整 repo_clone_credentials/);
+  assert.match(wrapped.message, /demo\/repo-a\.git/);
+});
+
+test('buildTaskDetailBootstrapError delegates to repo credentials bootstrap error mapper', () => {
+  const err = new Error(
+    'HTTP 409 http://api/repo-clone-credentials/: {"error_code":"REPO_CLONE_CREDENTIALS_INCOMPLETE","detail":"任务仓库克隆凭证不完整","missing_repo_credentials":["http://localhost:8012/demo/repo-a.git"]}'
+  );
+  const wrapped = buildTaskDetailBootstrapError(err);
+  assert.match(wrapped.message, /repo-clone-credentials 未返回完整 repo_clone_credentials/);
+});
+
+test('fetchBootstrapRepoInputs fetches task-detail then repo-clone-credentials in order', async () => {
+  const originalFetch = global.fetch;
+  const calls = [];
+  global.fetch = async (url, options) => {
+    calls.push(String(url));
+    if (String(url).endsWith('/server-container-token/task-detail/')) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () =>
+          JSON.stringify({
+            project_repos: [{ git_repos: ['http://localhost:8012/demo/repo-a.git'] }],
+          }),
+        headers: new Map(),
+      };
+    }
+    return {
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          repo_clone_credentials: {
+            'http://localhost:8012/demo/repo-a.git': {
+              ephemeral_oauth_access_token: 'token-a',
+            },
+          },
+        }),
+      headers: new Map(),
+    };
+  };
+  try {
+    const got = await fetchBootstrapRepoInputs('http://api.daydaymoney.com', 'access-token', 5);
+    assert.deepEqual(got.urls, ['http://localhost:8012/demo/repo-a.git']);
+    assert.equal(
+      got.credRoot['http://localhost:8012/demo/repo-a.git'].ephemeral_oauth_access_token,
+      'token-a'
+    );
+    assert.equal(calls.length, 2);
+    assert.match(calls[0], /server-container-token\/task-detail\/$/);
+    assert.match(calls[1], /server-container-token\/repo-clone-credentials\/$/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('fetchBootstrapRepoInputs skips repo-clone-credentials call when no repo urls', async () => {
+  const originalFetch = global.fetch;
+  const calls = [];
+  global.fetch = async (url, options) => {
+    calls.push(String(url));
+    return {
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ project_repos: [] }),
+      headers: new Map(),
+    };
+  };
+  try {
+    const got = await fetchBootstrapRepoInputs('http://api.daydaymoney.com', 'access-token', 5);
+    assert.deepEqual(got.urls, []);
+    assert.deepEqual(got.credRoot, {});
+    assert.equal(calls.length, 1);
+    assert.match(calls[0], /server-container-token\/task-detail\/$/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('isRepoCloneCredentialsIncompleteError detects 409 structured payload', () => {
+  const err = new Error('HTTP 409 http://api/x: {"error_code":"REPO_CLONE_CREDENTIALS_INCOMPLETE"}');
+  err.structuredPayload = {
+    error_code: 'REPO_CLONE_CREDENTIALS_INCOMPLETE',
+    missing_repo_credentials: ['https://github.com/org/a.git'],
+  };
+  assert.equal(isRepoCloneCredentialsIncompleteError(err), true);
+  assert.equal(isRepoCloneCredentialsIncompleteError(new Error('HTTP 500 boom')), false);
+});
+
+test('repoCloneCredentialsRetryConfigFromEnv clamps retries and backoff', () => {
+  const prevR = process.env.TASK_API_REPO_CLONE_CREDENTIALS_RETRIES;
+  const prevB = process.env.TASK_API_REPO_CLONE_CREDENTIALS_BACKOFF_MS;
+  try {
+    process.env.TASK_API_REPO_CLONE_CREDENTIALS_RETRIES = '99';
+    process.env.TASK_API_REPO_CLONE_CREDENTIALS_BACKOFF_MS = '1';
+    const cfg = repoCloneCredentialsRetryConfigFromEnv();
+    assert.equal(cfg.maxAttempts, 30);
+    assert.equal(cfg.backoffMs, 1);
+  } finally {
+    if (prevR === undefined) delete process.env.TASK_API_REPO_CLONE_CREDENTIALS_RETRIES;
+    else process.env.TASK_API_REPO_CLONE_CREDENTIALS_RETRIES = prevR;
+    if (prevB === undefined) delete process.env.TASK_API_REPO_CLONE_CREDENTIALS_BACKOFF_MS;
+    else process.env.TASK_API_REPO_CLONE_CREDENTIALS_BACKOFF_MS = prevB;
+  }
+});
+
+test('fetchBootstrapRepoInputs retries REPO_CLONE_CREDENTIALS_INCOMPLETE then succeeds', async () => {
+  const originalFetch = global.fetch;
+  const prevR = process.env.TASK_API_REPO_CLONE_CREDENTIALS_RETRIES;
+  const prevB = process.env.TASK_API_REPO_CLONE_CREDENTIALS_BACKOFF_MS;
+  const prevStagger = process.env.TASK_API_BOOTSTRAP_SAAS_STAGGER_MS;
+  process.env.TASK_API_REPO_CLONE_CREDENTIALS_RETRIES = '4';
+  process.env.TASK_API_REPO_CLONE_CREDENTIALS_BACKOFF_MS = '0';
+  process.env.TASK_API_BOOTSTRAP_SAAS_STAGGER_MS = '0';
+  let credCalls = 0;
+  global.fetch = async (url) => {
+    if (String(url).endsWith('/server-container-token/task-detail/')) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () =>
+          JSON.stringify({
+            project_repos: [{ git_repos: ['http://localhost:8012/demo/repo-a.git'] }],
+          }),
+        headers: new Map(),
+      };
+    }
+    credCalls += 1;
+    if (credCalls < 3) {
+      return {
+        ok: false,
+        status: 409,
+        text: async () =>
+          JSON.stringify({
+            error_code: 'REPO_CLONE_CREDENTIALS_INCOMPLETE',
+            detail: 'repo clone credentials incomplete',
+            missing_repo_credentials: ['http://localhost:8012/demo/repo-a.git'],
+          }),
+        headers: new Map(),
+      };
+    }
+    return {
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          repo_clone_credentials: {
+            'http://localhost:8012/demo/repo-a.git': {
+              ephemeral_oauth_access_token: 'token-after-bind',
+            },
+          },
+        }),
+      headers: new Map(),
+    };
+  };
+  try {
+    const got = await fetchBootstrapRepoInputs('http://api.daydaymoney.com', 'access-token', 5);
+    assert.equal(credCalls, 3);
+    assert.equal(
+      got.credRoot['http://localhost:8012/demo/repo-a.git'].ephemeral_oauth_access_token,
+      'token-after-bind',
+    );
+  } finally {
+    global.fetch = originalFetch;
+    if (prevR === undefined) delete process.env.TASK_API_REPO_CLONE_CREDENTIALS_RETRIES;
+    else process.env.TASK_API_REPO_CLONE_CREDENTIALS_RETRIES = prevR;
+    if (prevB === undefined) delete process.env.TASK_API_REPO_CLONE_CREDENTIALS_BACKOFF_MS;
+    else process.env.TASK_API_REPO_CLONE_CREDENTIALS_BACKOFF_MS = prevB;
+    if (prevStagger === undefined) delete process.env.TASK_API_BOOTSTRAP_SAAS_STAGGER_MS;
+    else process.env.TASK_API_BOOTSTRAP_SAAS_STAGGER_MS = prevStagger;
+  }
+});
+
+test('fetchBootstrapRepoInputs exhausts incomplete-credential retries then throws', async () => {
+  const originalFetch = global.fetch;
+  const prevR = process.env.TASK_API_REPO_CLONE_CREDENTIALS_RETRIES;
+  const prevB = process.env.TASK_API_REPO_CLONE_CREDENTIALS_BACKOFF_MS;
+  const prevStagger = process.env.TASK_API_BOOTSTRAP_SAAS_STAGGER_MS;
+  process.env.TASK_API_REPO_CLONE_CREDENTIALS_RETRIES = '2';
+  process.env.TASK_API_REPO_CLONE_CREDENTIALS_BACKOFF_MS = '0';
+  process.env.TASK_API_BOOTSTRAP_SAAS_STAGGER_MS = '0';
+  let credCalls = 0;
+  global.fetch = async (url) => {
+    if (String(url).endsWith('/server-container-token/task-detail/')) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () =>
+          JSON.stringify({
+            project_repos: [{ git_repos: ['http://localhost:8012/demo/repo-a.git'] }],
+          }),
+        headers: new Map(),
+      };
+    }
+    credCalls += 1;
+    return {
+      ok: false,
+      status: 409,
+      text: async () =>
+        JSON.stringify({
+          error_code: 'REPO_CLONE_CREDENTIALS_INCOMPLETE',
+          detail: 'repo clone credentials incomplete',
+          missing_repo_credentials: ['http://localhost:8012/demo/repo-a.git'],
+        }),
+      headers: new Map(),
+    };
+  };
+  try {
+    await assert.rejects(
+      () => fetchBootstrapRepoInputs('http://api.daydaymoney.com', 'access-token', 5),
+      (err) => {
+        assert.match(String(err?.message || err), /HTTP\s+409|REPO_CLONE_CREDENTIALS_INCOMPLETE/);
+        return true;
+      },
+    );
+    assert.equal(credCalls, 2);
+  } finally {
+    global.fetch = originalFetch;
+    if (prevR === undefined) delete process.env.TASK_API_REPO_CLONE_CREDENTIALS_RETRIES;
+    else process.env.TASK_API_REPO_CLONE_CREDENTIALS_RETRIES = prevR;
+    if (prevB === undefined) delete process.env.TASK_API_REPO_CLONE_CREDENTIALS_BACKOFF_MS;
+    else process.env.TASK_API_REPO_CLONE_CREDENTIALS_BACKOFF_MS = prevB;
+    if (prevStagger === undefined) delete process.env.TASK_API_BOOTSTRAP_SAAS_STAGGER_MS;
+    else process.env.TASK_API_BOOTSTRAP_SAAS_STAGGER_MS = prevStagger;
+  }
+});
+
+test('noteBootstrapFailure / getLastBootstrapFailure round-trip for API surface', () => {
+  clearLastBootstrapFailure();
+  assert.equal(getLastBootstrapFailure(), null);
+  noteBootstrapFailure({
+    phase: 'task_detail_or_credentials',
+    code: 'REPO_CLONE_CREDENTIALS_INCOMPLETE',
+    message: '凭证未齐',
+  });
+  const got = getLastBootstrapFailure();
+  assert.equal(got.phase, 'task_detail_or_credentials');
+  assert.equal(got.code, 'REPO_CLONE_CREDENTIALS_INCOMPLETE');
+  assert.match(got.message, /凭证未齐/);
+  assert.ok(got.at);
+  clearLastBootstrapFailure();
+  assert.equal(getLastBootstrapFailure(), null);
+});
+
+test('bootstrapCloneLogFailurePayload exposes readable text for empty-layer UI', () => {
+  clearLastBootstrapFailure();
+  assert.equal(bootstrapCloneLogFailurePayload(), null);
+  noteBootstrapFailure({
+    phase: 'task_detail_or_credentials',
+    code: 'REPO_CLONE_CREDENTIALS_INCOMPLETE',
+    message: '请绑定 Git 授权',
+    missing_repo_credentials: ['https://github.com/org/a.git'],
+  });
+  const payload = bootstrapCloneLogFailurePayload();
+  assert.ok(payload);
+  assert.match(payload.text, /引导失败/);
+  assert.match(payload.text, /请绑定 Git 授权/);
+  assert.match(payload.text, /github.com\/org\/a\.git/);
+  assert.equal(payload.error_code, 'REPO_CLONE_CREDENTIALS_INCOMPLETE');
+  clearLastBootstrapFailure();
+});

@@ -1,0 +1,174 @@
+2026-02-14 Version: 1.10.0
+- Support API CreateCustomAgent.
+- Support API DeleteCustomAgent.
+- Support API ListDataCenterDatabase.
+- Support API ListDataCenterTable.
+- Support API ModifyCustomAgent.
+- Support API OperateCustomAgent.
+
+
+2026-02-13 Version: 1.9.0
+- Support API ListDataAgentSession.
+
+
+2026-02-10 Version: 1.8.7
+- Update API CreateDataAgentSession: add request parameters SessionConfig.EncryptKey.
+- Update API CreateDataAgentSession: add request parameters SessionConfig.EncryptType.
+- Update API CreateDataAgentSession: add request parameters SessionConfig.ReportPageWidth.
+- Update API CreateDataAgentSession: add request parameters SessionConfig.ReportWaterMark.
+- Update API CreateDataAgentSession: add response parameters Body.Data.SessionConfig.EncryptKey.
+- Update API CreateDataAgentSession: add response parameters Body.Data.SessionConfig.EncryptType.
+- Update API CreateDataAgentSession: add response parameters Body.Data.SessionConfig.ReportPageWidth.
+- Update API CreateDataAgentSession: add response parameters Body.Data.SessionConfig.ReportWaterMark.
+- Update API DescribeDataAgentSession: add response parameters Body.Data.SessionConfig.EncryptKey.
+- Update API DescribeDataAgentSession: add response parameters Body.Data.SessionConfig.EncryptType.
+- Update API DescribeDataAgentSession: add response parameters Body.Data.SessionConfig.ReportPageWidth.
+- Update API DescribeDataAgentSession: add response parameters Body.Data.SessionConfig.ReportWaterMark.
+
+
+2026-02-03 Version: 1.8.6
+- Update API SendChatMessage: add request parameters ParentSessionId.
+
+
+2026-02-03 Version: 1.8.6
+- Update API SendChatMessage: add request parameters ParentSessionId.
+
+
+2026-02-03 Version: 1.8.6
+- Update API SendChatMessage: add request parameters ParentSessionId.
+
+
+2026-01-28 Version: 1.8.5
+- Update API CreateDataAgentSession: add request parameters SessionConfig.UserOssBucket.
+- Update API CreateDataAgentSession: add response parameters Body.Data.SessionConfig.UserOssBucket.
+- Update API DescribeDataAgentSession: add response parameters Body.Data.SessionConfig.UserOssBucket.
+
+
+2026-01-20 Version: 1.8.4
+- Update API DescribeCustomAgent: add response parameters Body.Data.DMSUnit.
+- Update API DescribeCustomAgent: add response parameters Body.Data.IsScheduleTask.
+- Update API DescribeCustomAgent: add response parameters Body.Data.NextRuntime.
+- Update API DescribeCustomAgent: add response parameters Body.Data.ScheduleTaskConfig.
+- Update API ListCustomAgent: add response parameters Body.Data.Content.$.DMSUnit.
+- Update API ListCustomAgent: add response parameters Body.Data.Content.$.IsScheduleTask.
+- Update API ListCustomAgent: add response parameters Body.Data.Content.$.NextRuntime.
+- Update API ListCustomAgent: add response parameters Body.Data.Content.$.ScheduleTaskConfig.
+
+
+2026-01-15 Version: 1.8.3
+- Update API DescribeCustomAgent: add response parameters Body.Data.DefaultAgent.
+- Update API ListCustomAgent: add response parameters Body.Data.Content.$.DefaultAgent.
+
+
+2026-01-14 Version: 1.8.2
+- Update API DescribeCustomAgent: add response parameters Body.Data.KnowledgeConfigList.
+- Update API ListCustomAgent: add response parameters Body.Data.Content.$.KnowledgeConfigList.
+
+
+2026-01-07 Version: 1.8.1
+- Update API DescribeCustomAgent: add response parameters Body.Data.ExecutionConfig.SkipAskHuman.
+- Update API DescribeCustomAgent: add response parameters Body.Data.ExecutionConfig.SkipSqlConfirm.
+- Update API DescribeCustomAgent: add response parameters Body.Data.ExecutionConfig.SkipWebReportConfirm.
+- Update API ListCustomAgent: add response parameters Body.Data.Content.$.ExecutionConfig.SkipAskHuman.
+- Update API ListCustomAgent: add response parameters Body.Data.Content.$.ExecutionConfig.SkipSqlConfirm.
+- Update API ListCustomAgent: add response parameters Body.Data.Content.$.ExecutionConfig.SkipWebReportConfirm.
+
+
+2026-01-07 Version: 1.8.0
+- Support API AddUserToDataAgentWorkspace.
+- Support API CreateDataAgentWorkspace.
+- Support API DeleteDataAgentWorkspace.
+- Support API GetDataAgentSubAccountInfo.
+- Support API GetDataAgentWorkspaceInfo.
+- Support API ListDataAgentWorkspace.
+- Support API ListDataAgentWorkspaceMember.
+- Support API RemoveUserToDataAgentWorkspace.
+- Support API UpdateDataAgentSpaceInfo.
+- Support API UpdateDataAgentWorkspaceMemberRole.
+
+
+2026-01-05 Version: 1.7.0
+- Support API DeleteFileUpload.
+- Support API DescribeFileUploadSignature.
+- Support API FileUploadCallback.
+
+
+2025-12-29 Version: 1.6.1
+- Update API SendChatMessage: add request parameters SessionConfig.ReportWaterMark.
+
+
+2025-12-29 Version: 1.6.1
+- Update API SendChatMessage: add request parameters SessionConfig.ReportWaterMark.
+
+
+2025-12-29 Version: 1.6.0
+- Support API DescribeCustomAgent.
+- Support API ListCustomAgent.
+
+
+2025-12-17 Version: 1.5.0
+- Support API ListFileUpload.
+
+
+2025-12-16 Version: 1.4.1
+- Update API CreateDataAgentSession: add request parameters SessionConfig.McpServerIds.
+- Update API CreateDataAgentSession: add response parameters Body.Data.SessionConfig.McpServerIds.
+- Update API DescribeDataAgentSession: add response parameters Body.Data.SessionConfig.McpServerIds.
+
+
+2025-12-09 Version: 1.4.0
+- Support API CreateDataAgentSession.
+- Support API DescribeDataAgentSession.
+
+
+2025-12-09 Version: 1.3.0
+- Support API GetChatContent.
+- Support API GetNotebookTaskStatus.
+- Support API SendChatMessage.
+
+
+2025-10-22 Version: 1.2.0
+- Support API GetNotebookAndSubmitTask.
+
+
+2025-08-26 Version: 1.1.0
+- Support API BatchCreateDataLakePartitions.
+- Support API BatchDeleteDataLakePartitions.
+- Support API BatchUpdateDataLakePartitions.
+- Support API CreateAirflow.
+- Support API CreateDataLakeDatabase.
+- Support API CreateDataLakeFunction.
+- Support API CreateDataLakePartition.
+- Support API CreateDataLakeTable.
+- Support API DeleteAirflow.
+- Support API DeleteDataLakeDatabase.
+- Support API DeleteDataLakeFunction.
+- Support API DeleteDataLakePartition.
+- Support API DeleteDataLakeTable.
+- Support API GetAirflow.
+- Support API GetDataLakeCatalog.
+- Support API GetDataLakeDatabase.
+- Support API GetDataLakeFunction.
+- Support API GetDataLakePartition.
+- Support API GetDataLakeTable.
+- Support API ListAirflows.
+- Support API ListDataLakeCatalog.
+- Support API ListDataLakeDatabase.
+- Support API ListDataLakeFunction.
+- Support API ListDataLakeFunctionName.
+- Support API ListDataLakePartition.
+- Support API ListDataLakePartitionByFilter.
+- Support API ListDataLakePartitionName.
+- Support API ListDataLakeTable.
+- Support API ListDataLakeTableName.
+- Support API ListDataLakeTablebaseInfo.
+- Support API UpdateAirflow.
+- Support API UpdateDataLakeDatabase.
+- Support API UpdateDataLakeFunction.
+- Support API UpdateDataLakePartition.
+- Support API UpdateDataLakeTable.
+
+
+2025-06-05 Version: 1.0.0
+- Generated python 2025-04-14 for Dms.
+

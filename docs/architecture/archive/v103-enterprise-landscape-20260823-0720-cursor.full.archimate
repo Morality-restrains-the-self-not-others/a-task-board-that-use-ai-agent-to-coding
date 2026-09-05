@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v103 全量" id="id-v103elfull01">
+  <folder name="Business" id="id-v103elf-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v103ef-admin" name="平台管理员"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v103ef-user" name="目标用户"/>
+    <element xsi:type="archimate:BusinessService" id="id-v103ef-imp" name="以用户角色查看"/>
+    <element xsi:type="archimate:BusinessService" id="id-v103ef-inbox" name="用户收信箱"/>
+    <element xsi:type="archimate:BusinessService" id="id-v103ef-audit" name="模拟登录审计标识"/>
+  </folder>
+  <folder name="Application" id="id-v103elf-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v103ef-fe" name="taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v103ef-auth" name="taskAuth"/>
+  </folder>
+  <folder name="Relations" id="id-v103elf-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v103ef-rel-admin-imp" source="id-v103ef-admin" target="id-v103ef-imp"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v103ef-rel-inbox-user" source="id-v103ef-inbox" target="id-v103ef-user"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v103ef-rel-auth-inbox" source="id-v103ef-auth" target="id-v103ef-inbox"/>
+  </folder>
+  <folder name="Views" id="id-v103elf-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v103ef-view" name="v103 Full landscape">
+      <child xsi:type="archimate:DiagramObject" id="id-v103ef-d-admin" archimateElement="id-v103ef-admin">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v103ef-c-admin-imp" source="id-v103ef-d-admin" target="id-v103ef-d-imp" archimateRelationship="id-v103ef-rel-admin-imp"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v103ef-d-imp" targetConnections="id-v103ef-c-admin-imp" archimateElement="id-v103ef-imp">
+        <bounds x="240" y="48" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v103ef-d-inbox" archimateElement="id-v103ef-inbox">
+        <bounds x="240" y="160" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v103ef-c-inbox-user" source="id-v103ef-d-inbox" target="id-v103ef-d-user" archimateRelationship="id-v103ef-rel-inbox-user"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v103ef-d-user" targetConnections="id-v103ef-c-inbox-user" archimateElement="id-v103ef-user">
+        <bounds x="480" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

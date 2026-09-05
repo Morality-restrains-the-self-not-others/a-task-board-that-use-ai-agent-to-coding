@@ -1,0 +1,17 @@
+# SystemAdminOrderListPanel.orderNumberPaste.test.js 测试意图
+
+## 测试范围
+系统管理订单记录页「交易单号查询」：GET `/api/system-admin/orders/?order_number=` 精确查询；空输入不请求；未命中空态；502 错误带 `data-traceId`。
+
+## 关键业务断言
+- 展示号查询请求管理端列表并展示该单
+- 主键 / 支付渠道号同样带 `order_number` query
+- 空输入提示「请输入交易单号」且不发请求
+- 0 条展示「未找到该交易单号」
+- 列表 502 错误节点带 `data-traceId`
+
+## 破坏信号
+仍走 parse POST；未命中无空态；失败无 `data-traceId`。
+
+## 回归验证
+在 vitest 环境下运行本文件。

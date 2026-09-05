@@ -1,0 +1,62 @@
+# Legacy reference pipeline (same stages as promtail-local.yaml).
+# Remote AiMonitor compose no longer runs Promtail; use promtail-local.yaml on Mac.
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /var/lib/promtail/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: runall-services
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: runall
+          __path__: /var/log/runall/*.log
+    relabel_configs:
+      - source_labels:
+          - __path__
+        regex: '.*/([^/]+)\.log'
+        target_label: service
+    pipeline_stages:
+      - regex:
+          expression: '^\S+ \((?:stdout|stderr)\) (?P<payload>.*)$'
+      - json:
+          expressions:
+            trace_id: trace_id
+            traceId: traceId
+            level: level
+            service: service
+            msg: msg
+          source: payload
+      # Plaintext fallback when JSON has no level (e.g. log.Fatalf "Config error: ...").
+      - regex:
+          expression: '(?i)\b(?P<plain_level>error|fatal|panic|warn(?:ing)?|info|debug)\b'
+          source: payload
+      - template:
+          source: level
+          template: '{{ if .level }}{{ .level }}{{ else if eq .plain_level "fatal" }}error{{ else if eq .plain_level "panic" }}error{{ else if eq .plain_level "warning" }}warn{{ else }}{{ .plain_level }}{{ end }}'
+      - regex:
+          expression: '\[trace_id=(?P<trace_id>[A-Za-z0-9._:-]{8,256})\]'
+          source: payload
+      - template:
+          source: trace_id
+          template: '{{ if .trace_id }}{{ .trace_id }}{{ else }}{{ .traceId }}{{ end }}'
+      - regex:
+          expression: '^[A-Za-z0-9._:-]{8,256}$'
+          source: trace_id
+      - labels:
+          trace_id:
+          level:
+          service:
+      # Promote msg to structured metadata so Grafana details panel shows it as a first-class field.
+      - structured_metadata:
+          msg:
+      # Strip runAll tee prefix so Loki stores pure JSON; Grafana can parse msg and other fields.
+      - output:
+          source: payload

@@ -1,0 +1,7 @@
+# daydaymoney.yaml — service identity (do NOT put workspace_id / project_id / company_id)
+version: 1
+service_id: taskContainerGateway
+display_name: Task Container Gateway
+tags:
+  - svc:taskContainerGateway
+  - domain:container

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v87 全量 (post-change)" id="id-v87els-full01">
+  <folder name="Application" id="id-v87elsf-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v87elsf-gw" name="API Gateway"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v87elsf-fe" name="taskFE [MODIFIED v87]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v87elsf-bill" name="taskBill"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v87elsf-auth" name="taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v87elsf-cloud" name="taskCloudService"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v87elsf-sse" name="taskSSE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v87elsf-gitoauth" name="taskGitOauth"/>
+    <element xsi:type="archimate:DataObject" id="id-v87elsf-billdb" name="taskBill DB"/>
+  </folder>
+  <folder name="Technology" id="id-v87elsf-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v87elsf-edge" name="SH Edge nginx"/>
+    <element xsi:type="archimate:Node" id="id-v87elsf-ngx" name="taskfe-nginx Docker [NEW v87]"/>
+    <element xsi:type="archimate:TechnologyService" id="id-v87elsf-gl-old" name="GitLab CE 现网 :8012"/>
+    <element xsi:type="archimate:TechnologyService" id="id-v87elsf-gl-sh1" name="GitLab CE SH-1 :8014"/>
+    <element xsi:type="archimate:TechnologyService" id="id-v87elsf-kafka" name="Kafka"/>
+    <element xsi:type="archimate:Node" id="id-v87elsf-ctr" name="Comment-scoped container"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v87elsf-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v87elsf-pl85" name="Plateau v85"/>
+    <element xsi:type="archimate:Plateau" id="id-v87elsf-pl87" name="Plateau v87"/>
+    <element xsi:type="archimate:Gap" id="id-v87elsf-gap" name="Gap: SPA 绑 vite preview，stop 即 502"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v87elsf-wp" name="WP-taskfe-nginx-static-resident"/>
+  </folder>
+  <folder name="Relations" id="id-v87elsf-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v87elsf-rel-gw-bill" source="id-v87elsf-gw" target="id-v87elsf-bill" name="billing/*"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87elsf-rel-gw-fe" source="id-v87elsf-gw" target="id-v87elsf-fe" name="SPA 静态资源"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v87elsf-rel-ngx-fe" source="id-v87elsf-ngx" target="id-v87elsf-fe" name="Docker nginx 常驻 :4000"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87elsf-rel-fe-bill" source="id-v87elsf-fe" target="id-v87elsf-bill" name="选购 region"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v87elsf-rel-bill-db" source="id-v87elsf-bill" target="id-v87elsf-billdb" name="region 注册表"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87elsf-rel-bill-old" source="id-v87elsf-bill" target="id-v87elsf-gl-old" name="Admin API region=A"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87elsf-rel-bill-sh1" source="id-v87elsf-bill" target="id-v87elsf-gl-sh1" name="Admin API region=sh-1"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87elsf-rel-edge-old" source="id-v87elsf-edge" target="id-v87elsf-gl-old" name="gitlab.${baseDomain}"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87elsf-rel-edge-sh1" source="id-v87elsf-edge" target="id-v87elsf-gl-sh1" name="gitlab-tencent-sh-1"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87elsf-rel-auth-old" source="id-v87elsf-auth" target="id-v87elsf-gl-old" name="OIDC"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87elsf-rel-auth-sh1" source="id-v87elsf-auth" target="id-v87elsf-gl-sh1" name="OIDC client 独立"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87elsf-rel-ctr-sse" source="id-v87elsf-ctr" target="id-v87elsf-sse" name="heartbeat"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87elsf-rel-sse-fe" source="id-v87elsf-sse" target="id-v87elsf-fe" name="apply snapshot"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v87elsf-rel-pl85-gap" source="id-v87elsf-pl85" target="id-v87elsf-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v87elsf-rel-wp-gap" source="id-v87elsf-wp" target="id-v87elsf-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v87elsf-rel-wp-pl87" source="id-v87elsf-wp" target="id-v87elsf-pl87"/>
+  </folder>
+  <folder name="Views" id="id-v87elsf-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v87elsf-view-topo" name="v87 全量拓扑 — Docker nginx SPA">
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-gw" archimateElement="id-v87elsf-gw">
+        <bounds x="48" y="360" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-gw-bill" source="id-v87elsf-d-gw" target="id-v87elsf-d-bill" archimateRelationship="id-v87elsf-rel-gw-bill"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-gw-fe" source="id-v87elsf-d-gw" target="id-v87elsf-d-fe" archimateRelationship="id-v87elsf-rel-gw-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-fe" targetConnections="id-v87elsf-c-gw-fe id-v87elsf-c-ngx-fe id-v87elsf-c-sse-fe" archimateElement="id-v87elsf-fe">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-fe-bill" source="id-v87elsf-d-fe" target="id-v87elsf-d-bill" archimateRelationship="id-v87elsf-rel-fe-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-ngx" archimateElement="id-v87elsf-ngx">
+        <bounds x="48" y="120" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-ngx-fe" source="id-v87elsf-d-ngx" target="id-v87elsf-d-fe" archimateRelationship="id-v87elsf-rel-ngx-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-bill" targetConnections="id-v87elsf-c-gw-bill id-v87elsf-c-fe-bill" archimateElement="id-v87elsf-bill">
+        <bounds x="280" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-bill-db" source="id-v87elsf-d-bill" target="id-v87elsf-d-billdb" archimateRelationship="id-v87elsf-rel-bill-db"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-bill-old" source="id-v87elsf-d-bill" target="id-v87elsf-d-gl-old" archimateRelationship="id-v87elsf-rel-bill-old"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-bill-sh1" source="id-v87elsf-d-bill" target="id-v87elsf-d-gl-sh1" archimateRelationship="id-v87elsf-rel-bill-sh1"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-billdb" targetConnections="id-v87elsf-c-bill-db" archimateElement="id-v87elsf-billdb">
+        <bounds x="470" y="48" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-edge" archimateElement="id-v87elsf-edge">
+        <bounds x="48" y="220" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-edge-old" source="id-v87elsf-d-edge" target="id-v87elsf-d-gl-old" archimateRelationship="id-v87elsf-rel-edge-old"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-edge-sh1" source="id-v87elsf-d-edge" target="id-v87elsf-d-gl-sh1" archimateRelationship="id-v87elsf-rel-edge-sh1"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-gl-old" targetConnections="id-v87elsf-c-bill-old id-v87elsf-c-edge-old id-v87elsf-c-auth-old" archimateElement="id-v87elsf-gl-old">
+        <bounds x="280" y="200" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-gl-sh1" targetConnections="id-v87elsf-c-bill-sh1 id-v87elsf-c-edge-sh1 id-v87elsf-c-auth-sh1" archimateElement="id-v87elsf-gl-sh1">
+        <bounds x="280" y="280" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-auth" archimateElement="id-v87elsf-auth">
+        <bounds x="48" y="300" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-auth-old" source="id-v87elsf-d-auth" target="id-v87elsf-d-gl-old" archimateRelationship="id-v87elsf-rel-auth-old"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-auth-sh1" source="id-v87elsf-d-auth" target="id-v87elsf-d-gl-sh1" archimateRelationship="id-v87elsf-rel-auth-sh1"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-ctr" archimateElement="id-v87elsf-ctr">
+        <bounds x="520" y="200" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-ctr-sse" source="id-v87elsf-d-ctr" target="id-v87elsf-d-sse" archimateRelationship="id-v87elsf-rel-ctr-sse"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-sse" targetConnections="id-v87elsf-c-ctr-sse" archimateElement="id-v87elsf-sse">
+        <bounds x="760" y="200" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-sse-fe" source="id-v87elsf-d-sse" target="id-v87elsf-d-fe" archimateRelationship="id-v87elsf-rel-sse-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-cloud" archimateElement="id-v87elsf-cloud">
+        <bounds x="520" y="300" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-gitoauth" archimateElement="id-v87elsf-gitoauth">
+        <bounds x="520" y="380" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-d-kafka" archimateElement="id-v87elsf-kafka">
+        <bounds x="760" y="300" width="120" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v87elsf-view-mig" name="架构变迁 v85→v87 — taskfe-nginx-static-resident">
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-do-pl85" archimateElement="id-v87elsf-pl85">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-pl85-gap" source="id-v87elsf-do-pl85" target="id-v87elsf-do-gap" archimateRelationship="id-v87elsf-rel-pl85-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-do-gap" targetConnections="id-v87elsf-c-pl85-gap id-v87elsf-c-wp-gap" archimateElement="id-v87elsf-gap">
+        <bounds x="240" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-do-wp" archimateElement="id-v87elsf-wp">
+        <bounds x="240" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-wp-gap" source="id-v87elsf-do-wp" target="id-v87elsf-do-gap" archimateRelationship="id-v87elsf-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87elsf-c-wp-pl87" source="id-v87elsf-do-wp" target="id-v87elsf-do-pl87" archimateRelationship="id-v87elsf-rel-wp-pl87"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87elsf-do-pl87" targetConnections="id-v87elsf-c-wp-pl87" archimateElement="id-v87elsf-pl87">
+        <bounds x="620" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

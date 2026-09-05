@@ -1,0 +1,62 @@
+' @title: 镜像/技能 mention 存储 ID 化 + 名↔ID 映射持久化（企业景观）
+' @view: enterprise-landscape
+' @status: target
+' @version: 107
+' @iteration: image-skill-id-mapping-store
+' @author: claude
+' @based_on: v106 (v106-enterprise-landscape-20260824-0854-claude.puml)
+' @updated: 2026-08-24 15:15
+' @description: 创建任务镜像/技能绑定存储契约升级：技能引入服务端派生 ID，任务保存镜像 ID + 技能 ID + 名↔ID 映射快照
+
+@startuml
+!include <archimate/Archimate>
+
+title v107 landscape — 镜像/技能存储 ID 化 2026-08-24 15:15
+
+' ═══════════════════════════════════════
+' Change Legend — v107 变更图例
+' ═══════════════════════════════════════
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v107 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v107 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Business_Actor(dev, "开发者 / 外部用户")
+Business_Service(taskSvc, "创建/编辑任务并绑定镜像技能 🟡")
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  [MODIFIED v107] 显示 $镜像名 /技能名（不变）；
+  提交携带 container_image_skill_id
+  @author: claude @2026-08-24 15:15
+end note
+Application_Component(tts, "taskTaskService")
+note right of tts
+  [MODIFIED v107] task_tasks.image_skill_id +
+  container_image_snapshot 名↔ID 快照
+  @author: claude @2026-08-24 15:15
+end note
+Application_Component(cloud, "taskCloudService")
+note right of cloud
+  [MODIFIED v107] image_skills_json 技能附派生 id
+  @author: claude @2026-08-24 15:15
+end note
+Technology_Node(mysql, "MySQL (task/cloud 库)")
+
+Rel_Assignment(dev, taskSvc)
+Rel_Serving(tts, taskSvc, "任务 CRUD + 镜像/技能绑定 🟡")
+Rel_Flow(taskFE, tts, "create/update task 🟡")
+Rel_Flow(tts, cloud, "image_skills 校验/反解 🟡")
+Rel_Serving(mysql, tts, "task_tasks 持久化 🟡")
+Rel_Serving(mysql, cloud, "installed_images 持久化 🟡")
+
+Implementation_Plateau(plateauV106, "Plateau v106")
+Implementation_Plateau(plateauV107, "Plateau v107 镜像/技能存储 ID 化")
+Implementation_Gap(gapId, "Gap: 技能无 ID、任务仅存镜像 ID、名↔ID 映射未持久化")
+Implementation_WorkPackage(wpId, "WP-image-skill-id-mapping")
+Rel_Triggering(plateauV106, gapId, "identifies")
+Rel_Realization(wpId, gapId, "closes")
+Rel_Realization(wpId, plateauV107, "delivers")
+
+@enduml

@@ -1,0 +1,10 @@
+# 测试意图：CreateProject Git 仓库 URL 置顶
+
+## 背景
+创建项目页用户常需先填写 Git 仓库并完成 OAuth 授权，再填项目名称等字段。原布局将 Git 仓库放在名称/描述/标签之后，授权入口不够靠前。
+
+## 验收
+1. `#gitRepo0` 在 DOM 顺序上位于 `#projectName` 之前
+2. 视觉上 Git 输入框的 Y 坐标小于项目名称输入框
+
+对应测例：`CreateProject.git-repo-top.playwright.test.js`

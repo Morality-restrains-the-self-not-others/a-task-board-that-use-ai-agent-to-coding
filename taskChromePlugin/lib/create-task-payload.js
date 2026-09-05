@@ -1,0 +1,481 @@
+/**
+ * 创建任务 payload 构建 — 与 work-panel CreateTaskModal / WorkPanel.submitDeliverableForm 对齐
+ * 纯函数，无 Chrome API 依赖；DevTools / content / node --test 共用
+ *
+ * ## 描述格式 (Description Format)
+ *
+ * 任务描述遵循 composeCreateTaskDescription（见 task2app 端 createTaskDescriptionCompose.js）的
+ * Markdown 格式：自由文本（可选）位于首个已知标题之前，后接结构化段落。示例：
+ *
+ *   自由文本...
+ *
+ *   ## 任务背景
+ *   背景说明...
+ *
+ *   ## 当前问题是什么
+ *   问题描述...
+ *
+ *   ## 需要模型完成什么修改
+ *   修改说明...
+ *
+ *   ## 目标文件、模块或命令在哪里
+ *   位置说明...
+ *
+ *   ## 需要保持哪些原有行为不变
+ *   行为说明...
+ *
+ *   ## 是否禁止新增依赖
+ *   是/否
+ *
+ *   ## 建议验证方式
+ *   验证说明...
+ *
+ * ## 字段可见性 (Field Visibility)
+ *
+ * 工作空间可配置创建任务表单字段的显隐。字段定义参考 Web 端的
+ * createTaskFieldSettings.js（CREATE_TASK_FIELD_SETTING_KEYS）：
+ *   description, task_kind, code_lang, structured_fields, project_branch,
+ *   container_image, feature_params, priority, due_date, auto_run, owner, assignees
+ *
+ * 默认关闭：code_lang、structured_fields；其余字段默认开启。
+ * 插件应在初始化时从 API 获取工作空间字段设置，调用 isCreateTaskFieldEnabled() 判断显隐。
+ *
+ * ## 结构化字段标题 (7 个)
+ *
+ * 对应 CREATE_TASK_STRUCTURED_FIELDS 中定义的 7 个标题（顺序固定）：
+ *   1. 任务背景 (taskBackground)
+ *   2. 当前问题是什么 (currentProblem)
+ *   3. 需要模型完成什么修改 (requestedChanges)
+ *   4. 目标文件、模块或命令在哪里 (targetLocation)
+ *   5. 需要保持哪些原有行为不变 (preserveBehavior)
+ *   6. 是否禁止新增依赖 (forbidNewDeps, kind='deps': 'yes'|'no')
+ *   7. 建议验证方式 (suggestedVerification)
+ */
+
+const FEATURE_PARAMS_SOURCES = new Set(['company', 'workspace', 'personal']);
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function formatDateTimeLocal(date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}T${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+
+/**
+ * 默认截止日期：当前 +7 天后再对齐到周四（与 workPanelBranchHelpers.getDefaultTaskDeadline 一致）
+ * @param {Date} [now]
+ */
+function getDefaultTaskDeadline(now = new Date()) {
+  const targetDate = new Date(now.getTime());
+  targetDate.setSeconds(0, 0);
+  targetDate.setDate(targetDate.getDate() + 7);
+  const daysUntilThursday = (4 - targetDate.getDay() + 7) % 7;
+  targetDate.setDate(targetDate.getDate() + daysUntilThursday);
+  return formatDateTimeLocal(targetDate);
+}
+
+/**
+ * 优先级：与 work-panel 一致 — 0=高 1=中 2=低
+ * @param {unknown} raw
+ * @returns {0|1|2}
+ */
+function normalizePriority(raw) {
+  if (raw === 0 || raw === '0') return 0;
+  if (raw === 1 || raw === '1') return 1;
+  if (raw === 2 || raw === '2') return 2;
+  const key = String(raw || '').trim().toLowerCase();
+  if (key === 'high' || key === 'critical') return 0;
+  if (key === 'medium') return 1;
+  if (key === 'low') return 2;
+  return 1;
+}
+
+function normalizeFeatureParamsSource(raw) {
+  const source = String(raw ?? '').trim();
+  if (!source || source === 'none') return '';
+  return FEATURE_PARAMS_SOURCES.has(source) ? source : '';
+}
+
+/**
+ * @param {{ feature_params_source?: unknown, personal_feature_params_config_id?: unknown }} task
+ */
+function buildFeatureParamsFields(task = {}) {
+  const source = normalizeFeatureParamsSource(task.feature_params_source);
+  if (!source) return {};
+  if (source === 'personal') {
+    const configId = String(task.personal_feature_params_config_id || '').trim();
+    if (!configId) return {};
+    return {
+      feature_params_source: source,
+      personal_feature_params_config_id: configId,
+    };
+  }
+  return { feature_params_source: source };
+}
+
+/**
+ * 将勾选项目展开为 API projects[]（含 repo_index），对齐 workPanelBranchHelpers.buildBranchStrategyProjectMappings
+ *
+ * 基准分支优先级（高→低）：
+ * 1. projectSelections[].repoBranches[].baseBranch
+ * 2. repoBaseBranches["projectId:repoIndex"]
+ * 3. 全局 baseBranch
+ * 4. 项目 base_branch / default_branch
+ * 5. "main"
+ */
+function repoBaseBranchKey(projectId, repoIndex) {
+  return `${String(projectId)}:${Number(repoIndex) || 0}`;
+}
+
+function normalizeAssignees(raw) {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const id of raw) {
+    const s = String(id || '').trim();
+    if (!s || seen.has(s)) continue;
+    seen.add(s);
+    out.push(s);
+  }
+  return out;
+}
+
+function shortenRepoLabel(url, index) {
+  const raw = String(url || '').trim();
+  if (!raw) return `仓库 ${index + 1}`;
+  try {
+    const u = new URL(raw.replace(/^git@([^:]+):/, 'https://$1/'));
+    const path = (u.pathname || '').replace(/\.git$/, '').replace(/^\//, '');
+    return path ? `仓库 ${index + 1}：${path}` : `仓库 ${index + 1}：${u.hostname}`;
+  } catch (_) {
+    return raw.length > 48 ? `仓库 ${index + 1}：${raw.slice(0, 45)}…` : `仓库 ${index + 1}：${raw}`;
+  }
+}
+
+const RepoBaseBranchDatalist = (typeof globalThis !== 'undefined' && globalThis.BranchDatalist)
+  ? globalThis.BranchDatalist
+  : (typeof require === 'function' ? require('./branch-datalist.js') : null);
+
+function resolveBaseForRepo({
+  projectId,
+  repoIndex,
+  project,
+  globalBase = '',
+  repoBaseBranches = {},
+  projectSelections = [],
+}) {
+  const selections = Array.isArray(projectSelections) ? projectSelections : [];
+  const sel = selections.find((s) => String(s?.projectId || s?.project_id) === String(projectId));
+  const repoBranches = Array.isArray(sel?.repoBranches) ? sel.repoBranches : [];
+  const fromSel = repoBranches.find((r) => Number(r.repoIndex) === Number(repoIndex))
+    || repoBranches[repoIndex];
+  if (fromSel?.baseBranch != null && String(fromSel.baseBranch).trim() !== '') {
+    return String(fromSel.baseBranch).trim();
+  }
+
+  const key = repoBaseBranchKey(projectId, repoIndex);
+  const fromMap = repoBaseBranches && repoBaseBranches[key];
+  if (fromMap != null && String(fromMap).trim() !== '') {
+    return String(fromMap).trim();
+  }
+
+  const overrideBase = String(globalBase || '').trim();
+  if (overrideBase) return overrideBase;
+
+  if (project?.base_branch && String(project.base_branch).trim()) {
+    return String(project.base_branch).trim();
+  }
+  if (project?.default_branch && String(project.default_branch).trim()) {
+    return String(project.default_branch).trim();
+  }
+  return 'main';
+}
+
+function buildProjectsFromSelection({
+  projectIds = [],
+  projectsList = [],
+  workBranch = '',
+  baseBranch = '',
+  repoBaseBranches = {},
+  projectSelections = [],
+} = {}) {
+  const target = String(workBranch || '').trim();
+  const out = [];
+  for (const pid of projectIds) {
+    const projectId = String(pid || '').trim();
+    if (!projectId) continue;
+    const proj = projectsList.find((p) => String(p.id || p._id) === projectId);
+    const repos = Array.isArray(proj?.git_repos)
+      ? proj.git_repos.filter((u) => u && String(u).trim())
+      : [];
+
+    const pushOne = (repoIndex) => {
+      out.push({
+        project_id: projectId,
+        repo_index: repoIndex,
+        base_branch: resolveBaseForRepo({
+          projectId,
+          repoIndex,
+          project: proj,
+          globalBase: baseBranch,
+          repoBaseBranches,
+          projectSelections,
+        }),
+        target_branch: target,
+      });
+    };
+
+    if (repos.length === 0) {
+      pushOne(0);
+      continue;
+    }
+    for (let i = 0; i < repos.length; i += 1) {
+      pushOne(i);
+    }
+  }
+  return out;
+}
+
+function gitIdentityModule() {
+  if (typeof CreateTaskGitIdentity !== 'undefined') return CreateTaskGitIdentity;
+  if (typeof require === 'function') {
+    try { return require('./create-task-git-identity.js'); } catch (_) { return null; }
+  }
+  return null;
+}
+
+function autoRunLabelModule() {
+  if (typeof ProjectAutoRunLabel !== 'undefined') return ProjectAutoRunLabel;
+  if (typeof require === 'function') {
+    try { return require('./project-auto-run-label.js'); } catch (_) { return null; }
+  }
+  return null;
+}
+
+/**
+ * 创建任务表单门禁（与 CreateTaskModal createSubmitBlockedReason 对齐）
+ * @returns {string} 空字符串表示可提交
+ */
+function validateCreateTaskForm(form = {}) {
+  const title = String(form.title || '').trim();
+  if (!title) return '请输入任务标题';
+  const workspaceId = String(form.workspaceId || form.workspace_id || '').trim();
+  if (!workspaceId) return '请选择工作空间';
+  const owner = String(form.owner || '').trim();
+  if (!owner) return '请填写 Owner';
+  const projectIds = Array.isArray(form.projectIds)
+    ? form.projectIds
+    : (Array.isArray(form.projects) ? form.projects : []);
+  if (!projectIds.length) return '请选择一个项目';
+
+  const source = normalizeFeatureParamsSource(form.feature_params_source);
+  if (!source) return '请先选择智能体资源配置后再创建';
+  if (source === 'personal' && !String(form.personal_feature_params_config_id || '').trim()) {
+    return '请先选择智能体资源配置后再创建';
+  }
+  const AutoRun = autoRunLabelModule();
+  if (AutoRun && typeof AutoRun.validateAutoRunRequiresImage === 'function') {
+    const imageReason = AutoRun.validateAutoRunRequiresImage(
+      form.auto_run === true,
+      form.container_image_id || form.containerImageId,
+    );
+    if (imageReason) return imageReason;
+  }
+  const GitId = gitIdentityModule();
+  if (GitId) {
+    const identReason = GitId.validateFromForm(form);
+    if (identReason) return identReason;
+  }
+  return '';
+}
+
+/**
+ * 构建与 work-panel POST /todos/ 对齐的请求体
+ */
+function buildCreateTaskPayload(form = {}) {
+  const workspaceId = String(form.workspaceId || form.workspace_id || '').trim();
+  const workBranch = String(form.workBranch || form.work_branch_name || '').trim();
+  const mergeTarget = String(form.mergeTarget || form.merge_target_branch_name || '').trim();
+  const projectIds = Array.isArray(form.projectIds)
+    ? form.projectIds.map(String)
+    : [];
+
+  const projects = Array.isArray(form.projects) && form.projects.length && !projectIds.length
+    ? form.projects
+    : buildProjectsFromSelection({
+      projectIds,
+      projectsList: form.projectsList || [],
+      workBranch,
+      baseBranch: form.baseBranch || '',
+      repoBaseBranches: form.repoBaseBranches || {},
+      projectSelections: form.projectSelections || [],
+    });
+
+  const payload = {
+    title: String(form.title || '').trim(),
+    description: String(form.description || ''),
+    priority: normalizePriority(form.priority),
+    workspace_id: workspaceId,
+    owner: String(form.owner || '').trim(),
+    assignees: normalizeAssignees(form.assignees),
+    projects,
+    due_date: String(form.due_date || '').trim() || getDefaultTaskDeadline(form.now || new Date()),
+    auto_run: form.auto_run === true,
+  };
+  if (form.auto_run === true) {
+    payload.queued_auto_run = form.queued_auto_run === true;
+  }
+
+  const progressColumnId = String(form.progress_column_id || form.progressColumnId || '').trim();
+  if (progressColumnId) payload.progress_column_id = progressColumnId;
+
+  const deliverableObjId = String(form.deliverable_obj_id || form.deliverableObjId || '').trim();
+  if (deliverableObjId) payload.deliverable_obj_id = deliverableObjId;
+
+  const containerImageId = String(form.container_image_id || form.containerImageId || '').trim();
+  if (containerImageId) {
+    payload.container_image_id = containerImageId;
+    const containerImageSkillId = String(form.container_image_skill_id || form.containerImageSkillId || '').trim();
+    if (containerImageSkillId) payload.container_image_skill_id = containerImageSkillId;
+  }
+
+  if (form.force_auto_run === true) payload.force_auto_run = true;
+
+  const clientPublicIp = String(form.client_public_ip || form.clientPublicIp || '').trim();
+  if (clientPublicIp) payload.client_public_ip = clientPublicIp;
+
+  Object.assign(payload, buildFeatureParamsFields(form));
+
+  const GitId = gitIdentityModule();
+  if (GitId) {
+    const repoIdentities = GitId.buildPayloadFromForm(form);
+    if (repoIdentities) payload.repo_identities = repoIdentities;
+  }
+
+  if (workBranch || mergeTarget) {
+    payload.branch_strategy = {
+      work_branch_name: workBranch,
+      merge_target_branch_name: mergeTarget,
+      target_branch_name: workBranch,
+    };
+  } else if (form.branch_strategy && typeof form.branch_strategy === 'object') {
+    payload.branch_strategy = { ...form.branch_strategy };
+  }
+
+  return payload;
+}
+
+function escapeAttr(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/** 用户可见标签/提示：单仓；留空用项目默认分支（不再用「逐仓」）。 */
+const REPO_BASE_LABEL = '基准分支';
+const REPO_BASE_HINT = '空则用项目默认分支';
+const REPO_BASE_EMPTY_HINT = REPO_BASE_HINT;
+
+/**
+ * 选定项目后的基准分支编辑区 HTML（纯函数，供 panel / content 复用）
+ */
+function buildRepoBaseEditorsHtml({
+  projectIds = [],
+  projectsList = [],
+  previousValues = {},
+  inputClass = 'form-input',
+  emptyHint = REPO_BASE_EMPTY_HINT,
+} = {}) {
+  const ids = (projectIds || []).map(String).filter(Boolean);
+  if (!ids.length) {
+    return `<p class="placeholder" style="color:#6c7086;font-size:11px;">${escapeAttr(emptyHint)}</p>`;
+  }
+  let html = '';
+  for (const projectId of ids) {
+    const proj = projectsList.find((p) => String(p.id || p._id) === projectId);
+    const name = proj?.name || proj?.displayName || proj?.title || projectId;
+    const repos = Array.isArray(proj?.git_repos)
+      ? proj.git_repos.filter((u) => u && String(u).trim())
+      : [];
+    const fallback = (proj?.base_branch && String(proj.base_branch).trim())
+      || (proj?.default_branch && String(proj.default_branch).trim())
+      || 'main';
+    html += `<div class="repo-base-project" style="margin:6px 0;padding:6px;border:1px solid #45475a;border-radius:6px">`;
+    html += `<div style="font-size:11px;font-weight:600;margin-bottom:4px">${escapeAttr(name)}</div>`;
+    const rows = repos.length ? repos : [''];
+    rows.forEach((url, i) => {
+      const key = repoBaseBranchKey(projectId, i);
+      const prev = previousValues[key] != null ? String(previousValues[key]) : '';
+      const label = shortenRepoLabel(url, i);
+      html += `<div class="repo-base-row" style="margin:4px 0">`;
+      html += `<label style="display:block;font-size:10px;color:#a6adc8;margin-bottom:2px">${escapeAttr(label)}</label>`;
+      const listId = RepoBaseBranchDatalist.repoBaseDatalistId(projectId, i);
+      html += `<input type="text" class="${escapeAttr(inputClass)} repo-base-input" `
+        + `list="${escapeAttr(listId)}" `
+        + `data-repo-base="1" data-project-id="${escapeAttr(projectId)}" data-repo-index="${i}" `
+        + `placeholder="${escapeAttr(fallback)}" value="${escapeAttr(prev)}">`;
+      html += `<datalist id="${escapeAttr(listId)}">${RepoBaseBranchDatalist.branchDatalistOptionsHtml([])}</datalist>`;
+      html += `</div>`;
+    });
+    html += `</div>`;
+  }
+  return html;
+}
+
+/**
+ * 悬浮面板「描述重置」是否可点击：描述框有任意内容时可清空。
+ * @param {unknown} description
+ * @returns {boolean}
+ */
+function shouldEnableDescReset(description) {
+  return String(description ?? '').length > 0;
+}
+
+/**
+ * 从容器读取基准分支 map
+ * @param {ParentNode} root
+ */
+function readRepoBaseBranchesFromRoot(root) {
+  const map = {};
+  if (!root || typeof root.querySelectorAll !== 'function') return map;
+  root.querySelectorAll('[data-repo-base][data-project-id]').forEach((el) => {
+    const projectId = el.getAttribute('data-project-id');
+    const repoIndex = el.getAttribute('data-repo-index') || '0';
+    const key = repoBaseBranchKey(projectId, repoIndex);
+    map[key] = String(el.value || '').trim();
+  });
+  return map;
+}
+
+const CreateTaskPayload = {
+  normalizePriority,
+  getDefaultTaskDeadline,
+  buildProjectsFromSelection,
+  buildFeatureParamsFields,
+  validateCreateTaskForm,
+  buildCreateTaskPayload,
+  normalizeFeatureParamsSource,
+  repoBaseBranchKey,
+  normalizeAssignees,
+  shortenRepoLabel,
+  resolveBaseForRepo,
+  buildRepoBaseEditorsHtml,
+  readRepoBaseBranchesFromRoot,
+  shouldEnableDescReset,
+  repoBaseDatalistId: RepoBaseBranchDatalist.repoBaseDatalistId,
+  parseRemoteBranchNames: RepoBaseBranchDatalist.parseRemoteBranchNames,
+  branchDatalistOptionsHtml: RepoBaseBranchDatalist.branchDatalistOptionsHtml,
+  REPO_BASE_LABEL,
+  REPO_BASE_HINT,
+  REPO_BASE_EMPTY_HINT,
+};
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = CreateTaskPayload;
+}
+if (typeof globalThis !== 'undefined') {
+  globalThis.CreateTaskPayload = CreateTaskPayload;
+}

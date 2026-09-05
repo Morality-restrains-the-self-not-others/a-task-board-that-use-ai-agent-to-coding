@@ -1,0 +1,1927 @@
+openapi: 3.0.3
+info:
+  title: taskCloudService Internal API
+  description: '运维与服务间可见的内部接口规范（完整覆盖 mountRoutes 中 `/api/internal/*`）。
+
+    请求/响应字段按 handler 源码整理；前缀路由在 description 中列出子路径。
+
+    访问：`/api/swagger-internal/` 或网关 `/gateway/ops/docs/taskCloudService/`（token）。'
+  version: 1.8.0
+servers:
+- url: http://127.0.0.1:8018
+  description: taskCloudService 直连（运维）
+paths:
+  /api/internal/cloud/job-execution-events/:
+    post:
+      summary: 内部 — 持久化容器 job-stream 执行事件
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                company_id: { type: string }
+                workspace_id: { type: string }
+                task_id: { type: string }
+                comment_id: { type: string }
+                job_id: { type: string }
+                seq: { type: integer }
+                phase: { type: string }
+                message: { type: string }
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/image/resolve/:
+    get:
+      summary: 内部 — 解析租户已安装镜像为 docker ref
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: tenant_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: installed_image_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                  installed_image_id:
+                    type: string
+                  external_image_id:
+                    type: string
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+        '409':
+          description: 冲突
+  /api/internal/cloud/tenant-budget-enabled/:
+    get:
+      summary: endpoint (/api/internal/cloud/tenant-budget-enabled/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/cloud/init-tenant-feature-params/:
+    get:
+      summary: endpoint (/api/internal/cloud/init-tenant-feature-params/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+  /api/internal/cloud/users/:
+    get:
+      summary: 内部 — 按用户查云侧账号注销 blockers（account-deletion-blockers）
+      tags: [internal]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Not Found }
+        "403":
+          description: Forbidden
+  /api/internal/budget/:
+    get:
+      summary: 内部 — 预算前缀路由（见子路径说明）
+      description: 'Prefix router。常用子路径：
+
+        - POST `/record-usage` / `/record-usage-batch`
+
+        - POST `/reserve-or-deny`
+
+        - GET/POST `/workspace-defaults` (+ `/upsert` `/delete`)
+
+        - GET/POST `/task-budgets` (+ `/upsert`)；GET `/task-usage`
+
+        - GET/POST `/tenant-permissions` (+ `/upsert` `/evaluate-raise`)
+
+        鉴权：`X-Internal-Secret`（401）。'
+      tags:
+      - internal
+      - budget
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: 子路径分发
+        '401':
+          description: 未认证（缺内部密钥）
+        '404':
+          description: 未找到
+        '405':
+          description: method not allowed
+    post:
+      summary: 内部 — 预算写入类子路径
+      tags:
+      - internal
+      - budget
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: string
+                workspace_id:
+                  type: string
+                task_id:
+                  type: string
+                todo_id:
+                  type: string
+                company_id:
+                  type: string
+                provider:
+                  type: string
+                base_url:
+                  type: string
+                model_name:
+                  type: string
+                idempotency_key:
+                  type: string
+                request_id:
+                  type: string
+                  description: idempotency_key 备选
+                input_tokens:
+                  type: integer
+                input_tokens_delta:
+                  type: integer
+                output_tokens:
+                  type: integer
+                output_tokens_delta:
+                  type: integer
+                items:
+                  type: array
+                  description: batch 模式
+                  items:
+                    type: object
+                user_id:
+                  type: string
+                member_id:
+                  type: string
+                is_tenant_admin:
+                  type: boolean
+                is_workspace_admin:
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  allowed:
+                    type: boolean
+                  usage_id:
+                    type: string
+                  spent_amount:
+                    type: string
+                  budget_limit:
+                    type: string
+                  currency:
+                    type: string
+                    example: CNY
+                  items:
+                    type: array
+                  deleted:
+                    type: integer
+        '400':
+          description: 参数错误
+        '401':
+          description: 未认证（缺内部密钥）
+        '402':
+          description: 预算/余额不足
+        '405':
+          description: method not allowed
+    put:
+      summary: 内部 — 预算 upsert 子路径
+      tags:
+      - internal
+      - budget
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: 参数错误
+        '401':
+          description: 未认证（缺内部密钥）
+        '405':
+          description: method not allowed
+    delete:
+      summary: 内部 — 预算删除子路径
+      tags:
+      - internal
+      - budget
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: 参数错误
+        '401':
+          description: 未认证（缺内部密钥）
+        '405':
+          description: method not allowed
+  /api/internal/ai-endpoint/:
+    post:
+      summary: 内部 — AI endpoint 解析（resolve-route / upstream-credentials）
+      description: 子路径：`/resolve-route`、`/upstream-credentials`。鉴权 401。
+      tags:
+      - internal
+      - ai
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: string
+                provider:
+                  type: string
+                base_url:
+                  type: string
+                  description: upstream-credentials 必填
+              required:
+              - tenant_id
+              - provider
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  provider:
+                    type: string
+                  upstream_base_url:
+                    type: string
+                  base_url:
+                    type: string
+                  api_key:
+                    type: string
+                  use_sub_token:
+                    type: boolean
+                  budget_enabled:
+                    type: boolean
+                  derive_needed:
+                    type: boolean
+        '400':
+          description: 参数错误
+        '401':
+          description: 未认证（缺内部密钥）
+        '405':
+          description: method not allowed
+  /api/internal/feature-params-env/:
+    get:
+      summary: 内部 — 解析 Feature Params 环境变量
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: tenant_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: company_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 缺省等于 tenant_id
+      - name: proxy_token
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  company_id:
+                    type: string
+                  workspace_id:
+                    type: string
+                  task_id:
+                    type: string
+                  env:
+                    type: object
+                    description: map[string]string，含 TASK_LLM_PROVIDERS_JSON 等
+                  resolve_source:
+                    type: string
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+    post:
+      summary: 内部 — 解析 Feature Params（POST body）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: string
+                workspace_id:
+                  type: string
+                task_id:
+                  type: string
+                company_id:
+                  type: string
+                proxy_token:
+                  type: string
+              required:
+              - tenant_id
+              - workspace_id
+              - task_id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  company_id:
+                    type: string
+                  workspace_id:
+                    type: string
+                  task_id:
+                    type: string
+                  env:
+                    type: object
+                  resolve_source:
+                    type: string
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/cloud-server-config/:
+    get:
+      summary: 内部 — 云服务器配置 lookup / container-target / histories
+      description: 子路径：`/lookup`、`/list-by-task`、`/container-target`、`/histories`。
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      parameters:
+      - name: tenant_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: trace_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: container_page_url
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: open_only
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 配置或历史
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  company_id:
+                    type: string
+                  workspace_id:
+                    type: string
+                  task_id:
+                    type: string
+                  platform:
+                    type: string
+                  instance_id:
+                    type: string
+                  public_ip:
+                    type: string
+                  server_url:
+                    type: string
+                  business_api_endpoint:
+                    type: string
+                  base_url:
+                    type: string
+                  access_token:
+                    type: string
+                  histories:
+                    type: array
+                  count:
+                    type: integer
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+        '404':
+          description: 未找到
+    post:
+      summary: 内部 — 云服务器配置 import / validate / clear-after-stop / histories
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                configs:
+                  type: array
+                  description: import 模式
+                rows:
+                  type: array
+                  description: configs 别名
+                histories:
+                  type: array
+                tenant_id:
+                  type: string
+                workspace_id:
+                  type: string
+                task_id:
+                  type: string
+                trace_id:
+                  type: string
+                stop_reason:
+                  type: string
+                reason:
+                  type: string
+                  description: stop_reason 别名
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  imported:
+                    type: integer
+                  status:
+                    type: string
+                  cleared:
+                    type: boolean
+        '201':
+          description: Created history
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+    put:
+      summary: 内部 — histories 更新
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+        '404':
+          description: 未找到
+    patch:
+      summary: 内部 — histories 部分更新
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+        '404':
+          description: 未找到
+  /api/internal/cloud-server-config/list-by-task/:
+    get:
+      summary: 内部 — 按任务列出评论级云服务器配置
+      description: "返回任务级 running_machine_count / running_container_count 与全部评论 CSC（不含 comment_id 为空的模板行）。无评论行时 200 + comments 空数组。"
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      parameters:
+      - name: tenant_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 评论 CSC 列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                  running_machine_count:
+                    type: integer
+                  running_container_count:
+                    type: integer
+                  comments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        comment_id:
+                          type: string
+                        instance_id:
+                          type: string
+                        server_url:
+                          type: string
+                        last_runtime_status:
+                          type: string
+                        region:
+                          type: string
+                        platform:
+                          type: string
+                        authorization_id:
+                          type: string
+        '400':
+          description: 缺 task_id
+        '403':
+          description: 缺内部密钥
+  /api/internal/cloud-server-events/:
+    get:
+      summary: 内部 — latest-pending-start
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      parameters:
+      - name: company_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+        '404':
+          description: 未找到
+    post:
+      summary: 内部 — update-status / update-data / import
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event_id:
+                  type: string
+                status:
+                  type: string
+                error_message:
+                  type: string
+                event_data:
+                  type: object
+                events:
+                  type: array
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  imported:
+                    type: integer
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/access-key-iam-associations/:
+    post:
+      summary: 内部 — AccessKey↔IAM 关联创建或 /import 批量导入
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                auth_id:
+                  type: string
+                cloud_platform_auth_id:
+                  type: string
+                  description: auth_id 别名
+                access_key:
+                  type: string
+                iam_id:
+                  type: string
+                items:
+                  type: array
+                  description: import 模式
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  imported:
+                    type: integer
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/tenant-member/:
+    get:
+      summary: 内部 — 校验租户成员（代理 resolve-user-member）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: tenant_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 成员存在
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  company_member_id:
+                    type: string
+                  user_id:
+                    type: string
+                  tenant_id:
+                    type: string
+                  is_admin:
+                    type: boolean
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+        '404':
+          description: 未找到
+  /api/internal/relay-startup-session/upsert/:
+    post:
+      summary: 内部 — Redis relay 启动会话 upsert
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workflow_id:
+                  type: string
+                tenant_id:
+                  type: string
+                workspace_id:
+                  type: string
+                task_id:
+                  type: string
+                phase:
+                  type: string
+                  description: 如 token_init_succeeded
+                token_initialized:
+                  type: boolean
+                request_id:
+                  type: string
+                expires_at:
+                  type: string
+              required:
+              - workflow_id
+              - tenant_id
+              - workspace_id
+              - task_id
+              - phase
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  workflow_id:
+                    type: string
+                  phase:
+                    type: string
+                  token_initialized:
+                    type: boolean
+                  request_id:
+                    type: string
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+        '503':
+          description: 依赖不可用
+  /api/internal/cloud-platform-authorizations/import/:
+    post:
+      summary: 内部 — 批量导入 CPA 与 active_methods
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                authorizations:
+                  type: array
+                active_methods:
+                  type: array
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  imported_authorizations:
+                    type: integer
+                  imported_active_methods:
+                    type: integer
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/cloud-platform-authorizations/lookup/:
+    get:
+      summary: 内部 — 按 company_id 列表或 id 单查 CPA（含 secret）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: company_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 列表模式必填
+      - name: id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 单查模式
+      - name: platform_type
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 单查过滤
+      responses:
+        '200':
+          description: object 或 array
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  platform_type:
+                    type: string
+                  authorization_type:
+                    type: string
+                  secret_id:
+                    type: string
+                  secret_key:
+                    type: string
+                  remark:
+                    type: string
+                  company_id:
+                    type: string
+                  active:
+                    type: boolean
+                  is_active:
+                    type: boolean
+                  oauth_token_id:
+                    type: string
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+        '404':
+          description: 未找到
+  /api/internal/cloud-platform-authorizations/active-methods/:
+    get:
+      summary: 内部 — 租户 CPA active method 列表
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: company_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    company_id:
+                      type: string
+                    platform_type:
+                      type: string
+                    auth_method:
+                      type: string
+                    auth_instance_id:
+                      type: string
+                    is_active:
+                      type: boolean
+                    created_at:
+                      type: string
+                    updated_at:
+                      type: string
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/cloud/oauth-token/lookup/:
+    get:
+      summary: 内部 — OAuth token 元数据查询
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: company_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  company_id:
+                    type: string
+                  platform_type:
+                    type: string
+                    default: aliyun
+                  authorization_type:
+                    type: string
+                    default: oauth
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+        '404':
+          description: 未找到
+  /api/internal/tenant-installed-images/import/:
+    post:
+      summary: 内部 — 批量导入租户已安装镜像
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                installed_images:
+                  type: array
+                  items:
+                    type: object
+              required:
+              - installed_images
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  imported:
+                    type: integer
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/tenant-installed-images/lookup/:
+    get:
+      summary: 内部 — 查询租户已安装镜像（单条或列表）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: tenant_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 有则单条，无则列表
+      - name: name
+        in: query
+        required: false
+        schema:
+          type: string
+        description: id 未命中时，若该租户下此镜像名唯一则回退该条
+      responses:
+        '200':
+          description: object 或 array
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  tenant_id:
+                    type: string
+                  external_image_id:
+                    type: string
+                  name:
+                    type: string
+                  image_url:
+                    type: string
+                  version:
+                    type: string
+                  vendor_id:
+                    type: string
+                  auto_run_steps_md:
+                    type: string
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+        '404':
+          description: 未找到
+  /api/internal/layer-git-push/prepare/:
+    post:
+      summary: 内部 — layer git push prepare（OAuth/push_body）
+      tags:
+      - internal
+      - git
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: string
+                workspace_id:
+                  type: string
+                task_id:
+                  type: string
+                layer_id:
+                  type: string
+                user_id:
+                  type: string
+                identity_id:
+                  type: string
+                repo_url:
+                  type: string
+                prefer_container_remote:
+                  type: boolean
+                target_branch:
+                  type: string
+                github_auth_by_repo:
+                  type: object
+              required:
+              - tenant_id
+              - task_id
+              - layer_id
+              - user_id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  push_body:
+                    type: object
+                  use_oauth_access_push:
+                    type: boolean
+                  detail:
+                    type: string
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/layer-git-push/complete/:
+    post:
+      summary: 内部 — layer git push 完成（best-effort）
+      tags:
+      - internal
+      - git
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: string
+                task_id:
+                  type: string
+                layer_id:
+                  type: string
+                user_id:
+                  type: string
+              required:
+              - tenant_id
+              - task_id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/layer-git-push/auth-context/:
+    get:
+      summary: 内部 — Git 推送 OAuth 就绪状态
+      tags:
+      - internal
+      - git
+      security:
+      - internalSecret: []
+      parameters:
+      - name: tenant_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  has_github_repo_projects:
+                    type: boolean
+                  has_gitlab_repo_projects:
+                    type: boolean
+                  push_requires_github_oauth:
+                    type: boolean
+                  push_requires_git_oauth:
+                    type: boolean
+                  git_oauth_providers_required:
+                    type: array
+                    items:
+                      type: string
+                  git_oauth_ready_for_push:
+                    type: boolean
+                  github_app_user_oauth_connected:
+                    type: boolean
+                  gitlab_app_user_oauth_connected:
+                    type: boolean
+                  repos:
+                    type: array
+                  message:
+                    type: string
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/layer-git-repo-identities/prepare/:
+    post:
+      summary: 内部 — 解析 repos 为容器 push 作者身份
+      tags:
+      - internal
+      - git
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: string
+                user_id:
+                  type: string
+                repos:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    properties:
+                      repo_url:
+                        type: string
+                      identity_id:
+                        type: string
+                    required:
+                    - repo_url
+                    - identity_id
+              required:
+              - tenant_id
+              - user_id
+              - repos
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  repos:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        repo_match_key:
+                          type: string
+                        user_name:
+                          type: string
+                        user_email:
+                          type: string
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/runtime-session/open/:
+    post:
+      summary: 内部 — 打开 runtime session
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: string
+                workspace_id:
+                  type: string
+                task_id:
+                  type: string
+                runtime_source:
+                  type: string
+                  default: relay_local
+                ensure_cloud_server_config:
+                  type: boolean
+                  default: true
+              required:
+              - tenant_id
+              - task_id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  session_id:
+                    type: string
+                    description: history id
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/cloud/compute/recycle-idle-machines/:
+    post:
+      summary: 内部 — 回收 idle workspace 机器
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  recycled:
+                    type: integer
+        '403':
+          description: 缺内部密钥
+  /api/internal/cloud/workspace-machine-policy/:
+    get:
+      summary: 内部 — 读取工作空间机器闲置策略（供 Credential task-detail 组装）
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      parameters:
+      - name: company_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 可选；与 comment_id 一起用于组装 machine_release_sts
+      - name: comment_id
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK；无策略行时 idle_recycle_minutes 默认 5；无 RAM Role 时省略 machine_release_sts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  idle_recycle_minutes:
+                    type: integer
+                    example: 5
+                    default: 5
+                  enabled_authorization_ids:
+                    type: array
+                    items:
+                      type: string
+                  machine_release_sts:
+                    type: object
+                    description: 可选短时 STS；无 Role 时本字段不出现
+        '400':
+          description: 缺 company_id/workspace_id
+        '403':
+          description: 缺内部密钥
+  /api/internal/cloud/compute/reconcile-orphan-csc/:
+    post:
+      summary: 内部 — 孤儿 CSC 对账：任务已删但 CSC 仍有实例 → 打 terminal_released 标记；同 tick 补偿终态任务未释放的运行实例
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  cleaned:
+                    type: integer
+                  terminal_cleaned:
+                    type: integer
+                    description: 任务已取消/已完成但仍有运行实例的 CSC 释放数量
+        '403':
+          description: 缺内部密钥
+  /api/internal/cloud/compute/reconcile-workspace-machine-runtimes/:
+    post:
+      summary: 内部 — 按工作区刷新 last_runtime_status（Describe + 孤儿名对账）；看板 GET 只读
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  workspaces:
+                    type: integer
+        '403':
+          description: 缺内部密钥
+  /api/internal/cloud/compute/reconcile-leaked-servers/:
+    post:
+      summary: 内部 — 泄漏实例对账：terminal_released=1 但 server_url 仍在 → 清理可达性并关闭 sidecar
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  cleaned:
+                    type: integer
+        '403':
+          description: 缺内部密钥
+  /api/internal/cloud/compute/clear-idle-bindings-on-instance/:
+    post:
+      summary: 内部 — 清除实例上空闲绑定
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                company_id:
+                  type: string
+                tenant_id:
+                  type: string
+                  description: company_id 别名
+                workspace_id:
+                  type: string
+                instance_id:
+                  type: string
+                exclude_task_id:
+                  type: string
+              required:
+              - workspace_id
+              - instance_id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  cleared:
+                    type: integer
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/cloud/compute/set-terminal-released-flag/:
+    post:
+      summary: 内部 — 设置任务 terminal_released 标志
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                company_id:
+                  type: string
+                tenant_id:
+                  type: string
+                workspace_id:
+                  type: string
+                task_id:
+                  type: string
+              required:
+              - workspace_id
+              - task_id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  terminal_released:
+                    type: boolean
+                    example: true
+        '400':
+          description: 参数错误
+        '403':
+          description: 缺内部密钥
+  /api/internal/cloud/compute/instance-bindings/:
+    get:
+      summary: 内部 — 列出共享同一 instance_id 的 CSC 绑定
+      tags:
+      - internal
+      parameters:
+      - name: company_id
+        in: query
+        schema:
+          type: string
+      - name: tenant_id
+        in: query
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: instance_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: bindings 数组
+        '400':
+          description: 缺少参数
+  /api/internal/cloud/compute/mark-terminal-released/:
+    post:
+      summary: 内部 — 标记任务 CSC 终态硬释放（禁止 idle reuse）
+      tags:
+      - internal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - task_id
+              properties:
+                tenant_id:
+                  type: string
+                company_id:
+                  type: string
+                workspace_id:
+                  type: string
+                task_id:
+                  type: string
+      responses:
+        '200':
+          description: terminal_released=true
+  /api/internal/cloud/compute/mark-comment-terminal-released/:
+    post:
+      summary: 内部 — 按评论粒度标记 CSC 终态硬释放
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - task_id
+              - comment_id
+              properties:
+                tenant_id:
+                  type: string
+                company_id:
+                  type: string
+                workspace_id:
+                  type: string
+                task_id:
+                  type: string
+                comment_id:
+                  type: string
+      responses:
+        '200':
+          description: terminal_released=true（评论级）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  terminal_released:
+                    type: boolean
+                  affected:
+                    type: integer
+        '400':
+          description: 缺少 tenant/task/comment
+        '403':
+          description: 缺内部密钥
+  /api/internal/cloud/stops/:
+    get:
+      summary: 内部 — 云停机请求幂等查询（子路径 processed）
+      description: |
+        挂载前缀 `/api/internal/cloud/stops/`；当前实现子路径 `processed`：
+        `GET .../processed?stop_request_id=` 查询 CLOUD_SERVER_STOPPED 是否已处理。
+      tags:
+      - internal
+      - compute
+      security:
+      - internalSecret: []
+      parameters:
+      - name: stop_request_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 子路径 processed 时必填
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  processed:
+                    type: boolean
+        '400':
+          description: 缺 stop_request_id
+        '403':
+          description: 缺内部密钥
+        '404':
+          description: 未知子路径
+  /api/internal/cloud/compute/migrate-container-off-instance/:
+    post:
+      summary: 内部 — 将镜像容器从共享实例迁到所属任务独占机器
+      tags:
+      - internal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - workspace_id
+              - owner_task_id
+              - from_instance_id
+              properties:
+                tenant_id:
+                  type: string
+                company_id:
+                  type: string
+                workspace_id:
+                  type: string
+                owner_task_id:
+                  type: string
+                from_instance_id:
+                  type: string
+                forbid_reuse_instance_id:
+                  type: string
+      responses:
+        '200':
+          description: '新 instance_id；via=start_vm_auto|new_mock|idempotent（idle_reuse 已下线 ADR-0013）；
+
+            container_start_triggered 表示已触发容器重建（UserData 或 gateway start）
+
+            '
+        '400':
+          description: 缺少参数
+  /api/internal/extract-auto-run-steps/:
+    post:
+      summary: 内部 — 从 OCI 镜像抽取 /app/autoRunStep.md
+      description: '供 Saas_Ai_Provider 在厂商保存/更新 image_url（含 DRAFT）时调用。
+
+        成功返回 markdown + digest；失败返回 422 与 status（not_found / auth_failed / failed）。
+
+        '
+      tags:
+      - internal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - image_url
+              properties:
+                image_url:
+                  type: string
+                  description: 镜像仓库引用（registry/repo:tag 或 @digest）
+                path:
+                  type: string
+                  default: /app/autoRunStep.md
+      responses:
+        '200':
+          description: 抽取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  markdown:
+                    type: string
+                  digest:
+                    type: string
+                  status:
+                    type: string
+                    example: ok
+                  path:
+                    type: string
+        '422':
+          description: 未找到文件或仓库鉴权/拉取失败
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - not_found
+                    - auth_failed
+                    - failed
+                  detail:
+                    type: string
+                  digest:
+                    type: string
+        '403':
+          description: 缺少或错误的 X-Internal-Secret
+  /api/internal/vendor-cloud-credentials/lookup/:
+    get:
+      summary: 内部 — 按 vendor_id + platform_type 查找凭证（供 ai-provider）
+      tags:
+      - internal
+      parameters:
+      - name: vendor_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: platform_type
+        in: query
+        required: true
+        schema:
+          type: string
+          example: aliyun
+      responses:
+        '200':
+          description: 含 secret_id/secret_key（仅 internal，禁止暴露给浏览器）
+        '404':
+          description: 未配置或 code=vendor_cloud_credential_missing
+components:
+  securitySchemes:
+    internalSecret:
+      type: apiKey
+      in: header
+      name: X-Internal-Secret
+      description: 服务间内部密钥（cfg.InternalSecret）

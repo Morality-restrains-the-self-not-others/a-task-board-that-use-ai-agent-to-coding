@@ -1,0 +1,15 @@
+provider: gitlab
+service_provider: synology-gitlab
+target:
+  website: http://183.250.1.132:8012
+  website_aliases:
+    - http://183.250.1.132:8012
+  authorize_origin: http://183.250.1.132:8012
+  client_id: ''
+  client_secret: ""
+  redirect_uri: ${subdomains.gateway}/api/accounts/synology-gitlab/oauth/callback/
+  scope: read_repository write_repository api read_user
+service:
+  allowedHost: http://127.0.0.1:8002
+  host: 0.0.0.0
+  port: 8002

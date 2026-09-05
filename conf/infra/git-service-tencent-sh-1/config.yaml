@@ -1,0 +1,36 @@
+# GitLab CE instance: tencent-sh-1（上海腾讯云独立实例，精简模式）
+# SSOT: 本目录。现网实例仍用 conf/infra/git-service/。
+allowedHost: ${scheme}://${subdomains.gitlabTencentSh1}
+host: 0.0.0.0
+port: 8014
+logging.log_file: logs/infra/git-service-tencent-sh-1.log
+sshPort: 2223
+advertiseSshPort: 2223
+publicUrl: ${scheme}://${subdomains.gitlabTencentSh1}
+# SH 宿主机非易失路径（禁止 tmpfs）
+gitlabHome: /var/lib/daydaymoney/gitService-tencent-sh-1
+
+# Omnibus 镜像与现网实例锁同步（SSOT；compose 消费 GITLAB_IMAGE）
+imageTag: 19.2.4-ce.0
+# 精简模式（上海机 ~3.6GiB RAM）
+memLimit: 2g
+shmSize: 256m
+pumaWorkers: 1
+sidekiqConcurrency: 2
+minDockerMemoryMib: 2048
+
+signupEnabled: false
+passwordAuthWeb: ''
+passwordAuthGit: ''
+
+regionSlug: tencent-sh-1
+containerName: gitlab-tencent-sh-1
+# taskAuth bootstrapClients.clientId；run.sh / deploy 脚本导出 GITLAB_OIDC_CLIENT_ID
+oidcClientId: gitlab-git-service-tencent-sh-1
+# 跨节点：SH 宿主经 8004 反向隧道（ensure-edge-tunnels.sh DOCKER_BIND_PORTS，
+# bind docker0 172.17.0.1）→ 本机 taskBill；容器内 host.docker.internal 解析。
+# 2026-08-23 起：直连 ${INFRA_HOST}:8004 从 sh 不可达（公网 VPC 隔离），勿改回。
+trafficGateTaskBillBase: http://host.docker.internal:8004
+# 机密只写 conf-local 同路径；已跟踪文件必须留空（ADR-0054 / OPT-20260831-012）
+oidcClientSecret: ""
+trafficGateInternalSecret: ""

@@ -1,0 +1,10 @@
+# MEMBER_JOINED — company member row created (invite join / company create / internal upsert).
+# Consumer: taskEvents member_joined/1_create_default_git_identity → ensure default git identity.
+# Kafka topic SSOT remains taskEvents/config DefaultTopicForEventType (member-joined).
+intents:
+  1_create_default_git_identity:
+    host: 0.0.0.0
+    port: 18060
+    groupId: task-events-member-joined-1-create-default-git-identity
+    events:
+    - MEMBER_JOINED

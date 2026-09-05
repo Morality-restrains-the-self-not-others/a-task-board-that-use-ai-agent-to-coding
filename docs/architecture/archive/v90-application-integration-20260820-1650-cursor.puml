@@ -1,0 +1,63 @@
+' @title: 容器→SaaS 接口契约版本
+' @view: application-integration
+' @status: target
+' @version: 90
+' @iteration: saas-inbound-skill-version
+' @author: cursor
+' @based_on: v88 (v88-application-integration-20260820-1520-cursor.puml)
+' @updated: 2026-08-20 16:50
+' @description: 厂商镜像必须声明已发布的 saas inbound skill 版本；taskAiProvider 提供版本目录 API
+
+@startuml
+!include <archimate/Archimate>
+
+title v90 Target — 容器→SaaS 接口版本 2026-08-20 16:50
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v90 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v90 |
+endlegend
+
+Application_Component(portal, "taskAiProvider SPA")
+note right of portal
+  [MODIFIED v90] skill 页展示版本；
+  添加/编辑镜像必选接口版本
+  @author: cursor @2026-08-20 16:50
+end note
+
+Application_Component(aip, "taskAiProvider")
+note right of aip
+  [MODIFIED v90]
+  GET saas-inbound-skill-versions
+  镜像 CRUD 校验 published 集
+end note
+
+Application_DataObject(catalog, "saas-container/versions.yaml")
+note right of catalog
+  [NEW v90] 已发布契约目录 SSOT
+end note
+
+Application_DataObject(img, "ai_provider_vendorcontainerimage")
+note right of img
+  [MODIFIED v90] saas_inbound_skill_version
+end note
+
+Application_Interface(verAPI, "GET skill-versions")
+note right of verAPI
+  [NEW v90] 公开只读
+end note
+
+Rel_Flow(portal, aip, "选版本 / CRUD 镜像")
+Rel_Serving(verAPI, aip, "公开目录")
+Rel_Access(aip, catalog, "R")
+Rel_Access(aip, img, "R/W")
+
+Implementation_Plateau(p88, "Plateau v88")
+Implementation_Gap(gap, "Gap: 契约无版本标签")
+Implementation_WorkPackage(wp, "WP-saas-inbound-skill-version")
+Implementation_Plateau(p90, "Plateau v90")
+Rel_Triggering(p88, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p90, "delivers")
+
+@enduml

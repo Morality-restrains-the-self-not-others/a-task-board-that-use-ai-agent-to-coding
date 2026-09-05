@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v125 变迁 (v124→v125)" id="id-v125aidiff01">
+  <folder name="Application" id="id-v125ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v125-app-fe" name="taskFE ImageMarket"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v125-app-gw" name="taskGateway APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v125-app-auth" name="taskAuth sso_bridge"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v125-app-aip" name="taskAiProvider"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v125-app-portal" name="provider SPA ApplyPanel [DEPRECATED v125]"/>
+    <element xsi:type="archimate:DataObject" id="id-v125-data-vendor" name="ai_provider_vendor"/>
+    <element xsi:type="archimate:DataObject" id="id-v125-data-settings" name="marketplace_settings"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v125ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v125-pl-v124" name="Plateau v124 clone-run"/>
+    <element xsi:type="archimate:Plateau" id="id-v125-pl-v125" name="Plateau v125 ImageMarket apply"/>
+    <element xsi:type="archimate:Gap" id="id-v125-gap" name="Gap: 申请在门户、镜像市场无 SSO 漏斗"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v125-wp" name="WP-imagemarket-vendor-apply-restore"/>
+  </folder>
+  <folder name="Relations" id="id-v125ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v125-rel-fe-gw" source="id-v125-app-fe" target="id-v125-app-gw" name="vendor-status / vendor-application"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v125-rel-gw-aip" source="id-v125-app-gw" target="id-v125-app-aip" name="token + gateway secret"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v125-rel-fe-auth" source="id-v125-app-fe" target="id-v125-app-auth" name="SSO vendor_bridge"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v125-rel-auth-aip" source="id-v125-app-auth" target="id-v125-app-aip" name="sso-exchange"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v125-rel-aip-vendor" source="id-v125-app-aip" target="id-v125-data-vendor" name="申请/审核写"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v125-rel-aip-set" source="id-v125-app-aip" target="id-v125-data-settings" name="审核开关"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v125-rel-portal-aip" source="id-v125-app-portal" target="id-v125-app-aip" name="不再 POST 申请"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v125-rel-pl-gap" source="id-v125-pl-v124" target="id-v125-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v125-rel-wp-gap" source="id-v125-wp" target="id-v125-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v125-rel-wp-pl" source="id-v125-wp" target="id-v125-pl-v125"/>
+  </folder>
+  <folder name="Views" id="id-v125ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v125-view-mig" name="架构变迁 v124→v125 — ImageMarket 恢复厂商申请入口">
+      <child xsi:type="archimate:DiagramObject" id="id-v125-do-pl124" archimateElement="id-v125-pl-v124">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125-c-pl-gap" source="id-v125-do-pl124" target="id-v125-do-gap" archimateRelationship="id-v125-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125-do-gap" targetConnections="id-v125-c-pl-gap id-v125-c-wp-gap" archimateElement="id-v125-gap">
+        <bounds x="340" y="48" width="480" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125-do-wp" archimateElement="id-v125-wp">
+        <bounds x="340" y="140" width="480" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125-c-wp-gap" source="id-v125-do-wp" target="id-v125-do-gap" archimateRelationship="id-v125-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125-c-wp-pl" source="id-v125-do-wp" target="id-v125-do-pl125" archimateRelationship="id-v125-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125-do-pl125" targetConnections="id-v125-c-wp-pl" archimateElement="id-v125-pl-v125">
+        <bounds x="860" y="140" width="280" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v125-view-topo" name="v125 Current — 镜像市场申请与 SSO">
+      <child xsi:type="archimate:DiagramObject" id="id-v125-do-fe" archimateElement="id-v125-app-fe">
+        <bounds x="48" y="80" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125-c-fe-gw" source="id-v125-do-fe" target="id-v125-do-gw" archimateRelationship="id-v125-rel-fe-gw"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125-c-fe-auth" source="id-v125-do-fe" target="id-v125-do-auth" archimateRelationship="id-v125-rel-fe-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125-do-gw" targetConnections="id-v125-c-fe-gw" archimateElement="id-v125-app-gw">
+        <bounds x="280" y="80" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125-c-gw-aip" source="id-v125-do-gw" target="id-v125-do-aip" archimateRelationship="id-v125-rel-gw-aip"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125-do-auth" targetConnections="id-v125-c-fe-auth" archimateElement="id-v125-app-auth">
+        <bounds x="48" y="180" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125-c-auth-aip" source="id-v125-do-auth" target="id-v125-do-aip" archimateRelationship="id-v125-rel-auth-aip"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125-do-aip" targetConnections="id-v125-c-gw-aip id-v125-c-auth-aip id-v125-c-portal-aip" archimateElement="id-v125-app-aip">
+        <bounds x="520" y="80" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125-c-aip-vendor" source="id-v125-do-aip" target="id-v125-do-vendor" archimateRelationship="id-v125-rel-aip-vendor"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125-c-aip-set" source="id-v125-do-aip" target="id-v125-do-set" archimateRelationship="id-v125-rel-aip-set"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125-do-vendor" targetConnections="id-v125-c-aip-vendor" archimateElement="id-v125-data-vendor">
+        <bounds x="760" y="48" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125-do-set" targetConnections="id-v125-c-aip-set" archimateElement="id-v125-data-settings">
+        <bounds x="760" y="120" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v125-do-portal" archimateElement="id-v125-app-portal">
+        <bounds x="280" y="200" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v125-c-portal-aip" source="id-v125-do-portal" target="id-v125-do-aip" archimateRelationship="id-v125-rel-portal-aip"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

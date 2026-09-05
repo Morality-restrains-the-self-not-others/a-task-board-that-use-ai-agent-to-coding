@@ -1,0 +1,7 @@
+---
+name: read_pages_domain
+description: Grants the ability to read pages domains
+boundaries:
+  - project
+permissions:
+  - read_pages_domain

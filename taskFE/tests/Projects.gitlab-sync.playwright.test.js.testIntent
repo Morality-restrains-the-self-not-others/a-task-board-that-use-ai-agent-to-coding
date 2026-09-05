@@ -1,0 +1,28 @@
+# Projects.gitlab-sync.playwright.test.js
+
+## 意图
+验证项目列表页「从 GitLab 同步」功能：按钮可见、对话框打开、远程仓库列表加载、勾选与工作空间选择、批量创建项目。
+
+## 被测功能
+1. 项目列表页显示「从 GitLab 同步」按钮（有/无项目时）
+2. 点击按钮打开 `gitlab-sync-projects-modal` 对话框
+3. GET `/api/tenant/{tid}/projects/gitlab-remote-repos/` 返回仓库列表并渲染
+4. 未绑定 OAuth 时显示「前往 GitLab 授权」按钮
+5. 列表返回 imported_in_single_repo_project / imported_in_any_project；合并不限制已导入，批量仅排除单仓已占用
+6. 已导入仓库显示「已导入」且不可选
+
+## 前置条件
+- 前端与后端服务可访问（默认 `SITE_BASE` 或 port_config vue 地址）
+- 测试账号 `contact@daydaymoney.com` 可登录租户 `850256677331562496`
+- **API 登录**：password 须经 `generateDjangoPasswordHash(明文, 邮箱)` 后再 POST `/api/auth/`（见 `helpers/gatewayLoginE2e.js`）；UI 登录由 Login.vue 在提交时自动哈希
+- Mock 用例通过 `page.route()` 拦截 API，不依赖 gitOauth/GitLab 在线状态
+- 真实 API 用例需已部署 GitLab 同步功能且用户已绑定 GitLab OAuth（否则仅验证 OAuth 引导）
+
+## 测试环境变量
+- `SITE_BASE` / `BASE_URL` — 主站地址（默认 port_config 或 `http://183.250.1.132:4000`）
+- `PLAYWRIGHT_TEST_EMAIL` — 默认 contact@daydaymoney.com
+- `PLAYWRIGHT_TEST_PASSWORD` — 默认 <env:PLAYWRIGHT_TEST_PASSWORD>
+- `TEST_TENANT_ID` — 默认 850256677331562496
+
+## 预期结果
+Mock 用例全部通过；真实 API 用例在 OAuth 已绑定时至少加载到 1 个仓库或成功展示 OAuth 引导。

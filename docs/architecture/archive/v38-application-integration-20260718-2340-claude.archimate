@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v38-daydaymoney-yaml-metadata-20260718-2340">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v38 Target (daydaymoney-yaml-metadata)</name>
+  <purpose>Repo daydaymoney.yaml identity; tag-based multi workspace/project resolve; header/meta/logs/Grafana</purpose>
+
+  <folder name="Motivation" id="id-v38-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="🟢 YAML 禁止固化 ws/project/tenant id [NEW v38]" id="id-v38-constraint"/>
+    <element xsi:type="archimate:Principle" name="🟢 同一 service_id 可映射多 WS/项目 [NEW v38]" id="id-v38-principle"/>
+  </folder>
+  <folder name="Application" id="id-v38-f-app" type="application">
+    <element xsi:type="archimate:DataObject" name="🟢 daydaymoney.yaml service_id+tags [NEW v38]" id="id-v38-yaml"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue ProjectPage sync tags [MODIFIED v38]" id="id-v38-vue-proj"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 SPA head daydaymoney-* meta [MODIFIED v38]" id="id-v38-vue-head"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskChromePlugin resolve+autofill [MODIFIED v38]" id="id-v38-chrome"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 DaydaymoneyGrafana meta match [MODIFIED v38]" id="id-v38-grafana"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway JWT tenant" id="id-v38-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskProjectService daydaymoney/resolve [MODIFIED v38]" id="id-v38-tps"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 shareLib/tracelog daydaymoney fields [MODIFIED v38]" id="id-v38-tracelog"/>
+    <element xsi:type="archimate:DataObject" name="projects.tags + project_workspaces" id="id-v38-tags"/>
+  </folder>
+  <folder name="Technology" id="id-v38-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="Loki JSON logs" id="id-v38-loki"/>
+  </folder>
+  <folder name="Relations" id="id-v38-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v38-flow-yaml-head" source="id-v38-yaml" target="id-v38-vue-head" name="build/CI inject"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v38-flow-yaml-proj" source="id-v38-yaml" target="id-v38-vue-proj" name="fetch/parse"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v38-flow-yaml-log" source="id-v38-yaml" target="id-v38-tracelog" name="startup load"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v38-flow-head-chrome" source="id-v38-vue-head" target="id-v38-chrome" name="read meta"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v38-flow-proj-gw" source="id-v38-vue-proj" target="id-v38-gw" name="PATCH tags / parse-yaml"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v38-flow-chrome-gw" source="id-v38-chrome" target="id-v38-gw" name="GET daydaymoney/resolve"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v38-flow-grafana-gw" source="id-v38-grafana" target="id-v38-gw" name="list / resolve"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v38-flow-gw-tps" source="id-v38-gw" target="id-v38-tps" name="tenant auth"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v38-acc-tps-tags" source="id-v38-tps" target="id-v38-tags" name="R/W tags R resolve"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v38-flow-log-loki" source="id-v38-tracelog" target="id-v38-loki" name="daydaymoney fields"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v38-flow-loki-grafana" source="id-v38-loki" target="id-v38-grafana" name="meta match"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v38-inf-c-yaml" source="id-v38-constraint" target="id-v38-yaml" name="schema"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v38-inf-p-tps" source="id-v38-principle" target="id-v38-tps" name="multi matches"/>
+  </folder>
+  <folder name="Implementation" id="id-v38-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v37 — work-panel-task-status-sse (current)" id="id-v38-plat-v37"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v38 — daydaymoney-yaml-metadata" id="id-v38-plat-v38"/>
+    <element xsi:type="archimate:Gap" name="Gap: 无稳定服务身份与多归属反查" id="id-v38-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v38-daydaymoney-yaml-metadata" id="id-v38-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v38-rel-plat37-gap" source="id-v38-plat-v37" target="id-v38-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v38-rel-wp-gap" source="id-v38-wp" target="id-v38-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v38-rel-wp-plat38" source="id-v38-wp" target="id-v38-plat-v38"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v38-rel-plat38-tps" source="id-v38-plat-v38" target="id-v38-tps"/>
+  </folder>
+  <folder name="Views" id="id-v38-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v37→v38 — daydaymoney-yaml-metadata" id="id-v38-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-plat37" archimateElement="id-v38-plat-v37">
+        <bounds x="48" y="100" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-plat37-gap"
+          source="id-v38-do-plat37" target="id-v38-do-gap"
+          archimateRelationship="id-v38-rel-plat37-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-gap" archimateElement="id-v38-gap"
+        targetConnections="id-v38-conn-plat37-gap id-v38-conn-wp-gap">
+        <bounds x="420" y="100" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-wp" archimateElement="id-v38-wp">
+        <bounds x="880" y="60" width="360" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-wp-gap"
+          source="id-v38-do-wp" target="id-v38-do-gap"
+          archimateRelationship="id-v38-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-wp-plat38"
+          source="id-v38-do-wp" target="id-v38-do-plat38"
+          archimateRelationship="id-v38-rel-wp-plat38"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-plat38" archimateElement="id-v38-plat-v38"
+        targetConnections="id-v38-conn-wp-plat38">
+        <bounds x="880" y="160" width="360" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-plat38-tps"
+          source="id-v38-do-plat38" target="id-v38-do-tps-m"
+          archimateRelationship="id-v38-rel-plat38-tps"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-tps-m" archimateElement="id-v38-tps"
+        targetConnections="id-v38-conn-plat38-tps">
+        <bounds x="880" y="250" width="360" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v38 Target — daydaymoney 元信息数据流" id="id-v38-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-yaml" archimateElement="id-v38-yaml">
+        <bounds x="40" y="40" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-yaml-head"
+          source="id-v38-do-yaml" target="id-v38-do-head"
+          archimateRelationship="id-v38-flow-yaml-head"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-yaml-proj"
+          source="id-v38-do-yaml" target="id-v38-do-proj"
+          archimateRelationship="id-v38-flow-yaml-proj"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-yaml-log"
+          source="id-v38-do-yaml" target="id-v38-do-tracelog"
+          archimateRelationship="id-v38-flow-yaml-log"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-head" archimateElement="id-v38-vue-head"
+        targetConnections="id-v38-conn-yaml-head">
+        <bounds x="260" y="20" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-head-chrome"
+          source="id-v38-do-head" target="id-v38-do-chrome"
+          archimateRelationship="id-v38-flow-head-chrome"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-proj" archimateElement="id-v38-vue-proj"
+        targetConnections="id-v38-conn-yaml-proj">
+        <bounds x="260" y="100" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-proj-gw"
+          source="id-v38-do-proj" target="id-v38-do-gw"
+          archimateRelationship="id-v38-flow-proj-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-chrome" archimateElement="id-v38-chrome"
+        targetConnections="id-v38-conn-head-chrome">
+        <bounds x="480" y="20" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-chrome-gw"
+          source="id-v38-do-chrome" target="id-v38-do-gw"
+          archimateRelationship="id-v38-flow-chrome-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-grafana" archimateElement="id-v38-grafana">
+        <bounds x="480" y="200" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-grafana-gw"
+          source="id-v38-do-grafana" target="id-v38-do-gw"
+          archimateRelationship="id-v38-flow-grafana-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-gw" archimateElement="id-v38-gw"
+        targetConnections="id-v38-conn-proj-gw id-v38-conn-chrome-gw id-v38-conn-grafana-gw">
+        <bounds x="720" y="100" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-gw-tps"
+          source="id-v38-do-gw" target="id-v38-do-tps"
+          archimateRelationship="id-v38-flow-gw-tps"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-tps" archimateElement="id-v38-tps"
+        targetConnections="id-v38-conn-gw-tps id-v38-conn-c-yaml id-v38-conn-p-tps">
+        <bounds x="900" y="100" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-tps-tags"
+          source="id-v38-do-tps" target="id-v38-do-tags"
+          archimateRelationship="id-v38-acc-tps-tags"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-tags" archimateElement="id-v38-tags"
+        targetConnections="id-v38-conn-tps-tags">
+        <bounds x="900" y="200" width="240" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-tracelog" archimateElement="id-v38-tracelog"
+        targetConnections="id-v38-conn-yaml-log">
+        <bounds x="260" y="200" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-log-loki"
+          source="id-v38-do-tracelog" target="id-v38-do-loki"
+          archimateRelationship="id-v38-flow-log-loki"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-loki" archimateElement="id-v38-loki"
+        targetConnections="id-v38-conn-log-loki">
+        <bounds x="480" y="280" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-loki-grafana"
+          source="id-v38-do-loki" target="id-v38-do-grafana"
+          archimateRelationship="id-v38-flow-loki-grafana"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-c" archimateElement="id-v38-constraint">
+        <bounds x="40" y="280" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-c-yaml"
+          source="id-v38-do-c" target="id-v38-do-tps"
+          archimateRelationship="id-v38-inf-c-yaml"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v38-do-p" archimateElement="id-v38-principle">
+        <bounds x="40" y="360" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v38-conn-p-tps"
+          source="id-v38-do-p" target="id-v38-do-tps"
+          archimateRelationship="id-v38-inf-p-tps"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

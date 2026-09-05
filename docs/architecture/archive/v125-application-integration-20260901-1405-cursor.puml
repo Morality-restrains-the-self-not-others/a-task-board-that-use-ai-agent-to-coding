@@ -1,0 +1,58 @@
+' @title: 厂商申请入口收回镜像市场（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 125
+' @iteration: ImageMarket 恢复厂商申请入口
+' @author: cursor
+' @based_on: v124 (v124-application-integration-20260831-1817-cursor.puml)
+' @updated: 2026-09-01 14:30
+' @description: 租户镜像市场承载 vendor-application；SSO 仅 qualified 或关审核+真实邮箱；门户申请面板已下线
+
+@startuml
+!include <archimate/Archimate>
+
+title 厂商申请入口 — v125 Current Architecture (2026-09-01 14:30)
+
+Application_Component(fe, "taskFE ImageMarket")
+note right of fe
+  四态：none+邮箱+审核开 → 表单
+  pending → 审核中（无 SSO）
+  qualified / 关审核+邮箱 → SSO
+  合成邮箱 → 绑邮箱深链
+  @author: cursor @2026-09-01 14:30
+end note
+
+Application_Component(gw, "taskGateway APISIX")
+Application_Component(auth, "taskAuth sso_bridge")
+Application_Component(aip, "taskAiProvider")
+note top of aip
+  申请唯一公网入口为主站 ImageMarket；
+  接口仍为本服务 Go API
+end note
+
+Application_Component(portal, "provider SPA")
+note top of portal
+  仅 SSO 换票与镜像维护；
+  未认证用户引导回镜像市场
+  @author: cursor @2026-09-01 14:30
+end note
+
+Application_DataObject(vendor, "ai_provider_vendor")
+Application_DataObject(settings, "marketplace_settings")
+
+Rel_Flow(fe, gw, "vendor-status / vendor-application")
+Rel_Flow(gw, aip, "token + gateway secret")
+Rel_Flow(fe, auth, "SSO vendor_bridge")
+Rel_Flow(auth, aip, "sso-exchange")
+Rel_Access_w(aip, vendor, "申请/审核写")
+Rel_Access_r(aip, settings, "审核开关")
+
+Implementation_Plateau(p124, "Plateau v124 clone-run")
+Implementation_Plateau(p125, "Plateau v125 ImageMarket apply")
+Implementation_Gap(gap, "Gap closed: 申请回到镜像市场")
+Implementation_WorkPackage(wp, "WP-imagemarket-vendor-apply-restore")
+Rel_Triggering(p124, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p125, "delivers")
+
+@enduml

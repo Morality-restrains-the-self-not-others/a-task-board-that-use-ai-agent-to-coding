@@ -1,0 +1,51 @@
+' @title: 管理员订单分账只读展示
+' @view: application-integration
+' @status: archived
+' @version: 96
+' @iteration: admin-order-profit-sharing
+' @author: cursor
+' @based_on: v95 (v95-application-integration-20260822-1330-cursor.puml)
+' @updated: 2026-08-22 14:05
+' @description: 管理端订单展开经 staff-only 详情读取 billing_profit_sharing；租户 GET 不附加分账
+
+@startuml
+!include <archimate/Archimate>
+
+title v96 — 管理员订单分账只读 2026-08-22 14:05
+
+Application_Component(fe, "taskFE Vue SPA")
+note right of fe
+  管理端展开改打 admin GET
+  OrderExpandDetail 分账区块（prop 隔离）
+end note
+
+Application_Component(bill, "taskBill")
+note right of bill
+  GET /api/system-admin/orders/{id}/
+  租户 GET 不加 profit_sharing
+end note
+
+Application_DataObject(order, "billing_resource_order")
+Application_DataObject(ps, "billing_profit_sharing")
+note right of ps
+  订单级分账快照只读
+end note
+
+Technology_Node(mysqlB, "MySQL task_bill utf8mb4")
+
+Rel_Flow(fe, bill, "GET admin order detail")
+Rel_Flow(fe, bill, "GET tenant order (no PS field)")
+Rel_Flow(bill, order, "loadOrderByID")
+Rel_Flow(bill, ps, "list by order_id")
+Rel_Serving(mysqlB, order, "InnoDB")
+Rel_Serving(mysqlB, ps, "InnoDB")
+
+Implementation_Plateau(plateauV95, "Plateau v95")
+Implementation_Plateau(plateauV96, "Plateau v96 admin order profit sharing")
+Implementation_Gap(gapPS, "Gap: 订单展开无分账对象与金额")
+Implementation_WorkPackage(wpPS, "WP-admin-order-profit-sharing")
+Rel_Triggering(plateauV95, gapPS, "identifies")
+Rel_Realization(wpPS, gapPS, "closes")
+Rel_Realization(wpPS, plateauV96, "delivers")
+
+@enduml

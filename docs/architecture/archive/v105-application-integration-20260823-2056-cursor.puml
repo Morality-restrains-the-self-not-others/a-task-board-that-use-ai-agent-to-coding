@@ -1,0 +1,54 @@
+' @title: 测试角色与 GitLab 区域访问模式
+' @view: application-integration
+' @status: target
+' @version: 105
+' @iteration: tester-role-gitlab-region-access-mode
+' @author: cursor
+' @based_on: v104 (v104-application-integration-20260823-1400-cursor.puml)
+' @updated: 2026-08-23 20:56
+' @description: is_tester + X-User-Is-Tester；billing_gitlab_region.access_mode；开发区仅测试可用
+
+@startuml
+!include <archimate/Archimate>
+
+title v105 — tester role + gitlab region access_mode 2026-08-23 20:56
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  用户列表角色「测试」🟢
+  区域卡片开发/发布模式 🟢
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(auth, "taskAuth")
+Application_Component(bill, "taskBill")
+Application_Event(evTester, "UserTesterFlagChanged 🟢")
+Application_Event(evMode, "GitlabRegionAccessModeChanged 🟢")
+Application_DataObject(userRow, "auth_user.is_tester 🟢")
+Application_DataObject(regionRow, "billing_gitlab_region.access_mode 🟢")
+
+Technology_Node(mysqlAuth, "MySQL task_auth")
+Technology_Node(mysqlBill, "MySQL task_bill")
+Technology_Node(kafka, "Kafka")
+
+Rel_Flow(taskFE, gw, "users PATCH / gitlab-regions PUT 🟢")
+Rel_Flow(gw, auth, "forward-auth + X-User-Is-Tester 🟢")
+Rel_Flow(gw, bill, "regions + purchase")
+Rel_Access_w(auth, userRow, "PATCH is_tester")
+Rel_Access_w(bill, regionRow, "PUT access_mode")
+Rel_Access_r(auth, mysqlAuth, "flags")
+Rel_Access_r(bill, mysqlBill, "regions")
+Rel_Flow(auth, evTester, "publish")
+Rel_Flow(bill, evMode, "publish")
+Rel_Flow(evTester, kafka, "user-tester-flag-changed")
+Rel_Flow(evMode, kafka, "gitlab-region-access-mode-changed")
+
+Implementation_Plateau(plateauV104, "Plateau v104")
+Implementation_Plateau(plateauV105, "Plateau v105 tester+region mode")
+Implementation_Gap(gapQ, "Gap: 无测试角色/开发区门禁")
+Implementation_WorkPackage(wpQ, "WP-tester-gitlab-access-mode")
+Rel_Triggering(plateauV104, gapQ, "identifies")
+Rel_Realization(wpQ, gapQ, "closes")
+Rel_Realization(wpQ, plateauV105, "delivers")
+
+@enduml

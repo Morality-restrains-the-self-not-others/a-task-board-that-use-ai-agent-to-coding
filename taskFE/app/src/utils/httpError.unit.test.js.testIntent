@@ -1,0 +1,6 @@
+# httpError.unit.test.js
+
+- **目标**：失败 compute/API 响应不能只展示裸 `HTTP 403`；须从 `_errorData.message|error|detail` 或 HTML 原文提取可读文案，并保留 `traceId`。网关 502/503/504 HTML（APISIX connection refused）须给「服务暂时不可用，请稍后重试」，禁止把 nginx 正文或页面兜底「加载支付记录失败」当作用户文案。
+- **关键断言**：无 `detail` 的 `{message}` / `{error}` 403 展示业务字段；HTML 403 不回退成恰好 `HTTP 403`；空 body 才用 HTTP 状态兜底；502 HTML 为重试文案且 JSON `{error}` 优先。
+- **破坏信号**：重新只读 `detail`、或 `json()` 后再 `text()` 导致空文案；502 回退成裸 HTML / 通用「加载失败」。
+- **回归**：改 `httpError.js` / `apiFetch` 错误体注入后跑本文件。

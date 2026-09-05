@@ -1,0 +1,264 @@
+---
+description: 数据库表名前缀强制规范 — 表名必须以所在应用服务名的后缀（去掉 "task" 前缀）为表名前缀
+globs: "**/*.go,**/*.py,**/*.sql,**/dataMigrate/**/*.sql,**/models.py,**/db.go,**/infrastructure/*.go"
+alwaysApply: true
+---
+
+# 数据库表名前缀强制规范（元规则）
+
+适用于整个 monorepo 的所有服务（Go / Python / 未来语言）。本规则是**元规则**，优先级高于各语言局部惯例。
+
+## 核心原则
+
+**每个服务的数据库表名必须以该服务名的后缀为前缀。服务名格式为 `taskXxxYyy`，去掉 `task` 前缀后，剩余部分转为 snake_case 即为表名前缀。**
+
+> 示例：`taskBill` → 后缀 `Bill` → snake_case `bill` → 表名前缀 `bill_`
+> 示例：`taskCloudService` → 后缀 `CloudService` → snake_case `cloud_service` → 表名前缀 `cloud_service_`
+> 示例：`taskCredentialService` → 后缀 `CredentialService` → snake_case `credential_service` → 表名前缀 `credential_service_`
+> 示例：`taskProjectService` → 后缀 `ProjectService` → snake_case `project_service` → 表名前缀 `project_service_`
+> 示例：`taskEvents` → 后缀 `Events` → snake_case `events` → 表名前缀 `events_`
+
+此规则确保：
+1. **跨库 JOIN/查询时**，从表名即可立即判断所属服务，无需查文档
+2. **数据迁移脚本**按服务目录组织时，SQL 文件中的表名一目了然
+3. **多服务共享同一数据库实例**时，表名不会冲突（不同前缀天然隔离）
+4. **新人阅读代码时**，看到表名就能定位到负责该表的服务
+
+## 前缀生成规则
+
+### 步骤 1：提取服务后缀
+
+从服务目录名（如 `taskBill`, `taskCloudService`）中去掉 `task` 前缀：
+
+| 服务目录 | 去掉 task 后的后缀 |
+|---------|-------------------|
+| `taskBill` | `Bill` |
+| `taskCloudService` | `CloudService` |
+| `taskCredentialService` | `CredentialService` |
+| `taskProjectService` | `ProjectService` |
+| `taskAuth` | `Auth` |
+| `taskEvents` | `Events` |
+| `taskGateway` | `Gateway` |
+| `taskReferral` | `Referral` |
+| `taskTenantService` | `TenantService` |
+| `taskAIComment` | `AIComment` |
+| `taskAiProvider` | `AiProvider` |
+| `taskAgentSupport` | `AgentSupport` |
+| `taskTaskService` | `TaskService` |
+| `taskSSE` | `SSE` |
+| `taskGitOauth` | `GitOauth` |
+| `taskContainerGateway` | `ContainerGateway` |
+| `taskChromePlugin` | `ChromePlugin` |
+| `taskFE` | `FE` |
+
+### 步骤 2：转为 snake_case
+
+将后缀转为小写蛇形命名：
+
+| 后缀 | snake_case | 表名前缀 |
+|------|-----------|---------|
+| `Bill` | `bill` | `bill_` |
+| `CloudService` | `cloud_service` | `cloud_service_` |
+| `CredentialService` | `credential_service` | `credential_service_` |
+| `ProjectService` | `project_service` | `project_service_` |
+| `Auth` | `auth` | `auth_` |
+| `Events` | `events` | `events_` |
+| `Gateway` | `gateway` | `gateway_` |
+| `Referral` | `referral` | `referral_` |
+| `TenantService` | `tenant_service` | `tenant_service_` |
+| `AIComment` | `ai_comment` | `ai_comment_` |
+| `AiProvider` | `ai_provider` | `ai_provider_` |
+| `AgentSupport` | `agent_support` | `agent_support_` |
+| `TaskService` | `task_service` | `task_service_` |
+| `SSE` | `sse` | `sse_` |
+| `GitOauth` | `git_oauth` | `git_oauth_` |
+| `ContainerGateway` | `container_gateway` | `container_gateway_` |
+| `ChromePlugin` | `chrome_plugin` | `chrome_plugin_` |
+| `FE` | `fe` | `fe_` |
+
+### 简化豁免
+
+对于多词后缀，如果**第一个词已能唯一标识服务且不会与其他服务冲突**，允许仅使用第一个词作为简写前缀。此豁免需在 Code Review 中明确确认：
+
+| 服务 | 完整前缀 | 允许简写 | 理由 |
+|------|---------|---------|------|
+| `taskCloudService` | `cloud_service_` | `cloud_` | `cloud` 在系统中唯一，且现网已广泛使用 |
+| `taskCredentialService` | `credential_service_` | `credential_` | `credential` 在系统中唯一 |
+| `taskProjectService` | `project_service_` | `project_` | `project` 在系统中唯一 |
+| `taskTenantService` | `tenant_service_` | `tenant_` | `tenant` 在系统中唯一 |
+
+## 强制要求
+
+### 1. 新建服务
+
+- **所有新服务的所有表**，从第一张表开始就必须使用正确的前缀
+- 服务初始化时，Schema Review 必须确认表名前缀符合本规则
+- 禁止无前缀的通用表名（如 `users`, `orders`, `configs`, `events`）
+
+### 2. 跨服务共享表
+
+- **表所属服务 = 负责该表 DDL 迁移脚本的 `dataMigrate/<service>/` 目录**
+- 如果其他服务需要读写该表，应通过所属服务的 API 访问，而非直接查询
+- 如需跨服务直接查询（仅限性能关键路径），必须在代码注释中说明原因
+
+### 3. 前缀一致性
+
+- **同一服务内的所有表必须使用相同的前缀**，不允许混用多个前缀
+- 前缀一经确定不得随意更改。如需变更，必须走完整的重命名迁移流程（旧表保留 + 新表创建 + 数据迁移 + 代码切换 + 旧表清理）
+
+### 4. 迁移文件约束
+
+- `dataMigrate/<service>/` 目录下的 `.sql` 文件中，所有 `CREATE TABLE` 语句必须使用该服务的前缀
+- 新增迁移文件的 Code Review 必须检查表名是否符合前缀规则
+- CI 静态检查：扫描新增 SQL 文件的 `CREATE TABLE` 表名是否匹配预期前缀
+
+### 5. 代码中引用表名
+
+- Go: 裸 SQL 字符串中的表名必须使用带前缀的完整表名
+- Python/Django: `Meta.db_table` 必须显式设置为带前缀的表名
+- 禁止使用无前缀的简写表名
+
+## 存量表合规状态（全项目 11 个数据库服务审计，2026-08-02）
+
+### 服务合规总览
+
+| 服务 | 预期前缀 | 总表数 | 合规 | 不合规 | 合规率 | 主要问题 |
+|------|---------|--------|------|--------|--------|---------|
+| `taskBill` | `bill_` | 25 | 25 ✅ | 0 ❌ | 100% | ✅ 2026-08-02 已修复：8 表 → `billing_` 前缀 |
+| `taskCloudService` | `cloud_` | 24 | 24 ✅ | 0 ❌ | 100% | ✅ 2026-08-02 已修复：17 表 → `cloud_` 前缀 |
+| `taskAuth` | `auth_` | 25 | 25 ✅ | 0 ❌ | 100% | ✅ 2026-08-02 已修复：23 表 `accounts_`/`oidc_`/`django_`/`system_` → `auth_` 前缀 |
+| `taskProjectService` | `project_` | 18 | 18 ✅ | 0 ❌ | 100% | ✅ 2026-08-02 已修复全部 15 表（`projects`→`project_entries`，`workspaces`→`project_workspace_entries`） |
+| `taskTaskService` | `task_` | 13 | 13 ✅ | 0 ❌ | 100% | ✅ 2026-08-02 已修复：7 表 → `task_` 前缀 |
+| `taskTenantService` | `tenant_` | 5 | 5 ✅ | 0 ❌ | 100% | ✅ 2026-08-02 已修复：`accounts_company*` → `tenant_company*` |
+| `taskReferral` | `referral_` | 2 | 2 ✅ | 0 ❌ | 100% | ✅ 2026-08-02 已修复：`accounts_referral_*` → `referral_*` |
+| `taskCredentialService` | `credential_` | 2 | 2 ✅ | 0 ❌ | 100% | ✅ 2026-08-02 已修复：`container_tokens` → `credential_container_tokens`，`token_audit_events` → `credential_token_audit_events` |
+| `taskAiProvider` | `ai_provider_` | 8 | 8 ✅ | 0 ❌ | 100% | ✅ 2026-08-02 已修复：`marketplace_` → `ai_provider_` |
+| `taskGitOauth` | `git_oauth_` | 4 | 4 ✅ | 0 ❌ | 100% | ✅ 2026-08-02 已修复：`api_gitoauth*` → `git_oauth_`，`tenant_gitlab_*` → `git_oauth_tenant_gitlab_*` |
+| `taskAIComment` | `ai_comment_` | 2 | 2 ✅ | 0 ❌ | 100% | ✅ 2026-08-02 已修复：`container_agent_comments` → `ai_comment_container_agent_comments` |
+| **合计** | | **128** | **128** | **0** | **100%** | ✅ 全部完成 |
+
+### 各服务不合规详情
+
+#### taskBill（7 不合规表）
+
+| 表名 | 当前前缀 | 问题 |
+|------|---------|------|
+| `referral_edge` | `referral_` | 属于 taskReferral 域，应迁移到 taskReferral 或重命名为 `billing_referral_edge` |
+| `referral_commission_accrual` | `referral_` | 同上 |
+| `referral_config` | `referral_` | 同上 |
+| `license_agreements` | 无 | 缺少 `billing_` 前缀 |
+| `user_license_agreement_consents` | 无 | 缺少 `billing_` 前缀 |
+| `privacy_policies` | 无 | 缺少 `billing_` 前缀 |
+| `user_privacy_policy_consents` | 无 | 缺少 `billing_` 前缀 |
+| `gitlab_region` | 无 | 缺少 `billing_` 前缀 |
+
+#### taskCloudService（17 不合规表）
+
+| 表名 | 当前前缀 | 问题 |
+|------|---------|------|
+| `projects_tenant_feature_params` | `projects_` | Django 遗留 `projects` app 前缀 |
+| `projects_workspace_feature_params` | `projects_` | 同上 |
+| `projects_personal_feature_params_config` | `projects_` | 同上 |
+| `projects_feature_params_access_audit` | `projects_` | 同上 |
+| `projects_task_feature_params_snapshot` | `projects_` | 同上 |
+| `projects_task_api_key_usage` | `projects_` | 同上 |
+| `projects_workspace_model_budget_default` | `projects_` | 属于 taskBudget 域但由 taskCloudService 管理 |
+| `projects_task_model_budget` | `projects_` | 同上 |
+| `projects_task_model_budget_usage` | `projects_` | 同上 |
+| `projects_task_model_budget_usage_idempotency` | `projects_` | 同上 |
+| `projects_tenant_budget_permission` | `projects_` | 同上 |
+| `oauth_tokens` | 无 | 缺少 `cloud_` 前缀 |
+| `tenant_installed_images` | 无 | 缺少 `cloud_` 前缀 |
+| `vendor_cloud_platform_credentials` | 无 | 缺少 `cloud_` 前缀 |
+| `access_key_iam_associations` | 无 | 缺少 `cloud_` 前缀 |
+| `comment_container_bindings` | 无 | 缺少 `cloud_` 前缀 |
+| `workspace_machine_policies` | 无 | 缺少 `cloud_` 前缀 |
+
+#### taskAuth（24 不合规表 — Django 遗留）
+
+`accounts_user`, `accounts_login_method`, `accounts_customtoken`, `accounts_super_admin`, `accounts_user_access_token`, `accounts_user_access_token_audit`, `accounts_sms_verification_code`, `accounts_recharge_sms_gate`, `accounts_registration_invite_policy`, `accounts_registration_invite_code`, `accounts_kyc_profile`, `accounts_kyc_audit_log`, `accounts_aml_screening_record`, `accounts_kyc_limit_policy`, `accounts_referral_code`, `accounts_referral_policy`, `accounts_email_registration_invite`, `accounts_user_profile`, `accounts_email_invite_delivery_attempt`, `accounts_user_archived`, `oidc_client`, `oidc_authorization`, `django_content_type`, `system_feature_policy`
+
+#### taskProjectService（15 不合规表）
+
+`projects`, `workspaces`, `workspace_accesses`, `deliverable_systems`, `deliverable_columns`, `user_workspace_work_panel_filters`, `workspace_task_kind_options`, `workspace_code_lang_options`, `workspace_create_task_field_settings`, `progress_systems`, `progress_columns`, `progress_systems_tenant`, `progress_columns_tenant`, `progress_systems_default_tenant`, `progress_systems_workspace`
+
+#### taskTenantService（5 不合规表 — 全部为 Django 遗留）
+
+`accounts_company`, `accounts_company_member`, `accounts_company_group`, `accounts_company_group_member`, `accounts_invitation`
+
+#### taskTaskService（7 不合规表）
+
+`tasks`, `comments`, `git_identities`, `top_deliverable_schedule_rhythms`, `top_deliverable_schedule_rhythm_windows`, `queued_auto_run_memberships`, `queued_machine_slots`
+
+#### taskAiProvider（8 不合规表 — 全部 marketplace_ 前缀）
+
+`marketplace_vendor`, `marketplace_containerimagegroup`, `marketplace_vendorcontainerimage`, `marketplace_userdatatemplate`, `marketplace_vendorcloudserverimage`, `marketplace_containercloudserverassociation`, `marketplace_vendorcloudserverimageuserdata`, `marketplace_platformstaff`
+
+#### taskGitOauth（4 不合规表）
+
+`api_gitoauthappusercredential`, `api_gitoauthappaccesstokenuseaudit`, `api_gitoauthtaskcredentialaudit`, `tenant_gitlab_oauth_connections`
+
+#### taskCredentialService（2 不合规表）
+
+`container_tokens`, `token_audit_events`
+
+#### taskAIComment（1 不合规表）
+
+`container_agent_comments`
+
+> **注**：`projects_workspace_model_budget_default` 等 5 张预算表在 `dataMigrate/taskBudget/` 有 DDL 定义，但实际由 `taskCloudService/src/budget_db.go` 创建和管理。这些表在当前架构下属于 taskCloudService 域，预期前缀为 `cloud_`。
+
+### 无数据库表的服务
+
+以下服务不持有数据库，无需遵守本规则：`taskEvents`（Kafka/Redis）、`taskGateway`（APISIX）、`taskSSE`、`taskAIEndPoint`、`taskAgentSupport`、`taskContainerGateway`、`taskChromePlugin`（浏览器扩展）、`taskFE`（前端）
+
+## 存量迁移策略
+
+不合规存量表采取**渐进式迁移**，不要求一次性全部重命名：
+
+### 优先级
+
+| 优先级 | 条件 | 行动 |
+|--------|------|------|
+| **P0（阻断）** | 新增表不使用正确前缀 | Code Review 必须阻断，强制使用正确前缀 |
+| **P1（近期）** | 多服务前缀冲突（如 `accounts_` 被 taskAuth 和 taskTenantService 共用） | 评估冲突风险，制定重命名方案 |
+| **P2（中期）** | 单服务内前缀混用（如 taskProjectService 使用 5+ 种前缀） | 逐步统一到一个前缀，新增表强制使用新前缀 |
+| **P3（长期）** | 已有稳定表名前缀但非标准（如 taskAiProvider 的 `marketplace_`） | 不改已有表；新表使用标准前缀；文档标记差异 |
+
+### 迁移步骤（针对 P1/P2）
+
+1. **写出迁移计划** — 明确旧表名→新表名的映射
+2. **创建新表**（使用正确前缀）— 与旧表并行运行
+3. **双写** — 应用层同时写入新旧两表
+4. **数据回填** — 将旧表历史数据迁移至新表
+5. **切换读取** — 应用层改为读取新表
+6. **停止双写** — 仅写入新表
+7. **清理旧表** — 确认无依赖后删除旧表
+
+## 例外情况
+
+以下情况允许不使用服务前缀：
+
+| 例外 | 说明 | 条件 |
+|------|------|------|
+| **Django 框架表** | `django_content_type`, `django_migrations` 等 | Django 内置，无法修改 |
+| **第三方库表** | 如 OIDC 库的 `oidc_*` 表 | 由第三方库管理 DDL |
+| **Schema 迁移记录表** | `<service>_schema_migrations` | 框架自动管理，允许使用完整服务名 |
+| **跨服务共享基础表** | 无 | 不存在真正的"基础表" — 每张表都应有所属服务 |
+
+## 合规检查
+
+- **Schema Review 门禁**：新增表 PR 必须检查表名前缀是否符合本规则
+- **CI 静态检查**：
+  - 新增 `.sql` 文件中的 `CREATE TABLE` 表名与所在 `dataMigrate/<service>/` 目录不匹配 → **阻断**
+  - 扫描规则：从路径提取服务名 → 计算预期前缀 → 检查表名是否以该前缀开头
+- **Code Review**：检查清单须包含「数据库表名符合服务前缀规则」项
+
+## 命名最佳实践
+
+| 实践 | 推荐 | 不推荐 |
+|------|------|--------|
+| 前缀后表名用名词单数 | `billing_transaction`, `cloud_server_config` | `billing_transactions`, `cloud_server_configs`（复数视团队约定，但需一致） |
+| 关联表命名 | `billing_resource_order` + `billing_resource_order_item` | `billing_resource_order` + `order_items`（丢失前缀） |
+| 避免冗余前缀词 | `billing_account` | `billing_billing_account` |
+| 缩写词保持小写 | `ai_comment`, `sse_connection` | `AI_comment`, `SSE_connection` |

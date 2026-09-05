@@ -1,0 +1,60 @@
+' @title: Application Integration — 任务子树状态展示与终态门禁
+' @view: application-integration
+' @status: archived
+' @version: 41
+' @author: claude
+' @based_on: v40 current (v40-application-integration-20260719-1746-claude.puml)
+' @updated: 2026-07-19 18:30
+' @description: TTS subtree API + DescendantTerminalGate；Vue 详情下级交付物面板
+' @iteration: task-subtree-status-and-terminal-gate
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v41 — Task Subtree Status & Terminal Gate (2026-07-19 18:16)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v41 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v41 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+rectangle "Motivation" {
+  Motivation_Constraint(goFirst, "Constraint\n新增接口默认 Go")
+  Motivation_Principle(subtreeAlign, "Principle\n父终态前子树须关闭")
+}
+
+rectangle "Application" {
+  Application_Component(vueTask, "🟡 Vue Task Detail\nSubtreeStatusPanel")
+  Application_Component(gw, "task-gateway")
+  Application_Component(tts, "🟡 taskTaskService\nSubtree + TerminalGate")
+  Application_Component(django, "saas-backend\nprogress-system columns")
+  Application_Component(te, "taskEvents")
+  Application_DataObject(taskDB, "task.db\ntasks.parent_task_id")
+}
+
+rectangle "Technology" {
+  Technology_Node(kafka, "Kafka")
+}
+
+note right of tts
+  [MODIFIED v41] GET .../subtree/
+  PATCH 进入终态前 DescendantTerminalGate
+  @author: claude @2026-07-19 18:16
+end note
+
+note top of vueTask
+  [MODIFIED v41] 下级交付物状态面板
+  + 409 DESCENDANTS_NOT_TERMINAL 展示
+end note
+
+Rel_Flow(vueTask, gw, "subtree GET / todos PATCH")
+Rel_Flow(gw, tts, "JWT")
+Rel_Access_R(tts, taskDB, "R subtree / W gate")
+Rel_Flow(tts, django, "progress columns map")
+Rel_Flow(tts, kafka, "TASK_STATUS_CHANGED\n(on success only)")
+Rel_Flow(kafka, te, "consume")
+Rel_Influence(goFirst, tts, "落点")
+Rel_Influence(subtreeAlign, tts, "门禁")
+
+@enduml

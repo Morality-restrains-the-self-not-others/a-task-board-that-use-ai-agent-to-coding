@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v80 变迁 (v79→v80)" id="id-v80diff01">
+  <folder name="Application" id="id-v80diff-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v80-app-fe" name="taskFE WorkPanel / TaskDetail [MOD]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v80-app-cloud" name="taskCloudService [MOD]"/>
+    <element xsi:type="archimate:DataObject" id="id-v80-do-cmt" name="cloud_server_configs comment CSC [MOD]"/>
+    <element xsi:type="archimate:DataObject" id="id-v80-do-tpl" name="cloud_server_configs task template [MOD]"/>
+    <element xsi:type="archimate:DataObject" id="id-v80-do-m" name="running_machine_count [NEW]"/>
+    <element xsi:type="archimate:DataObject" id="id-v80-do-c" name="running_container_count [NEW]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v80diff-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v80-pl-v79" name="Plateau v79"/>
+    <element xsi:type="archimate:Plateau" id="id-v80-pl-v80" name="Plateau v80"/>
+    <element xsi:type="archimate:Gap" id="id-v80-gap" name="Gap: task-level CSC still stores Starting/Running"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v80-wp" name="WP: task-running-comment-counts"/>
+  </folder>
+  <folder name="Relations" id="id-v80diff-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v80-rel-ind" source="id-v80-app-fe" target="id-v80-app-cloud" name="indicators + comment runtime-status"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v80-rel-cnt" source="id-v80-app-cloud" target="id-v80-app-fe" name="machines=N containers=M"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v80-rel-cmt" source="id-v80-app-cloud" target="id-v80-do-cmt" name="write runtime"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v80-rel-tpl" source="id-v80-app-cloud" target="id-v80-do-tpl" name="template only"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v80-rel-m" source="id-v80-app-cloud" target="id-v80-do-m" name="recompute"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v80-rel-c" source="id-v80-app-cloud" target="id-v80-do-c" name="recompute"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v80-rel-pl79-gap" source="id-v80-pl-v79" target="id-v80-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v80-rel-wp-gap" source="id-v80-wp" target="id-v80-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v80-rel-wp-pl80" source="id-v80-wp" target="id-v80-pl-v80"/>
+  </folder>
+  <folder name="Views" id="id-v80diff-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v80-view-mig" name="架构变迁 v79→v80 — task-running-comment-counts">
+      <child xsi:type="archimate:DiagramObject" id="id-v80-do-pl79" archimateElement="id-v80-pl-v79">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80-conn-pl79-gap" source="id-v80-do-pl79" target="id-v80-do-gap" archimateRelationship="id-v80-rel-pl79-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v80-do-gap" targetConnections="id-v80-conn-pl79-gap id-v80-conn-wp-gap" archimateElement="id-v80-gap">
+        <bounds x="240" y="48" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v80-do-wp" archimateElement="id-v80-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80-conn-wp-gap" source="id-v80-do-wp" target="id-v80-do-gap" archimateRelationship="id-v80-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80-conn-wp-pl80" source="id-v80-do-wp" target="id-v80-do-pl80" archimateRelationship="id-v80-rel-wp-pl80"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v80-do-pl80" targetConnections="id-v80-conn-wp-pl80" archimateElement="id-v80-pl-v80">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v80-view-flow" name="v80 Target — task running counts">
+      <child xsi:type="archimate:DiagramObject" id="id-v80-d-fe" archimateElement="id-v80-app-fe">
+        <bounds x="48" y="48" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80-c-ind" source="id-v80-d-fe" target="id-v80-d-cloud" archimateRelationship="id-v80-rel-ind"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v80-d-cloud" targetConnections="id-v80-c-ind" archimateElement="id-v80-app-cloud">
+        <bounds x="320" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80-c-cnt" source="id-v80-d-cloud" target="id-v80-d-fe" archimateRelationship="id-v80-rel-cnt"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80-c-cmt" source="id-v80-d-cloud" target="id-v80-d-cmt" archimateRelationship="id-v80-rel-cmt"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80-c-tpl" source="id-v80-d-cloud" target="id-v80-d-tpl" archimateRelationship="id-v80-rel-tpl"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80-c-m" source="id-v80-d-cloud" target="id-v80-d-m" archimateRelationship="id-v80-rel-m"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80-c-c" source="id-v80-d-cloud" target="id-v80-d-c" archimateRelationship="id-v80-rel-c"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v80-d-cmt" targetConnections="id-v80-c-cmt" archimateElement="id-v80-do-cmt">
+        <bounds x="48" y="160" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v80-d-tpl" targetConnections="id-v80-c-tpl" archimateElement="id-v80-do-tpl">
+        <bounds x="280" y="160" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v80-d-m" targetConnections="id-v80-c-m" archimateElement="id-v80-do-m">
+        <bounds x="520" y="160" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v80-d-c" targetConnections="id-v80-c-c" archimateElement="id-v80-do-c">
+        <bounds x="720" y="160" width="200" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

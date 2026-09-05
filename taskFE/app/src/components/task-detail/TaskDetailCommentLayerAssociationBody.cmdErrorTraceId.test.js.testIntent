@@ -1,0 +1,6 @@
+# TaskDetailCommentLayerAssociationBody.cmdErrorTraceId.test.js
+
+- **目标**：评论执行细节 ztree 面板必须收到 `layerGraphCmdErrorTraceId`，失败红字才能带 `data-traceId`，而不是裸 `HTTP 403`。
+- **关键断言**：`buildLayerBodyBind` 转发 traceId；CommentsSection 声明 prop 并 `v-bind` 到 Body；Body 把 kebab-case 属性传给 TaskDetailTaskLayerAssociationPanel。
+- **破坏信号**：漏写 `:layer-graph-cmd-error-trace-id`，或 CommentsSection 不再走 `buildPerCommentLayerBodyBind`。
+- **回归**：改 `TaskDetailCommentLayerAssociationBody.vue` / `TaskDetailCommentsSection.vue` 后跑本文件。

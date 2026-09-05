@@ -1,0 +1,12 @@
+-- 003_migrate_git_identities_from_saas
+-- OPT-052: migrate accounts_user_company_git_identity from retired saas DB to task_task DB.
+-- Idempotent: INSERT IGNORE skips rows whose id already exists.
+INSERT IGNORE INTO git_identities (id, user_id, company_id, git_user_name, git_user_email, created_at, updated_at)
+SELECT id,
+       COALESCE(user_id, ''),
+       COALESCE(company_id, ''),
+       COALESCE(git_user_name, ''),
+       COALESCE(git_user_email, ''),
+       NOW(),
+       NOW()
+FROM saas.accounts_user_company_git_identity;

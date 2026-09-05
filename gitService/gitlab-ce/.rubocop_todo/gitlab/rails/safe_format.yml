@@ -1,0 +1,5 @@
+---
+# Cop supports --autocorrect.
+Gitlab/Rails/SafeFormat:
+  Exclude:
+    - 'app/helpers/emails_helper.rb'

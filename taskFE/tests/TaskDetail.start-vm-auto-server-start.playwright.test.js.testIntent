@@ -1,0 +1,37 @@
+# TaskDetail.start-vm-auto-server-start.playwright.test.js
+
+## 意图
+
+验证 start-vm-auto 全链路：HTTP 受理 → CLOUD_SERVER_START_AUTO → CLOUD_SERVER_STARTED（Kafka 链式发布）→ 云实例创建，最终 `server-runtime-status` 返回非空 `instance_id`。
+
+## 前置
+
+- 真实阿里云 authorization、**账户后付费余额充足**、已安装容器镜像
+- 容器镜像在 cn-hongkong 仅 arm64 宿主机时，须选镜像支持的规格（默认 `ecs.c8y.large`，非 `ecs.c6.large` / `ecs.c6r.large`）
+- task-events-cloud-server-start-auto / cloud-server-started 进程 healthy
+- `conf/events/domain-events/config.yaml` transport=kafka
+- 云事件进程不得继承失效的 `http_proxy`（Aliyun SDK 已内置 bypass）
+
+## 断言
+
+- POST start-vm-auto 200 + event_id（UI 或 API fallback）
+- UI 按钮进入「启动中/处理中」（项目模版模式可跳过）
+- 12 分钟内 poll `server-runtime-status` 得到 instance_id
+- 实例就绪后 `GET workbench-link` 200，`workbench_url` 含 `ecs-workbench.aliyun.com` 且 `instance_id` 与运行时一致
+- **已有实例快速路径**：预检若 `instance_id` 非空，直接断言 workbench-link（跳过重跑启动链）
+
+## 运行
+
+```bash
+PLAYWRIGHT_SITE_ORIGIN=http://183.250.1.132:4000 \
+PLAYWRIGHT_GATEWAY_ORIGIN=http://183.250.1.132:18081 \
+PLAYWRIGHT_INSTANCE_TYPE=ecs.c8y.large \
+npx playwright test tests/TaskDetail.start-vm-auto-server-start.playwright.test.js \
+  --config=playwright.config.chromium.js
+```
+
+## 回归点
+
+- taskEvents `PublishEvent` 在 transport=kafka 时必须写 Kafka topic，不可仅写 Redis stream（否则 CLOUD_SERVER_STARTED 无人消费）
+- 幂等键须含 `event_id`，不可仅用 `task_id`（否则同任务重试被静默跳过）
+- start-vm-auto 须按实例架构解析宿主机镜像，x86 规格 + 仅 arm64 镜像须同步 400 拒绝

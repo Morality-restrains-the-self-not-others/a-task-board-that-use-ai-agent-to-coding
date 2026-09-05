@@ -1,0 +1,7 @@
+intents:
+  1_await_running_heartbeat:
+    host: 0.0.0.0
+    port: 18046
+    groupId: task-events-container-migrate-await-ready-1-await-running-heartbeat
+    events:
+    - CONTAINER_MIGRATE_AWAIT_READY

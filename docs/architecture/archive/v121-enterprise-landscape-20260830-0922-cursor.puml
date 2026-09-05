@@ -1,0 +1,61 @@
+' @title: 意见与建议链接按租户累计消耗可见（企业景观）
+' @view: enterprise-landscape
+' @status: current
+' @version: 121
+' @iteration: tenant-feedback-links-by-consumption
+' @author: cursor
+' @based_on: v120 (v120-enterprise-landscape-20260830-0040-cursor.puml)
+' @updated: 2026-08-30 10:05
+' @description: 超管配置多资源 AND≥ 门槛的链接组；租户全员看到同一套意见与建议子菜单
+
+@startuml
+!include <archimate/Archimate>
+
+title v121 Current — 意见与建议链接 2026-08-30 10:05
+
+Business_Actor(admin, "平台超管")
+note right of admin
+  配置组 / 阈值 / 外链
+end note
+
+Business_Actor(member, "租户成员")
+note right of member
+  全员同一套可见链接
+end note
+
+Business_Process(configure, "配置意见链接组")
+note right of configure
+  多种资源 AND ≥
+end note
+
+Business_Process(openNav, "打开意见与建议子菜单")
+note right of openNav
+  按组名分段外链
+end note
+
+Application_Component(fe, "taskFE")
+note right of fe
+  侧栏 + 超管页
+end note
+
+Application_Component(bill, "taskBill")
+note right of bill
+  求值过滤
+end note
+
+Rel_Assignment(admin, configure)
+Rel_Assignment(member, openNav)
+Rel_Flow(admin, fe, "CRUD")
+Rel_Flow(member, fe, "侧栏 GET")
+Rel_Flow(fe, bill, "API")
+Rel_Serving(bill, openNav, "仅返回可见组")
+
+Implementation_Plateau(p120, "Plateau v120")
+Implementation_Plateau(p121, "Plateau v121")
+Implementation_Gap(g, "Gap: 无消耗分层意见入口")
+Implementation_WorkPackage(wp, "WP-tenant-feedback-links")
+Rel_Triggering(p120, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p121, "delivers")
+
+@enduml

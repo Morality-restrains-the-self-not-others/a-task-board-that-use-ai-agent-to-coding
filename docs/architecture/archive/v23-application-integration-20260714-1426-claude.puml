@@ -1,0 +1,58 @@
+' @title: Application Integration — autoRunStep.md 镜像说明抽取与展示
+' @view: application-integration
+' @status: target
+' @version: 23
+' @author: claude
+' @based_on: v21 (v21-application-integration-20260714-0130-claude.puml)
+' @updated: 2026-07-14 14:26
+' @description: 镜像内 autoRunStep.md 真源；注册/开发中抽取缓存；创建任务/详情/镜像市场展示
+' @iteration: auto-run-steps-md
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v23 — autoRunStep.md (2026-07-14 14:26)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v23 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v23 |
+  | <#White>       </> | unchanged from v21 baseline subset |
+endlegend
+
+Application_Component(vue, "🟡 Vue\nImageMarket/CreateTask/TaskDetail")
+Application_Component(gw, "task-gateway")
+Application_Component(cloud, "🟡 taskCloudService\nextract + installed-images")
+Application_Component(aip, "🟡 Saas_Ai_Provider\ncatalog fields")
+Application_Component(osjs, "🟢 onlineServiceJS\nGET /api/auto-run-steps")
+Application_Component(cgw, "taskContainerGateway")
+
+Application_DataObject(vci, "🟡 VendorContainerImage\nauto_run_steps_md")
+Application_DataObject(tii, "🟡 tenant_installed_images\nauto_run_steps_md")
+Application_DataObject(mdfile, "🟢 /app/autoRunStep.md\n[NEW v23]")
+
+note right of osjs
+  [NEW v23] 运行时读镜像文件系统
+  @author: claude @2026-07-14 14:26
+end note
+
+note top of cloud
+  [MODIFIED v23] POST /api/internal/extract-auto-run-steps/
+  OCI 抽文件；安装时拷贝快照
+end note
+
+note bottom of aip
+  [MODIFIED v23] catalog + vendor-development-catalog
+  含 DRAFT 开发中镜像字段
+end note
+
+Rel_Flow(vue, gw, "installed-images / compute")
+Rel_Flow(gw, cloud, "catalog / extract trigger")
+Rel_Flow(cloud, aip, "public catalog / unsubmitted")
+Rel_Access_RW(aip, vci, "RW steps_md")
+Rel_Access_RW(cloud, tii, "RW install snapshot")
+Rel_Flow(aip, cloud, "extract request")
+Rel_Flow(vue, cgw, "container API proxy")
+Rel_Flow(cgw, osjs, "GET /api/auto-run-steps")
+Rel_Access_R(osjs, mdfile, "R markdown")
+
+@enduml

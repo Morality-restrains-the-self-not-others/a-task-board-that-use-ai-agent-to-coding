@@ -1,0 +1,73 @@
+' @title: 任务级只标记运行中机器数与容器数
+' @view: application-integration
+' @status: archived
+' @version: 80
+' @iteration: task-level-running-comment-server-count-v80
+' @author: cursor
+' @based_on: v79 (v79-application-integration-20260814-1333-cursor.puml)
+' @updated: 2026-08-14 15:30
+' @description: 任务级 CSC 仅模板+两计数；评论 CSC 为运行态权威；看板读 count
+
+@startuml
+!include <archimate/Archimate>
+
+title v80 — Task-level running machine/container counts Target 2026-08-14 14:37
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v80 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v80 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v80 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(taskFE, "taskFE WorkPanel / TaskDetail")
+note right of taskFE
+  🟡 [MODIFIED v80]
+  壳/看板读两计数
+  评论卡 comment_id runtime
+  @author: cursor @2026-08-14 14:37
+end note
+
+Application_Component(taskCloud, "taskCloudService (Go :8018)")
+note right of taskCloud
+  🟡 [MODIFIED v80]
+  persist/status 只写评论 CSC
+  recomputeTaskRunningCounts
+  @author: cursor @2026-08-14 14:37
+end note
+
+Application_DataObject(cmtCSC, "cloud_server_configs\ncomment_id=cmt_*")
+note right of cmtCSC
+  🟡 [MODIFIED v80]
+  唯一运行实例
+  instance / last_runtime_status / URL
+end note
+
+Application_DataObject(taskTpl, "cloud_server_configs\ncomment_id=''")
+note right of taskTpl
+  🟡 [MODIFIED v80]
+  仅平台模板 + 两计数
+  🔴 不作运行实例
+  DDL 清空旧 instance/status，无 heal
+end note
+
+Application_DataObject(cntMachine, "running_machine_count")
+note right of cntMachine
+  🟢 [NEW v80]
+  评论已启动台数
+end note
+
+Application_DataObject(cntContainer, "running_container_count")
+note right of cntContainer
+  🟢 [NEW v80]
+  已启动且 server_url 可达
+end note
+
+Rel_Flow(taskFE, taskCloud, "🟡 indicators + comment runtime-status")
+Rel_Access_W(taskCloud, cmtCSC, "write runtime")
+Rel_Access_W(taskCloud, taskTpl, "template only")
+Rel_Access_W(taskCloud, cntMachine, "🟢 recompute")
+Rel_Access_W(taskCloud, cntContainer, "🟢 recompute")
+Rel_Flow(taskCloud, taskFE, "🟡 machines=N containers=M")
+
+@enduml

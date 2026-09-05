@@ -1,0 +1,230 @@
+:root {
+  --bg: #ffffff;
+  --surface: #f8fafc;
+  --input-bg: #ffffff;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --accent-dim: #1d4ed8;
+  --danger: #dc2626;
+  --ok: #16a34a;
+  font-family: "DM Sans", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+  color: #fff;
+}
+
+.btn-ghost {
+  background: #ffffff;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-ghost.danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.btn-warning {
+  background: #d97706;
+  color: #ffffff;
+}
+
+.table-wrap {
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.875rem;
+}
+
+th,
+td {
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+th {
+  color: var(--muted);
+  font-weight: 600;
+  background: #f8fafc;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-draft {
+  background: #f1f5f9;
+  color: #475569;
+}
+.badge-pending {
+  background: #ffedd5;
+  color: #9a3412;
+}
+.badge-ok {
+  background: #dcfce7;
+  color: #166534;
+}
+.badge-reject {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.badge-unavailable {
+  background: #fef3c7;
+  color: #92400e;
+  max-width: 22rem;
+  white-space: normal;
+  line-height: 1.25;
+  border-radius: 0.5rem;
+}
+
+.badge-region-nouserdata {
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 0.5rem;
+  cursor: help;
+}
+
+/* 同一镜像组允许多个 approved 但仅一个激活版本：本版本即当前激活（公开目录生效） */
+.badge-version-active {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #16a34a;
+  border-radius: 0.5rem;
+  white-space: nowrap;
+}
+
+/* 同一镜像组允许多个 approved 但仅一个激活版本：组内已有激活版本时的提示徽章 */
+.badge-group-active {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px dashed #f59e0b;
+  border-radius: 0.5rem;
+  cursor: help;
+  white-space: nowrap;
+}
+
+.err {
+  color: var(--danger);
+}
+
+.aip-request-error-banner {
+  padding: 0.75rem 1rem;
+  margin: 0;
+  background: #fee2e2;
+  border-bottom: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 0.9rem;
+}
+/* Success banner (replaces window.alert for non-error messages) */
+.aip-success-banner {
+  padding: 0.75rem 1rem;
+  margin: 0;
+  background: #d1fae5;
+  border-bottom: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 0.9rem;
+}
+/* Confirm banner (replaces window.confirm) */
+.aip-confirm-banner {
+  padding: 0.75rem 1rem;
+  margin: 0;
+  background: #fef3c7;
+  border-bottom: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 0.9rem;
+  align-items: center;
+  gap: 8px;
+}
+.aip-confirm-banner .btn-confirm {
+  padding: 0.25rem 0.75rem;
+  background: #059669;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.aip-confirm-banner .btn-cancel {
+  padding: 0.25rem 0.75rem;
+  background: #e5e7eb;
+  color: #374151;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}

@@ -1,0 +1,86 @@
+' @title: 终态释放对齐评论级 CSC
+' @view: application-integration
+' @status: target
+' @version: 82
+' @iteration: terminal-release-comment-csc-v82
+' @author: cursor
+' @based_on: v80 (v80-application-integration-20260814-1437-cursor.puml)
+' @updated: 2026-08-14 20:59
+' @description: release-servers 读评论 CSC 列表；空模板不再 retry/DLT
+
+@startuml
+!include <archimate/Archimate>
+
+title v82 — Terminal release comment CSC Target 2026-08-14 20:59
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v82 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v82 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v82 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(taskFE, "taskFE WorkPanel / TaskDetail")
+
+Application_Component(taskTask, "taskTaskService (Go :8017)")
+note right of taskTask
+  无标记 — 已有
+  发布 TASK_STATUS_CHANGED
+end note
+
+Application_Component(taskEvents, "taskEvents release-servers-on-terminal")
+note right of taskEvents
+  🟡 [MODIFIED v82]
+  按评论 CSC 逐台释放
+  无运行资源 success no-op
+  禁止任务级 instance retry
+  @author: cursor @2026-08-14 20:59
+end note
+
+Application_Component(taskCloud, "taskCloudService (Go :8018)")
+note right of taskCloud
+  🟡 [MODIFIED v82]
+  新增 list-by-task
+  @author: cursor @2026-08-14 20:59
+end note
+
+Application_Interface(listByTask, "GET list-by-task")
+note right of listByTask
+  🟢 [NEW v82]
+  模板两计数 + 全部评论 CSC
+  @author: cursor @2026-08-14 20:59
+end note
+
+Application_DataObject(cmtCSC, "cloud_server_configs\ncomment_id=cmt_*")
+note right of cmtCSC
+  🟡 [MODIFIED v82]
+  终态释放权威来源
+end note
+
+Application_DataObject(taskTpl, "cloud_server_configs\ncomment_id=''")
+Application_DataObject(cntMachine, "running_machine_count")
+Application_DataObject(cntContainer, "running_container_count")
+
+Application_Event(evStatus, "TASK_STATUS_CHANGED")
+Application_Event(evStopped, "CLOUD_SERVER_STOPPED")
+note right of evStopped
+  🟡 [MODIFIED v82]
+  必带 comment_id
+  instance_id + region_id
+end note
+
+Rel_Flow(taskFE, taskCloud, "indicators + comment runtime-status")
+Rel_Flow(taskCloud, taskFE, "machines=N containers=M")
+Rel_Access_W(taskCloud, cmtCSC, "write runtime")
+Rel_Access_W(taskCloud, taskTpl, "template only")
+Rel_Access_W(taskCloud, cntMachine, "recompute")
+Rel_Access_W(taskCloud, cntContainer, "recompute")
+
+Rel_Flow(taskTask, evStatus, "publish terminal")
+Rel_Flow(evStatus, taskEvents, "consume")
+Rel_Serving(listByTask, taskCloud, "🟢 owned")
+Rel_Flow(taskEvents, listByTask, "🟢 list comment CSC")
+Rel_Access_R(taskEvents, cmtCSC, "🟡 releaseable rows")
+Rel_Flow(taskEvents, evStopped, "🟢 per comment if started")
+
+@enduml

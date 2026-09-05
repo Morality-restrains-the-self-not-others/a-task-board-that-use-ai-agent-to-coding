@@ -1,0 +1,9 @@
+---
+name: read_avatar
+description: Grants the ability to read avatars
+boundaries:
+  - user
+  - group
+  - project
+permissions:
+  - read_avatar

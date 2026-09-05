@@ -1,0 +1,154 @@
+// @ts-check
+/** taskApiPrefix：任务详情页形态 TaskApiEndPoint 须能解析，否则换票不执行。 */
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { isRetryableGitCloneFailure, taskApiPrefix } from './saasTaskCloud.mjs';
+
+function snapshotEnv(keys) {
+  const out = {};
+  for (const k of keys) {
+    out[k] = process.env[k];
+  }
+  return out;
+}
+
+function restoreEnv(saved) {
+  for (const k of Object.keys(saved)) {
+    const v = saved[k];
+    if (v === undefined) delete process.env[k];
+    else process.env[k] = v;
+  }
+}
+
+const KEYS = [
+  'TaskApiEndPoint',
+  'TASK_API_ENDPOINT',
+  'tenantId',
+  'workspaceId',
+  'taskId',
+  'COMMENT_ID',
+  'DOCKER_GATEWAY_HOSTNAME',
+  'DOCKER_HOST_GATEWAY_IP',
+];
+
+test('taskApiPrefix：浏览器任务详情路径无 COMMENT_ID 时拒绝旧 /cloud', () => {
+  const saved = snapshotEnv(KEYS);
+  try {
+    delete process.env.tenantId;
+    delete process.env.workspaceId;
+    delete process.env.taskId;
+    delete process.env.COMMENT_ID;
+    process.env.TaskApiEndPoint =
+      'http://daydaymoney.com/tenant/827923618468040704/workspace/827923618602258432/task-detail/840502733785767936/';
+    assert.throws(
+      () => taskApiPrefix(),
+      /requires \/comment\/\{cid\}\//,
+    );
+  } finally {
+    restoreEnv(saved);
+  }
+});
+
+test('taskApiPrefix：旧 /api/tenant/.../task/.../cloud 无 COMMENT_ID 时拒绝', () => {
+  const saved = snapshotEnv(KEYS);
+  try {
+    delete process.env.tenantId;
+    delete process.env.workspaceId;
+    delete process.env.taskId;
+    delete process.env.COMMENT_ID;
+    process.env.TaskApiEndPoint =
+      'https://api.daydaymoney.com/api/tenant/a/workspace/b/task/c/cloud';
+    assert.throws(
+      () => taskApiPrefix(),
+      /requires \/comment\/\{cid\}\//,
+    );
+  } finally {
+    restoreEnv(saved);
+  }
+});
+
+test('taskApiPrefix：仅设旧 TASK_API_ENDPOINT 无 COMMENT_ID 时拒绝', () => {
+  const saved = snapshotEnv(KEYS);
+  try {
+    delete process.env.TaskApiEndPoint;
+    delete process.env.tenantId;
+    delete process.env.workspaceId;
+    delete process.env.taskId;
+    delete process.env.COMMENT_ID;
+    process.env.TASK_API_ENDPOINT =
+      'http://api.daydaymoney.com/api/tenant/827923618468040704/workspace/827923618602258432/task/840502733785767936/cloud';
+    assert.throws(
+      () => taskApiPrefix(),
+      /requires \/comment\/\{cid\}\//,
+    );
+  } finally {
+    restoreEnv(saved);
+  }
+});
+
+test('taskApiPrefix：保留 /comment/{cid}/ 位置段（skill 推荐 TaskApiEndPoint）', () => {
+  const saved = snapshotEnv(KEYS);
+  try {
+    delete process.env.tenantId;
+    delete process.env.workspaceId;
+    delete process.env.taskId;
+    delete process.env.COMMENT_ID;
+    process.env.TaskApiEndPoint =
+      'https://api.daydaymoney.com/api/tenant/a/workspace/b/task/c/comment/cmt_1/cloud';
+    assert.strictEqual(
+      taskApiPrefix(),
+      'https://api.daydaymoney.com/api/tenant/a/workspace/b/task/c/comment/cmt_1/cloud'
+    );
+  } finally {
+    restoreEnv(saved);
+  }
+});
+
+test('taskApiPrefix：旧前缀 + COMMENT_ID 补上 /comment/{cid}/', () => {
+  const saved = snapshotEnv(KEYS);
+  try {
+    delete process.env.tenantId;
+    delete process.env.workspaceId;
+    delete process.env.taskId;
+    process.env.COMMENT_ID = 'cmt_9';
+    process.env.TaskApiEndPoint =
+      'https://api.daydaymoney.com/api/tenant/a/workspace/b/task/c/cloud';
+    assert.strictEqual(
+      taskApiPrefix(),
+      'https://api.daydaymoney.com/api/tenant/a/workspace/b/task/c/comment/cmt_9/cloud'
+    );
+  } finally {
+    restoreEnv(saved);
+  }
+});
+
+test('taskApiPrefix：/api/.../task-detail/{id} + COMMENT_ID 重建新前缀', () => {
+  const saved = snapshotEnv(KEYS);
+  try {
+    delete process.env.tenantId;
+    delete process.env.workspaceId;
+    delete process.env.taskId;
+    process.env.COMMENT_ID = 'cmt_z';
+    process.env.TaskApiEndPoint =
+      'https://api.daydaymoney.com/api/tenant/x/workspace/y/task-detail/z/';
+    assert.strictEqual(
+      taskApiPrefix(),
+      'https://api.daydaymoney.com/api/tenant/x/workspace/y/task/z/comment/cmt_z/cloud'
+    );
+  } finally {
+    restoreEnv(saved);
+  }
+});
+
+test('isRetryableGitCloneFailure: 识别 TLS/EOF 网络中断', () => {
+  const err = new Error(
+    'git exit 128: error: RPC failed; curl 56 GnuTLS recv error (-9): Error decoding the received TLS packet.\n' +
+      'fatal: early EOF\nfatal: fetch-pack: invalid index-pack output'
+  );
+  assert.strictEqual(isRetryableGitCloneFailure(err), true);
+});
+
+test('isRetryableGitCloneFailure: 不误判认证失败', () => {
+  const err = new Error('git exit 128: fatal: Authentication failed for https://example.com/repo.git');
+  assert.strictEqual(isRetryableGitCloneFailure(err), false);
+});

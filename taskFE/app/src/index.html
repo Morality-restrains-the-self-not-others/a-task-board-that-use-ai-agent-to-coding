@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/img/icon128.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="trae-service" content="task2app" />
+    <meta name="daydaymoney-service-id" content="task2app" />
+    <meta name="daydaymoney-tags" content="svc:task2app,domain:saas" />
+    <title>云端开发</title>
+    <!-- Non-Django runtime config: override API base URL via ?apiBaseUrl=... or data-api-base attribute -->
+    <!-- 外置为 /api-base.js（v106 安全加固）：严格 CSP script-src 'self' 会拦截内联脚本 -->
+    <script src="/api-base.js" data-api-base></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

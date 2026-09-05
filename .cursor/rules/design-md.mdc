@@ -1,0 +1,23 @@
+---
+description: 产品 UI 以仓库根 DESIGN.md 为视觉 SSOT；awesome-design-md 只作可本地化模板
+globs: "DESIGN.md,**/*.{vue,css,html},taskFE/**/*,.claude/skills/design-md/**"
+alwaysApply: false
+---
+
+# DESIGN.md 视觉基线
+
+细则：`.ai/04_frontend_development/02_design_md_integration.md`；技能：`.claude/skills/design-md/SKILL.md`。
+
+## 强制要求
+
+- 改用户可见 UI 前先读仓库根 `DESIGN.md`，颜色/圆角/字号走已有 token（`--color-primary` 等），禁止页面私有 hex。
+- 禁止把 [awesome-design-md](https://github.com/VoltAgent/awesome-design-md) 的品牌 `DESIGN.md` 整份覆盖到仓库根；只借结构气质并本地化。
+- 产品 SPA 不以 `frontend-design` 的「每页一套大胆审美」覆盖本基线。
+- `colors.primary` 必须与 `taskFE/app/src/css/tailwind.css` 的 `--color-primary` 一致。
+
+## 验收
+
+```bash
+python3 db/scripts/ci/test_check_design_md.py
+python3 db/scripts/ci/check_design_md.py
+```

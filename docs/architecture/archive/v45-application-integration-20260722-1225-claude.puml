@@ -1,0 +1,65 @@
+' @title: Application Integration — 租户退款申请审批原路退
+' @view: application-integration
+' @status: target
+' @version: 45
+' @author: claude
+' @based_on: v41 current (v41-application-integration-20260719-1816-claude.puml)
+' @updated: 2026-07-22 12:25
+' @description: 租户申请冻结积分；超管审批；PayPal/微信原路退；taskBill 台账
+' @iteration: tenant-refund-application
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v45 — Tenant Refund Application (2026-07-22 12:25)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v45 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v45 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+rectangle "Motivation" {
+  Motivation_Constraint(goFirst, "Constraint\n新增接口默认 Go")
+  Motivation_Principle(origPath, "Principle\n付费积分原路退回")
+  Motivation_Constraint(compliance, "Constraint\n支付合规/日志脱敏")
+}
+
+rectangle "Application" {
+  Application_Component(vueBill, "🟡 Vue BillingDashboard\n申请退款")
+  Application_Component(vueAdmin, "🟢 Vue SystemAdminRefunds\n审批列表")
+  Application_Component(djangoBridge, "🟡 Django billing_bridge\nproxy + superuser gate")
+  Application_Component(taskBill, "🟡 taskBill\nfreeze/approve/refund")
+  Application_DataObject(account, "🟡 billing_account\nfrozen_balance")
+  Application_DataObject(refundApp, "🟢 billing_refund_application")
+  Application_DataObject(ledger, "🟢 billing_payment_ledger")
+}
+
+rectangle "Technology" {
+  Technology_Node(paypal, "PayPal Refunds API")
+  Technology_Node(wechat, "WeChat Pay Refund API")
+  Technology_Node(kafka, "Kafka")
+  Technology_Node(sqlite, "billing.db")
+}
+
+note right of taskBill
+  [MODIFIED v45] apply/approve/reject
+  FIFO ledger → original-path refund
+  @author: claude @2026-07-22 12:25
+end note
+
+Rel_Flow(vueBill, djangoBridge, "POST refund-applications")
+Rel_Flow(vueAdmin, djangoBridge, "approve/reject")
+Rel_Flow(djangoBridge, taskBill, "proxy / internal")
+Rel_Access_W(taskBill, account, "R/W freeze")
+Rel_Access_W(taskBill, refundApp, "R/W")
+Rel_Access_W(taskBill, ledger, "R/W FIFO")
+Rel_Access_W(taskBill, sqlite, "R/W")
+Rel_Flow(taskBill, paypal, "Refund Capture")
+Rel_Flow(taskBill, wechat, "Refund")
+Rel_Flow(taskBill, kafka, "BillingRefund*")
+Rel_Influence(goFirst, taskBill, "落点")
+Rel_Influence(origPath, taskBill, "原路退")
+Rel_Influence(compliance, taskBill, "脱敏")
+
+@enduml

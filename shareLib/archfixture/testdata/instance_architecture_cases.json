@@ -1,0 +1,21 @@
+{
+  "_comment": "Shared CPU architecture inference cases. Single source of truth driving Go (taskProjectService/src/instance_architecture.go, taskCloudService/src/cpu_architecture.go) and JS (taskFE/app/src/utils/containerImageArchitecture.js) tests, so the three implementations cannot silently drift. extract_from_text_cases feed extractCPUArchitecturesFromText(...inputs); infer_instance_architecture_cases feed inferInstanceArchitecture(instance_type). want uses canonical ISA labels (x86_64 / arm64).",
+  "extract_from_text_cases": [
+    { "name": "x86_64 token in version", "inputs": ["private_x86_64-latest", "trae-agent", ""], "want": ["x86_64"] },
+    { "name": "arm64 + aarch64 tokens across fields", "inputs": ["linux/arm64", "demo", "registry.example/app:aarch64"], "want": ["arm64"] },
+    { "name": "amd64 alias canonicalizes to x86_64", "inputs": ["foo/amd64", "bar"], "want": ["x86_64"] },
+    { "name": "no ISA tokens", "inputs": ["latest", "trae-agent"], "want": [] },
+    { "name": "alnum boundaries guard false positives", "inputs": ["myx86_64image"], "want": [] },
+    { "name": "both ISA tokens dedupe to stable order", "inputs": ["a/x86_64", "b/arm64", "c/amd64"], "want": ["x86_64", "arm64"] },
+    { "name": "unknown tokens dropped", "inputs": ["x86_64", "riscv64", "mips"], "want": ["x86_64"] }
+  ],
+  "infer_instance_architecture_cases": [
+    { "instance_type": "ecs.c6.large", "want": "x86_64" },
+    { "instance_type": "ecs.r6.xlarge", "want": "x86_64" },
+    { "instance_type": "ecs.g7.xlarge", "want": "x86_64" },
+    { "instance_type": "ecs.g8y.xlarge", "want": "arm64" },
+    { "instance_type": "ecs.c6r.xlarge", "want": "arm64" },
+    { "instance_type": "ecs.r6r.xlarge", "want": "arm64" },
+    { "instance_type": "", "want": "" }
+  ]
+}

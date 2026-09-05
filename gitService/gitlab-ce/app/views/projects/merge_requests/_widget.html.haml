@@ -1,0 +1,32 @@
+- artifacts_endpoint_placeholder = ':pipeline_artifacts_id'
+
+= javascript_tag do
+  :plain
+    window.gl = window.gl || {};
+    window.gl.mrWidgetData = #{serialize_issuable(@merge_request, serializer: 'widget', issues_links: true)}
+
+    window.gl.mrWidgetData.artifacts_endpoint = '#{downloadable_artifacts_project_pipeline_path(@project, artifacts_endpoint_placeholder, format: :json)}';
+    window.gl.mrWidgetData.artifacts_endpoint_placeholder = '#{artifacts_endpoint_placeholder}';
+    window.gl.mrWidgetData.pipeline_etag = '#{graphql_etag_pipeline_sha_path(@merge_request.diff_head_sha)}';
+    window.gl.mrWidgetData.squash_before_merge_help_path = '#{help_page_path("user/project/merge_requests/squash_and_merge.md")}';
+    window.gl.mrWidgetData.ci_troubleshooting_docs_path = '#{help_page_path('ci/debugging.md')}';
+    window.gl.mrWidgetData.mr_troubleshooting_docs_path = '#{help_page_path('user/project/merge_requests/merge_request_troubleshooting.md')}';
+    window.gl.mrWidgetData.pipeline_must_succeed_docs_path = '#{help_page_path('user/project/merge_requests/auto_merge.md', anchor: 'require-a-successful-pipeline-for-merge')}';
+    window.gl.mrWidgetData.code_coverage_check_help_page_path = '#{help_page_path('ci/testing/code_coverage/_index.md', anchor: 'add-a-coverage-check-approval-rule')}';
+    window.gl.mrWidgetData.security_configuration_path = '#{project_security_configuration_path(@project)}';
+    window.gl.mrWidgetData.license_compliance_docs_path = '#{help_page_path('user/compliance/license_scanning_of_cyclonedx_files/_index.md')}';
+    window.gl.mrWidgetData.eligible_approvers_docs_path = '#{help_page_path('user/project/merge_requests/approvals/rules.md', anchor: 'eligible-approvers')}';
+    window.gl.mrWidgetData.approvals_help_path = '#{help_page_path("user/project/merge_requests/approvals/_index.md")}';
+    window.gl.mrWidgetData.codequality_help_path = '#{help_page_path("ci/testing/code_quality.md", anchor: "pipeline-details-view")}';
+    window.gl.mrWidgetData.false_positive_doc_url = '#{help_page_path('user/application_security/vulnerabilities/_index.md')}';
+    window.gl.mrWidgetData.can_view_false_positive = '#{@merge_request.project.licensed_feature_available?(:sast_fp_reduction).to_s}';
+    window.gl.mrWidgetData.user_preferences_gitpod_path = '#{profile_preferences_path(anchor: 'user_gitpod_enabled')}';
+    window.gl.mrWidgetData.user_profile_enable_gitpod_path = '#{user_settings_profile_path(user: { gitpod_enabled: true })}';
+    window.gl.mrWidgetData.saml_approval_path = window.gl.mrWidgetData.saml_approval_path;
+
+%h2#merge-request-widgets-heading.gl-sr-only
+  = _("Merge request reports")
+#js-vue-mr-widget.mr-widget{
+  role: 'region',
+  'aria-labelledby': 'merge-request-widgets-heading'
+}

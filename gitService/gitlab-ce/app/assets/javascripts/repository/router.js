@@ -1,0 +1,119 @@
+import { escapeRegExp } from 'lodash-es';
+import Vue from 'vue';
+import VueRouter from 'vue-router';
+import { joinPaths, webIDEUrl } from '~/lib/utils/url_utility';
+import { encodeRepositoryPath } from './utils/url_utility';
+import { setTitle } from './utils/title';
+import BlobPage from './pages/blob.vue';
+import IndexPage from './pages/index.vue';
+import TreePage from './pages/tree.vue';
+import { getRefType } from './utils/ref_type';
+
+Vue.use(VueRouter);
+
+const normalizePathParam = (pathParam) => {
+  // Vue Router 4 when there's more than one `:path` segment
+  if (Array.isArray(pathParam)) {
+    return joinPaths(...pathParam);
+  }
+
+  // Vue Router 3, or when there's zero or one `:path` segments.
+  return pathParam?.replace(/^\//, '') || '/';
+};
+
+export default function createRouter(base, baseRef, fullName) {
+  const treePathRoute = {
+    component: TreePage,
+    props: (route) => ({
+      path: normalizePathParam(route.params.path),
+      refType: getRefType(route.query.ref_type || null),
+    }),
+  };
+
+  const blobPathRoute = {
+    component: BlobPage,
+    props: (route) => {
+      return {
+        path: normalizePathParam(route.params.path),
+        projectPath: base,
+        refType: getRefType(route.query.ref_type || null),
+      };
+    },
+  };
+
+  const router = new VueRouter({
+    mode: 'history',
+    base: joinPaths(gon.relative_url_root || '', base),
+    routes: [
+      {
+        name: 'treePathDecoded',
+        // Sometimes the ref needs decoding depending on how the backend sends it to us
+        path: `/:dash(-)?/tree/${decodeURI(baseRef)}/:path*`,
+        ...treePathRoute,
+      },
+      {
+        name: 'treePathEncoded',
+        // Support encoded refs for branches with special characters (e.g., #, %, etc.)
+        path: `/:dash(-)?/tree/${encodeRepositoryPath(baseRef)}/:path*`,
+        ...treePathRoute,
+      },
+      {
+        name: 'treePath',
+        // Support without decoding as well just in case the ref doesn't need to be decoded
+        path: `/:dash(-)?/tree/${escapeRegExp(baseRef)}/:path*`,
+        ...treePathRoute,
+      },
+      {
+        name: 'blobPathDecoded',
+        // Sometimes the ref needs decoding depending on how the backend sends it to us
+        path: `/:dash(-)?/blob/${decodeURI(baseRef)}/:path*`,
+        ...blobPathRoute,
+      },
+      {
+        name: 'blobPathEncoded',
+        // Support encoded refs for branches with special characters (e.g., #, %, etc.)
+        path: `/:dash(-)?/blob/${encodeRepositoryPath(baseRef)}/:path*`,
+        ...blobPathRoute,
+      },
+      {
+        name: 'blobPath',
+        // Support without decoding as well just in case the ref doesn't need to be decoded
+        path: `/:dash(-)?/blob/${escapeRegExp(baseRef)}/:path*`,
+        ...blobPathRoute,
+      },
+      {
+        path: '/',
+        name: 'projectRoot',
+        component: IndexPage,
+        props: {
+          refType: 'HEADS',
+        },
+        meta: {
+          refType: 'HEADS',
+        },
+      },
+    ],
+  });
+
+  router.afterEach(({ params: { path }, name }) => {
+    const needsClosingSlash = !name.includes('blobPath');
+    const normalizedPath = normalizePathParam(path);
+    window.gl.webIDEPath = webIDEUrl(
+      joinPaths(
+        '/',
+        base,
+        'edit',
+        decodeURI(baseRef),
+        '-',
+        normalizedPath,
+        needsClosingSlash && '/',
+      ),
+    );
+
+    const titlePath = Array.isArray(path) ? joinPaths(...path) : path; // Vue 3 returns an array of strings for the path
+
+    setTitle(titlePath || '', baseRef, fullName);
+  });
+
+  return router;
+}

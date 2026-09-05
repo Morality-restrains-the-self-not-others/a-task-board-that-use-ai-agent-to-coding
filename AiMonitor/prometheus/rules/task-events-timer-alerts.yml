@@ -1,0 +1,29 @@
+groups:
+  - name: task-events-timer-alerts
+    interval: 60s
+    rules:
+      # ============================================================
+      # task-events intent timer 存活告警（OPT-20260827-049）
+      # 背景：queued-auto-run-scan timer 曾 service_status=failed（约 23:07 起
+      # 健康检查停），reclaim 静默停摆，页面只显示「调度启服中」且无告警。
+      # 指标来源：Prometheus 对 runAll file_sd 健康目标 /api/health/ready 的
+      # up 探测。timer 进程挂掉或 health 返回非 200 → up=0。
+      # 断言：curl 'http://localhost:9090/api/v1/query?query=up{job="task-events-queued-auto-run-scan-1-dispatch"}'
+      # ============================================================
+
+      - alert: TaskEventsQueuedAutoRunScanDown
+        expr: up{job="task-events-queued-auto-run-scan-1-dispatch"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          component: task-events
+          category: scheduling
+        annotations:
+          summary: "queued auto-run scan timer down"
+          description: >
+            task-events-queued-auto-run-scan-1-dispatch（health :18065）已不可探测
+            5 分钟。排队调度自动运行会静默停摆，reclaim 不再执行。
+            排查：curl http://localhost:18065/api/health/ready，经 runAll 精准重启
+            taskEvents；端口 SSOT：conf/events/domain-events/queued_auto_run_scan/config.yaml
+            intents.port 须等于 runAll.yaml health 端口
+            （python3 db/scripts/ci/check_task_events_runall_health_ports.py）。

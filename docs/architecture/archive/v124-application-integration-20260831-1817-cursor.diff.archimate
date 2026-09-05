@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v124 变迁 (v123→v124)" id="id-v124aidiff01">
+  <folder name="Application" id="id-v124ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v124-app-up" name="scripts/up.sh"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v124-app-sync" name="deploy-sync"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v124-app-confload" name="confload / conf_loader"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v124-app-gw" name="taskGateway"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v124-app-auth" name="taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v124-app-svc" name="其余 Go / taskEvents / taskFE"/>
+    <element xsi:type="archimate:DataObject" id="id-v124-data-skel" name="conf/rel 骨架"/>
+    <element xsi:type="archimate:DataObject" id="id-v124-data-conflocal" name="conf-local/rel + PEM"/>
+    <element xsi:type="archimate:DataObject" id="id-v124-data-pins" name="releases.yaml 新 tag"/>
+    <element xsi:type="archimate:DataObject" id="id-v124-data-old" name="secrets/taskGateway 与 db PEM overlay [DEPRECATED]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v124ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v124-pl-v123" name="Plateau v123"/>
+    <element xsi:type="archimate:Plateau" id="id-v124-pl-v124" name="Plateau v124 clone-run"/>
+    <element xsi:type="archimate:Gap" id="id-v124-gap" name="Gap: PEM 树外 + 旧 ELF + seed 漂移"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v124-wp" name="WP-daydaymoney-deploy-new-node-clone"/>
+  </folder>
+  <folder name="Relations" id="id-v124ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v124-rel-up-cl" source="id-v124-app-up" target="id-v124-data-conflocal" name="rsync overlay"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v124-rel-up-sync" source="id-v124-app-up" target="id-v124-app-sync" name="有 bin/runAll 后"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v124-rel-sync-pin" source="id-v124-app-sync" target="id-v124-data-pins" name="读钉"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v124-rel-sync-svc" source="id-v124-app-sync" target="id-v124-app-svc" name="ELF unpack"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v124-rel-cl-skel" source="id-v124-app-confload" target="id-v124-data-skel" name="1 读"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v124-rel-cl-loc" source="id-v124-app-confload" target="id-v124-data-conflocal" name="2 合并"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v124-rel-cl-svc" source="id-v124-app-confload" target="id-v124-app-svc" name="注入 YAML"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v124-rel-gw-cl" source="id-v124-app-gw" target="id-v124-data-conflocal" name="staging PEM"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v124-rel-auth-cl" source="id-v124-app-auth" target="id-v124-data-conflocal" name="签名钥"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v124-rel-old-up" source="id-v124-data-old" target="id-v124-app-up" name="不再 rsync"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v124-rel-pl-gap" source="id-v124-pl-v123" target="id-v124-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v124-rel-wp-gap" source="id-v124-wp" target="id-v124-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v124-rel-wp-pl" source="id-v124-wp" target="id-v124-pl-v124"/>
+  </folder>
+  <folder name="Views" id="id-v124ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v124-view-mig" name="架构变迁 v123→v124 — daydaymoney-deploy-new-node-clone">
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-pl123" archimateElement="id-v124-pl-v123">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124-c-pl-gap" source="id-v124-do-pl123" target="id-v124-do-gap" archimateRelationship="id-v124-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-gap" targetConnections="id-v124-c-pl-gap id-v124-c-wp-gap" archimateElement="id-v124-gap">
+        <bounds x="340" y="48" width="420" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-wp" archimateElement="id-v124-wp">
+        <bounds x="340" y="140" width="420" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124-c-wp-gap" source="id-v124-do-wp" target="id-v124-do-gap" archimateRelationship="id-v124-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124-c-wp-pl" source="id-v124-do-wp" target="id-v124-do-pl124" archimateRelationship="id-v124-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-pl124" targetConnections="id-v124-c-wp-pl" archimateElement="id-v124-pl-v124">
+        <bounds x="800" y="140" width="280" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v124-view-topo" name="v124 Target — clone-run 加载链">
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-up" archimateElement="id-v124-app-up">
+        <bounds x="48" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124-c-up-cl" source="id-v124-do-up" target="id-v124-do-loc" archimateRelationship="id-v124-rel-up-cl"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124-c-up-sync" source="id-v124-do-up" target="id-v124-do-sync" archimateRelationship="id-v124-rel-up-sync"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-sync" targetConnections="id-v124-c-up-sync" archimateElement="id-v124-app-sync">
+        <bounds x="240" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124-c-sync-pin" source="id-v124-do-sync" target="id-v124-do-pin" archimateRelationship="id-v124-rel-sync-pin"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124-c-sync-svc" source="id-v124-do-sync" target="id-v124-do-svc" archimateRelationship="id-v124-rel-sync-svc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-pin" targetConnections="id-v124-c-sync-pin" archimateElement="id-v124-data-pins">
+        <bounds x="440" y="80" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-svc" targetConnections="id-v124-c-sync-svc id-v124-c-cl-svc" archimateElement="id-v124-app-svc">
+        <bounds x="660" y="80" width="220" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-cl" archimateElement="id-v124-app-confload">
+        <bounds x="240" y="180" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124-c-cl-skel" source="id-v124-do-cl" target="id-v124-do-skel" archimateRelationship="id-v124-rel-cl-skel"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124-c-cl-loc" source="id-v124-do-cl" target="id-v124-do-loc" archimateRelationship="id-v124-rel-cl-loc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124-c-cl-svc" source="id-v124-do-cl" target="id-v124-do-svc" archimateRelationship="id-v124-rel-cl-svc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-skel" targetConnections="id-v124-c-cl-skel" archimateElement="id-v124-data-skel">
+        <bounds x="48" y="180" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-loc" targetConnections="id-v124-c-cl-loc id-v124-c-up-cl id-v124-c-gw-cl id-v124-c-auth-cl" archimateElement="id-v124-data-conflocal">
+        <bounds x="480" y="180" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-gw" archimateElement="id-v124-app-gw">
+        <bounds x="240" y="280" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124-c-gw-cl" source="id-v124-do-gw" target="id-v124-do-loc" archimateRelationship="id-v124-rel-gw-cl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-auth" archimateElement="id-v124-app-auth">
+        <bounds x="48" y="280" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124-c-auth-cl" source="id-v124-do-auth" target="id-v124-do-loc" archimateRelationship="id-v124-rel-auth-cl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v124-do-old" archimateElement="id-v124-data-old">
+        <bounds x="440" y="280" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v124-c-old-up" source="id-v124-do-old" target="id-v124-do-up" archimateRelationship="id-v124-rel-old-up"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

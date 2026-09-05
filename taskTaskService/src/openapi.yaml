@@ -1,0 +1,557 @@
+openapi: 3.0.3
+info:
+  title: taskTaskService API
+  description: |
+    任务域服务 (:8017)。含公网任务 CRUD 与服务间 container-snapshot。
+  version: 1.5.0
+servers:
+  - url: http://127.0.0.1:8017
+    description: taskTaskService 直连（开发）
+paths:
+  /api/internal/git-identities/ensure-default/:
+    post:
+      summary: 内部 — 确保默认 git 身份
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/internal/task-projects/detach-by-project/:
+    post:
+      summary: 内部 — 按 project_id 解除 task_projects 绑定（project_deleted）
+      tags: [internal]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [project_id]
+              properties:
+                project_id: { type: string }
+      responses:
+        "200": { description: OK — deleted count; missing rows still 200 }
+        "400": { description: Bad Request }
+        "403": { description: Forbidden }
+        "405": { description: Method Not Allowed }
+  /api/user/:
+    get:
+      summary: endpoint (/api/user/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/tenant/:
+    get:
+      summary: endpoint (/api/tenant/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/queue-schedule/:
+    get:
+      summary: 工作空间排队调度快照（节奏、窗口、成员、recent_history）
+      tags: [queue-schedule]
+      parameters:
+        - in: path
+          name: tenant_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: workspace_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK — schedule_rhythm, in_window, members, recent_history
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+    put:
+      summary: 保存工作空间排队调度节奏
+      tags: [queue-schedule]
+      parameters:
+        - in: path
+          name: tenant_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: workspace_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [windows]
+              properties:
+                enabled: { type: boolean }
+                timezone: { type: string }
+                windows:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      daily_start: { type: string }
+                      daily_end: { type: string }
+                      max_queued_machines: { type: integer }
+                      auto_close: { type: boolean }
+      responses:
+        "200": { description: 保存后快照（与 GET 同构） }
+        "400": { description: 校验失败 }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/queue-schedule/history/:
+    get:
+      summary: 工作空间调度历史（新→旧分页）
+      tags: [queue-schedule]
+      parameters:
+        - in: path
+          name: tenant_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: workspace_id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 50 }
+        - in: query
+          name: cursor
+          schema: { type: string }
+          description: 上一页末条 created_at|id
+      responses:
+        "200":
+          description: "{ items, next_cursor, has_more }"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/tasks/:
+    get:
+      summary: endpoint (/api/tasks/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/tasks/search/tenant_id/{tenant_id}/:
+    get:
+      summary: 租户级任务搜索（navbar / 计费筛选；与 /api/tenant/{tid}/tasks/search/ 等价）
+      tags: [tasks]
+      parameters:
+        - in: path
+          name: tenant_id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: q
+          schema: { type: string }
+          description: 标题/编号模糊匹配
+        - in: query
+          name: workspace_id
+          schema: { type: string }
+        - in: query
+          name: assignee_ids
+          schema: { type: string }
+          description: 逗号分隔成员 ID（负责人/操作员/指派人）
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: "OK — { results: [{ id, title, workspace_id, owner, operator, assignees }] }"
+        "400":
+          description: tenant_id 缺失或 limit 非法
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/tasks/todos/tenant_id/{tenant_id}/workspace_id/{workspace_id}/:
+    get:
+      summary: 任务列表（工作面板 todos 家族；tenant_id/workspace_id 路径键值对为权威身份）
+      tags: [tasks]
+      parameters:
+        - in: path
+          name: tenant_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: workspace_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK（列表项含 post_expires_at / post_expired 只读字段）
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+    post:
+      summary: 创建任务（消耗 1 创建帖次数 → post_expires_at = now + 12M）
+      tags: [tasks]
+      parameters:
+        - in: path
+          name: tenant_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: workspace_id
+          required: true
+          schema: { type: string }
+      responses:
+        "201":
+          description: 创建成功（含 post_expires_at）
+        "402":
+          description: 创建帖配额不足（INSUFFICIENT_TASK_POST_QUOTA）
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/tasks/todos/tenant_id/{tenant_id}/workspace_id/{workspace_id}/{task_id}/:
+    get:
+      summary: 任务详情（含 post_expires_at / post_expired）
+      tags: [tasks]
+      parameters:
+        - in: path
+          name: tenant_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: workspace_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+        "402":
+          description: 任务帖已到期（TASK_POST_EXPIRED，详情只读）
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+    patch:
+      summary: 更新任务（过期帖拒绝编辑）
+      tags: [tasks]
+      parameters:
+        - in: path
+          name: tenant_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: workspace_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+        "402":
+          description: 任务帖已到期（TASK_POST_EXPIRED）
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/tasks/todos/tenant_id/{tenant_id}/workspace_id/{workspace_id}/{task_id}/renew/:
+    post:
+      summary: 续存任务帖（消耗 1 创建帖次数，expires_at = max(now, cur) + 12M）
+      tags: [tasks]
+      parameters:
+        - in: path
+          name: tenant_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: workspace_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: 续存成功，返回更新后任务（含新的 post_expires_at / post_expired=false）
+        "402":
+          description: 创建帖配额不足（INSUFFICIENT_TASK_POST_QUOTA）
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/tasks/:
+    get:
+      summary: endpoint (/api/internal/tasks/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/tasks/terminal-kinds/:
+    post:
+      summary: 内部 — 批量查询任务是否已取消/已完成（cloud 入站守卫与 CSC 对账）
+      tags: [internal]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                task_ids:
+                  type: array
+                  items: { type: string }
+                  maxItems: 500
+      responses:
+        "200":
+          description: "{ kinds: { taskId: cancelled|completed|'' } }；缺 key 表示任务不存在"
+        "403":
+          description: Forbidden
+        "500":
+          description: lookup failed
+  /api/tenant_id/{tenant_id}/workspaceId/{workspace_id}/tasks/{task_id}/comments/{parent_comment_id}:
+    post:
+      summary: 回复指定父评论（parent 取自 path）；git_pr 按 task_id+html_url 幂等
+      tags: [comments]
+      parameters:
+        - in: path
+          name: tenant_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: workspace_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: parent_comment_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskCommentRequest'
+      responses:
+        "200":
+          description: 同 task_id + git_pr_html_url 已存在，返回已有评论
+        "201":
+          description: Created
+        "400":
+          description: 非法 JSON / 内容为空 / 父评论不存在
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: 任务或 workspace 不匹配
+  /api/tasks/{task_id}/comments/tenant_id/{tenant_id}:
+    post:
+      summary: 创建任务评论；@镜像 mentions 时可带 server_run_template 覆盖项目运行模版（仅进事件，不落评论表）
+      tags: [comments]
+      parameters:
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: tenant_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskCommentRequest'
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: 非法 JSON / 内容为空 / mentions 非法
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/git-identities/:
+    get:
+      summary: endpoint (/api/git-identities/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/health:
+    get:
+      summary: 健康检查
+      tags: [meta]
+      responses:
+        "200":
+          description: OK
+components:
+  schemas:
+    ContainerSnapshot:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        workspace_id:
+          type: string
+        tenant_id:
+          type: string
+        auto_run:
+          type: boolean
+        force_auto_run:
+          type: boolean
+          description: 当 auto_run 已为 true 时仍强制再次触发 start-vm
+        client_public_ip:
+          type: string
+          description: 用户公网 IP；auto_run 异步 start-vm-auto 时透传到自动安全组入网白名单（亦可由边缘 X-Forwarded-For 解析）
+        target_branch:
+          type: string
+        branch_strategy:
+          type: object
+          properties:
+            work_branch_name:
+              type: string
+            merge_target_branch_name:
+              type: string
+            target_branch_name:
+              type: string
+        projects:
+          type: array
+          items:
+            type: object
+            properties:
+              project_id:
+                type: string
+              project_name:
+                type: string
+              git_repos:
+                type: array
+                items:
+                  type: string
+              repo_branches:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    git_repo:
+                      type: string
+                    base_branch:
+                      type: string
+                    target_branch:
+                      type: string
+        repo_identities:
+          type: array
+          items:
+            type: object
+            properties:
+              repo_url:
+                type: string
+              git_identity_id:
+                type: string
+
+    TaskBrief:
+      type: object
+      description: 工作面板 todos 列表项（节选）；created_by 由 owner 经 Django 批量解析展示名
+      properties:
+        id:
+          type: string
+        owner:
+          type: string
+          nullable: true
+          description: company_member_id 或 user_id
+        created_by:
+          type: object
+          properties:
+            id:
+              type: string
+              description: user_id
+            username:
+              type: string
+              description: 展示名（member_name 或登录标识）
+            email:
+              type: string
+        created_at:
+          type: string
+          format: date-time
+
+    CreateTaskCommentRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        parent_comment_id:
+          type: string
+          description: 顶层创建可选；回复接口以 path parent_comment_id 为准
+        git_pr:
+          type: object
+          properties:
+            html_url: { type: string }
+            provider: { type: string, enum: [github, gitlab] }
+        execution_mode:
+          type: string
+          enum: [wait_previous, independent]
+        depends_on_comment_ids:
+          type: array
+          items: { type: string }
+        auto_commit:
+          type: boolean
+        mentions:
+          type: array
+          maxItems: 1
+          items:
+            type: object
+            properties:
+              type: { type: string, example: installed_image }
+              id: { type: string }
+              name: { type: string }
+        server_run_template:
+          type: object
+          description: 可选。仅当 mentions 含 installed_image 且临时硬件配置完整时生效；覆盖关联项目运行模版。须含 cloud_platform_id 与 region。
+          properties:
+            cloud_platform_id: { type: string }
+            region: { type: string }
+            zone_id: { type: string }
+            vpc_id: { type: string }
+            vswitch_id: { type: string }
+            security_group_id: { type: string }
+            authorization_id: { type: string }
+            selected_instance: { type: string }
+            hardware_config:
+              type: object
+              additionalProperties: true

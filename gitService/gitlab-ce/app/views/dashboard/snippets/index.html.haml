@@ -1,0 +1,9 @@
+- page_title _("Snippets")
+- button_path = new_snippet_path if can?(current_user, :create_snippet)
+
+- if current_user.snippets.exists?
+  = render 'dashboard/snippets_head'
+  .top-area= render partial: 'snippets/snippets_scope_menu', locals: { include_private: true, counts: @snippet_counts }
+  = render partial: 'shared/snippets/list', locals: { link_project: true }
+- else
+  = render 'shared/empty_states/snippets', button_path: button_path

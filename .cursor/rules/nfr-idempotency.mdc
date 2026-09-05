@@ -1,0 +1,32 @@
+---
+description: 执行 /5-nfr 时：副作用路径须评估幂等键是否与业务重复边界同粒度；只读路径须书面 L0
+alwaysApply: true
+---
+
+# NFR 幂等性审视（元规则）
+
+适用于整个 monorepo 的 NFR 澄清（`/5-nfr`）与产出 `*-nfr-clarification.md`。细则见 `.ai/01_project_constraints/53_nfr_idempotency.md`；约束索引第 48 条；技能附录 `.claude/skills/5-nfr/references/idempotency.md`。
+
+## 强制要求
+
+- 枚举增量内全部相关路径（HTTP 写接口、事件消费、Webhook、timer 一次性 API、出站写调用）。
+- **无副作用** → 可标 L0，须写理由；禁止把隐式写标成只读。
+- **有副作用** → **必须**写重复触发源、业务重复边界、幂等键、重放语义；判定键是否与边界同粒度。
+- 用户点击/双击作为触发源时，须同时规划前端防重放（元规则 52）。
+- **禁止**默认用 `company_id` / `tenant_id` / `user_id` 作事件消费幂等键。
+- 资金/配额/云资源/支付路径默认 ≥ L3。
+- NFR 文档须含「幂等性审视」表；未通过则禁止进入 `/6-ddd`。
+
+## 触发
+
+- 调用 `/5-nfr` 或编写/修改 `docs/superpowers/plans/*-nfr-clarification.md`
+- 设计/价值流增量引入写 API、Kafka 消费、Webhook、timer
+- 评审发现写路径无幂等键，或键为租户/用户级粗字段
+
+## 验收
+
+```bash
+test -f .claude/skills/5-nfr/references/idempotency.md
+rg -n '幂等性强制审视' .claude/skills/5-nfr/SKILL.md
+python3 db/scripts/ci/test_check_nfr_idempotency_table.py
+```

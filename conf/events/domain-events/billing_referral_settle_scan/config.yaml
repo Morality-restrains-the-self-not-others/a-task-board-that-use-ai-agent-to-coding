@@ -1,0 +1,7 @@
+intents:
+  1_settle_due:
+    host: 0.0.0.0
+    port: 18067
+    groupId: task-events-billing-referral-settle-scan-1-settle-due
+    events:
+    - BILLING_REFERRAL_SETTLE_SCAN

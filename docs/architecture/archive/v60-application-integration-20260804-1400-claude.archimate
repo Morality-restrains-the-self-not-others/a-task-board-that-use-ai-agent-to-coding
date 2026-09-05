@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.archimatetool.com/archimate http://www.archimatetool.com/archimate"
+    identifier="model-v59-rbac-20260804">
+
+  <name xml:lang="en">v60 RBAC Centralized PDP Architecture</name>
+  <purpose>v60 target: taskAuth centralized PDP + shareLib/authz thin client + group role inheritance + CompanyCreated→creator auto-role. Refined from v59 (heavy-engine shareLib). Includes migration view (v57→v60).</purpose>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- FOLDER: Application Layer -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <folder name="Application" id="folder-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="taskAuth (:8003) [MODIFIED v59]" id="taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskGitOauth (:8002)" id="taskGitOauth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTenantService (:8020) [MODIFIED v59]" id="taskTenant"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskProjectService (:8016)" id="taskProject"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTaskService (:8021)" id="taskTask"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskAIComment (:8022)" id="taskAIComment"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskCloudService (:8018)" id="taskCloud"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskBill (:8004)" id="taskBill"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskEvents (:8023)" id="taskEvents"/>
+    <element xsi:type="archimate:ApplicationComponent" name="shareLib/authz Thin Client [REFINED v60]" id="shareLibAuthz"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Kafka Consumers (Go)" id="kafkaConsumers"/>
+    <element xsi:type="archimate:ApplicationComponent" name="APISIX Gateway (:18081) [MODIFIED v59]" id="gateway"/>
+    <element xsi:type="archimate:DataObject" name="Kafka Domain Events Bus" id="kafkaBroker"/>
+    <element xsi:type="archimate:DataObject" name="taskAuth DB [MODIFIED v59]" id="taskAuthDB"/>
+    <element xsi:type="archimate:DataObject" name="taskGitOauth DB" id="taskGitOauthDB"/>
+    <element xsi:type="archimate:DataObject" name="taskTenant DB [MODIFIED v59]" id="taskTenantDB"/>
+    <element xsi:type="archimate:DataObject" name="taskProject DB" id="taskProjectDB"/>
+    <element xsi:type="archimate:DataObject" name="taskTask DB" id="taskTaskDB"/>
+    <element xsi:type="archimate:DataObject" name="taskCloud DB" id="taskCloudDB"/>
+    <element xsi:type="archimate:DataObject" name="taskBill DB" id="taskBillDB"/>
+    <element xsi:type="archimate:ApplicationEvent" name="PlatformRoleAssigned [NEW v59]" id="evtRoleAssigned"/>
+    <element xsi:type="archimate:ApplicationEvent" name="PlatformRoleRevoked [NEW v59]" id="evtRoleRevoked"/>
+    <element xsi:type="archimate:ApplicationEvent" name="TenantRoleChanged [NEW v59]" id="evtTenantRole"/>
+    <element xsi:type="archimate:ApplicationComponent" name="is_admin direct check [DEPRECATED v59]" id="oldIsAdmin"/>
+    <element xsi:type="archimate:ApplicationComponent" name="is_superuser direct check [DEPRECATED v59]" id="oldIsSuperuser"/>
+  </folder>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- FOLDER: Implementation & Migration -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <folder name="Implementation" id="folder-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v57 — binary is_admin/is_superuser auth" id="plateauV57"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v60 — taskAuth PDP + thin client + group roles" id="plateauV59"/>
+    <element xsi:type="archimate:Gap" name="Gap: no RBAC roles, no central PDP, no group-role inheritance" id="gapRoles"/>
+    <element xsi:type="archimate:WorkPackage" name="WP Phase1: PDP + API + service migration (5-7d)" id="wpPhase1"/>
+    <element xsi:type="archimate:WorkPackage" name="WP Phase2: perm codes + custom roles (3-5d)" id="wpPhase2"/>
+  </folder>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- FOLDER: Relations -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <folder name="Relations" id="folder-rels" type="relations">
+    <!-- Gateway routing -->
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-gw-auth" source="gateway" target="taskAuth"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-gw-tenant" source="gateway" target="taskTenant"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-gw-project" source="gateway" target="taskProject"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-gw-task" source="gateway" target="taskTask"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-gw-cloud" source="gateway" target="taskCloud"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-gw-bill" source="gateway" target="taskBill"/>
+    <element xsi:type="archimate:FlowRelationship" name="forward-auth roles" id="rel-gw-authz" source="gateway" target="shareLibAuthz"/>
+    <!-- Permission middleware → services -->
+    <element xsi:type="archimate:ServingRelationship" name="platform role check" id="rel-authz-auth" source="shareLibAuthz" target="taskAuth"/>
+    <element xsi:type="archimate:ServingRelationship" name="tenant role check" id="rel-authz-tenant" source="shareLibAuthz" target="taskTenant"/>
+    <element xsi:type="archimate:ServingRelationship" name="platform role check" id="rel-authz-cloud" source="shareLibAuthz" target="taskCloud"/>
+    <element xsi:type="archimate:ServingRelationship" name="platform role check" id="rel-authz-bill" source="shareLibAuthz" target="taskBill"/>
+    <element xsi:type="archimate:ServingRelationship" name="tenant role check" id="rel-authz-project" source="shareLibAuthz" target="taskProject"/>
+    <element xsi:type="archimate:ServingRelationship" name="tenant role check" id="rel-authz-task" source="shareLibAuthz" target="taskTask"/>
+    <!-- Kafka event flow -->
+    <element xsi:type="archimate:FlowRelationship" name="consume" id="rel-kafka-consumers" source="kafkaBroker" target="kafkaConsumers"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-consumers-tenant" source="kafkaConsumers" target="taskTenant"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-consumers-auth" source="kafkaConsumers" target="taskAuth"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-consumers-project" source="kafkaConsumers" target="taskProject"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-consumers-cloud" source="kafkaConsumers" target="taskCloud"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-consumers-events" source="kafkaConsumers" target="taskEvents"/>
+    <!-- Data ownership (Access) -->
+    <element xsi:type="archimate:AccessRelationship" name="write" id="rel-auth-db" source="taskAuth" target="taskAuthDB"/>
+    <element xsi:type="archimate:AccessRelationship" name="write" id="rel-tenant-db" source="taskTenant" target="taskTenantDB"/>
+    <element xsi:type="archimate:AccessRelationship" name="write" id="rel-project-db" source="taskProject" target="taskProjectDB"/>
+    <element xsi:type="archimate:AccessRelationship" name="write" id="rel-task-db" source="taskTask" target="taskTaskDB"/>
+    <element xsi:type="archimate:AccessRelationship" name="write" id="rel-cloud-db" source="taskCloud" target="taskCloudDB"/>
+    <element xsi:type="archimate:AccessRelationship" name="write" id="rel-bill-db" source="taskBill" target="taskBillDB"/>
+    <!-- New domain events -->
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-auth-ev1" source="taskAuth" target="evtRoleAssigned"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-auth-ev2" source="taskAuth" target="evtRoleRevoked"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-tenant-ev3" source="taskTenant" target="evtTenantRole"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-ev1-kafka" source="evtRoleAssigned" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-ev2-kafka" source="evtRoleRevoked" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-ev3-kafka" source="evtTenantRole" target="kafkaBroker"/>
+    <!-- Migration: Plateau → Gap → WorkPackage → Plateau -->
+    <element xsi:type="archimate:AssociationRelationship" name="triggers" id="rel-plateauV57-gap" source="plateauV57" target="gapRoles"/>
+    <element xsi:type="archimate:RealizationRelationship" name="closes" id="rel-wp1-gap" source="wpPhase1" target="gapRoles"/>
+    <element xsi:type="archimate:RealizationRelationship" name="closes" id="rel-wp2-gap" source="wpPhase2" target="gapRoles"/>
+    <element xsi:type="archimate:RealizationRelationship" name="delivers" id="rel-wp1-plateauV59" source="wpPhase1" target="plateauV59"/>
+    <element xsi:type="archimate:RealizationRelationship" name="delivers" id="rel-wp2-plateauV59" source="wpPhase2" target="plateauV59"/>
+  </folder>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- FOLDER: Views -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <folder name="Views" id="folder-views" type="diagrams">
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- VIEW 1: 架构变迁 v57→v59 — 身份角色权限体系 -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v57→v60 — RBAC 集中授权" id="view-migration">
+      <documentation>Implementation &amp; Migration: Plateau v57 → Gap → WorkPackages → Plateau v60</documentation>
+
+      <!-- Plateau v57 -->
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV57" archimateElement="plateauV57">
+        <bounds x="50" y="100" width="220" height="80"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v57-gap"
+          source="do-plateauV57" target="do-gap"
+          archimateRelationship="rel-plateauV57-gap"/>
+      </child>
+
+      <!-- Gap -->
+      <child xsi:type="archimate:DiagramObject" id="do-gap" archimateElement="gapRoles"
+        targetConnections="conn-v57-gap conn-wp1-gap conn-wp2-gap">
+        <bounds x="350" y="100" width="280" height="80"/>
+      </child>
+
+      <!-- WP Phase 1 -->
+      <child xsi:type="archimate:DiagramObject" id="do-wp1" archimateElement="wpPhase1"
+        targetConnections="conn-wp1-plateau">
+        <bounds x="50" y="250" width="280" height="65"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp1-gap"
+          source="do-wp1" target="do-gap"
+          archimateRelationship="rel-wp1-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp1-plateau"
+          source="do-wp1" target="do-plateauV59"
+          archimateRelationship="rel-wp1-plateauV59"/>
+      </child>
+
+      <!-- WP Phase 2 -->
+      <child xsi:type="archimate:DiagramObject" id="do-wp2" archimateElement="wpPhase2"
+        targetConnections="conn-wp2-plateau">
+        <bounds x="50" y="350" width="280" height="65"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp2-gap"
+          source="do-wp2" target="do-gap"
+          archimateRelationship="rel-wp2-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp2-plateau"
+          source="do-wp2" target="do-plateauV59"
+          archimateRelationship="rel-wp2-plateauV59"/>
+      </child>
+
+      <!-- Plateau v59 -->
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV59" archimateElement="plateauV59"
+        targetConnections="conn-wp1-plateau conn-wp2-plateau">
+        <bounds x="350" y="280" width="280" height="80"/>
+      </child>
+    </element>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- VIEW 2: v59 Target — 核心数据流（Gateway → Services → DB） -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v60 Target — 核心服务拓扑与数据流" id="view-topology">
+      <documentation>Target topology: Gateway → taskAuth PDP → Services (thin client) → Databases. Shows 🟢 new, 🔄 refined, 🔴 deprecated components.</documentation>
+
+      <!-- Gateway -->
+      <child xsi:type="archimate:DiagramObject" id="do-gw" archimateElement="gateway">
+        <bounds x="24" y="24" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-authz"
+          source="do-gw" target="do-authz"
+          archimateRelationship="rel-gw-authz"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-auth"
+          source="do-gw" target="do-auth"
+          archimateRelationship="rel-gw-auth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-tenant"
+          source="do-gw" target="do-tenant"
+          archimateRelationship="rel-gw-tenant"/>
+      </child>
+
+      <!-- shareLib/authz [NEW] -->
+      <child xsi:type="archimate:DiagramObject" id="do-authz" archimateElement="shareLibAuthz"
+        targetConnections="conn-gw-authz">
+        <bounds x="210" y="24" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-authz-auth"
+          source="do-authz" target="do-auth"
+          archimateRelationship="rel-authz-auth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-authz-tenant"
+          source="do-authz" target="do-tenant"
+          archimateRelationship="rel-authz-tenant"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-authz-cloud"
+          source="do-authz" target="do-cloud"
+          archimateRelationship="rel-authz-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-authz-bill"
+          source="do-authz" target="do-bill"
+          archimateRelationship="rel-authz-bill"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-authz-project"
+          source="do-authz" target="do-project"
+          archimateRelationship="rel-authz-project"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-authz-task"
+          source="do-authz" target="do-task"
+          archimateRelationship="rel-authz-task"/>
+      </child>
+
+      <!-- taskAuth [MODIFIED] -->
+      <child xsi:type="archimate:DiagramObject" id="do-auth" archimateElement="taskAuth"
+        targetConnections="conn-gw-auth conn-authz-auth">
+        <bounds x="420" y="24" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-db"
+          source="do-auth" target="do-authdb"
+          archimateRelationship="rel-auth-db"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-ev1"
+          source="do-auth" target="do-ev1"
+          archimateRelationship="rel-auth-ev1"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-ev2"
+          source="do-auth" target="do-ev2"
+          archimateRelationship="rel-auth-ev2"/>
+      </child>
+
+      <!-- taskTenant [MODIFIED] -->
+      <child xsi:type="archimate:DiagramObject" id="do-tenant" archimateElement="taskTenant"
+        targetConnections="conn-gw-tenant conn-authz-tenant">
+        <bounds x="420" y="100" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tenant-db"
+          source="do-tenant" target="do-tenantdb"
+          archimateRelationship="rel-tenant-db"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tenant-ev3"
+          source="do-tenant" target="do-ev3"
+          archimateRelationship="rel-tenant-ev3"/>
+      </child>
+
+      <!-- taskCloud -->
+      <child xsi:type="archimate:DiagramObject" id="do-cloud" archimateElement="taskCloud"
+        targetConnections="conn-authz-cloud">
+        <bounds x="420" y="176" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cloud-db"
+          source="do-cloud" target="do-clouddb"
+          archimateRelationship="rel-cloud-db"/>
+      </child>
+
+      <!-- taskBill -->
+      <child xsi:type="archimate:DiagramObject" id="do-bill" archimateElement="taskBill"
+        targetConnections="conn-authz-bill">
+        <bounds x="420" y="252" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-bill-db"
+          source="do-bill" target="do-billdb"
+          archimateRelationship="rel-bill-db"/>
+      </child>
+
+      <!-- taskProject -->
+      <child xsi:type="archimate:DiagramObject" id="do-project" archimateElement="taskProject"
+        targetConnections="conn-authz-project">
+        <bounds x="580" y="24" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-project-db"
+          source="do-project" target="do-projectdb"
+          archimateRelationship="rel-project-db"/>
+      </child>
+
+      <!-- taskTask -->
+      <child xsi:type="archimate:DiagramObject" id="do-task" archimateElement="taskTask"
+        targetConnections="conn-authz-task">
+        <bounds x="580" y="100" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-task-db"
+          source="do-task" target="do-taskdb"
+          archimateRelationship="rel-task-db"/>
+      </child>
+
+      <!-- Databases -->
+      <child xsi:type="archimate:DiagramObject" id="do-authdb" archimateElement="taskAuthDB"
+        targetConnections="conn-auth-db">
+        <bounds x="600" y="176" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-tenantdb" archimateElement="taskTenantDB"
+        targetConnections="conn-tenant-db">
+        <bounds x="600" y="240" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-clouddb" archimateElement="taskCloudDB"
+        targetConnections="conn-cloud-db">
+        <bounds x="600" y="304" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-billdb" archimateElement="taskBillDB"
+        targetConnections="conn-bill-db">
+        <bounds x="600" y="368" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-projectdb" archimateElement="taskProjectDB"
+        targetConnections="conn-project-db">
+        <bounds x="750" y="24" width="130" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-taskdb" archimateElement="taskTaskDB"
+        targetConnections="conn-task-db">
+        <bounds x="750" y="100" width="130" height="50"/>
+      </child>
+
+      <!-- Kafka Broker -->
+      <child xsi:type="archimate:DiagramObject" id="do-kafka" archimateElement="kafkaBroker">
+        <bounds x="24" y="200" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-kafka-consumers"
+          source="do-kafka" target="do-consumers"
+          archimateRelationship="rel-kafka-consumers"/>
+      </child>
+
+      <!-- Kafka Consumers -->
+      <child xsi:type="archimate:DiagramObject" id="do-consumers" archimateElement="kafkaConsumers"
+        targetConnections="conn-kafka-consumers">
+        <bounds x="210" y="200" width="160" height="55"/>
+      </child>
+
+      <!-- Domain Events [NEW] -->
+      <child xsi:type="archimate:DiagramObject" id="do-ev1" archimateElement="evtRoleAssigned"
+        targetConnections="conn-auth-ev1">
+        <bounds x="24" y="310" width="170" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-ev1-kafka"
+          source="do-ev1" target="do-kafka"
+          archimateRelationship="rel-ev1-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-ev2" archimateElement="evtRoleRevoked"
+        targetConnections="conn-auth-ev2">
+        <bounds x="24" y="370" width="170" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-ev2-kafka"
+          source="do-ev2" target="do-kafka"
+          archimateRelationship="rel-ev2-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-ev3" archimateElement="evtTenantRole"
+        targetConnections="conn-tenant-ev3">
+        <bounds x="24" y="430" width="170" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-ev3-kafka"
+          source="do-ev3" target="do-kafka"
+          archimateRelationship="rel-ev3-kafka"/>
+      </child>
+
+      <!-- [DEPRECATED] elements -->
+      <child xsi:type="archimate:DiagramObject" id="do-oldadmin" archimateElement="oldIsAdmin">
+        <bounds x="24" y="510" width="200" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-oldsuper" archimateElement="oldIsSuperuser">
+        <bounds x="250" y="510" width="200" height="45"/>
+      </child>
+    </element>
+
+  </folder>
+
+</archimate:model>

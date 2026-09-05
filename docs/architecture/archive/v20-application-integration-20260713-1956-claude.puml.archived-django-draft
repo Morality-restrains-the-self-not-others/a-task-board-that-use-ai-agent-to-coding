@@ -1,0 +1,51 @@
+' @title: Application Integration — 工作面板过滤选项持久化
+' @view: application-integration
+' @status: target
+' @version: 20
+' @author: claude
+' @based_on: v19 (v19-application-integration-20260713-1537-claude.puml)
+' @updated: 2026-07-13 19:56
+' @description: 用户×工作空间 work-panel 过滤偏好表 + GET/PUT API；WorkPanel 拉取/保存
+' @iteration: work-panel-filter-persistence
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v20 — 工作面板过滤选项持久化 (2026-07-13 19:56)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v20 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v20 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v20 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件 |
+endlegend
+
+Application_Component(vueWork, "🟡 Vue WorkPanel")
+Application_Component(gw, "task-gateway\nAPISIX")
+Application_Component(saas, "🟡 saas-backend\naccounts")
+
+Application_DataObject(pref, "🟢 accounts_user_workspace_work_panel_filter")
+
+note top of vueWork
+  [MODIFIED v20]
+  init GET filters；debounce PUT
+  切换 workspace 加载对应偏好
+  @author: claude @2026-07-13 19:56
+end note
+
+note top of saas
+  [MODIFIED v20]
+  GET/PUT /workspace/{id}/work-panel-filters/
+  @author: claude @2026-07-13 19:56
+end note
+
+note bottom of pref
+  [NEW v20] SSOT in saas.sqlite3
+  unique (user_id, company_id, workspace_id)
+end note
+
+Rel_Flow(vueWork, gw, "GET/PUT work-panel-filters")
+Rel_Flow(gw, saas, "accounts API")
+Rel_Access_RW(saas, pref, "RW upsert")
+
+@enduml

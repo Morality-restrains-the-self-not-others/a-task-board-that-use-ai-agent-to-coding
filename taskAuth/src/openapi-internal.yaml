@@ -1,0 +1,753 @@
+openapi: 3.0.3
+info:
+  title: taskAuth Internal / OIDC API
+  description: '运维与服务间可见的内部接口与 OIDC Provider 规范。
+
+    不进入浏览器门户 Swagger；经 `/api/schema-internal/` 与 `/api/swagger-internal/` 提供（勿与公开
+    `/api/schema/` 混淆）。'
+  version: 1.0.0
+servers:
+- url: http://127.0.0.1:8003
+  description: taskAuth 直连（运维）
+paths:
+  /api/internal/taskauth/login-methods/void-orphans/:
+    post:
+      summary: 内部 — 清理孤儿 login_method
+      tags: [internal]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/internal/users/wechat-linked-account/:
+    get:
+      summary: 内部 — 按微信号查询已绑定账号
+      tags: [internal]
+      responses:
+        "200": { description: OK }
+        "400": { description: Missing q }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/internal/authz/apply-member-grants/:
+    post:
+      summary: 内部 — 应用成员授权
+      tags: [internal]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/internal/users/id/{user_id}/profile/:
+    get:
+      summary: endpoint (/api/internal/users/id/{user_id}/profile/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/taskauth/account-deletion/execute-due/:
+    post:
+      summary: 内部 — 账号注销 execute-due timer 执行
+      tags: [internal]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/internal/taskauth/oidc-sso-idempotency/cleanup/:
+    post:
+      summary: 内部 — 清理 auth_oidc_sso_idempotency 过期幂等行（timer 调用，OPT-20260825-030）
+      tags: [internal]
+      parameters:
+      - name: max_age_days
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 7
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 500
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/internal/taskauth/email-invites/expire-due/:
+    post:
+      summary: 内部 — 将到期 pending 超管邮箱邀请标为 expired（timer 调用，OPT-20260829-003）
+      tags: [internal]
+      responses:
+        "200": { description: OK }
+        "403": { description: Forbidden }
+        "405": { description: Method Not Allowed }
+  /api/internal/taskauth/wechat-mp-cleanup/:
+    post:
+      summary: 内部 — 清理微信服务号挂起行与过期票据行（timer 调用，OPT-20260826-003）
+      tags: [internal]
+      parameters:
+      - name: pending_max_age_days
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 30
+      - name: ticket_max_age_days
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 7
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 500
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/internal/users/id/{user_id}/platform-roles/:
+    get:
+      summary: endpoint (/api/internal/users/id/{user_id}/platform-roles/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/users/id/{user_id}/wechat-pay-openid/:
+    get:
+      summary: 内部 — 查询用户用于微信分账的 openid
+      tags: [internal]
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: preferred_app_id
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+        "403":
+          description: Forbidden
+        "404":
+          description: wechat identity not found
+  /api/internal/users/id/{user_id}/profile:
+    get:
+      summary: internal endpoint (/api/internal/users/id/{user_id}/profile)
+      tags: [internal]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/users/id/{user_id}/platform-roles:
+    get:
+      summary: internal endpoint (/api/internal/users/id/{user_id}/platform-roles)
+      tags: [internal]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/email-delivery-callback:
+    get:
+      summary: internal endpoint (/api/internal/email-delivery-callback)
+      tags: [internal]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/email-unsubscription/:
+    get:
+      summary: 内部 — 查询邮箱是否已退订邀请邮件
+      tags: [internal]
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: '{unsubscribed, unsubscribe_url}'
+        "403":
+          description: Forbidden
+  /api/internal/authz/role-exists:
+    get:
+      summary: internal endpoint (/api/internal/authz/role-exists)
+      tags: [internal]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/authz/check:
+    get:
+      summary: internal endpoint (/api/internal/authz/check)
+      tags: [internal]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/users/:
+    get:
+      summary: 列出用户（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+  /api/internal/user-count/:
+    get:
+      summary: 用户计数（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+  /api/internal/users/id/{user_id}/:
+    patch:
+      summary: 更新用户（internal）
+      tags:
+      - internal
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+  /api/internal/users/batch/resolve/:
+    post:
+      summary: 批量解析用户（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+  /api/internal/users/batch/details/:
+    post:
+      summary: 批量获取用户邮箱/手机号/用户名（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+  /api/internal/token/resolve/:
+    post:
+      summary: 解析 Token（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+  /api/internal/gateway/forward-auth/:
+    get:
+      summary: 网关 forward-auth（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: 未认证
+    post:
+      summary: 网关 forward-auth（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: 未认证
+  /api/internal/container-gateway/validate-session/:
+    post:
+      summary: 容器网关校验会话（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: 无效会话
+        '403':
+          description: 缺内部密钥
+  /api/internal/users/id/{user_id}/super-admin/:
+    get:
+      summary: 查询超级管理员标记（internal）
+      tags:
+      - internal
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+  /api/internal/users/lookup-by-email/:
+    post:
+      summary: 按邮箱查找用户（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: 未找到
+        '403':
+          description: 缺内部密钥
+  /api/internal/login-methods/username-taken/:
+    post:
+      summary: 用户名是否占用（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+  /api/internal/users/id/{user_id}/username-login-method/:
+    patch:
+      summary: 写入用户名登录方式（internal）
+      tags:
+      - internal
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+  /api/internal/login-methods/phone-taken/:
+    post:
+      summary: 手机号是否占用（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+  /api/internal/users/id/{user_id}/phone-login-method/:
+    patch:
+      summary: 写入手机登录方式（internal）
+      tags:
+      - internal
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+  /api/internal/verification-code/verify/:
+    post:
+      summary: 校验手机验证码（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: '{ valid: bool }'
+        '403':
+          description: 缺内部密钥
+  /api/internal/recharge-sms-gate/:
+    get:
+      summary: 充值短信门禁状态（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+    post:
+      summary: 设置充值短信门禁（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+    delete:
+      summary: 清除充值短信门禁（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+  /api/internal/access-token/resolve/:
+    post:
+      summary: 解析访问令牌（internal）
+      tags:
+      - internal
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: 缺内部密钥
+  /api/internal/kyc/profile/:
+    get:
+      summary: 获取或创建 KYC 档案（internal）
+      tags:
+      - kyc
+      parameters:
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: KYC profile
+        '403':
+          description: 缺内部密钥
+  /api/internal/kyc/evaluate/:
+    post:
+      summary: 评估 KYC（手机已验证→T1）
+      tags:
+      - kyc
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id:
+                  type: string
+      responses:
+        '200':
+          description: KYC profile
+        '403':
+          description: 缺内部密钥
+  /api/internal/kyc/admin-override/:
+    post:
+      summary: 超管覆盖 KYC 等级/状态
+      tags:
+      - kyc
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, tier, status]
+              properties:
+                user_id:
+                  type: string
+                tier:
+                  type: string
+                  enum: [T0_unverified, T1_basic, T2_enhanced]
+                status:
+                  type: string
+                reason_code:
+                  type: string
+                reason_detail:
+                  type: string
+                actor_id:
+                  type: string
+      responses:
+        '200':
+          description: KYC profile
+        '403':
+          description: 缺内部密钥
+  /api/internal/kyc/audit/:
+    get:
+      summary: KYC 变更审计列表
+      tags:
+      - kyc
+      parameters:
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: '{ results: [...] }'
+        '403':
+          description: 缺内部密钥
+  /api/internal/kyc/aml-screening/:
+    get:
+      summary: 最近一条 AML 筛查记录
+      tags:
+      - kyc
+      parameters:
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: '{ latest: record|null }'
+        '403':
+          description: 缺内部密钥
+    post:
+      summary: 登记 AML 筛查结果
+      tags:
+      - kyc
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, result]
+              properties:
+                user_id:
+                  type: string
+                result:
+                  type: string
+                  enum: [pending, clear, review, hit]
+                provider:
+                  type: string
+                notes:
+                  type: string
+                actor_id:
+                  type: string
+                screening_ref:
+                  type: string
+      responses:
+        '200':
+          description: AML screening record
+        '403':
+          description: 缺内部密钥
+  /api/internal/kyc/limit-policy/:
+    get:
+      summary: 列出 KYC 限额策略
+      tags:
+      - kyc
+      responses:
+        '200':
+          description: '{ results: [...] }'
+        '403':
+          description: 缺内部密钥
+    put:
+      summary: 更新 KYC 限额策略
+      tags:
+      - kyc
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tier:
+                  type: string
+                max_single_yuan:
+                  type: integer
+                max_daily_yuan:
+                  type: integer
+                recharge_allowed:
+                  type: boolean
+                policies:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: '{ results: [...] }'
+        '403':
+          description: 缺内部密钥
+  /api/internal/kyc/recharge-gate/:
+    get:
+      summary: 充值 KYC 门禁校验（供 taskBill）
+      tags:
+      - kyc
+      parameters:
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: amount_yuan
+        in: query
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: '{ allowed, reason_code, tier, status, max_single_yuan, max_daily_yuan, daily_used_yuan_hint }'
+        '403':
+          description: 缺内部密钥
+  /api/health/oidc:
+    get:
+      summary: OIDC 健康检查
+      tags:
+      - oidc
+      responses:
+        '200':
+          description: OK
+        '503':
+          description: OIDC 未就绪
+  /.well-known/openid-configuration:
+    get:
+      summary: OIDC Discovery
+      tags:
+      - oidc
+      responses:
+        '200':
+          description: Discovery 文档
+  /api/oidc/authorize:
+    get:
+      summary: OIDC Authorize
+      tags:
+      - oidc
+      responses:
+        '302':
+          description: 重定向
+        '400':
+          description: 参数错误
+  /api/oidc/token:
+    post:
+      summary: OIDC Token
+      tags:
+      - oidc
+      responses:
+        '200':
+          description: 令牌响应
+        '400':
+          description: 参数错误
+  /api/oidc/userinfo:
+    get:
+      summary: OIDC UserInfo
+      tags:
+      - oidc
+      responses:
+        '200':
+          description: 用户信息
+        '401':
+          description: 未认证
+    post:
+      summary: OIDC UserInfo
+      tags:
+      - oidc
+      responses:
+        '200':
+          description: 用户信息
+        '401':
+          description: 未认证
+  /api/oidc/jwks:
+    get:
+      summary: OIDC JWKS
+      tags:
+      - oidc
+      responses:
+        '200':
+          description: JWKS
+  /api/oidc/{tenant_id}/authorize:
+    get:
+      summary: OIDC Authorize（租户路径，ADR-0044）
+      tags:
+      - oidc
+      responses:
+        '302':
+          description: 重定向
+        '400':
+          description: 参数错误或 path tenant 与 client 不一致
+  /api/oidc/{tenant_id}/token:
+    post:
+      summary: OIDC Token（租户路径）
+      tags:
+      - oidc
+      responses:
+        '200':
+          description: 令牌响应
+        '400':
+          description: 参数错误或 path tenant 与 client 不一致
+  /api/oidc/{tenant_id}/userinfo:
+    get:
+      summary: OIDC UserInfo（租户路径）
+      tags:
+      - oidc
+      responses:
+        '200':
+          description: 用户信息
+        '401':
+          description: 未认证或 aud 与 path tenant 不一致
+    post:
+      summary: OIDC UserInfo（租户路径）
+      tags:
+      - oidc
+      responses:
+        '200':
+          description: 用户信息
+        '401':
+          description: 未认证
+  /api/oidc/{tenant_id}/jwks:
+    get:
+      summary: OIDC JWKS（租户路径；密钥集暂与全局相同）
+      tags:
+      - oidc
+      responses:
+        '200':
+          description: JWKS
+  /api/oidc/endsession:
+    get:
+      summary: OIDC End Session
+      tags:
+      - oidc
+      responses:
+        '302':
+          description: 登出重定向
+components:
+  securitySchemes:
+    internalSecret:
+      type: apiKey
+      in: header
+      name: X-Internal-Secret
+      description: 服务间内部密钥（具体头名以运行配置为准）

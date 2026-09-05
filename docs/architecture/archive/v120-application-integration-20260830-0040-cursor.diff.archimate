@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v120 变迁 (v118→v120)" id="id-v120aidiff01">
+  <folder name="Application" id="id-v120ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v120-ai-fe" name="taskFE SPA [MODIFIED v120]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v120-ai-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v120-ai-task" name="taskTaskService [MODIFIED v120]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v120-ai-proj" name="taskProjectService [MODIFIED v120]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v120-ai-ev" name="taskEvents [MODIFIED v120]"/>
+    <element xsi:type="archimate:DataObject" id="id-v120-ai-tr" name="task_revision [NEW v120]"/>
+    <element xsi:type="archimate:DataObject" id="id-v120-ai-pr" name="project_revision [NEW v120]"/>
+  </folder>
+  <folder name="Business" id="id-v120ai-biz" type="business">
+    <element xsi:type="archimate:BusinessEvent" id="id-v120-ai-evt" name="TASK_REVISION_RECORDED [NEW v120]"/>
+    <element xsi:type="archimate:BusinessEvent" id="id-v120-ai-evp" name="PROJECT_REVISION_RECORDED [NEW v120]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v120ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v120-ai-pl118" name="Plateau v118 无内容历史"/>
+    <element xsi:type="archimate:Plateau" id="id-v120-ai-pl120" name="Plateau v120 不可变快照"/>
+    <element xsi:type="archimate:Gap" id="id-v120-ai-gap" name="Gap: 热表覆盖丢失旧标题正文"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v120-ai-wp" name="WP-entity-revisions"/>
+  </folder>
+  <folder name="Relations" id="id-v120ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v120-ai-rel-fe-gw" source="id-v120-ai-fe" target="id-v120-ai-gw" name="revisions GET / content PATCH"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v120-ai-rel-gw-task" source="id-v120-ai-gw" target="id-v120-ai-task" name="task routes"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v120-ai-rel-gw-proj" source="id-v120-ai-gw" target="id-v120-ai-proj" name="project routes"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v120-ai-rel-task-tr" source="id-v120-ai-task" target="id-v120-ai-tr" name="insert / select"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v120-ai-rel-proj-pr" source="id-v120-ai-proj" target="id-v120-ai-pr" name="insert / select"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v120-ai-rel-task-evt" source="id-v120-ai-task" target="id-v120-ai-evt" name="after commit"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v120-ai-rel-proj-evp" source="id-v120-ai-proj" target="id-v120-ai-evp" name="after commit"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v120-ai-rel-task-ev" source="id-v120-ai-task" target="id-v120-ai-ev" name="publish Kafka"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v120-ai-rel-proj-ev" source="id-v120-ai-proj" target="id-v120-ai-ev" name="publish Kafka"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v120-ai-rel-pl-gap" source="id-v120-ai-pl118" target="id-v120-ai-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v120-ai-rel-wp-gap" source="id-v120-ai-wp" target="id-v120-ai-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v120-ai-rel-wp-pl" source="id-v120-ai-wp" target="id-v120-ai-pl120"/>
+  </folder>
+  <folder name="Views" id="id-v120ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v120-ai-view-mig" name="架构变迁 v118→v120 — task-project-entity-revisions">
+      <child xsi:type="archimate:DiagramObject" id="id-v120-ai-do-pl118" archimateElement="id-v120-ai-pl118">
+        <bounds x="48" y="48" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-ai-c-pl-gap" source="id-v120-ai-do-pl118" target="id-v120-ai-do-gap" archimateRelationship="id-v120-ai-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-ai-do-gap" targetConnections="id-v120-ai-c-pl-gap id-v120-ai-c-wp-gap" archimateElement="id-v120-ai-gap">
+        <bounds x="320" y="48" width="380" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-ai-do-wp" archimateElement="id-v120-ai-wp">
+        <bounds x="320" y="160" width="380" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-ai-c-wp-gap" source="id-v120-ai-do-wp" target="id-v120-ai-do-gap" archimateRelationship="id-v120-ai-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-ai-c-wp-pl" source="id-v120-ai-do-wp" target="id-v120-ai-do-pl120" archimateRelationship="id-v120-ai-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-ai-do-pl120" targetConnections="id-v120-ai-c-wp-pl" archimateElement="id-v120-ai-pl120">
+        <bounds x="740" y="160" width="240" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v120-ai-view-topo" name="v120 Target — 内容历史数据流">
+      <child xsi:type="archimate:DiagramObject" id="id-v120-ai-do-fe" archimateElement="id-v120-ai-fe">
+        <bounds x="48" y="48" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-ai-c-fe-gw" source="id-v120-ai-do-fe" target="id-v120-ai-do-gw" archimateRelationship="id-v120-ai-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-ai-do-gw" targetConnections="id-v120-ai-c-fe-gw" archimateElement="id-v120-ai-gw">
+        <bounds x="220" y="48" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-ai-c-gw-task" source="id-v120-ai-do-gw" target="id-v120-ai-do-task" archimateRelationship="id-v120-ai-rel-gw-task"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-ai-c-gw-proj" source="id-v120-ai-do-gw" target="id-v120-ai-do-proj" archimateRelationship="id-v120-ai-rel-gw-proj"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-ai-do-task" targetConnections="id-v120-ai-c-gw-task" archimateElement="id-v120-ai-task">
+        <bounds x="440" y="16" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-ai-c-task-tr" source="id-v120-ai-do-task" target="id-v120-ai-do-tr" archimateRelationship="id-v120-ai-rel-task-tr"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-ai-c-task-evt" source="id-v120-ai-do-task" target="id-v120-ai-do-evt" archimateRelationship="id-v120-ai-rel-task-evt"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-ai-c-task-ev" source="id-v120-ai-do-task" target="id-v120-ai-do-ev" archimateRelationship="id-v120-ai-rel-task-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-ai-do-proj" targetConnections="id-v120-ai-c-gw-proj" archimateElement="id-v120-ai-proj">
+        <bounds x="440" y="140" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-ai-c-proj-pr" source="id-v120-ai-do-proj" target="id-v120-ai-do-pr" archimateRelationship="id-v120-ai-rel-proj-pr"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-ai-c-proj-evp" source="id-v120-ai-do-proj" target="id-v120-ai-do-evp" archimateRelationship="id-v120-ai-rel-proj-evp"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-ai-c-proj-ev" source="id-v120-ai-do-proj" target="id-v120-ai-do-ev" archimateRelationship="id-v120-ai-rel-proj-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-ai-do-tr" targetConnections="id-v120-ai-c-task-tr" archimateElement="id-v120-ai-tr">
+        <bounds x="660" y="16" width="220" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-ai-do-pr" targetConnections="id-v120-ai-c-proj-pr" archimateElement="id-v120-ai-pr">
+        <bounds x="660" y="140" width="220" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-ai-do-evt" targetConnections="id-v120-ai-c-task-evt" archimateElement="id-v120-ai-evt">
+        <bounds x="660" y="80" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-ai-do-evp" targetConnections="id-v120-ai-c-proj-evp" archimateElement="id-v120-ai-evp">
+        <bounds x="660" y="200" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-ai-do-ev" targetConnections="id-v120-ai-c-task-ev id-v120-ai-c-proj-ev" archimateElement="id-v120-ai-ev">
+        <bounds x="48" y="140" width="140" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

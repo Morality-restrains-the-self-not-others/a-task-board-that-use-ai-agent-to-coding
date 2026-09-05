@@ -1,0 +1,7 @@
+intents:
+  1_process_project_update:
+    host: 0.0.0.0
+    port: 18031
+    groupId: task-events-project-updated-1-process-project-update
+    events:
+    - PROJECT_UPDATED

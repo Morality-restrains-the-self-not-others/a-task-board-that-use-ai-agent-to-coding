@@ -1,0 +1,241 @@
+' @title: daydaymoney Enterprise Landscape
+' @view: enterprise-landscape
+' @status: target
+' @version: 9
+' @iteration: Cloud 域 Go 真源 + Instruct Worker 下沉
+' @based_on: v7 (v7-enterprise-landscape-20260706-1710-claude.puml)
+' @updated: 2026-07-06 18:34
+' @description: v8 Phase 2 — taskTaskService SQLite 真源；Django Todo/Comment ORM 已删；Plateau v8 关闭 gapTask
+
+@startuml
+!include <archimate/Archimate>
+
+title daydaymoney Platform — Enterprise Landscape v8 Target (2026-07-06 18:34)
+
+legend right
+  |<#LightGreen>  </> | 🟢 [NEW v8] 本次新增 |
+  |<#LightYellow> </> | 🟡 [MODIFIED v8] 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED v8] 本次废弃/已删除 |
+  |<#White>       </> | 无标记 — v6 及更早 |
+endlegend
+
+' ═══════════════════════════════════════════════════════════
+' Business Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Business" {
+  Business_Actor(developer, "Developer")
+  Business_Actor(admin, "Platform Admin")
+  Business_Actor(enterprise, "Enterprise Customer")
+
+  Business_Service(ideSvc, "IDE Workspace Service")
+  Business_Service(taskMgmt, "Task Management Service")
+  Business_Service(cloudRes, "Cloud Resource Service")
+  Business_Service(billingSvc, "Billing & License Service")
+  Business_Service(llmSvc, "LLM AI Service")
+  Business_Service(projMgmt, "Project Management Service")
+
+  Business_Process(devFlow, "Development Workflow")
+  Business_Process(projOnboard, "Project Onboarding")
+
+  Business_Object(project, "Project")
+  Business_Object(workspace, "Workspace")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Application Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Application" {
+  Application_Component(gateway, "API Gateway (APISIX)")
+  Application_Component(djangoApp, "Django SaaS Platform\n(internal 真源 only)")
+  Application_Component(authSvc, "taskAuth (Go :8003)")
+  Application_Component(gitOauthSvc, "Git OAuth Service")
+  Application_Component(sseSvc, "Task SSE Service")
+  Application_Component(taskAIEndPoint, "taskAIEndPoint (Go :8013)")
+  Application_Component(taskCredential, "taskCredentialService (Go :8015)")
+  Application_Component(taskAgentSupport, "taskAgentSupport (Go :8011)")
+  Application_Component(taskContainerGW, "taskContainerGateway (Go :8014)")
+  Application_Component(goRelay, "go-relay (Go :8797)")
+  Application_Component(claudeAgent, "claude-agent (Go CLI)")
+
+  Application_Component(taskProjectSvc, "taskProjectService (Go :8016)")
+  Application_Component(taskTaskSvc, "taskTaskService (Go :8017)")
+  Application_Component(taskCloudSvc, "taskCloudService (Go :8018)")
+
+  Application_Service(authAPI, "Authentication API")
+  Application_Service(projectAPI, "Project Management API")
+  Application_Service(taskAPI, "Task Management API")
+  Application_Service(cloudAPI, "Cloud Resource API")
+  Application_Service(billingAPI, "Billing API")
+  Application_Service(llmProxyAPI, "LLM Proxy API")
+  Application_Service(containerProxyAPI, "Container Proxy API")
+  Application_Service(relayLifecycleAPI, "Relay Lifecycle API")
+
+  Application_Interface(restAPI, "REST API")
+  Application_Interface(webSocket, "WebSocket / SSE")
+
+  Application_DataObject(userDB, "User & Auth Data")
+  Application_DataObject(projectDB, "Project/Workspace Data\n(SQLite task_project.db)")
+  Application_DataObject(taskDB, "Task/Comment Data\n(SQLite task_task.db)")
+  Application_DataObject(cloudDB, "Cloud Auth/Instance Data")
+  Application_DataObject(billingDB, "Billing Data")
+  Application_DataObject(containerDB, "Container Runtime Data")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Technology Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Technology" {
+  Technology_Device(lb, "Load Balancer")
+  Technology_Node(appNode, "Application Host")
+  Technology_Node(dbNode, "Database Host")
+  Technology_Node(cacheNode, "Cache Host")
+
+  Technology_SystemSoftware(docker, "Docker Engine")
+  Technology_SystemSoftware(djangoRuntime, "Django (Python)")
+  Technology_SystemSoftware(goRuntime, "Go Runtime")
+  Technology_SystemSoftware(nodeRuntime, "Node.js Runtime")
+
+  Technology_Service(postgres, "PostgreSQL")
+  Technology_Service(redis, "Redis")
+  Technology_Service(kafka, "Kafka")
+  Technology_Service(upstreamLLM, "Upstream LLM Provider")
+  Technology_Service(onlineServiceJS, "onlineServiceJS Container API")
+
+  Technology_Artifact(sqliteTaskDB, "SQLite task_task.db")
+  Technology_Artifact(dockerImg, "Docker Images")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Implementation & Migration (架构变迁)
+' ═══════════════════════════════════════════════════════════
+rectangle "Implementation & Migration" {
+  Implementation_Plateau(plateauV5, "Plateau v5 — Shipped Baseline")
+  Implementation_Plateau(plateauV6, "Plateau v6 — 3-Service Go Split (design)")
+  Implementation_Plateau(plateauV8, "Plateau v8 — Project Domain Go Delivered")
+  Implementation_Gap(gapProject, "Gap: Project/Workspace in Django")
+  Implementation_Gap(gapProjectRem, "Gap: Phase 1b endpoints (switch-workspace/gitlab)")
+  Implementation_Gap(gapTask, "Gap: Task in Django ✅ closed")
+  Implementation_Gap(gapCloud, "Gap: Aliyun API in Django")
+  Implementation_WorkPackage(wpP0, "WP Phase 0 — Infra")
+  Implementation_WorkPackage(wpP1, "WP Phase 1 — taskProjectService ✅")
+  Implementation_WorkPackage(wpP1b, "WP Phase 1b — Go API parity")
+  Implementation_WorkPackage(wpP2, "WP Phase 2 — taskTaskService ✅")
+  Implementation_WorkPackage(wpP3, "WP Phase 3 — taskCloudService")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Cross-Layer Relationships
+' ═══════════════════════════════════════════════════════════
+Rel_Serving(gateway, restAPI, "routes")
+Rel_Realization(taskProjectSvc, projectAPI, "serves")
+Rel_Realization(taskTaskSvc, taskAPI, "serves")
+Rel_Realization(taskCloudSvc, cloudAPI, "serves")
+Rel_Realization(djangoApp, billingAPI, "serves proxy")
+Rel_Realization(authSvc, authAPI, "serves")
+Rel_Realization(taskAIEndPoint, llmProxyAPI, "serves")
+Rel_Realization(taskContainerGW, containerProxyAPI, "serves outbound")
+Rel_Realization(goRelay, relayLifecycleAPI, "serves relay lifecycle")
+Rel_Realization(taskAgentSupport, containerProxyAPI, "serves inbound")
+
+Rel_Assignment(appNode, taskProjectSvc, "hosts")
+Rel_Assignment(appNode, taskTaskSvc, "hosts")
+Rel_Assignment(appNode, taskCloudSvc, "hosts")
+Rel_Assignment(appNode, goRuntime, "runs Go services")
+
+Rel_Serving(sqliteProjectDB, projectDB, "taskProjectService 读写")
+Rel_Access(taskProjectSvc, projectDB, "reads/writes")
+Rel_Serving(postgres, taskDB, "task_task_db")
+Rel_Serving(postgres, cloudDB, "task_cloud_db")
+Rel_Serving(postgres, djangoApp, "ORM 真源 (accounts/company internal)")
+Rel_Serving(postgres, containerDB, "CloudServerConfig")
+
+' v6 新数据流
+Rel_Serving(taskTaskSvc, taskProjectSvc, "workspace 存在性校验")
+Rel_Serving(taskCloudSvc, taskProjectSvc, "workspace 云平台默认配置")
+Rel_Serving(taskCloudSvc, taskTaskSvc, "实例状态回调 task")
+Rel_Serving(taskProjectSvc, authSvc, "JWT 验证")
+Rel_Serving(taskTaskSvc, authSvc, "JWT 验证")
+Rel_Serving(taskCloudSvc, authSvc, "JWT 验证")
+Rel_Serving(taskProjectSvc, djangoApp, "company 校验 (internal)")
+Rel_Serving(taskTaskSvc, djangoApp, "company 校验 (internal)")
+Rel_Serving(taskCloudSvc, djangoApp, "company 校验 (internal)")
+
+Rel_Serving(projectAPI, projMgmt, "enables")
+Rel_Serving(taskAPI, taskMgmt, "enables")
+Rel_Serving(cloudAPI, cloudRes, "enables")
+
+' 接入已有数据流
+Rel_Serving(taskCloudSvc, onlineServiceJS, "instance API proxy")
+Rel_Serving(taskContainerGW, onlineServiceJS, "outbound HTTP proxy")
+Rel_Serving(taskContainerGW, djangoApp, "internal session/target")
+Rel_Serving(goRelay, onlineServiceJS, "subprocess lifecycle")
+Rel_Serving(taskAgentSupport, taskCredential, "token exchange")
+
+' 架构变迁关系
+Rel_Triggering(plateauV5, gapProject, "identifies")
+Rel_Triggering(plateauV5, gapTask, "identifies")
+Rel_Triggering(plateauV5, gapCloud, "identifies")
+Rel_Realization(wpP1, gapProject, "closes ✅ (delivered)")
+Rel_Realization(wpP1, plateauV8, "delivers Phase 1")
+Rel_Realization(wpP1b, gapProjectRem, "closes (Phase 1b)")
+Rel_Realization(wpP2, gapTask, "closes (taskTaskService)")
+Rel_Realization(wpP3, gapCloud, "closes (taskCloudService)")
+Rel_Realization(wpP0, plateauV6, "delivers infra design")
+Rel_Composition(plateauV8, taskProjectSvc, "includes (live)")
+Rel_Composition(plateauV6, taskTaskSvc, "includes (planned)")
+Rel_Composition(plateauV6, taskCloudSvc, "includes (planned)")
+
+' v6 变更标注
+note right of djangoApp
+  🟡 [MODIFIED v8] Django 任务域已下线
+  删除: Todo/Comment ORM, todos 公网路由
+  保留: accounts, company internal,
+  AITaskComment (→ taskAIComment)
+  @author: claude @2026-07-06 18:34
+end note
+
+note right of taskTaskSvc
+  🟡 [MODIFIED v8] taskTaskService (:8017) live
+  SQLite task_task.db 唯一真源
+  Task CRUD / Comment / FeatureParams
+  @author: claude @2026-07-06 18:34
+end note
+
+note bottom of plateauV8
+  🎯 v8 Target Plateau — Phase 2 Delivered
+  任务域: Go SQLite 真源, Django Todo 零残留
+  云: 仍 Django (Phase 3 待交付)
+  @author: claude @2026-07-06 18:34
+end note
+
+note right of taskProjectSvc
+  🟡 [MODIFIED v7] taskProjectService (:8016)
+  SQLite 唯一真源 — 无 Django fallback
+  APISIX → Go 直连 (183.250.1.132:8016)
+  Phase 1b: switch-workspace/gitlab 待补
+  @author: claude @2026-07-06 17:10
+end note
+
+note right of taskTaskSvc
+  🟢 [NEW v6] taskTaskService (Go :8017)
+  任务 CRUD / 评论 / AI 评论流
+  功能参数 / 快照
+  @author: claude @2026-07-06 15:43
+end note
+
+note right of taskCloudSvc
+  🟢 [NEW v6] taskCloudService (Go :8018)
+  阿里云授权 (AK+OAuth) / ECS 实例
+  VPC/交换机/安全组 / 镜像/地域
+  UserData 模板 / AI 模型授权
+  @author: claude @2026-07-06 15:43
+end note
+
+note bottom of plateauV8
+  🎯 v8 Target Plateau — Phase 2 Task Domain Delivered
+  项目域: Go SQLite 真源, Django 表已删
+  任务/云: 仍 Django (Phase 2/3 待交付)
+  @author: claude @2026-07-06 17:10
+end note
+
+@enduml

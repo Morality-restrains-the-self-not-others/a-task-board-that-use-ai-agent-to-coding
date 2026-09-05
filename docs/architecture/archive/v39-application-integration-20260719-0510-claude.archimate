@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v39-people-member-group-go-20260719-0510">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v39 Target (people-member-group-go-migration)</name>
+  <purpose>taskTenantService owns people members/invite/groups public APIs and four tables</purpose>
+
+  <folder name="Motivation" id="id-v39-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="Constraint 新增接口默认 Go" id="id-v39-constraint"/>
+    <element xsi:type="archimate:Principle" name="Principle 单表单服务所有权" id="id-v39-principle"/>
+  </folder>
+  <folder name="Application" id="id-v39-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue People* [MODIFIED v39]" id="id-v39-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 task-gateway members/groups [MODIFIED v39]" id="id-v39-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟢 taskTenantService [NEW v39]" id="id-v39-tts"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 saas-backend Company [MODIFIED v39]" id="id-v39-django"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskProjectService" id="id-v39-tps"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskEvents" id="id-v39-te"/>
+    <element xsi:type="archimate:DataObject" name="🟢 task_tenant.db [NEW v39]" id="id-v39-tdb"/>
+    <element xsi:type="archimate:DataObject" name="saas accounts_company" id="id-v39-saas"/>
+  </folder>
+  <folder name="Technology" id="id-v39-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="Kafka" id="id-v39-kafka"/>
+  </folder>
+  <folder name="Relations" id="id-v39-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v39-flow-vue-gw" source="id-v39-vue" target="id-v39-gw" name="members|groups"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v39-flow-gw-tts" source="id-v39-gw" target="id-v39-tts" name="JWT"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v39-acc-tts-tdb" source="id-v39-tts" target="id-v39-tdb" name="R/W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v39-flow-tts-dj" source="id-v39-tts" target="id-v39-django" name="company exists"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v39-acc-dj-saas" source="id-v39-django" target="id-v39-saas" name="R company"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v39-flow-tts-tps" source="id-v39-tts" target="id-v39-tps" name="workspace access"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v39-flow-tts-kafka" source="id-v39-tts" target="id-v39-kafka" name="events"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v39-flow-kafka-te" source="id-v39-kafka" target="id-v39-te" name="consume"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v39-inf-c" source="id-v39-constraint" target="id-v39-tts" name="落点"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v39-inf-p" source="id-v39-principle" target="id-v39-tdb" name="owner"/>
+  </folder>
+  <folder name="Implementation" id="id-v39-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v38 — daydaymoney-yaml-metadata (archived)" id="id-v39-plat-v38"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v39 — people-member-group-go (current)" id="id-v39-plat-v39"/>
+    <element xsi:type="archimate:Gap" name="Gap: 人员组织公网仍 Django" id="id-v39-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v39-people-member-group-go" id="id-v39-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v39-rel-plat38-gap" source="id-v39-plat-v38" target="id-v39-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v39-rel-wp-gap" source="id-v39-wp" target="id-v39-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v39-rel-wp-plat39" source="id-v39-wp" target="id-v39-plat-v39"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v39-rel-plat39-tts" source="id-v39-plat-v39" target="id-v39-tts"/>
+  </folder>
+  <folder name="Views" id="id-v39-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v38→v39 — people-go" id="id-v39-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-plat38" archimateElement="id-v39-plat-v38">
+        <bounds x="48" y="100" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v39-conn-plat38-gap"
+          source="id-v39-do-plat38" target="id-v39-do-gap"
+          archimateRelationship="id-v39-rel-plat38-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-gap" archimateElement="id-v39-gap"
+        targetConnections="id-v39-conn-plat38-gap id-v39-conn-wp-gap">
+        <bounds x="420" y="100" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-wp" archimateElement="id-v39-wp">
+        <bounds x="840" y="60" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v39-conn-wp-gap"
+          source="id-v39-do-wp" target="id-v39-do-gap"
+          archimateRelationship="id-v39-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v39-conn-wp-plat39"
+          source="id-v39-do-wp" target="id-v39-do-plat39"
+          archimateRelationship="id-v39-rel-wp-plat39"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-plat39" archimateElement="id-v39-plat-v39"
+        targetConnections="id-v39-conn-wp-plat39">
+        <bounds x="840" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v39-conn-plat39-tts"
+          source="id-v39-do-plat39" target="id-v39-do-tts-m"
+          archimateRelationship="id-v39-rel-plat39-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-tts-m" archimateElement="id-v39-tts"
+        targetConnections="id-v39-conn-plat39-tts">
+        <bounds x="840" y="250" width="320" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v39 Target — people API 数据流" id="id-v39-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-vue" archimateElement="id-v39-vue">
+        <bounds x="40" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v39-conn-vue-gw"
+          source="id-v39-do-vue" target="id-v39-do-gw"
+          archimateRelationship="id-v39-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-gw" archimateElement="id-v39-gw"
+        targetConnections="id-v39-conn-vue-gw">
+        <bounds x="240" y="80" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v39-conn-gw-tts"
+          source="id-v39-do-gw" target="id-v39-do-tts"
+          archimateRelationship="id-v39-flow-gw-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-tts" archimateElement="id-v39-tts"
+        targetConnections="id-v39-conn-gw-tts id-id-v39-conn-inf-c">
+        <bounds x="460" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v39-conn-tts-tdb"
+          source="id-v39-do-tts" target="id-v39-do-tdb"
+          archimateRelationship="id-v39-acc-tts-tdb"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v39-conn-tts-dj"
+          source="id-v39-do-tts" target="id-v39-do-dj"
+          archimateRelationship="id-v39-flow-tts-dj"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v39-conn-tts-tps"
+          source="id-v39-do-tts" target="id-v39-do-tps"
+          archimateRelationship="id-v39-flow-tts-tps"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v39-conn-tts-kafka"
+          source="id-v39-do-tts" target="id-v39-do-kafka"
+          archimateRelationship="id-v39-flow-tts-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-tdb" archimateElement="id-v39-tdb"
+        targetConnections="id-v39-conn-tts-tdb id-id-v39-conn-inf-p">
+        <bounds x="460" y="200" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-dj" archimateElement="id-v39-django"
+        targetConnections="id-v39-conn-tts-dj">
+        <bounds x="700" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v39-conn-dj-saas"
+          source="id-v39-do-dj" target="id-v39-do-saas"
+          archimateRelationship="id-v39-acc-dj-saas"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-saas" archimateElement="id-v39-saas"
+        targetConnections="id-v39-conn-dj-saas">
+        <bounds x="700" y="200" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-tps" archimateElement="id-v39-tps"
+        targetConnections="id-v39-conn-tts-tps">
+        <bounds x="460" y="280" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-kafka" archimateElement="id-v39-kafka"
+        targetConnections="id-v39-conn-tts-kafka">
+        <bounds x="240" y="200" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v39-conn-kafka-te"
+          source="id-v39-do-kafka" target="id-v39-do-te"
+          archimateRelationship="id-v39-flow-kafka-te"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-te" archimateElement="id-v39-te"
+        targetConnections="id-v39-conn-kafka-te">
+        <bounds x="240" y="280" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-c" archimateElement="id-v39-constraint">
+        <bounds x="40" y="200" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-id-v39-conn-inf-c"
+          source="id-v39-do-c" target="id-v39-do-tts"
+          archimateRelationship="id-v39-inf-c"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v39-do-p" archimateElement="id-v39-principle">
+        <bounds x="40" y="280" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-id-v39-conn-inf-p"
+          source="id-v39-do-p" target="id-v39-do-tdb"
+          archimateRelationship="id-v39-inf-p"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

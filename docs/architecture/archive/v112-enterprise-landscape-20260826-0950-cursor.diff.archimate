@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v112 变迁 (v111→v112)" id="id-v112eldiff01">
+  <folder name="Business" id="id-v112el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v112-biz-user" name="已登录用户"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v112-biz-wx" name="微信服务号 [NEW v112]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v112-biz-follow" name="关注服务号 [NEW v112]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v112-biz-apply" name="填写名称简介申请资格 [MODIFIED v112]"/>
+  </folder>
+  <folder name="Application" id="id-v112el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v112-el-fe" name="taskFE 推荐页 [MODIFIED v112]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v112-el-auth" name="taskAuth [MODIFIED v112]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v112-el-ref" name="taskReferral [MODIFIED v112]"/>
+    <element xsi:type="archimate:DataObject" id="id-v112-el-ident" name="wechat_identity mp [MODIFIED v112]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v112el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v112-el-pl111" name="Plateau v111"/>
+    <element xsi:type="archimate:Plateau" id="id-v112-el-pl112" name="Plateau v112"/>
+    <element xsi:type="archimate:Gap" id="id-v112-el-gap" name="Gap: 申请不要求关注服务号"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v112-el-wp" name="WP-referral-mp-follow-gate"/>
+  </folder>
+  <folder name="Relations" id="id-v112el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v112-el-rel-user-follow" source="id-v112-biz-user" target="id-v112-biz-follow"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v112-el-rel-user-apply" source="id-v112-biz-user" target="id-v112-biz-apply"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v112-el-rel-user-wx" source="id-v112-biz-user" target="id-v112-biz-wx" name="扫码关注"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v112-el-rel-wx-auth" source="id-v112-biz-wx" target="id-v112-el-auth" name="subscribe"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v112-el-rel-user-fe" source="id-v112-biz-user" target="id-v112-el-fe" name="我已关注 / 申请"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v112-el-rel-fe-auth" source="id-v112-el-fe" target="id-v112-el-auth" name="follow-status"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v112-el-rel-fe-ref" source="id-v112-el-fe" target="id-v112-el-ref" name="apply"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v112-el-rel-auth-ident" source="id-v112-el-auth" target="id-v112-el-ident" name="bind openid"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v112-el-rel-pl111-gap" source="id-v112-el-pl111" target="id-v112-el-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v112-el-rel-wp-gap" source="id-v112-el-wp" target="id-v112-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v112-el-rel-wp-pl112" source="id-v112-el-wp" target="id-v112-el-pl112"/>
+  </folder>
+  <folder name="Views" id="id-v112el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v112-el-view-mig" name="架构变迁 v111→v112 — referral-mp-follow-gate">
+      <child xsi:type="archimate:DiagramObject" id="id-v112-el-do-pl111" archimateElement="id-v112-el-pl111">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v112-el-c-pl111-gap" source="id-v112-el-do-pl111" target="id-v112-el-do-gap" archimateRelationship="id-v112-el-rel-pl111-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v112-el-do-gap" targetConnections="id-v112-el-c-pl111-gap id-v112-el-c-wp-gap" archimateElement="id-v112-el-gap">
+        <bounds x="240" y="48" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v112-el-do-wp" archimateElement="id-v112-el-wp">
+        <bounds x="240" y="160" width="360" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v112-el-c-wp-gap" source="id-v112-el-do-wp" target="id-v112-el-do-gap" archimateRelationship="id-v112-el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v112-el-c-wp-pl112" source="id-v112-el-do-wp" target="id-v112-el-do-pl112" archimateRelationship="id-v112-el-rel-wp-pl112"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v112-el-do-pl112" targetConnections="id-v112-el-c-wp-pl112" archimateElement="id-v112-el-pl112">
+        <bounds x="640" y="160" width="200" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v112-el-view-topo" name="v112 Target — 关注后申请">
+      <child xsi:type="archimate:DiagramObject" id="id-v112-el-do-user" archimateElement="id-v112-biz-user">
+        <bounds x="48" y="48" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v112-el-c-user-follow" source="id-v112-el-do-user" target="id-v112-el-do-follow" archimateRelationship="id-v112-el-rel-user-follow"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v112-el-c-user-apply" source="id-v112-el-do-user" target="id-v112-el-do-apply" archimateRelationship="id-v112-el-rel-user-apply"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v112-el-c-user-wx" source="id-v112-el-do-user" target="id-v112-el-do-wx" archimateRelationship="id-v112-el-rel-user-wx"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v112-el-c-user-fe" source="id-v112-el-do-user" target="id-v112-el-do-fe" archimateRelationship="id-v112-el-rel-user-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v112-el-do-follow" targetConnections="id-v112-el-c-user-follow" archimateElement="id-v112-biz-follow">
+        <bounds x="240" y="16" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v112-el-do-apply" targetConnections="id-v112-el-c-user-apply" archimateElement="id-v112-biz-apply">
+        <bounds x="240" y="80" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v112-el-do-wx" targetConnections="id-v112-el-c-user-wx" archimateElement="id-v112-biz-wx">
+        <bounds x="240" y="160" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v112-el-c-wx-auth" source="id-v112-el-do-wx" target="id-v112-el-do-auth" archimateRelationship="id-v112-el-rel-wx-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v112-el-do-fe" targetConnections="id-v112-el-c-user-fe" archimateElement="id-v112-el-fe">
+        <bounds x="480" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v112-el-c-fe-auth" source="id-v112-el-do-fe" target="id-v112-el-do-auth" archimateRelationship="id-v112-el-rel-fe-auth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v112-el-c-fe-ref" source="id-v112-el-do-fe" target="id-v112-el-do-ref" archimateRelationship="id-v112-el-rel-fe-ref"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v112-el-do-auth" targetConnections="id-v112-el-c-wx-auth id-v112-el-c-fe-auth" archimateElement="id-v112-el-auth">
+        <bounds x="700" y="120" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v112-el-c-auth-ident" source="id-v112-el-do-auth" target="id-v112-el-do-ident" archimateRelationship="id-v112-el-rel-auth-ident"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v112-el-do-ref" targetConnections="id-v112-el-c-fe-ref" archimateElement="id-v112-el-ref">
+        <bounds x="700" y="32" width="140" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v112-el-do-ident" targetConnections="id-v112-el-c-auth-ident" archimateElement="id-v112-el-ident">
+        <bounds x="900" y="120" width="200" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

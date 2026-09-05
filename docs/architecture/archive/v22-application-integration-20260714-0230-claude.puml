@@ -1,0 +1,63 @@
+' @title: Application Integration — 租户充值页接入微信支付 Native 扫码
+' @view: application-integration
+' @status: target
+' @version: 22
+' @author: claude
+' @based_on: v21 (v21-application-integration-20260714-0130-claude.puml)
+' @updated: 2026-07-14 02:30
+' @description: 充值页新增微信支付通道；Go taskBill 主责预下单/回调验签入账；Django 薄编排 SMS 门禁；Vue 扫码弹层
+' @iteration: wechat-pay-recharge
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v22 🎯 — WeChat Pay Recharge (2026-07-14 02:30)
+
+legend right
+  |= 图例 |= 说明 |
+  | 🟢 [NEW] | WeChatPay 外部系统 |
+  | 🟡 [MODIFIED] | taskBill — Native prepay / notify / mock-complete + wechatpay-go 公钥验签 |
+  | 🟡 [MODIFIED] | Django billing_bridge — SMS 门禁薄编排 recharge_wechat_* + notify 代理 |
+  | 🟡 [MODIFIED] | Vue BillingRecharge — 支付方式选择 + 扫码弹层 |
+endlegend
+
+Application_Component(vue, "🟡 Vue BillingRecharge\n[MODIFIED v22]")
+Application_Component(django, "🟡 Django billing_bridge\n[MODIFIED v22]")
+Application_Component(bill, "🟡 taskBill\n:8004 [MODIFIED v22]")
+Application_Component(wechat, "🟢 WeChatPay\n[NEW v22]")
+
+Application_DataObject(pending, "wechat_recharge_pending\n{out_trade_no}")
+Application_DataObject(txn, "billing_transaction\nuser_recharge_wechat")
+
+note top of bill
+  Native prepay → code_url
+  POST /api/billing/wechat/notify/
+  wechatpay-go 公钥验签 + 解密
+  mock-complete (mode=mock)
+  credit-recharge 幂等 wechat:{out_trade_no}
+  @author: claude @2026-07-14
+end note
+
+note bottom of django
+  recharge_wechat_create/status
+  SMS 门禁 + 租户成员校验
+  delegate → taskBill
+  notify 代理（raw body 转发 Go）
+end note
+
+note right of vue
+  PayPal | 微信支付切换
+  QR 弹层 code_url
+  轮询 recharge_wechat_status 2s
+end note
+
+Rel_Flow(vue, django, "recharge_wechat_create/status\nSMS verified")
+Rel_Flow(django, bill, "delegate prepay/status")
+Rel_Flow(bill, wechat, "Native prepay API")
+Rel_Flow(wechat, bill, "POST notify\n验签解密入账")
+Rel_Flow(wechat, django, "notify 代理路径")
+Rel_Flow(django, bill, "notify raw forward")
+Rel_Access_RW(bill, pending, "RW pending order")
+Rel_Access_RW(bill, txn, "RW credit-recharge")
+
+@enduml

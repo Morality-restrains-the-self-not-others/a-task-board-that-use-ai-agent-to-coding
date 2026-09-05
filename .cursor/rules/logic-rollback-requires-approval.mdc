@@ -1,0 +1,23 @@
+---
+description: 逻辑回退须人类审批；默认删除旧逻辑，禁止无用路径残留
+alwaysApply: true
+---
+
+# 逻辑回退须经审批（元规则）
+
+细则：`.ai/01_project_constraints/58_logic_rollback_requires_approval.md`；约束索引第 53 条；ADR-0021。
+
+## 强制要求
+
+- 替换/重构后**默认删除**旧函数、旧分支、注释掉的旧实现、无引用兼容名。删除**不需要**询问。
+- **保留或恢复**旧逻辑（双路径、兼容名、从 git 拷回已删实现、为让测试变绿而撤回目标语义）必须在本会话获得人类批准。`/goal` 零交互**不覆盖**本条。
+- 未批准 → 按删除执行。禁止把沉默或自动推进当成批准。
+- 批准后须同时：代码旁 `Logic-Rollback-OK: <原因>; remove-by: YYYY-MM-DD`，且 commit message 含 `Logic-Rollback-OK: <原因>`。
+- 禁止注释掉旧代码充删除；禁止无期限双路径。
+
+## 验收样例
+
+```bash
+python3 db/scripts/ci/check_logic_rollback_approval.py
+python3 db/scripts/ci/test_check_logic_rollback_approval.py
+```

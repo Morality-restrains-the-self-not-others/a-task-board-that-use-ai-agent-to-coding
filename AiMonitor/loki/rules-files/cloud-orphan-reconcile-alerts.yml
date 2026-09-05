@@ -1,0 +1,77 @@
+groups:
+  - name: cloud-orphan-reconcile
+    interval: 60s
+    rules:
+      # OPT-20260821-023: orphan reconcile 在 CSC 尚未回填 instance_id（keep_instance_id 为空）
+      # 时仍执行了 DeleteInstance。代码已跳过年龄未知/分钟级 CreationTime 与初始化状态，
+      # 但一旦守卫回归，刚 RunInstances 的节点会被当孤儿杀掉，这里必须主动告警。
+      - alert: OrphanReconcileDeleteWithoutKeepInstance
+        expr: |
+          sum(
+            count_over_time(
+              {job="task-cloud-service"}
+              | json
+              | msg =~ "event=orphan_reconcile_delete task_id=\\S+ orphan_instance_id=\\S+ keep_instance_id=$"
+              [5m]
+            )
+          ) > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: task-cloud-service
+          category: cloud-server-lifecycle
+        annotations:
+          summary: "orphan reconcile deleted instance with empty keep_instance_id ({{ $value }} in 5m)"
+          description: >
+            taskCloudService 在 keep_instance_id 为空（CSC 尚未落 instance_id 或刚被
+            stop 清空）时仍执行了 DeleteInstance。这可能把刚 RunInstances 的节点当孤儿
+            杀掉。立即核对 ECS 控制台最近删除实例与 orphan_reconcile_delete 日志行，
+            并检查 orphan_instance_reconcile.go 的 CreationTime/status 守卫是否被回归。
+
+      # orphan reconcile 删除失败但错误是 Initializing / LastTokenProcessing：说明节点
+      # 仍在启动/处理中被瞄准删除，只是 403 拦住了。反复出现说明守卫节奏落后于启动。
+      - alert: OrphanReconcileDeleteFailedOnInitializing
+        expr: |
+          sum(
+            count_over_time(
+              {job="task-cloud-service"}
+              | json
+              | msg =~ "event=orphan_reconcile_delete_failed.*(Initializing|LastTokenProcessing)"
+              [10m]
+            )
+          ) > 0
+        for: 5m
+        labels:
+          severity: warning
+          component: task-cloud-service
+          category: cloud-server-lifecycle
+        annotations:
+          summary: "orphan reconcile delete failed on initializing/processing instance ({{ $value }}/10m)"
+          description: >
+            DeleteInstance 返回 IncorrectInstanceStatus.Initializing / LastTokenProcessing，
+            说明 orphan reconcile 正在瞄准仍在启动/处理中的节点。若持续出现，需收紧
+            orphan reconcile 的跳过守卫（初始化状态 + CreationTime 宽限期）。
+
+      # keep 为空且无法解析 CreationTime 而跳过的实例数突发：Describe 返回新形状、
+      # 或刚 RunInstances 大量新节点被扫描时会出现。突发量异常应引起注意。
+      - alert: OrphanReconcileSkipUnknownAgeBurst
+        expr: |
+          sum(
+            count_over_time(
+              {job="task-cloud-service"}
+              | json
+              | msg =~ "event=orphan_reconcile_skip_unknown_age"
+              [15m]
+            )
+          ) > 30
+        for: 5m
+        labels:
+          severity: warning
+          component: task-cloud-service
+          category: cloud-server-lifecycle
+        annotations:
+          summary: "orphan reconcile skip-unknown-age burst ({{ $value }}/15m)"
+          description: >
+            近 15 分钟 {{ $value }} 个实例因 CreationTime 无法解析且 keep_instance_id 为空
+            被跳过。若描述调用返回新字段形状或新节点批量启动，需核对
+            parseECSCreationTime 支持格式与 orphan reconcile 扫描频率。

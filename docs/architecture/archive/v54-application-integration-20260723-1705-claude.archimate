@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v54-comment-multi-csc-20260723-1705">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v54 (comment-multi-csc-parallel)</name>
+  <documentation>OPT-019: per-comment CSC UNIQUE(workspace,task,comment); idx(workspace,task)</documentation>
+
+  <folder name="Application" id="id-v54-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 comment_container_bindings schedule [MODIFIED v54]" id="id-v54-ccb"/>
+    <element xsi:type="archimate:ApplicationFunction" name="🟢 ensureCommentCloudServerConfig [NEW v54]" id="id-v54-ensure"/>
+    <element xsi:type="archimate:DataObject" name="🟡 cloud_server_configs [MODIFIED v54]" id="id-v54-csc"/>
+    <element xsi:type="archimate:ApplicationComponent" name="go_run_container (task_taskId_commentId)" id="id-v54-mock"/>
+    <element xsi:type="archimate:ApplicationComponent" name="TaskDetailCommentsSection" id="id-v54-fe"/>
+  </folder>
+  <folder name="Relations" id="id-v54-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v54-flow-ccb-ens" source="id-v54-ccb" target="id-v54-ensure" name="advance"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v54-acc-ens-csc" source="id-v54-ensure" target="id-v54-csc" name="W create comment CSC"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v54-flow-ccb-mock" source="id-v54-ccb" target="id-v54-mock" name="container name"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v54-serv-fe-ccb" source="id-v54-fe" target="id-v54-ccb" name="ensure/advance UI"/>
+  </folder>
+  <folder name="Implementation" id="id-v54-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v53" id="id-v54-plat-v53"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v54 — comment-multi-csc-parallel" id="id-v54-plat-v54"/>
+    <element xsi:type="archimate:Gap" name="Gap: independent 无法并行挂不同机器" id="id-v54-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-OPT-20260723-019" id="id-v54-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v54-rel-plat53-gap" source="id-v54-plat-v53" target="id-v54-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v54-rel-wp-gap" source="id-v54-wp" target="id-v54-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v54-rel-wp-plat54" source="id-v54-wp" target="id-v54-plat-v54"/>
+  </folder>
+  <folder name="Views" id="id-v54-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v53→v54 — comment-multi-csc" id="id-v54-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v54-do-plat53" archimateElement="id-v54-plat-v53">
+        <bounds x="48" y="100" width="240" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v54-conn-plat53-gap"
+          source="id-v54-do-plat53" target="id-v54-do-gap"
+          archimateRelationship="id-v54-rel-plat53-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v54-do-gap" archimateElement="id-v54-gap"
+        targetConnections="id-v54-conn-plat53-gap id-v54-conn-wp-gap">
+        <bounds x="340" y="100" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v54-do-wp" archimateElement="id-v54-wp">
+        <bounds x="760" y="60" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v54-conn-wp-gap"
+          source="id-v54-do-wp" target="id-v54-do-gap"
+          archimateRelationship="id-v54-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v54-conn-wp-plat54"
+          source="id-v54-do-wp" target="id-v54-do-plat54"
+          archimateRelationship="id-v54-rel-wp-plat54"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v54-do-plat54" archimateElement="id-v54-plat-v54"
+        targetConnections="id-v54-conn-wp-plat54">
+        <bounds x="760" y="160" width="320" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v54 Target — multi CSC 数据流" id="id-v54-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v54-do-fe" archimateElement="id-v54-fe">
+        <bounds x="40" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v54-conn-fe-ccb"
+          source="id-v54-do-fe" target="id-v54-do-ccb"
+          archimateRelationship="id-v54-serv-fe-ccb"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v54-do-ccb" archimateElement="id-v54-ccb"
+        targetConnections="id-v54-conn-fe-ccb">
+        <bounds x="300" y="80" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v54-conn-ccb-ens"
+          source="id-v54-do-ccb" target="id-v54-do-ens"
+          archimateRelationship="id-v54-flow-ccb-ens"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v54-conn-ccb-mock"
+          source="id-v54-do-ccb" target="id-v54-do-mock"
+          archimateRelationship="id-v54-flow-ccb-mock"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v54-do-ens" archimateElement="id-v54-ensure"
+        targetConnections="id-v54-conn-ccb-ens">
+        <bounds x="600" y="80" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v54-conn-ens-csc"
+          source="id-v54-do-ens" target="id-v54-do-csc"
+          archimateRelationship="id-v54-acc-ens-csc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v54-do-csc" archimateElement="id-v54-csc"
+        targetConnections="id-v54-conn-ens-csc">
+        <bounds x="900" y="80" width="260" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v54-do-mock" archimateElement="id-v54-mock"
+        targetConnections="id-v54-conn-ccb-mock">
+        <bounds x="300" y="200" width="280" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

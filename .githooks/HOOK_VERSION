@@ -1,0 +1,6 @@
+# Git Hooks 版本清单 — 由统一分发器/人工维护（git-hooks-version-control v13）
+# 校验入口：runAll/scripts/install-hooks-all.sh --check / commit_with_submodules.py --check-hooks
+pre-commit=1.4.1
+session-hooks=1.0.0
+commit-msg=1.0.0
+pre-push=1.0.0

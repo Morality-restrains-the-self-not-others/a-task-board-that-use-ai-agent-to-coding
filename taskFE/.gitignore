@@ -1,0 +1,39 @@
+node_modules/
+dist/
+app/dist/
+app/node_modules/
+app/.vite/
+*.log
+.env
+.env.local
+test-results/
+playwright-report/
+test_results/
+.vite/
+
+app/public/releases/
+app/public/.next/
+app/public/html
+app/public/html.tmp
+# 一次性调试残留（复现脚本/截图，回归用例在 tests/*.playwright.test.js）
+tests/repro-*.cjs
+tests/verify-fix-local.cjs
+work-panel-debug.png
+# 临时优化探针（保留在 tests/manual/，避免再次污染 git status）
+_opt_*.mjs
+# Python 缓存
+tests/**/__pycache__/
+*.pyc
+# 本地 Playwright HTML 报告（非 CI 产物）
+playwright-report-local/
+# 密钥类资产防护（OPT-20260824-060 全量子仓巡检）
+*.pem
+*.key
+*.p12
+*.jks
+.env*
+# Secret env files (meta gitignore parity — OPT-20260827-017)
+.env.*
+!.env.example
+!.env.sample
+!.env.template

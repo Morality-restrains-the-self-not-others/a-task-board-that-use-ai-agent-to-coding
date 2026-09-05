@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="trae-service" content="runAll" />
+<title>runAll Status</title>
+<style>
+/*EMBED_CSS*/
+</style>
+</head>
+<body>
+<div id="requestErrorBanner" class="request-error-banner" role="alert" aria-live="assertive"></div>
+<div class="page-header">
+  <h1>runAll Status</h1>
+  <button id="start-all-btn" class="action-btn start-all-btn" type="button">全部启动</button>
+  <button id="stop-all-btn" class="action-btn stop-all-btn" type="button">全部关闭</button>
+  <button id="restart-all-btn" class="action-btn restart-all-btn" type="button">全部重启</button>
+  <button id="build-all-btn" class="action-btn rebuild-all-btn" type="button">全部重新编译</button>
+  <button id="precise-restart-btn" class="action-btn precise-restart-btn" type="button" title="精准编译重启：编译后金丝雀平滑重启登记服务（新进程先就绪再排空旧进程），完成后清空登记">精准编译重启</button>
+  <span id="precise-restart-reg-label" class="precise-restart-reg-label" aria-live="polite"></span>
+  <button id="trae-agent-push-btn" class="action-btn trae-agent-push-btn" type="button" title="推送 trae-agent 镜像：在 trae-agent/onlineServiceJS 执行 DOCKER_PUSH=1 ./buildDocker.sh，完成后清空 pending 登记">推送 trae-agent 镜像</button>
+  <span id="trae-agent-push-label" class="precise-restart-reg-label" aria-live="polite"></span>
+  <button id="collapse-all-btn" class="action-btn collapse-all-btn" type="button">折叠全部</button>
+  <button id="proxy-toggle-btn" class="action-btn proxy-toggle-btn proxy-off" type="button" title="切换代理开关（默认关闭，服务启动时去除 HTTP_PROXY 等环境变量）">代理: 关闭</button>
+  <button id="shutdown-self-btn" class="action-btn shutdown-self-btn" type="button">关闭自身</button>
+</div>
+<div id="queue-status-bar" class="queue-status-bar" style="display:none" aria-live="polite" aria-label="执行队列"></div>
+<div id="start-all-progress-panel" class="start-all-progress" aria-live="polite">
+	<div class="progress-header">
+		<span class="progress-title">全部启动进度</span>
+		<div class="progress-header-actions">
+			<button id="prog-copy-logs-btn" class="progress-copy-btn progress-copy-logs-btn" type="button" style="display:none" title="复制进度与错误日志到剪贴板" onclick="copyProgressLogsToClipboard()">复制日志</button>
+			<button id="prog-clear-logs-btn" class="progress-copy-btn progress-clear-logs-btn" type="button" style="display:none" title="清空并关闭进度日志" onclick="dismissProgressPanel()">清空</button>
+			<button id="prog-cancel-btn" class="progress-cancel-btn" type="button" style="display:none" onclick="cancelProgressOperation()">中断</button>
+		</div>
+	</div>
+	<div class="progress-stats">
+		<span class="progress-stat started"><span id="prog-started-label">已启动</span>: <span class="val" id="prog-started">0</span></span>
+		<span class="progress-stat skipped" id="prog-skipped-stat" style="display:none">已跳过: <span class="val" id="prog-skipped">0</span></span>
+		<span class="progress-stat remaining">剩余: <span class="val" id="prog-remaining">0</span></span>
+		<span class="progress-stat failed" id="prog-failed-stat" style="display:none">失败: <span class="val" id="prog-failed">0</span></span>
+	</div>
+	<div class="progress-bar-track">
+		<div class="progress-bar-fill" id="prog-bar"></div>
+	</div>
+	<div class="progress-current" id="prog-current-line" style="display:none">
+		<span class="spinner"></span>
+		<span id="prog-current-text"></span>
+	</div>
+	<div class="progress-error" id="prog-error"></div>
+	<div class="progress-errors-list" id="prog-errors-list" style="display:none">
+		<ul id="prog-errors-ul"></ul>
+	</div>
+</div>
+<div id="workspace" class="workspace">
+  <section class="services-pane">
+    <div id="observability-bar" class="observability-bar" aria-label="Observability links">
+      <span class="obs-label">集中日志:</span>
+      <span>加载中…</span>
+    </div>
+    <div id="log-collection-bar" class="log-collection-bar" aria-label="Log collection status">
+      <span class="lc-label">📊 日志收集:</span>
+      <span>加载中…</span>
+    </div>
+    <div id="lc-detail-panel" class="lc-detail-panel" aria-hidden="true">
+      <table class="lc-detail-table">
+        <thead><tr><th>服务</th><th>状态</th><th>日志行数</th><th>最近日志</th><th>活动</th></tr></thead>
+        <tbody id="lc-detail-tbody"></tbody>
+      </table>
+    </div>
+    <div id="trace-shipping-bar" class="trace-shipping-bar" aria-label="Trace log shipping verification">
+      <span class="ts-label">🔍 Trace 投递验证:</span>
+      <span>尚未验证</span>
+    </div>
+    <div id="internal-apis-smoke-bar" class="trace-shipping-bar" aria-label="Internal API live smoke">
+      <span class="ts-label">🧪 Internal API smoke:</span>
+      <span>尚未验证</span>
+    </div>
+    <div id="ts-detail-panel" class="ts-detail-panel" aria-hidden="true">
+      <table class="ts-detail-table">
+        <thead><tr><th>服务</th><th>运行状态</th><th>本地采集</th><th>Loki 可见</th><th>条数</th><th>Grafana</th><th>问题</th></tr></thead>
+        <tbody id="ts-detail-tbody"></tbody>
+      </table>
+    </div>
+    <div id="dev-tools-bar" class="dev-tools-bar" aria-label="Development tools">
+      <span class="dev-label">开发工具:</span>
+      <button id="dev-generate-conf" class="logs-panel-btn dev-conf-generate-btn" type="button">生成配置副本</button>
+      <button id="dev-clear-databases" class="logs-panel-btn dev-clear-db-btn" type="button">清空全部数据库（开发）</button>
+      <button id="dev-init-databases" class="logs-panel-btn dev-init-db-btn" type="button">初始化全部数据库（开发）</button>
+      <span id="dev-init-db-pending-label" class="dev-init-db-pending-label" aria-live="polite"></span>
+      <button id="dev-view-logs" class="logs-panel-btn dev-conf-generate-btn" type="button">日志查看</button>
+      <button id="dev-catalog-link" class="logs-panel-btn dev-catalog-btn" type="button" title="服务网址目录：Grafana uid service-url-api-catalog（文档 docs/architecture/service-url-api-catalog.md）">服务网址目录</button>
+    </div>
+    <div class="subtitle">auto-refresh every 2s</div>
+    <div id="services"></div>
+    <div class="uptime" id="uptime"></div>
+  </section>
+  <aside id="logs-panel" class="logs-panel" aria-hidden="true" aria-labelledby="logs-panel-title">
+    <div id="logs-resize-handle" class="logs-resize-handle" aria-hidden="true"></div>
+    <div class="logs-panel-header">
+      <div>
+        <div id="logs-panel-title" class="logs-panel-title">Service Logs</div>
+        <div id="logs-panel-meta" class="logs-panel-meta">last 200 lines, auto-refresh every 2s</div>
+      </div>
+      <div class="logs-panel-actions">
+        <select id="dev-log-select" class="dev-log-select" aria-label="选择开发工具" style="display:none"></select>
+        <button id="logs-panel-loki" class="logs-panel-btn" type="button">Loki</button>
+        <button id="logs-panel-grafana" class="logs-panel-btn" type="button">Grafana</button>
+        <button id="logs-panel-clear-dev" class="logs-panel-btn clear-logs-btn" type="button" style="display:none">清空日志</button>
+        <button id="logs-panel-copy" class="logs-panel-btn" type="button">Copy</button>
+        <button id="logs-panel-refresh" class="logs-panel-btn" type="button">Refresh</button>
+        <button id="logs-panel-close" class="logs-panel-btn" type="button">Close</button>
+      </div>
+    </div>
+    <pre id="logs-content" class="logs-content logs-placeholder">Select a service to view logs.</pre>
+  </aside>
+</div>
+<script>
+/*EMBED_JS*/
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v97 全量 (post-change)" id="id-v97aifull01">
+  <folder name="Application" id="id-v97aif-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v97f-app-proj" name="taskProjectService"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v97f-app-cred" name="taskCredentialService"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v97f-app-cloud" name="taskCloudService"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v97f-app-goauth" name="taskGitOauth [MODIFIED v97]"/>
+    <element xsi:type="archimate:ApplicationInterface" id="id-v97f-if-site" name="gitsite access-for-user [NEW v97]"/>
+    <element xsi:type="archimate:ApplicationInterface" id="id-v97f-if-legacy" name="github|gitlab access-for-user [DEPRECATED default v97]"/>
+    <element xsi:type="archimate:DataObject" id="id-v97f-do-cred" name="git_oauth_appusercredential"/>
+  </folder>
+  <folder name="Technology" id="id-v97aif-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v97f-tech-mysqlg" name="MySQL git_oauth utf8mb4"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v97aif-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v97f-pl-v96" name="Plateau v96"/>
+    <element xsi:type="archimate:Plateau" id="id-v97f-pl-v97" name="Plateau v97"/>
+    <element xsi:type="archimate:Gap" id="id-v97f-gap" name="Gap: 换票路径用产品族而非 Git site"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v97f-wp" name="WP-gitsite-access-for-user"/>
+  </folder>
+  <folder name="Relations" id="id-v97aif-rel" type="relations">
+    <element xsi:type="archimate:ServingRelationship" id="id-v97f-rel-ifsite-go" source="id-v97f-if-site" target="id-v97f-app-goauth"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v97f-rel-ifleg-go" source="id-v97f-if-legacy" target="id-v97f-app-goauth"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v97f-rel-proj-if" source="id-v97f-app-proj" target="id-v97f-if-site" name="clone/branch 换票"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v97f-rel-cred-if" source="id-v97f-app-cred" target="id-v97f-if-site" name="容器 clone 换票"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v97f-rel-cloud-if" source="id-v97f-app-cloud" target="id-v97f-if-site" name="layer push 换票"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v97f-rel-go-row" source="id-v97f-app-goauth" target="id-v97f-do-cred" name="FindActive by provider_key"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v97f-rel-mysql-row" source="id-v97f-tech-mysqlg" target="id-v97f-do-cred" name="InnoDB"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v97f-rel-pl96-gap" source="id-v97f-pl-v96" target="id-v97f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v97f-rel-wp-gap" source="id-v97f-wp" target="id-v97f-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v97f-rel-wp-pl97" source="id-v97f-wp" target="id-v97f-pl-v97"/>
+  </folder>
+  <folder name="Views" id="id-v97aif-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v97f-view-mig" name="架构变迁 v96→v97 — gitsite-access-for-user-path">
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-do-pl96" archimateElement="id-v97f-pl-v96">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-c-pl96-gap" source="id-v97f-do-pl96" target="id-v97f-do-gap" archimateRelationship="id-v97f-rel-pl96-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-do-gap" targetConnections="id-v97f-c-pl96-gap id-v97f-c-wp-gap" archimateElement="id-v97f-gap">
+        <bounds x="240" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-do-wp" archimateElement="id-v97f-wp">
+        <bounds x="240" y="160" width="300" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-c-wp-gap" source="id-v97f-do-wp" target="id-v97f-do-gap" archimateRelationship="id-v97f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-c-wp-pl97" source="id-v97f-do-wp" target="id-v97f-do-pl97" archimateRelationship="id-v97f-rel-wp-pl97"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-do-pl97" targetConnections="id-v97f-c-wp-pl97" archimateElement="id-v97f-pl-v97">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v97f-view-flow" name="v97 全量拓扑 — gitsite access-for-user">
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-d-proj" archimateElement="id-v97f-app-proj">
+        <bounds x="48" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-c-proj-if" source="id-v97f-d-proj" target="id-v97f-d-ifsite" archimateRelationship="id-v97f-rel-proj-if"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-d-cred" archimateElement="id-v97f-app-cred">
+        <bounds x="48" y="120" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-c-cred-if" source="id-v97f-d-cred" target="id-v97f-d-ifsite" archimateRelationship="id-v97f-rel-cred-if"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-d-cloud" archimateElement="id-v97f-app-cloud">
+        <bounds x="48" y="192" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-c-cloud-if" source="id-v97f-d-cloud" target="id-v97f-d-ifsite" archimateRelationship="id-v97f-rel-cloud-if"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-d-ifsite" targetConnections="id-v97f-c-proj-if id-v97f-c-cred-if id-v97f-c-cloud-if" archimateElement="id-v97f-if-site">
+        <bounds x="280" y="120" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-c-ifsite-go" source="id-v97f-d-ifsite" target="id-v97f-d-go" archimateRelationship="id-v97f-rel-ifsite-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-d-ifleg" archimateElement="id-v97f-if-legacy">
+        <bounds x="280" y="200" width="260" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-c-ifleg-go" source="id-v97f-d-ifleg" target="id-v97f-d-go" archimateRelationship="id-v97f-rel-ifleg-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-d-go" targetConnections="id-v97f-c-ifsite-go id-v97f-c-ifleg-go" archimateElement="id-v97f-app-goauth">
+        <bounds x="560" y="120" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-c-go-row" source="id-v97f-d-go" target="id-v97f-d-row" archimateRelationship="id-v97f-rel-go-row"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-d-row" targetConnections="id-v97f-c-go-row id-v97f-c-mysql-row" archimateElement="id-v97f-do-cred">
+        <bounds x="760" y="120" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-d-mysql" archimateElement="id-v97f-tech-mysqlg">
+        <bounds x="760" y="200" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-c-mysql-row" source="id-v97f-d-mysql" target="id-v97f-d-row" archimateRelationship="id-v97f-rel-mysql-row"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

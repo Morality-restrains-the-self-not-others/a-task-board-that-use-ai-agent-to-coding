@@ -1,0 +1,58 @@
+' @title: 评论启动日志按 workspace_id 哈希分表
+' @view: application-integration
+' @status: archived
+' @version: 88
+' @iteration: ccb-logs-workspace-shard-v88
+' @author: cursor
+' @based_on: v85 (v85-application-integration-20260818-1439-cursor.puml)
+' @updated: 2026-08-20 15:30
+' @description: cloud_comment_container_binding_logs 拆为 16 张物理表，表名由 CRC32(workspace_id)%16 决定
+
+@startuml
+!include <archimate/Archimate>
+
+title v88 Current — CCB 启动日志 workspace 分表 2026-08-20 15:30
+
+Application_Component(fe, "taskFE Vue SPA")
+note right of fe
+  仍读 bindings[].logs
+  启动日志 DOM max-h-32
+end note
+
+Application_Component(gw, "API Gateway APISIX")
+Application_Component(cloud, "taskCloudService")
+note right of cloud
+  ccbLogTable(workspace_id)
+  CRC32 % 16 选片
+  Snowflake id
+  @author: cursor @2026-08-20 15:30
+end note
+
+Application_DataObject(legacy, "cloud_comment_container_binding_logs")
+note right of legacy
+  遗留单表：仅回填源，应用不写入
+end note
+
+Application_DataObject(shards, "cloud_comment_container_binding_logs_00..15")
+note right of shards
+  表名含分片序号
+  键 = workspace_id
+end note
+
+Technology_Node(mysql, "MySQL task_cloud utf8mb4")
+
+Rel_Flow(fe, gw, "GET comment-container-bindings")
+Rel_Flow(gw, cloud, "X-Workspace-Id")
+Rel_Flow(cloud, shards, "INSERT/SELECT 按 workspace 选表")
+Rel_Serving(mysql, shards, "16 预创建物理表")
+Rel_Serving(mysql, legacy, "遗留单表")
+
+Implementation_Plateau(plateauV85, "Plateau v85 archived")
+Implementation_Plateau(plateauV88, "Plateau v88 CCB log shards")
+Implementation_Gap(gapMono, "Gap: 启动日志单表全工作空间混存")
+Implementation_WorkPackage(wpShard, "WP-ccb-logs-workspace-shard")
+Rel_Triggering(plateauV85, gapMono, "identifies")
+Rel_Realization(wpShard, gapMono, "closes")
+Rel_Realization(wpShard, plateauV88, "delivers")
+
+@enduml

@@ -1,0 +1,30 @@
+---
+description: Kafka/领域事件消费者必须幂等消费；禁止业务服务自建无幂等 consume loop；键不得用 company_id/user_id
+alwaysApply: true
+---
+
+# 事件消费者幂等消费（元规则）
+
+适用于整个 monorepo 所有 Kafka / 领域事件消费者。细则见 `.ai/01_project_constraints/54_event_consumer_idempotency.md`；约束索引第 49 条；ADR-0015。
+
+## 强制要求
+
+1. 消费只允许 `taskEvents` intent worker，经 `eventbin.RunIntent` → `IdempotentDispatchService`
+2. **禁止**业务 HTTP 服务 `kafka.NewReader` 自建消费循环
+3. 幂等键与业务重复边界同粒度；**禁止**默认用 `company_id` / `tenant_id` / `user_id`
+4. 重复投递：Ack + 空操作；`warn` 日志 `idempotency skip`（键只打指纹）
+5. 失败路径不得 `Mark`；资金/云资源路径还须 owner 侧 DB 唯一约束（NFR ≥ L3）
+6. 新增/改消费者必须有重放测例 + 不同业务 ID 不塌缩测例
+
+## 触发
+
+- 新增/修改 `taskEvents/cmd/**`、`consumer/`、`domain/dispatch_service.go`、handler
+- 业务服务出现 Kafka Reader / FetchMessage
+- 评审事件消费、重复投递、SSE 被吞、停机/扣费执行两次
+
+## 验收
+
+```bash
+python3 db/scripts/ci/test_check_event_consumer_idempotency.py
+python3 db/scripts/ci/check_event_consumer_idempotency.py
+```

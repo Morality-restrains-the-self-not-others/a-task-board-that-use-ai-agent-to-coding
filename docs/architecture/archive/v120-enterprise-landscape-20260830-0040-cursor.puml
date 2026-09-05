@@ -1,0 +1,53 @@
+' @title: 任务与项目内容历史版本（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 120
+' @iteration: task-project-entity-revisions
+' @author: cursor
+' @based_on: v118 (v118-enterprise-landscape-20260829-1832-cursor.puml)
+' @updated: 2026-08-30 01:00
+' @description: 任务/项目标题与正文变更时记录不可变快照并供查阅
+
+@startuml
+!include <archimate/Archimate>
+
+title v120 Current — 任务与项目内容历史版本 2026-08-30 01:00
+
+Business_Actor(editor, "工作空间成员 / 项目成员")
+Business_Process(editContent, "修改标题或正文")
+Business_Process(viewHist, "查阅历史版本")
+note right of viewHist
+  只读列表与快照
+  @author: cursor @2026-08-30 01:00
+end note
+
+Application_Component(fe, "taskFE")
+note right of fe
+  历史版本面板
+end note
+
+Application_Component(task, "taskTaskService")
+note right of task
+  同事务写 task_revision
+end note
+
+Application_Component(proj, "taskProjectService")
+note right of proj
+  同事务写 project_revision
+end note
+
+Rel_Assignment(editor, editContent)
+Rel_Assignment(editor, viewHist)
+Rel_Flow(editor, fe, "edit / open history")
+Rel_Flow(fe, task, "PATCH task / GET revisions")
+Rel_Flow(fe, proj, "PATCH project / GET revisions")
+
+Implementation_Plateau(p118, "Plateau v118")
+Implementation_Plateau(p120, "Plateau v120")
+Implementation_Gap(g, "Gap: 标题正文只留最新值")
+Implementation_WorkPackage(wp, "WP-entity-revisions")
+Rel_Triggering(p118, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p120, "delivers")
+
+@enduml

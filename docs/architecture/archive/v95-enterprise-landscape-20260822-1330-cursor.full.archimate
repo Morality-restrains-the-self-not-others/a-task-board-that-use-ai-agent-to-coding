@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v95 full (after v95)" id="id-v95elfull01">
+  <folder name="Business" id="id-v95eld-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v95-biz-admin" name="系统超级管理员"/>
+    <element xsi:type="archimate:BusinessService" id="id-v95-biz-review" name="审批推荐资格"/>
+    <element xsi:type="archimate:BusinessService" id="id-v95-biz-revoke" name="取消分账资格 [NEW v95]"/>
+    <element xsi:type="archimate:BusinessService" id="id-v95-biz-audit" name="查阅操作审计 [NEW v95]"/>
+  </folder>
+  <folder name="Application" id="id-v95eld-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v95-el-fe" name="taskFE [MODIFIED v95]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v95-el-ref" name="taskReferral [MODIFIED v95]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v95-el-bill" name="taskBill [MODIFIED v95]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v95eld-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v95-el-pl94" name="Plateau v94"/>
+    <element xsi:type="archimate:Plateau" id="id-v95-el-pl95" name="Plateau v95"/>
+    <element xsi:type="archimate:Gap" id="id-v95-el-gap" name="Gap: 已通过资格无法取消"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v95-el-wp" name="WP-referral-qualification-revoke"/>
+  </folder>
+  <folder name="Relations" id="id-v95eld-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v95-rel-admin-review" source="id-v95-biz-admin" target="id-v95-biz-review"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v95-rel-admin-revoke" source="id-v95-biz-admin" target="id-v95-biz-revoke"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v95-rel-admin-audit" source="id-v95-biz-admin" target="id-v95-biz-audit"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v95-rel-fe-review" source="id-v95-el-fe" target="id-v95-biz-review"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v95-rel-fe-revoke" source="id-v95-el-fe" target="id-v95-biz-revoke"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v95-rel-fe-audit" source="id-v95-el-fe" target="id-v95-biz-audit"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v95-rel-review-revoke" source="id-v95-biz-review" target="id-v95-biz-revoke" name="approved → revoked"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v95-rel-revoke-audit" source="id-v95-biz-revoke" target="id-v95-biz-audit" name="reason row"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v95-rel-revoke-bill" source="id-v95-biz-revoke" target="id-v95-el-bill" name="stop future commission"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v95-rel-el-pl94-gap" source="id-v95-el-pl94" target="id-v95-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v95-rel-el-wp-gap" source="id-v95-el-wp" target="id-v95-el-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v95-rel-el-wp-pl95" source="id-v95-el-wp" target="id-v95-el-pl95"/>
+  </folder>
+  <folder name="Views" id="id-v95eld-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v95-el-view-mig" name="架构变迁 v94→v95 — referral-qualification-revoke">
+      <child xsi:type="archimate:DiagramObject" id="id-v95-eld-pl94" archimateElement="id-v95-el-pl94">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-elc-pl94-gap" source="id-v95-eld-pl94" target="id-v95-eld-gap" archimateRelationship="id-v95-rel-el-pl94-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-eld-gap" targetConnections="id-v95-elc-pl94-gap id-v95-elc-wp-gap" archimateElement="id-v95-el-gap">
+        <bounds x="240" y="48" width="320" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-eld-wp" archimateElement="id-v95-el-wp">
+        <bounds x="240" y="160" width="300" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-elc-wp-gap" source="id-v95-eld-wp" target="id-v95-eld-gap" archimateRelationship="id-v95-rel-el-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-elc-wp-pl95" source="id-v95-eld-wp" target="id-v95-eld-pl95" archimateRelationship="id-v95-rel-el-wp-pl95"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-eld-pl95" targetConnections="id-v95-elc-wp-pl95" archimateElement="id-v95-el-pl95">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v95-el-view-flow" name="v95 Target — 超管取消分账资格">
+      <child xsi:type="archimate:DiagramObject" id="id-v95-eld-admin" archimateElement="id-v95-biz-admin">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-elc-admin-review" source="id-v95-eld-admin" target="id-v95-eld-review" archimateRelationship="id-v95-rel-admin-review"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-elc-admin-revoke" source="id-v95-eld-admin" target="id-v95-eld-revoke" archimateRelationship="id-v95-rel-admin-revoke"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-elc-admin-audit" source="id-v95-eld-admin" target="id-v95-eld-audit" archimateRelationship="id-v95-rel-admin-audit"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-eld-review" targetConnections="id-v95-elc-admin-review id-v95-elc-fe-review" archimateElement="id-v95-biz-review">
+        <bounds x="260" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-elc-review-revoke" source="id-v95-eld-review" target="id-v95-eld-revoke" archimateRelationship="id-v95-rel-review-revoke"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-eld-revoke" targetConnections="id-v95-elc-admin-revoke id-v95-elc-review-revoke id-v95-elc-fe-revoke" archimateElement="id-v95-biz-revoke">
+        <bounds x="460" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-elc-revoke-audit" source="id-v95-eld-revoke" target="id-v95-eld-audit" archimateRelationship="id-v95-rel-revoke-audit"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-elc-revoke-bill" source="id-v95-eld-revoke" target="id-v95-eld-bill" archimateRelationship="id-v95-rel-revoke-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-eld-audit" targetConnections="id-v95-elc-admin-audit id-v95-elc-revoke-audit id-v95-elc-fe-audit" archimateElement="id-v95-biz-audit">
+        <bounds x="660" y="48" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-eld-fe" archimateElement="id-v95-el-fe">
+        <bounds x="48" y="160" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-elc-fe-review" source="id-v95-eld-fe" target="id-v95-eld-review" archimateRelationship="id-v95-rel-fe-review"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-elc-fe-revoke" source="id-v95-eld-fe" target="id-v95-eld-revoke" archimateRelationship="id-v95-rel-fe-revoke"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-elc-fe-audit" source="id-v95-eld-fe" target="id-v95-eld-audit" archimateRelationship="id-v95-rel-fe-audit"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-eld-ref" archimateElement="id-v95-el-ref">
+        <bounds x="260" y="160" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-eld-bill" targetConnections="id-v95-elc-revoke-bill" archimateElement="id-v95-el-bill">
+        <bounds x="460" y="160" width="160" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

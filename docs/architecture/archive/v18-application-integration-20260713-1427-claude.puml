@@ -1,0 +1,67 @@
+' @title: Application Integration — auto_run 首指令与自动交付
+' @view: application-integration
+' @status: target
+' @version: 18
+' @author: claude
+' @based_on: v13-application-integration-20260710-1505-claude
+' @updated: 2026-07-13 14:27
+' @description: 容器 task-detail 暴露 auto_run 与身份；bootstrap 后自动首指令；完成后 commit/push/PR
+' @iteration: auto-run-first-instruction-and-delivery
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v18 — auto_run 首指令与自动交付 (2026-07-13 14:27)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v18 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v18 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v18 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件 |
+endlegend
+
+Application_Component(vue, "Vue Frontend")
+Application_Component(gw, "task-gateway\nAPISIX")
+Application_Component(tts, "taskTaskService")
+Application_Component(cred, "taskCredentialService")
+Application_Component(osjs, "onlineServiceJS")
+Application_Component(gitoauth, "gitOauth")
+
+note top of cred
+  [MODIFIED v18]
+  task-detail: auto_run
+  + repo_git_identities
+  @author: claude @2026-07-13 14:27
+end note
+
+note right of osjs
+  [MODIFIED v18]
+  🟢 AutoRunFirstInstruction
+  🟢 AutoRunDelivery
+  (identities→commit→oauth-refresh-push)
+  @author: claude @2026-07-13 14:27
+end note
+
+Application_Function(firstInstr, "AutoRunFirstInstruction")
+Application_Function(delivery, "AutoRunDelivery")
+
+note bottom of firstInstr
+  [NEW v18] bootstrap 后
+  title+description → createJob
+end note
+
+note bottom of delivery
+  [NEW v18] job completed
+  sync identities → commit
+  → oauth-refresh-push + PR
+end note
+
+Rel_Flow(vue, gw, "创建任务 auto_run")
+Rel_Flow(gw, tts, "persist auto_run / start-vm")
+Rel_Flow(osjs, cred, "task-detail / oauth tokens")
+Rel_Flow(cred, gitoauth, "access-for-user")
+Rel_Serving(firstInstr, osjs, "编排")
+Rel_Serving(delivery, osjs, "编排")
+Rel_Flow(osjs, osjs, "createJob → close hook")
+
+@enduml

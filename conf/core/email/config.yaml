@@ -1,0 +1,20 @@
+# SMTP 配置真源（OPT-20260806-057：从 conf/core/django/config.yaml email/email2 块迁出）
+# 消费方：taskEvents 经 conf/events/domain-events/email.yaml sync 片段读取；
+# taskAuth 经 conf/auth/task-auth/email.yaml 作 Kafka 失败时 SMTP 回退。
+# 已删除 Django EMAIL_BACKEND（backend）——Go net/smtp 直发，该字段从未被反序列化。
+# email2 保留（第二 SMTP，未来可能启用）。
+email:
+  default_from: contact@daydaymoney.com
+  host: smtp.qq.com
+  port: 465
+  use_ssl: true
+  timeout: 10
+  host_user: contact@daydaymoney.com
+  host_password: ""
+email2:
+  host: pop.qq.com
+  port: 465
+  use_ssl: true
+  timeout: 10
+  host_user: riguangyu88@foxmail.com
+  host_password: ""

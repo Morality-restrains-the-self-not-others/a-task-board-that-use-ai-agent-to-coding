@@ -1,0 +1,95 @@
+' @title: Git OAuth 资源使用标记（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 118
+' @iteration: git-oauth-resource-grant-marker
+' @author: cursor
+' @based_on: v117 (v117-application-integration-20260829-1310-cursor.puml)
+' @updated: 2026-08-29 19:20
+' @description: L2 项目/评论标记；callback 打标；换票前查 L2；自动运行只标评论
+
+@startuml
+!include <archimate/Archimate>
+
+title v118 Current — Git OAuth 资源使用标记 2026-08-29 19:20
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  无 L2 提示 OAuth；已授权=标记+可写
+  @author: cursor @2026-08-29 18:32
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(goauth, "taskGitOauth")
+note right of goauth
+  state 带 grant_kind/id；
+  callback 调 owner MarkGrant；grant_ticket
+end note
+
+Application_Component(proj, "taskProjectService")
+note right of proj
+  项目 L2；换票前查标记
+end note
+
+Application_Component(task, "taskTaskService")
+note right of task
+  评论 JSON grant；
+  自动运行评论打标；排队用 created_by_id
+end note
+
+Application_Component(cred, "taskCredentialService")
+note right of cred
+  clone 先查评论 L2 再 access-for-user
+end note
+
+Application_Component(ev, "taskEvents")
+
+Application_DataObject(credRow, "git_oauth_appusercredential")
+note right of credRow
+  L1 不变 UNIQUE provider+user+remote_user_id
+end note
+
+Application_DataObject(pGrant, "project_git_oauth_grant")
+note right of pGrant
+  项目页专用；项目不会自动运行
+end note
+
+Application_DataObject(cGrant, "task_comments.oauth_grant")
+note right of cGrant
+  repo_identities_json 增
+  oauth_gitsite / oauth_remote_user_id
+end note
+
+Business_Event(evP, "PROJECT_GIT_OAUTH_GRANTED")
+note right of evP
+  项目 L2 写入后投递
+end note
+
+Business_Event(evC, "COMMENT_GIT_OAUTH_GRANTED")
+note right of evC
+  评论 L2 写入后投递
+end note
+
+Rel_Flow(taskFE, gw, "OAuth start / 资源页")
+Rel_Flow(gw, goauth, "start-from-gateway / callback")
+Rel_Access(goauth, credRow, "upsert L1")
+Rel_Flow(goauth, proj, "internal MarkGrant")
+Rel_Flow(goauth, task, "internal MarkGrant / ConsumeTicket")
+Rel_Access(proj, pGrant, "upsert")
+Rel_Access(task, cGrant, "upsert")
+Rel_Flow(proj, evP, "after grant")
+Rel_Flow(task, evC, "after grant")
+Rel_Flow(proj, ev, "publish Kafka")
+Rel_Flow(task, ev, "publish Kafka")
+Rel_Flow(cred, task, "check comment L2")
+Rel_Flow(cred, goauth, "access-for-user if granted")
+
+Implementation_Plateau(plateauV117, "Plateau v117 有票即可用")
+Implementation_Plateau(plateauV118, "Plateau v118 资源 L2 标记")
+Implementation_Gap(gapGrant, "Gap: L1 connected 冒充资源已授权")
+Implementation_WorkPackage(wpGrant, "WP-git-oauth-resource-grant")
+Rel_Triggering(plateauV117, gapGrant, "identifies")
+Rel_Realization(wpGrant, gapGrant, "closes")
+Rel_Realization(wpGrant, plateauV118, "delivers")
+
+@enduml

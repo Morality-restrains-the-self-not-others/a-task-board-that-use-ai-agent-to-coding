@@ -1,0 +1,73 @@
+' @title: 指令闲置回收
+' @view: application-integration
+' @status: archived
+' @version: 98
+' @iteration: instruction-idle-recycle
+' @author: cursor
+' @based_on: v96 (v96-application-integration-20260822-1405-cursor.puml)
+' @updated: 2026-08-22 16:47
+' @description: task-detail 带 idle_recycle_minutes；instruction_idle_since；L1/L2/L3 释放
+
+@startuml
+!include <archimate/Archimate>
+
+title v98 — 指令闲置回收 2026-08-22 15:55
+
+Application_Component(osjs, "onlineServiceJS")
+note right of osjs
+  交付成功后倒计时
+  新指令 interrupt；到期 request-machine-release
+end note
+
+Application_Component(cred, "taskCredentialService")
+note right of cred
+  task-detail
+  组装 idle_recycle_minutes
+end note
+
+Application_Component(cloud, "taskCloudService")
+note right of cloud
+  instruction_idle_since
+  recycle 扩展；可选 AssumeRole STS
+end note
+
+Application_Component(ev, "taskEvents")
+note right of ev
+  同一 timer 扫描
+  指令闲置 + 卸载闲置
+end note
+
+Application_DataObject(policy, "cloud_workspace_machine_policies")
+Application_DataObject(csc, "cloud_server_configs")
+note right of csc
+  instruction_idle_since
+end note
+
+Application_DataObject(evtIdle, "CONTAINER_INSTRUCTION_IDLE_*")
+note right of evtIdle
+  Marked / Cleared
+end note
+
+Technology_Node(mysqlC, "MySQL task_cloud utf8mb4")
+Technology_Node(aliyun, "Aliyun ECS")
+
+Rel_Flow(osjs, cred, "POST task-detail")
+Rel_Flow(cred, cloud, "internal GET policy")
+Rel_Flow(osjs, cloud, "heartbeat idle + request-machine-release")
+Rel_Flow(ev, cloud, "recycle-idle-machines")
+Rel_Flow(cloud, csc, "idle_since / instruction_idle_since")
+Rel_Flow(cloud, policy, "idle_recycle_minutes")
+Rel_Flow(cloud, evtIdle, "publish")
+Rel_Flow(cloud, aliyun, "DeleteInstance CPA or STS")
+Rel_Serving(mysqlC, policy, "InnoDB")
+Rel_Serving(mysqlC, csc, "InnoDB")
+
+Implementation_Plateau(plateauV96, "Plateau v96")
+Implementation_Plateau(plateauV97, "Plateau v98 instruction idle recycle")
+Implementation_Gap(gapIdle, "Gap: 指令跑完仍占机器")
+Implementation_WorkPackage(wpIdle, "WP-instruction-idle-recycle")
+Rel_Triggering(plateauV96, gapIdle, "identifies")
+Rel_Realization(wpIdle, gapIdle, "closes")
+Rel_Realization(wpIdle, plateauV97, "delivers")
+
+@enduml

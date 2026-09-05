@@ -1,0 +1,67 @@
+---
+description: 数据库连接池强制规范 — 所有服务连接数据库必须使用连接池，禁止无限制连接
+globs: "**/*.go,**/db.go,**/infrastructure/*.go,**/settings.py,**/settings_*.py"
+alwaysApply: true
+---
+
+# 数据库连接池强制规范（元规则）
+
+适用于整个 monorepo 的所有服务（Go / Python / 未来语言）。本规则是**元规则**，优先级高于各语言局部惯例。
+
+## 强制要求
+
+### Go 服务（使用 `database/sql`）
+
+每个 `*sql.DB` 实例创建后 **必须** 显式配置以下四项：
+
+```go
+db.SetMaxOpenConns(4)      // 最大打开连接数（根据服务负载调整，默认 4）
+db.SetMaxIdleConns(2)      // 最大空闲连接数（默认 maxOpen/2）
+db.SetConnMaxLifetime(5 * time.Minute)   // 连接最大存活时间
+db.SetConnMaxIdleTime(2 * time.Minute)   // 空闲连接最大存活时间
+```
+
+约束：
+- **`SetMaxOpenConns`** 和 **`SetMaxIdleConns`** 必须显式设置，禁止依赖 Go 默认值（`0` = 无限制）
+- **`SetConnMaxLifetime`** 必须设置，推荐 5 分钟；禁止永久存活连接（避免 MySQL `wait_timeout` 断开后池中残留死连接）
+- **`SetConnMaxIdleTime`** 必须设置，推荐 2 分钟；禁止空闲连接永不释放
+- 连接池参数可根据服务负载调整，但 **均不得为 0（无限制）**
+- 多数据库连接（如主库 + 从库 / 业务库 + 认证库）须 **各自独立配置** 连接池参数
+
+### Python/Django 服务
+
+`DATABASES` 配置中 **必须** 显式设置 `CONN_MAX_AGE`：
+
+```python
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        # ...
+        'CONN_MAX_AGE': 300,  # 持久连接，5 分钟回收（默认 0 = 每次请求新建连接）
+    }
+}
+```
+
+- **禁止 `CONN_MAX_AGE = 0`**（默认值），导致每个 HTTP 请求新建/销毁数据库连接
+- 推荐值 ≥ 60 秒；生产环境可设为 `None`（永不回收）+ `CONN_HEALTH_CHECKS = True`（Django 4.1+）
+- SQLite 数据库可豁免 `CONN_MAX_AGE`（本地文件无网络开销），但仍推荐显式设置
+
+### 所有语言通用约束
+
+- **禁止无连接池的直接数据库连接** — 每次请求新建连接的模式不可接受
+- **连接池参数须可配置** — 推荐从 `conf/` 配置文件或环境变量读取，允许运维不重新编译即可调整
+- **连接池须有上限** — 最大连接数不得超过数据库服务器 `max_connections` 的 50%（本仓库 MySQL 默认 `max_connections=500`，单服务不得超过 250）
+- 新增服务或新增加数据库连接时，Code Review 必须检查连接池配置是否完整
+
+## 推荐做法
+
+- Go 服务推荐使用共享的 `dbload` 包统一创建连接并配置池参数，减少重复代码
+- 生产环境建议根据实际 QPS 压测结果调整 `MaxOpenConns`（当前默认 4 适用于中低负载）
+- MySQL 连接池总连接数监控：所有服务 `Sum(MaxOpenConns) < max_connections - 50`（预留管理员连接）
+- Django 生产环境推荐 `CONN_MAX_AGE = None` + `CONN_HEALTH_CHECKS = True`，配合反向代理的健康检查
+
+## 合规检查
+
+- CI 静态检查：Go 文件中 `sql.Open` 调用后必须紧跟 `SetMaxOpenConns` / `SetConnMaxLifetime` 调用（正则匹配）
+- Django 设置文件中 `DATABASES['default']` 必须包含 `CONN_MAX_AGE` 键
+- 新增服务 PR 的 Code Review 检查清单中须包含「数据库连接池配置完整」项

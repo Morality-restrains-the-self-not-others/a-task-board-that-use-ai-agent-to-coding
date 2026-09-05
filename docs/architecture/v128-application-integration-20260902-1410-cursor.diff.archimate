@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v128 变迁 (v127→v128)" id="id-v128aidiff01">
+  <folder name="Application" id="id-v128ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v128-ai-fe" name="taskFE OrderCreate [MODIFIED v128]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v128-ai-bill" name="taskBill [MODIFIED v128]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v128-ai-gl" name="GitLab Admin API"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v128-ai-kfk" name="Kafka [NEW v128 events]"/>
+    <element xsi:type="archimate:DataObject" id="id-v128-ai-reg" name="billing_gitlab_region [MODIFIED v128]"/>
+    <element xsi:type="archimate:DataObject" id="id-v128-ai-quota" name="billing_tenant_gitlab_resource"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v128ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v128-ai-pl127" name="Plateau v127"/>
+    <element xsi:type="archimate:Plateau" id="id-v128-ai-pl128" name="Plateau v128"/>
+    <element xsi:type="archimate:Gap" id="id-v128-ai-gap" name="Gap: 无阿里云可售区"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v128-ai-wp" name="WP-aliyun-gitlab-region-manual-node"/>
+  </folder>
+  <folder name="Relations" id="id-v128ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v128-ai-rel-fe-bill" source="id-v128-ai-fe" target="id-v128-ai-bill" name="GET regions / POST orders"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v128-ai-rel-bill-reg" source="id-v128-ai-bill" target="id-v128-ai-reg" name="list sellable"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v128-ai-rel-bill-quota" source="id-v128-ai-bill" target="id-v128-ai-quota" name="pending_admin on pay"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v128-ai-rel-bill-gl" source="id-v128-ai-bill" target="id-v128-ai-gl" name="ensure iff ready"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v128-ai-rel-bill-kfk" source="id-v128-ai-bill" target="id-v128-ai-kfk" name="Queued / InfraMarkedReady"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v128-ai-rel-pl-gap" source="id-v128-ai-pl127" target="id-v128-ai-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v128-ai-rel-wp-gap" source="id-v128-ai-wp" target="id-v128-ai-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v128-ai-rel-wp-pl" source="id-v128-ai-wp" target="id-v128-ai-pl128"/>
+  </folder>
+  <folder name="Views" id="id-v128ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v128-ai-view-mig" name="架构变迁 v127→v128 — 阿里云 GitLab pending_node">
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-pl127" archimateElement="id-v128-ai-pl127">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-pl-gap" source="id-v128-ai-do-pl127" target="id-v128-ai-do-gap" archimateRelationship="id-v128-ai-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-gap" targetConnections="id-v128-ai-c-pl-gap id-v128-ai-c-wp-gap" archimateElement="id-v128-ai-gap">
+        <bounds x="280" y="48" width="280" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-wp" archimateElement="id-v128-ai-wp">
+        <bounds x="280" y="140" width="360" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-wp-gap" source="id-v128-ai-do-wp" target="id-v128-ai-do-gap" archimateRelationship="id-v128-ai-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-wp-pl" source="id-v128-ai-do-wp" target="id-v128-ai-do-pl128" archimateRelationship="id-v128-ai-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-pl128" targetConnections="id-v128-ai-c-wp-pl" archimateElement="id-v128-ai-pl128">
+        <bounds x="680" y="140" width="200" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v128-ai-view-topo" name="v128 Target — OrderCreate 到 pending_node 门闩">
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-fe" archimateElement="id-v128-ai-fe">
+        <bounds x="48" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-fe-bill" source="id-v128-ai-do-fe" target="id-v128-ai-do-bill" archimateRelationship="id-v128-ai-rel-fe-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-bill" targetConnections="id-v128-ai-c-fe-bill" archimateElement="id-v128-ai-bill">
+        <bounds x="280" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-bill-reg" source="id-v128-ai-do-bill" target="id-v128-ai-do-reg" archimateRelationship="id-v128-ai-rel-bill-reg"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-bill-quota" source="id-v128-ai-do-bill" target="id-v128-ai-do-quota" archimateRelationship="id-v128-ai-rel-bill-quota"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-bill-gl" source="id-v128-ai-do-bill" target="id-v128-ai-do-gl" archimateRelationship="id-v128-ai-rel-bill-gl"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v128-ai-c-bill-kfk" source="id-v128-ai-do-bill" target="id-v128-ai-do-kfk" archimateRelationship="id-v128-ai-rel-bill-kfk"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-reg" targetConnections="id-v128-ai-c-bill-reg" archimateElement="id-v128-ai-reg">
+        <bounds x="480" y="16" width="240" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-quota" targetConnections="id-v128-ai-c-bill-quota" archimateElement="id-v128-ai-quota">
+        <bounds x="480" y="80" width="260" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-gl" targetConnections="id-v128-ai-c-bill-gl" archimateElement="id-v128-ai-gl">
+        <bounds x="480" y="144" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v128-ai-do-kfk" targetConnections="id-v128-ai-c-bill-kfk" archimateElement="id-v128-ai-kfk">
+        <bounds x="480" y="208" width="240" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

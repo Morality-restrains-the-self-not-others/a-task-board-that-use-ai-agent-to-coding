@@ -1,0 +1,262 @@
+openapi: 3.0.3
+info:
+  title: taskAIComment API
+  version: "1.0.0"
+  description: AI comments and container agent comment streaming
+paths:
+  /api/internal/task-ai-comment/container-agent-comments:
+    post:
+      summary: Create pending container agent comment (internal)
+      security:
+        - TaskAICommentInternalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContainerAgentCommentCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContainerAgentComment"
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden
+        "409":
+          description: Active run already exists for parent comment
+  /api/internal/task-ai-comment/container-agent-comments/{id}/status:
+    patch:
+      summary: Update container agent comment run_status by id (internal)
+      security:
+        - TaskAICommentInternalSecret: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [run_status]
+              properties:
+                run_status:
+                  type: string
+                  enum: [pending, starting, running, streaming, completed, failed]
+      responses:
+        "200":
+          description: Updated
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+  /api/internal/task-ai-comment/container-agent-comments/by-parent/{parent_comment_id}/status:
+    patch:
+      summary: Update latest active container agent comment run_status by parent_comment_id (internal)
+      security:
+        - TaskAICommentInternalSecret: []
+      parameters:
+        - name: parent_comment_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [run_status]
+              properties:
+                run_status:
+                  type: string
+                  enum: [pending, starting, running, streaming, completed, failed]
+      responses:
+        "200":
+          description: Updated
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/task/{task_id}/container-agent-comments:
+    get:
+      summary: List container agent comments for a task
+      parameters:
+        - $ref: "#/components/parameters/tenant_id"
+        - $ref: "#/components/parameters/workspace_id"
+        - $ref: "#/components/parameters/task_id"
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: Create pending container agent comment
+      parameters:
+        - $ref: "#/components/parameters/tenant_id"
+        - $ref: "#/components/parameters/workspace_id"
+        - $ref: "#/components/parameters/task_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContainerAgentCommentCreate"
+      responses:
+        "201":
+          description: Created
+        "403":
+          description: Forbidden
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/task/{task_id}/container-agent-comments/{id}/stream:
+    post:
+      summary: Append streaming chunk from container agent
+      parameters:
+        - $ref: "#/components/parameters/tenant_id"
+        - $ref: "#/components/parameters/workspace_id"
+        - $ref: "#/components/parameters/task_id"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [chunk]
+              properties:
+                chunk:
+                  type: string
+      responses:
+        "200":
+          description: Chunk accepted; fans out SSE container_agent_stream
+        "403":
+          description: Forbidden
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/task/{task_id}/container-agent-comments/{id}/complete:
+    post:
+      summary: Complete container agent reply
+      parameters:
+        - $ref: "#/components/parameters/tenant_id"
+        - $ref: "#/components/parameters/workspace_id"
+        - $ref: "#/components/parameters/task_id"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assistant_response:
+                  type: string
+      responses:
+        "200":
+          description: Completed
+  /api/tenant/{tenant_id}/workspace/{workspace_id}/task/{task_id}/container-agent-comments/{id}/fail:
+    post:
+      summary: Mark container agent run failed
+      parameters:
+        - $ref: "#/components/parameters/tenant_id"
+        - $ref: "#/components/parameters/workspace_id"
+        - $ref: "#/components/parameters/task_id"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+      responses:
+        "200":
+          description: Failed status recorded
+components:
+  securitySchemes:
+    TaskAICommentInternalSecret:
+      type: apiKey
+      in: header
+      name: X-TaskAIComment-Internal-Secret
+  parameters:
+    tenant_id:
+      name: tenant_id
+      in: path
+      required: true
+      schema:
+        type: string
+    workspace_id:
+      name: workspace_id
+      in: path
+      required: true
+      schema:
+        type: string
+    task_id:
+      name: task_id
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    ContainerAgentCommentCreate:
+      type: object
+      required: [tenant_id, workspace_id, task_id, parent_comment_id, installed_image_id]
+      properties:
+        tenant_id:
+          type: string
+        workspace_id:
+          type: string
+        task_id:
+          type: string
+        parent_comment_id:
+          type: string
+        installed_image_id:
+          type: string
+        content:
+          type: string
+    ContainerAgentComment:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        workspace_id:
+          type: string
+        task_id:
+          type: string
+        parent_comment_id:
+          type: string
+        installed_image_id:
+          type: string
+        run_status:
+          type: string
+          enum: [pending, starting, running, streaming, completed, failed]
+        content:
+          type: string
+          nullable: true
+        assistant_response:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+        updated_at:
+          type: string

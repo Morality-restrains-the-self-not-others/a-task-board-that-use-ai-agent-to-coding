@@ -1,0 +1,46 @@
+' @title: 租户自建 GitLab 平台 OIDC SSO（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 110
+' @iteration: tenant-selfhosted-gitlab-oidc-sso
+' @author: cursor
+' @based_on: v109 (v109-enterprise-landscape-20260825-1930-cursor.puml)
+' @updated: 2026-08-25 21:10
+' @description: 租户管理员签发平台 OIDC client；成员用平台账号登录自建 GitLab Web；Git 授权绑定仍为独立 OAuth Application 流程
+
+@startuml
+!include <archimate/Archimate>
+
+title v110 — 企业景观 租户自建 GitLab OIDC SSO 2026-08-25 21:10
+
+Business_Actor(admin, "租户管理员")
+Business_Actor(member, "租户成员")
+Business_Process(bindGit, "Git 网站授权绑定")
+Business_Process(issueSso, "签发平台 OIDC SSO")
+Business_Process(loginGl, "用平台账号登录自建 GitLab")
+Business_Process(cfgOmni, "在自建 GitLab 配置 OmniAuth")
+Application_Component(fe, "taskFE gitlab-connection")
+Application_Component(auth, "taskAuth")
+Application_Component(gitoauth, "taskGitOauth")
+Application_Component(selfGl, "租户自建 GitLab")
+
+Rel_Assignment(admin, issueSso)
+Rel_Assignment(admin, cfgOmni)
+Rel_Assignment(member, bindGit)
+Rel_Assignment(member, loginGl)
+Rel_Flow(admin, fe, "启用 SSO / 保存 Application")
+Rel_Flow(fe, auth, "gitlab-oidc-sso")
+Rel_Flow(fe, gitoauth, "OAuth Application CRUD")
+Rel_Flow(member, selfGl, "点击 Daydaymoney SSO")
+Rel_Flow(selfGl, auth, "OIDC authorize/token")
+Rel_Flow(admin, selfGl, "粘贴 OmniAuth 片段")
+
+Implementation_Plateau(p109, "Plateau v109")
+Implementation_Plateau(p110, "Plateau v110")
+Implementation_Gap(g, "Gap: 自建 GitLab 仅有 OAuth App，无平台 Web SSO")
+Implementation_WorkPackage(wp, "WP-tenant-selfhosted-gitlab-oidc-sso")
+Rel_Triggering(p109, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p110, "delivers")
+
+@enduml

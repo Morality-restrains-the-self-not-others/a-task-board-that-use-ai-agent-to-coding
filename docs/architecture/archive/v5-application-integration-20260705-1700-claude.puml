@@ -1,0 +1,174 @@
+' @title: AI Dev Platform — Application Component Architecture
+' @view: application-integration
+' @status: target
+' @version: 5
+' @iteration: relay lifecycle 公网绕 Django + 副作用事件消费者
+' @author: claude
+' @based_on: v4 (v4-application-integration-20260705-1531-claude.puml)
+' @updated: 2026-07-05 17:00
+' @description: relay register/start/stop 经 tcg→go_relay；taskEvents relay-lifecycle 消费者处理 audit/session/reachability/workflow
+
+@startuml
+title AI Dev Platform — Application Component Architecture v5 Target (2026-07-05 17:00)
+
+' ═══════════════════════════════════════════════════════════
+' Change Legend — v4 变更图例
+' ═══════════════════════════════════════════════════════════
+legend right
+  |<#LightGreen>  </> | 🟢 [NEW v4] 本次新增 |
+  |<#LightYellow> </> | 🟡 [MODIFIED v4] 本次修改 |
+  |<#LightPink>   </> | 🔴 [DEPRECATED v4] 本次废弃 |
+  |<#White>       </> | 无标记 — 已有组件（v1-v3） |
+endlegend
+
+' ── Groups (logical layers) ──
+component "Frontend Layer" as FL #LightYellow
+component "Gateway Layer" as GL #LightBlue
+component "Platform Services" as PS #LightGreen
+component "Container Stack" as CS #LightCoral
+component "Domain Events (18 Consumers)" as DE #LightPink
+component "Dev Tools" as DT #LightGray
+
+' ── Frontend ──
+component "Vue Frontend\n(:4000)" as VUE #Yellow
+
+' ── Gateway ──
+component "task-gateway\nAPISIX (:18081)" as GW #Blue
+
+' ── Platform ──
+component "saas-backend\nDjango (:8001)\n[CRUD + internal 真源]" as BE #Green
+component "ai-provider\nDjango (:8010)" as AI #Green
+component "task-auth\nGo (:8003)" as AUTH #Green
+component "git-oauth\nDjango (:8002)" as GOAUTH #Green
+component "task-bill\nGo (:8009)" as BILL #Green
+component "task-sse\nNode.js (:8007)" as SSE #Green
+component "task-agent-support\nGo (:8011)\n[inbound + 业务下沉]" as AGT #Green
+component "task-ai-endpoint\nGo (:8013)" as AIEP #Green
+
+' ── Container Stack ──
+component "task-container-gateway\nGo (:8014)\n[compute outbound SSOT]" as CGW #Coral
+component "task-credential-service\nGo (:8015)" as CRED #Coral
+component "go-relay\nGo (:8797)\n[relay 公网入口]" as RELAY #Coral
+component "go-run-container\nGo" as RUN #Coral
+
+' ── Domain Events ──
+component "Registration Chain\nUSER→COMPANY→WORKSPACE\n(:18025-30)" as DE_REG #Pink
+component "Billing + SSE\n(:18020-21)" as DE_BILL #Pink
+component "Notifications\nEMAIL+INVITE+ACTIVATE\n(:18022-26)" as DE_NOTIF #Pink
+component "Company Fan-out\n(:18027-29)" as DE_COMP #Pink
+component "Cloud + AI Reply\n(:18030-37)" as DE_CLOUD #Pink
+
+' ── Dev Tools ──
+component "valueStream\nGo (:9998)" as VS #Gray
+component "claude-agent\nGo CLI (sidecar)" as CA #Gray
+
+' ── External ──
+component "onlineServiceJS\n(:8765)" as OSJS #White
+component "Upstream LLM\n(DeepSeek / OpenAI)" as LLM #White
+component "Claude Code CLI\n(Node.js)" as CCLI #White
+
+' ── Deprecated (保留对比，交付后删除) ──
+component "Django inline SSE\n(urls.py threading)" as BE_SSE #LightPink
+component "relay_to_trae_proxy\n(Django 公网入口)" as BE_RELAY #LightPink
+
+' ── Composition ──
+FL --> VUE
+GL --> GW
+PS --> BE
+PS --> AI
+PS --> AUTH
+PS --> GOAUTH
+PS --> BILL
+PS --> SSE
+PS --> AGT
+PS --> AIEP
+CS --> CGW
+CS --> CRED
+CS --> RELAY
+CS --> RUN
+DE --> DE_REG
+DE --> DE_BILL
+DE --> DE_NOTIF
+DE --> DE_COMP
+DE --> DE_CLOUD
+DT --> VS
+DT --> CA
+
+' ── v4 新增/修改数据流 ──
+VUE -[#Yellow]-> CGW : "[MOD v4] cloud/compute/container-*\n(L0/L1/L2 出站)"
+VUE -[#Yellow]-> GW : "[MOD v4] CRUD / 项目 / 成员"
+GW -[#Yellow]-> RELAY : "[NEW v4] relay-to-trae/*\n(绕过 Django)"
+GW -[#Yellow]-> CGW : "[NEW v4] 容器 compute 路由分流"
+CGW -[#Green]-> BE : "[MOD v4] internal\nvalidate-session + resolve-target"
+CGW -[#Green]-> OSJS : "[NEW v4] 全部 outbound HTTP\n(goroutine job-stream)"
+OSJS -[#Green]-> AGT : "[MOD v4] inbound token/heartbeat"
+OSJS -[#Green]-> CRED : "[MOD v4] exchange-refresh/refresh-access"
+AGT -[#Yellow]-> BE : "[MOD v4] internal 快照\n(Phase 2 逐步瘦化)"
+AGT -[#Green]-> GOAUTH : "[NEW v4] repo-clone OAuth\n(Phase 2)"
+AGT -[#Green]-> SSE : "[MOD v4] heartbeat → SSE publish"
+RELAY -[#Green]-> OSJS : "subprocess lifecycle"
+
+note top of BE
+  🟡 [MODIFIED v4] saas-backend 瘦身
+  保留: projects/accounts CRUD,
+  cloud 平台配置, VM 编排,
+  Django internal API 真源
+  移除公网: compute outbound,
+  relay-to-trae 代理
+  @author: claude @2026-07-05 15:31
+end note
+
+note top of CGW
+  🟡 [MODIFIED v5] taskContainerGateway
+  relay register/start/stop 同步编排
+  + Kafka RELAY_* 事件发布
+  @author: claude @2026-07-05 17:00
+end note
+
+note top of RELAY
+  🟡 [MODIFIED v5] go-relay lifecycle
+  经 tcg 转发；副作用事件化
+  @author: claude @2026-07-05 17:00
+end note
+
+note top of BE_RELAY
+  🔴 [DEPRECATED v5] relay_to_trae_proxy
+  公网已 410；回滚 TASK_CONTAINER_GATEWAY_ENABLED=false
+  @author: claude @2026-07-05 17:00
+end note
+
+note top of AGT
+  🟡 [MODIFIED v4] taskAgentSupport Phase 3
+  inbound 业务逻辑逐步下沉 Go
+  Django internal 保留 ORM 同步
+  @author: claude @2026-07-05 15:31
+end note
+
+note top of BE_SSE
+  🔴 [DEPRECATED v4] Django 内联 SSE
+  强制 TASK_SSE_ENABLED → taskSSE
+  交付后删除 urls.py threading 实现
+  @author: claude @2026-07-05 15:31
+end note
+
+note top of BE_RELAY
+  🔴 [DEPRECATED v4] relay_to_trae_proxy
+  公网路径改 APISIX → go-relay
+  交付后删除 Django 代理层
+  @author: claude @2026-07-05 15:31
+end note
+
+note top of OSJS
+  🟢 [NEW v4] onlineServiceJS 显式标注
+  容器 HTTP API 真源 (:8765)
+  与 saas-backend 解耦
+  @author: claude @2026-07-05 15:31
+end note
+
+' ── v3 继承数据流 ──
+CA -[#White]-> CCLI : "subprocess"
+AIEP -[#White]-> BE : "internal API"
+AIEP -[#White]-> CRED : "validate proxy token"
+AIEP -[#White]-> LLM : "Chat Completions SSE"
+
+@enduml

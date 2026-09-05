@@ -1,0 +1,94 @@
+groups:
+  - name: database-partition-monitoring
+    interval: 60s
+    rules:
+      # ============================================================
+      # 分区表大小告警
+      # ============================================================
+
+      # 热表行数超过阈值
+      - alert: HotTableRowsHigh
+        expr: |
+          mysql_info_schema_table_rows{
+            table_name=~"billing_transaction|billing_usage|cloud_server_events|cloud_server_config_histories|projects_feature_params_access_audit|billing_outbox_message"
+          } > 10000000
+        for: 30m
+        labels:
+          severity: warning
+          component: database-size
+          category: database
+        annotations:
+          summary: "热表行数过高: {{ $labels.table_name }} = {{ $value }} 行"
+          description: >
+            表 {{ $labels.table_name }}（库 {{ $labels.table_schema }}）已超过 1000 万行。
+            检查 ensure_partitions.sh 是否正常运行，TRUNCATE 过期分区可秒级清理。
+
+      # 热表行数严重超标
+      - alert: HotTableRowsCritical
+        expr: |
+          mysql_info_schema_table_rows{
+            table_name=~"billing_transaction|billing_usage|cloud_server_events"
+          } > 50000000
+        for: 10m
+        labels:
+          severity: critical
+          component: database-size
+          category: database
+        annotations:
+          summary: "热表行数严重超标: {{ $labels.table_name }} = {{ $value }} 行"
+          description: >
+            表 {{ $labels.table_name }} 已超过 5000 万行，查询性能严重下降。
+            立即执行: ALTER TABLE {{ $labels.table_name }} TRUNCATE PARTITION <过期分区>;
+
+      # ============================================================
+      # MAXVALUE 分区膨胀告警
+      # ============================================================
+
+      # p_future 中数据过多 — 说明长期未拆分分区
+      - alert: MaxValuePartitionBloated
+        expr: mysql_partition_maxvalue_rows > 5000000
+        for: 1h
+        labels:
+          severity: warning
+          component: database-partition
+          category: database
+        annotations:
+          summary: "MAXVALUE 分区膨胀: {{ $labels.table }}.p_future = {{ $value }} 行"
+          description: >
+            {{ $labels.database }}.{{ $labels.table }} 的 p_future 分区已积累 {{ $value }} 行。
+            需执行 ensure_partitions.sh 拆分: bash db/scripts/ensure_partitions.sh
+
+      # ============================================================
+      # 分区数量告警
+      # ============================================================
+
+      # 有效分区数过少（可能 p_future 被意外清空或分区创建失败）
+      - alert: PartitionCountLow
+        expr: mysql_partition_count < 3
+        for: 1h
+        labels:
+          severity: warning
+          component: database-partition
+          category: database
+        annotations:
+          summary: "分区数不足: {{ $labels.table }} = {{ $value }} 个有效分区"
+          description: >
+            {{ $labels.database }}.{{ $labels.table }} 仅有 {{ $value }} 个非 MAXVALUE 分区。
+            需检查 ensure_partitions.sh cron 是否正常运行。
+
+      # ============================================================
+      # MySQL Exporter 可用性
+      # ============================================================
+
+      - alert: MysqldExporterDown
+        expr: up{job="mysqld-exporter"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          component: database-monitoring
+          category: database
+        annotations:
+          summary: "MySQL Exporter 不可达"
+          description: >
+            Prometheus 无法采集 mysqld-exporter 指标，分区监控数据中断。
+            检查: docker compose -f AiMonitor/docker-compose.yaml ps mysqld-exporter

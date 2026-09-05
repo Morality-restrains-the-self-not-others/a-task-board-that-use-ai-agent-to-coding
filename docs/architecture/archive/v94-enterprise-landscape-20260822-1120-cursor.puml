@@ -1,0 +1,42 @@
+' @title: PR 回复与一键合并（企业景观）
+' @view: enterprise-landscape
+' @status: current
+' @version: 94
+' @iteration: pr-reply-merge-status
+' @author: cursor
+' @based_on: v93 (v93-enterprise-landscape-20260821-1635-cursor.puml)
+' @updated: 2026-08-22 11:20
+' @description: 成员在任务会话中看到 PR 回复并可一键合并
+
+@startuml
+!include <archimate/Archimate>
+
+title v94 Target landscape — PR reply merge 2026-08-22 11:20
+
+Business_Actor(member, "租户成员")
+Business_Service(push, "推送并创建PR")
+Business_Service(reply, "PR 链接回复")
+Business_Service(merge, "一键合并PR")
+
+Application_Component(fe, "taskFE")
+Application_Component(task, "taskTaskService")
+Application_Component(gitoauth, "taskGitOauth")
+
+Rel_Assignment(member, push)
+Rel_Assignment(member, reply)
+Rel_Assignment(member, merge)
+Rel_Serving(fe, push)
+Rel_Serving(fe, reply)
+Rel_Serving(fe, merge)
+Rel_Flow(push, reply, "html_url")
+Rel_Flow(reply, merge, "status")
+
+Implementation_Plateau(p93, "v93")
+Implementation_Plateau(p94, "v94")
+Implementation_Gap(g, "PR 仅外链无回复")
+Implementation_WorkPackage(wp, "WP-pr-reply-merge-status")
+Rel_Triggering(p93, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p94, "delivers")
+
+@enduml

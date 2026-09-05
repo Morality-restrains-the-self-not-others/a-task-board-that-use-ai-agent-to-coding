@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v116 全量 (post-change)" id="id-v116aifull01">
+  <folder name="Application" id="id-v116ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v116-app-fe" name="taskFE SPA [MODIFIED v116]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v116-app-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v116-app-auth" name="taskAuth [MODIFIED v116]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v116-app-ten" name="taskTenantService [MODIFIED v116]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v116-app-ev" name="taskEvents [MODIFIED v116]"/>
+    <element xsi:type="archimate:DataObject" id="id-v116-data-unsub" name="auth_email_unsubscription [NEW v116]"/>
+  </folder>
+  <folder name="Business" id="id-v116ai-biz" type="business">
+    <element xsi:type="archimate:BusinessEvent" id="id-v116-ev-unsub" name="EMAIL_UNSUBSCRIBED [NEW v116]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v116ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v116-pl-v115" name="Plateau v115 邀请只发信"/>
+    <element xsi:type="archimate:Plateau" id="id-v116-pl-v116" name="Plateau v116 可退订邀请邮件"/>
+    <element xsi:type="archimate:Gap" id="id-v116-gap" name="Gap: 邀请邮件无法退订"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v116-wp" name="WP-email-invite-unsubscribe"/>
+  </folder>
+  <folder name="Relations" id="id-v116ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v116-rel-fe-gw" source="id-v116-app-fe" target="id-v116-app-gw" name="public unsubscribe / invite"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v116-rel-gw-auth" source="id-v116-app-gw" target="id-v116-app-auth" name="GET/POST email-unsubscribe"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v116-rel-auth-unsub" source="id-v116-app-auth" target="id-v116-data-unsub" name="UPSERT/SELECT"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v116-rel-auth-ev" source="id-v116-app-auth" target="id-v116-ev-unsub" name="commit after"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v116-rel-ten-auth" source="id-v116-app-ten" target="id-v116-app-auth" name="GET internal unsubscription"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v116-rel-ev-auth" source="id-v116-app-ev" target="id-v116-app-auth" name="GET internal unsubscription"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v116-rel-pl115-gap" source="id-v116-pl-v115" target="id-v116-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v116-rel-wp-gap" source="id-v116-wp" target="id-v116-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v116-rel-wp-pl116" source="id-v116-wp" target="id-v116-pl-v116"/>
+  </folder>
+  <folder name="Views" id="id-v116ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v116-view-mig" name="架构变迁 v115→v116 — email-invite-unsubscribe">
+      <child xsi:type="archimate:DiagramObject" id="id-v116-do-pl115" archimateElement="id-v116-pl-v115">
+        <bounds x="48" y="48" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v116-c-pl115-gap" source="id-v116-do-pl115" target="id-v116-do-gap" archimateRelationship="id-v116-rel-pl115-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v116-do-gap" targetConnections="id-v116-c-pl115-gap id-v116-c-wp-gap" archimateElement="id-v116-gap">
+        <bounds x="320" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v116-do-wp" archimateElement="id-v116-wp">
+        <bounds x="320" y="160" width="420" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v116-c-wp-gap" source="id-v116-do-wp" target="id-v116-do-gap" archimateRelationship="id-v116-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v116-c-wp-pl116" source="id-v116-do-wp" target="id-v116-do-pl116" archimateRelationship="id-v116-rel-wp-pl116"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v116-do-pl116" targetConnections="id-v116-c-wp-pl116" archimateElement="id-v116-pl-v116">
+        <bounds x="780" y="160" width="240" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v116-view-topo" name="v116 Full — 邮件邀请退订">
+      <child xsi:type="archimate:DiagramObject" id="id-v116-do-fe" archimateElement="id-v116-app-fe">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v116-c-fe-gw" source="id-v116-do-fe" target="id-v116-do-gw" archimateRelationship="id-v116-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v116-do-gw" targetConnections="id-v116-c-fe-gw" archimateElement="id-v116-app-gw">
+        <bounds x="240" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v116-c-gw-auth" source="id-v116-do-gw" target="id-v116-do-auth" archimateRelationship="id-v116-rel-gw-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v116-do-auth" targetConnections="id-v116-c-gw-auth id-v116-c-ten-auth id-v116-c-ev-auth" archimateElement="id-v116-app-auth">
+        <bounds x="480" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v116-c-auth-unsub" source="id-v116-do-auth" target="id-v116-do-unsub" archimateRelationship="id-v116-rel-auth-unsub"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v116-c-auth-ev" source="id-v116-do-auth" target="id-v116-do-evunsub" archimateRelationship="id-v116-rel-auth-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v116-do-ten" archimateElement="id-v116-app-ten">
+        <bounds x="48" y="140" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v116-c-ten-auth" source="id-v116-do-ten" target="id-v116-do-auth" archimateRelationship="id-v116-rel-ten-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v116-do-ev" archimateElement="id-v116-app-ev">
+        <bounds x="48" y="220" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v116-c-ev-auth" source="id-v116-do-ev" target="id-v116-do-auth" archimateRelationship="id-v116-rel-ev-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v116-do-unsub" targetConnections="id-v116-c-auth-unsub" archimateElement="id-v116-data-unsub">
+        <bounds x="700" y="16" width="280" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v116-do-evunsub" targetConnections="id-v116-c-auth-ev" archimateElement="id-v116-ev-unsub">
+        <bounds x="700" y="80" width="280" height="45"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

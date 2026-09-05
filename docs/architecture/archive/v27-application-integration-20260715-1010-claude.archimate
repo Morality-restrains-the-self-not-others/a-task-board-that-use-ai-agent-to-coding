@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v27-ai-20260715-1010">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v27 Target</name>
+  <purpose>Terminal hard release of machine nodes; migrate foreign image containers to owning task machines before destroy</purpose>
+
+  <folder name="Motivation" id="id-v27-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="🟢 终态机器硬释放禁止再 reuse [NEW v27]" id="id-v27-constraint"/>
+  </folder>
+  <folder name="Application" id="id-v27-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Vue TaskDetail progress PATCH" id="id-v27-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v27-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTaskService TASK_STATUS_CHANGED" id="id-v27-task"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskEvents migrate then release [MODIFIED v27]" id="id-v27-events"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskCloudService bindings/migrate/reuse [MODIFIED v27]" id="id-v27-cloud"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskContainerGateway + relay/mock" id="id-v27-cgw"/>
+    <element xsi:type="archimate:DataObject" name="🟢 cloud_server_configs.terminal_released [NEW v27]" id="id-v27-csc"/>
+  </folder>
+  <folder name="Technology" id="id-v27-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="Kafka" id="id-v27-kafka"/>
+    <element xsi:type="archimate:Node" name="Aliyun ECS" id="id-v27-ecs"/>
+    <element xsi:type="archimate:Node" name="镜像容器 relay/mock" id="id-v27-docker"/>
+  </folder>
+  <folder name="Relations" id="id-v27-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v27-flow-vue-gw" source="id-v27-vue" target="id-v27-gw" name="PATCH todos"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v27-flow-gw-task" source="id-v27-gw" target="id-v27-task" name="update task"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v27-flow-task-kafka" source="id-v27-task" target="id-v27-kafka" name="TASK_STATUS_CHANGED"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v27-flow-kafka-events" source="id-v27-kafka" target="id-v27-events" name="consume"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v27-flow-events-cloud" source="id-v27-events" target="id-v27-cloud" name="bindings+migrate+mark"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v27-acc-cloud-csc" source="id-v27-cloud" target="id-v27-csc" name="W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v27-flow-events-kafka-stop" source="id-v27-events" target="id-v27-kafka" name="CLOUD_SERVER_STOPPED"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v27-flow-cloud-ecs" source="id-v27-cloud" target="id-v27-ecs" name="stop or start new"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v27-flow-events-cgw" source="id-v27-events" target="id-v27-cgw" name="stop/start container"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v27-flow-cgw-docker" source="id-v27-cgw" target="id-v27-docker" name="migrate stop+recreate"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v27-inf-c-cloud" source="id-v27-constraint" target="id-v27-cloud" name="reuse 排除终态"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v27-inf-c-events" source="id-v27-constraint" target="id-v27-events" name="先迁后释"/>
+  </folder>
+  <folder name="Implementation" id="id-v27-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v25 — auto SG whitelist (current)" id="id-v27-plat-v25"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v27 — terminal-hard-release-container-migrate" id="id-v27-plat-v27"/>
+    <element xsi:type="archimate:Gap" name="Gap: 终态可被 reuse；共享实例误杀外任务容器；无迁回所属任务" id="id-v27-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v27-terminal-hard-release-container-migrate" id="id-v27-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v27-rel-plat25-gap" source="id-v27-plat-v25" target="id-v27-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v27-rel-wp-gap" source="id-v27-wp" target="id-v27-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v27-rel-wp-plat27" source="id-v27-wp" target="id-v27-plat-v27"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v27-rel-plat27-events" source="id-v27-plat-v27" target="id-v27-events"/>
+  </folder>
+  <folder name="Views" id="id-v27-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v25→v27 — terminal-hard-release-container-migrate" id="id-v27-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-plat25" archimateElement="id-v27-plat-v25">
+        <bounds x="48" y="100" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-plat25-gap"
+          source="id-v27-do-plat25" target="id-v27-do-gap"
+          archimateRelationship="id-v27-rel-plat25-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-gap" archimateElement="id-v27-gap"
+        targetConnections="id-v27-conn-plat25-gap id-v27-conn-wp-gap">
+        <bounds x="380" y="100" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-wp" archimateElement="id-v27-wp">
+        <bounds x="820" y="60" width="360" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-wp-gap"
+          source="id-v27-do-wp" target="id-v27-do-gap"
+          archimateRelationship="id-v27-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-wp-plat27"
+          source="id-v27-do-wp" target="id-v27-do-plat27"
+          archimateRelationship="id-v27-rel-wp-plat27"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-plat27" archimateElement="id-v27-plat-v27"
+        targetConnections="id-v27-conn-wp-plat27">
+        <bounds x="820" y="160" width="360" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-plat27-events"
+          source="id-v27-do-plat27" target="id-v27-do-events-m"
+          archimateRelationship="id-v27-rel-plat27-events"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-events-m" archimateElement="id-v27-events"
+        targetConnections="id-v27-conn-plat27-events">
+        <bounds x="820" y="250" width="360" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v27 Target — 终态先迁容器再硬释放" id="id-v27-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-vue" archimateElement="id-v27-vue">
+        <bounds x="40" y="40" width="150" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-vue-gw"
+          source="id-v27-do-vue" target="id-v27-do-gw"
+          archimateRelationship="id-v27-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-gw" archimateElement="id-v27-gw"
+        targetConnections="id-v27-conn-vue-gw">
+        <bounds x="220" y="40" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-gw-task"
+          source="id-v27-do-gw" target="id-v27-do-task"
+          archimateRelationship="id-v27-flow-gw-task"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-task" archimateElement="id-v27-task"
+        targetConnections="id-v27-conn-gw-task">
+        <bounds x="380" y="40" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-task-kafka"
+          source="id-v27-do-task" target="id-v27-do-kafka"
+          archimateRelationship="id-v27-flow-task-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-kafka" archimateElement="id-v27-kafka"
+        targetConnections="id-v27-conn-task-kafka id-v27-conn-events-kafka-stop">
+        <bounds x="600" y="40" width="100" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-kafka-events"
+          source="id-v27-do-kafka" target="id-v27-do-events"
+          archimateRelationship="id-v27-flow-kafka-events"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-events" archimateElement="id-v27-events"
+        targetConnections="id-v27-conn-kafka-events id-v27-conn-c-events">
+        <bounds x="740" y="40" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-events-cloud"
+          source="id-v27-do-events" target="id-v27-do-cloud"
+          archimateRelationship="id-v27-flow-events-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-events-kafka-stop"
+          source="id-v27-do-events" target="id-v27-do-kafka"
+          archimateRelationship="id-v27-flow-events-kafka-stop"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-events-cgw"
+          source="id-v27-do-events" target="id-v27-do-cgw"
+          archimateRelationship="id-v27-flow-events-cgw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-cloud" archimateElement="id-v27-cloud"
+        targetConnections="id-v27-conn-events-cloud id-v27-conn-c-cloud">
+        <bounds x="740" y="140" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-cloud-csc"
+          source="id-v27-do-cloud" target="id-v27-do-csc"
+          archimateRelationship="id-v27-acc-cloud-csc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-cloud-ecs"
+          source="id-v27-do-cloud" target="id-v27-do-ecs"
+          archimateRelationship="id-v27-flow-cloud-ecs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-csc" archimateElement="id-v27-csc"
+        targetConnections="id-v27-conn-cloud-csc">
+        <bounds x="740" y="230" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-cgw" archimateElement="id-v27-cgw"
+        targetConnections="id-v27-conn-events-cgw">
+        <bounds x="980" y="40" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-cgw-docker"
+          source="id-v27-do-cgw" target="id-v27-do-docker"
+          archimateRelationship="id-v27-flow-cgw-docker"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-docker" archimateElement="id-v27-docker"
+        targetConnections="id-v27-conn-cgw-docker">
+        <bounds x="980" y="140" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-ecs" archimateElement="id-v27-ecs"
+        targetConnections="id-v27-conn-cloud-ecs">
+        <bounds x="980" y="230" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v27-do-c" archimateElement="id-v27-constraint">
+        <bounds x="40" y="160" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-c-cloud"
+          source="id-v27-do-c" target="id-v27-do-cloud"
+          archimateRelationship="id-v27-inf-c-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v27-conn-c-events"
+          source="id-v27-do-c" target="id-v27-do-events"
+          archimateRelationship="id-v27-inf-c-events"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

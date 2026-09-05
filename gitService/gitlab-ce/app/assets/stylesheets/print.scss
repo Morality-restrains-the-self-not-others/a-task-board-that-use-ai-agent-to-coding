@@ -1,0 +1,123 @@
+@import 'framework/variables';
+@import 'framework/variables_overrides';
+
+@import '@gitlab/ui/src/scss/variables';
+@import '@gitlab/ui/src/scss/mixins';
+
+@media print {
+  .md h1,
+  .md h2,
+  .md h3,
+  .md h4,
+  .md h5,
+  .md h6 {
+    margin-top: 17px;
+  }
+
+  .md h1 {
+    font-size: 30px;
+  }
+
+  .md h2 {
+    font-size: 22px;
+  }
+
+  .md h3 {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .md {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+
+    // fix blockquote style in print
+    blockquote {
+      &::before {
+        position: absolute;
+        top: 0;
+        left: -4px;
+        content: ' ';
+        height: 100%;
+        width: 4px;
+        background-color: $gl-border-color-default;
+      }
+
+      position: relative;
+      font-size: inherit;
+      @apply gl-text-subtle;
+      padding-top: $gl-spacing-scale-3;
+      padding-bottom: $gl-spacing-scale-3;
+      padding-left: $gl-spacing-scale-6;
+      margin-top: $gl-spacing-scale-3;
+      margin-bottom: $gl-spacing-scale-3;
+      margin-right: 0;
+      @apply gl-shadow-inner-l-4-gray-100;
+      margin-left: 4px;
+      border: 0 !important;
+    }
+  }
+
+  header,
+  nav,
+  .super-sidebar,
+  .super-sidebar-overlay,
+  .tree-ref-holder,
+  .tree-holder .breadcrumb,
+  .nav,
+  .btn,
+  ul.notes-form,
+  .issuable-gutter-toggle,
+  .gutter-toggle,
+  .edit-link,
+  .note-action-button,
+  .right-sidebar,
+  .flash-container,
+  .top-bar-fixed,
+  copy-code,
+  #js-peek {
+    display: none !important;
+  }
+
+  pre {
+    page-break-before: avoid;
+    page-break-inside: auto;
+  }
+
+  .page-gutter {
+    padding-top: 0;
+    padding-left: 0;
+  }
+
+  .right-sidebar {
+    top: 0;
+  }
+
+  a[href]::after {
+    content: none !important;
+  }
+
+  .with-performance-bar .layout-page, .content-wrapper {
+    padding-top: 0;
+  }
+
+  .panels-container .panel-content-inner,
+  .panels-container .vue-portal-target .work-item-drawer-content {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .panel-content {
+    height: auto !important;
+    overflow: visible !important;
+    contain: none !important;
+  }
+
+  .paneled-view {
+    overflow: visible !important;
+  }
+
+  .page-with-panels .layout-page {
+    height: auto !important;
+  }
+}

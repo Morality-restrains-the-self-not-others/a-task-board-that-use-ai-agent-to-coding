@@ -1,0 +1,72 @@
+' @title: 工作空间任务帖人读序号
+' @view: application-integration
+' @status: archived
+' @version: 81
+' @iteration: workspace-task-display-seq-v81
+' @author: cursor
+' @based_on: v80 (v80-application-integration-20260814-1437-cursor.puml)
+' @updated: 2026-08-14 21:15
+' @description: 技术主键不变；工作空间内 workspace_seq 展示为 #N；存量清空不回填
+
+@startuml
+!include <archimate/Archimate>
+
+title v81 — Workspace task display sequence Target 2026-08-14 20:57
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v81 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v81 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v81 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(taskFE, "taskFE WorkPanel / TaskDetail")
+note right of taskFE
+  🟡 [MODIFIED v81]
+  卡片/搜索/复制 #N
+  不再截技术 ID 后 6 位
+  @author: cursor @2026-08-14 20:57
+end note
+
+Application_Component(taskTask, "taskTaskService (Go :8017)")
+note right of taskTask
+  🟡 [MODIFIED v81]
+  建帖事务内发号
+  JSON + TASK_CREATED 带 workspace_seq
+  @author: cursor @2026-08-14 20:57
+end note
+
+Application_DataObject(taskId, "task_tasks.id\n(technical PK)")
+note right of taskId
+  无标记 — 技术主键不变
+  task_<digits>
+end note
+
+Application_DataObject(wsSeq, "task_tasks.workspace_seq")
+note right of wsSeq
+  🟢 [NEW v81]
+  工作空间内不可变序号
+  UNIQUE(tenant, workspace, seq)
+end note
+
+Application_DataObject(seqAlloc, "task_workspace_seq")
+note right of seqAlloc
+  🟢 [NEW v81]
+  next_val 发号器
+  SELECT FOR UPDATE
+end note
+
+Application_Event(taskCreated, "TASK_CREATED")
+note right of taskCreated
+  🟡 [MODIFIED v81]
+  payload 增补 workspace_seq
+end note
+
+Rel_Flow(taskFE, taskTask, "🟡 create / list / search")
+Rel_Flow(taskTask, taskFE, "🟡 id + workspace_seq → #N")
+Rel_Access_W(taskTask, seqAlloc, "🟢 allocate FOR UPDATE")
+Rel_Access_W(taskTask, wsSeq, "🟢 insert seq")
+Rel_Access_W(taskTask, taskId, "write technical id")
+Rel_Flow(taskTask, taskCreated, "🟡 publish + seq")
+
+@enduml

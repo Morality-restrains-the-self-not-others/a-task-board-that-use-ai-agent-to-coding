@@ -1,0 +1,303 @@
+# 意图→事件「证据豁免」登记册（known-debt）
+#
+# 用途：第二层 CI 允许的「证据豁免」必须在此登记；日后改走 MQ 时：
+#   1. 实现 send_event/PublishEvent（或 domain event 契约）
+#   2. 把意图表「MQ类型/契约」列改为真实常量，去掉例外理由中的「证据豁免」
+#   3. 删除本文件对应条目
+#
+# 校验：task2app/scripts/ci/check_ddd_bdd_compliance.py
+
+version: 1
+updated: "2026-07-15"
+
+exemptions:
+  - id: budget-usage-recorded-http
+    intent_stem: "001_budget账本迁Go"
+    event: BudgetUsageRecorded
+    reason: "taskCloudService Budget HTTP 直写账本，尚未投递领域事件"
+    future_mq_contract: BUDGET_USAGE_RECORDED
+    future_action: >
+      在 handleModelBudgetUsage / commit-usage 成功写库后 PublishEvent(BUDGET_USAGE_RECORDED)；
+      于 task2app Kafka KAFKA_TOPICS 与 taskEvents registry 注册；消费者按需投影。
+    remove_when: "生产路径已 send_event/PublishEvent(BUDGET_USAGE_RECORDED) 且意图表去掉证据豁免"
+
+  - id: feature-params-env-snapshot-http
+    intent_stem: "001_budget账本迁Go"
+    event: FeatureParamsEnvSnapshotAppended
+    reason: "FeatureParams env snapshot HTTP 直写，尚未投递领域事件"
+    future_mq_contract: FEATURE_PARAMS_ENV_SNAPSHOT_APPENDED
+    future_action: >
+      在 handleFeatureParamsEnv snapshot append 成功后 PublishEvent；
+      注册 MQ 契约后去掉意图表证据豁免。
+    remove_when: "生产路径已发布 FEATURE_PARAMS_ENV_SNAPSHOT_APPENDED 且意图表去掉证据豁免"
+
+  - id: gitoauth-bind-activated-log-only
+    intent_stem: "gitoauth_go_migration"
+    event: GitOauthCredentialBindActivated
+    reason: "taskGitOauth callback 首期仅结构化日志/审计，不强制 Kafka"
+    future_mq_contract: GIT_OAUTH_CREDENTIAL_BIND_ACTIVATED
+    future_action: >
+      绑定成功后 PublishEvent(GIT_OAUTH_CREDENTIAL_BIND_ACTIVATED) 并注册消费者。
+    remove_when: "生产路径已发布 GIT_OAUTH_CREDENTIAL_BIND_ACTIVATED 且意图表去掉证据豁免"
+
+  - id: gitoauth-bind-failed-log-only
+    intent_stem: "gitoauth_go_migration"
+    event: GitOauthCredentialBindFailed
+    reason: "taskGitOauth callback 失败路径首期仅日志/审计，不强制 Kafka"
+    future_mq_contract: GIT_OAUTH_CREDENTIAL_BIND_FAILED
+    future_action: >
+      绑定失败后 PublishEvent(GIT_OAUTH_CREDENTIAL_BIND_FAILED) 并注册消费者。
+    remove_when: "生产路径已发布 GIT_OAUTH_CREDENTIAL_BIND_FAILED 且意图表去掉证据豁免"
+
+  - id: login-phone-otp-stock-path
+    intent_stem: "login_phone_otp_enable"
+    event: "UserLoggedInViaPhoneOtp（存量路径）"
+    reason: "本期仅开启手机登录策略与前端入口，沿用存量 forward-login，不改契约"
+    future_mq_contract: USER_LOGGED_IN_VIA_PHONE_OTP
+    future_action: >
+      存量登录成功路径对齐领域事件后去掉证据豁免。
+    remove_when: "存量手机登录路径已有 publish 证据且意图表去掉证据豁免"
+
+  - id: otp-go-inc1-sent-log-only
+    intent_stem: "otp_go_migration_inc1_and_add_account_ac7"
+    event: VerificationCodeSent
+    reason: "首切仅结构化日志，不强制 Kafka"
+    future_mq_contract: VERIFICATION_CODE_SENT
+    future_action: >
+      发码成功后 PublishEvent(VERIFICATION_CODE_SENT) 并注册消费者。
+    remove_when: "生产路径已发布 VERIFICATION_CODE_SENT 且意图表去掉证据豁免"
+
+  - id: otp-go-inc1-verified-log-only
+    intent_stem: "otp_go_migration_inc1_and_add_account_ac7"
+    event: VerificationCodeVerified
+    reason: "首切仅结构化日志，不强制 Kafka"
+    future_mq_contract: VERIFICATION_CODE_VERIFIED
+    future_action: >
+      验码成功后 PublishEvent(VERIFICATION_CODE_VERIFIED) 并注册消费者。
+    remove_when: "生产路径已发布 VERIFICATION_CODE_VERIFIED 且意图表去掉证据豁免"
+
+  - id: otp-go-full-sent-log-only
+    intent_stem: "otp_go_full_native_sms"
+    event: VerificationCodeSent
+    reason: "全切仍以结构化日志为主，不强制 Kafka"
+    future_mq_contract: VERIFICATION_CODE_SENT
+    future_action: >
+      发码成功后 PublishEvent(VERIFICATION_CODE_SENT) 并注册消费者。
+    remove_when: "生产路径已发布 VERIFICATION_CODE_SENT 且意图表去掉证据豁免"
+
+  - id: otp-go-full-verified-log-only
+    intent_stem: "otp_go_full_native_sms"
+    event: VerificationCodeVerified
+    reason: "全切仍以结构化日志为主，不强制 Kafka"
+    future_mq_contract: VERIFICATION_CODE_VERIFIED
+    future_action: >
+      验码成功后 PublishEvent(VERIFICATION_CODE_VERIFIED) 并注册消费者。
+    remove_when: "生产路径已发布 VERIFICATION_CODE_VERIFIED 且意图表去掉证据豁免"
+
+  - id: tenant-gitlab-resource-purchased-http
+    intent_stem: "tenant_gitlab_resource_purchase"
+    event: TenantGitlabResourcePurchased
+    reason: "首期以 BILLING_TRANSACTION_CREATED outbox + HTTP 配额写库为主，不强制独立 Kafka 事件"
+    future_mq_contract: TENANT_GITLAB_RESOURCE_PURCHASED
+    future_action: >
+      POST 购买成功后 PublishEvent(TENANT_GITLAB_RESOURCE_PURCHASED) 并注册配额同步消费者。
+    remove_when: "生产路径已发布 TENANT_GITLAB_RESOURCE_PURCHASED 且意图表去掉证据豁免"
+
+  - id: tenant-gitlab-oauth-upsert-http
+    intent_stem: "tenant_gitlab_oauth_connection"
+    event: TenantGitLabOAuthConnectionUpserted
+    reason: "首期仅 HTTP 写库/审计，不强制 Kafka"
+    future_mq_contract: TENANT_GITLAB_OAUTH_CONNECTION_UPSERTED
+    future_action: >
+      PUT 成功后 PublishEvent(TENANT_GITLAB_OAUTH_CONNECTION_UPSERTED) 并注册消费者。
+    remove_when: "生产路径已发布 TENANT_GITLAB_OAUTH_CONNECTION_UPSERTED 且意图表去掉证据豁免"
+
+  - id: tenant-gitlab-oauth-delete-http
+    intent_stem: "tenant_gitlab_oauth_connection"
+    event: TenantGitLabOAuthConnectionDeleted
+    reason: "首期仅 HTTP 写库/审计，不强制 Kafka"
+    future_mq_contract: TENANT_GITLAB_OAUTH_CONNECTION_DELETED
+    future_action: >
+      DELETE 成功后 PublishEvent(TENANT_GITLAB_OAUTH_CONNECTION_DELETED) 并注册消费者。
+    remove_when: "生产路径已发布 TENANT_GITLAB_OAUTH_CONNECTION_DELETED 且意图表去掉证据豁免"
+
+  - id: tenant-gitlab-oauth-bind-activated-log-only
+    intent_stem: "tenant_gitlab_oauth_connection"
+    event: GitOauthCredentialBindActivated
+    reason: "与 gitoauth_go_migration 同策略：首期日志/审计，不强制 Kafka"
+    future_mq_contract: GIT_OAUTH_CREDENTIAL_BIND_ACTIVATED
+    future_action: >
+      绑定成功后 PublishEvent(GIT_OAUTH_CREDENTIAL_BIND_ACTIVATED) 并注册消费者。
+    remove_when: "生产路径已发布 GIT_OAUTH_CREDENTIAL_BIND_ACTIVATED 且意图表去掉证据豁免"
+
+  - id: otp-go-full-native-sent-log-only
+    intent_stem: "otp_go_full_native_sms"
+    event: VerificationCodeSent
+    reason: "全切 Go 首期仅结构化日志，不强制 Kafka"
+    future_mq_contract: VERIFICATION_CODE_SENT
+    future_action: >
+      发码成功后 PublishEvent(VERIFICATION_CODE_SENT) 并注册消费者。
+    remove_when: "生产路径已发布 VERIFICATION_CODE_SENT 且意图表去掉证据豁免"
+
+  - id: otp-go-full-native-verified-log-only
+    intent_stem: "otp_go_full_native_sms"
+    event: VerificationCodeVerified
+    reason: "全切 Go 首期仅结构化日志，不强制 Kafka"
+    future_mq_contract: VERIFICATION_CODE_VERIFIED
+    future_action: >
+      验码成功后 PublishEvent(VERIFICATION_CODE_VERIFIED) 并注册消费者。
+    remove_when: "生产路径已发布 VERIFICATION_CODE_VERIFIED 且意图表去掉证据豁免"
+
+  - id: queued-schedule-rhythm-updated-log-only
+    intent_stem: "top_deliverable_queued_auto_run_schedule"
+    event: ScheduleRhythmUpdated
+    reason: "taskTaskService 首期 publishDomainEvent 日志/审计，不强制 Kafka"
+    future_mq_contract: SCHEDULE_RHYTHM_UPDATED
+    future_action: >
+      节奏更新成功后 PublishEvent(SCHEDULE_RHYTHM_UPDATED) 并注册消费者。
+    remove_when: "生产路径已发布 SCHEDULE_RHYTHM_UPDATED 且意图表去掉证据豁免"
+
+  - id: queued-schedule-task-queued-log-only
+    intent_stem: "top_deliverable_queued_auto_run_schedule"
+    event: TaskQueuedForAutoRun
+    reason: "taskTaskService 首期 publishDomainEvent 日志/审计，不强制 Kafka"
+    future_mq_contract: TASK_QUEUED_FOR_AUTO_RUN
+    future_action: >
+      入队成功后 PublishEvent(TASK_QUEUED_FOR_AUTO_RUN) 并注册消费者。
+    remove_when: "生产路径已发布 TASK_QUEUED_FOR_AUTO_RUN 且意图表去掉证据豁免"
+
+  - id: create-task-queued-auto-run-log-only
+    intent_stem: "create_task_queued_auto_run"
+    event: TaskQueuedForAutoRun
+    reason: "沿用既有 enqueueQueuedAutoRun publishDomainEvent 日志/审计，不强制 Kafka"
+    future_mq_contract: TASK_QUEUED_FOR_AUTO_RUN
+    future_action: >
+      与 queued-schedule-task-queued-log-only 一并改为 PublishEvent(TASK_QUEUED_FOR_AUTO_RUN)。
+    remove_when: "生产路径已发布 TASK_QUEUED_FOR_AUTO_RUN 且意图表去掉证据豁免"
+
+  - id: workspace-schedule-disabled-enqueue-no-event
+    intent_stem: "workspace_schedule_disabled_enqueue_conflict"
+    event: TaskQueuedForAutoRun
+    reason: "拒绝入队不发事件；成功路径沿用既有 enqueueQueuedAutoRun publishDomainEvent"
+    future_mq_contract: TASK_QUEUED_FOR_AUTO_RUN
+    future_action: >
+      与 queued-schedule-task-queued-log-only 一并改为 PublishEvent(TASK_QUEUED_FOR_AUTO_RUN)。
+    remove_when: "生产路径已发布 TASK_QUEUED_FOR_AUTO_RUN 且意图表去掉证据豁免"
+
+
+  - id: queued-schedule-task-dequeued-log-only
+    intent_stem: "top_deliverable_queued_auto_run_schedule"
+    event: TaskDequeuedFromAutoRun
+    reason: "taskTaskService 首期 publishDomainEvent 日志/审计，不强制 Kafka"
+    future_mq_contract: TASK_DEQUEUED_FROM_AUTO_RUN
+    future_action: >
+      出队成功后 PublishEvent(TASK_DEQUEUED_FROM_AUTO_RUN) 并注册消费者。
+    remove_when: "生产路径已发布 TASK_DEQUEUED_FROM_AUTO_RUN 且意图表去掉证据豁免"
+
+  - id: queued-schedule-deferred-log-only
+    intent_stem: "top_deliverable_queued_auto_run_schedule"
+    event: QueuedAutoRunDeferred
+    reason: "taskTaskService 首期 publishDomainEvent 日志/审计，不强制 Kafka"
+    future_mq_contract: QUEUED_AUTO_RUN_DEFERRED
+    future_action: >
+      defer 后 PublishEvent(QUEUED_AUTO_RUN_DEFERRED) 并注册消费者。
+    remove_when: "生产路径已发布 QUEUED_AUTO_RUN_DEFERRED 且意图表去掉证据豁免"
+
+  - id: queued-schedule-started-log-only
+    intent_stem: "top_deliverable_queued_auto_run_schedule"
+    event: QueuedAutoRunStarted
+    reason: "taskTaskService 首期 publishDomainEvent 日志/审计，不强制 Kafka"
+    future_mq_contract: QUEUED_AUTO_RUN_STARTED
+    future_action: >
+      调度启服后 PublishEvent(QUEUED_AUTO_RUN_STARTED) 并注册消费者。
+    remove_when: "生产路径已发布 QUEUED_AUTO_RUN_STARTED 且意图表去掉证据豁免"
+
+  - id: schedule-rhythm-auto-close-updated-log-only
+    intent_stem: "schedule_rhythm_auto_close"
+    event: ScheduleRhythmUpdated
+    reason: "taskTaskService 首期 publishDomainEvent 日志/审计，不强制 Kafka"
+    future_mq_contract: SCHEDULE_RHYTHM_UPDATED
+    future_action: >
+      节奏更新成功后 PublishEvent(SCHEDULE_RHYTHM_UPDATED) 并注册消费者。
+    remove_when: "生产路径已发布 SCHEDULE_RHYTHM_UPDATED 且意图表去掉证据豁免"
+
+  - id: schedule-rhythm-auto-close-warned-log-only
+    intent_stem: "schedule_rhythm_auto_close"
+    event: ScheduleAutoCloseWarned
+    reason: "taskTaskService 首期 publishDomainEvent 日志/审计，不强制 Kafka"
+    future_mq_contract: SCHEDULE_AUTO_CLOSE_WARNED
+    future_action: >
+      预告成功后 PublishEvent(SCHEDULE_AUTO_CLOSE_WARNED) 并注册消费者。
+    remove_when: "生产路径已发布 SCHEDULE_AUTO_CLOSE_WARNED 且意图表去掉证据豁免"
+
+  - id: schedule-rhythm-auto-close-released-log-only
+    intent_stem: "schedule_rhythm_auto_close"
+    event: ScheduleAutoCloseReleased
+    reason: "taskTaskService 首期 publishDomainEvent 日志/审计，不强制 Kafka"
+    future_mq_contract: SCHEDULE_AUTO_CLOSE_RELEASED
+    future_action: >
+      释放成功后 PublishEvent(SCHEDULE_AUTO_CLOSE_RELEASED) 并注册消费者。
+    remove_when: "生产路径已发布 SCHEDULE_AUTO_CLOSE_RELEASED 且意图表去掉证据豁免"
+
+  - id: frontend-039-schedule-rhythm-auto-close-updated
+    intent_stem: "039_schedule_rhythm_auto_close"
+    event: ScheduleRhythmUpdated
+    reason: "前端仅发起 PATCH，领域事件由 taskTaskService 发布"
+    future_mq_contract: SCHEDULE_RHYTHM_UPDATED
+    future_action: >
+      前端不直接 publish；后端节奏更新路径发布后可去掉本前端意图豁免。
+    remove_when: "前端意图表去掉证据豁免或改为引用后端已发布事件证据"
+
+  - id: frontend-comment-execution-details-mode-changed
+    intent_stem: "comment_execution_details"
+    event: CommentExecutionModeChanged
+    reason: "前端仅发起 PATCH，领域事件由 taskTaskService / taskAIComment 发布"
+    future_mq_contract: COMMENT_EXECUTION_MODE_CHANGED
+    future_action: >
+      前端意图改为引用后端意图证据，或去掉本豁免行。
+    remove_when: "前端意图表去掉证据豁免或改为引用后端已发布事件证据"
+
+  - id: frontend-comment-execution-details-binding-advanced
+    intent_stem: "comment_execution_details"
+    event: CommentContainerBindingAdvanced
+    reason: "前端仅调用 ensure/advance API，领域事件由 taskCloudService 发布"
+    future_mq_contract: COMMENT_CONTAINER_BINDING_ADVANCED
+    future_action: >
+      前端意图改为引用 backend/cloud/comment_container_bindings 证据后去掉豁免。
+    remove_when: "前端意图表去掉证据豁免或改为引用后端已发布事件证据"
+
+  - id: auth-phone-occupancy-excludes-archived-no-new-event
+    intent_stem: "auth_phone_occupancy_excludes_archived"
+    event: "(none — occupancy query / stale binding void)"
+    reason: "占用判定改为 JOIN 活跃用户并作废归档/孤儿绑定，不发布新领域事件；新用户仍走既有 USER_CREATED"
+    future_mq_contract: ""
+    future_action: >
+      若产品要求「标识被回收」可观测，再发布 IdentifierOccupancyReclaimed 并登记消费者。
+    remove_when: "产品确认无需独立回收事件，或已发布 IdentifierOccupancyReclaimed 且意图表去掉证据豁免"
+
+  - id: gitlab-region-capacity-updated-log-only
+    intent_stem: "system_admin_gitlab_region_bandwidth"
+    event: GitlabRegionCapacityUpdated
+    reason: "taskBill 区域容量（磁盘/流量/带宽）写入 billing_gitlab_region 首期仅结构化日志，与既有容量更新同档"
+    future_mq_contract: GITLAB_REGION_CAPACITY_UPDATED
+    future_action: >
+      容量写入成功后 PublishEvent(GITLAB_REGION_CAPACITY_UPDATED) 并注册消费者。
+    remove_when: "生产路径已发布 GITLAB_REGION_CAPACITY_UPDATED 且意图表去掉证据豁免"
+
+  - id: reclone-agent-kickoff-deferred-runtime-event
+    intent_stem: "011_reclone_resumes_agent_kickoff"
+    event: AgentKickoffDeferred
+    reason: "onlineServiceJS 容器内 runtime-event HTTP（emitRuntimeEvent），非 Kafka 领域事件"
+    future_mq_contract: AGENT_KICKOFF_DEFERRED
+    future_action: >
+      若需跨服务编排，在 Cloud runtime-event 入站后 PublishEvent(AGENT_KICKOFF_DEFERRED)。
+    remove_when: "已发布 AGENT_KICKOFF_DEFERRED Kafka 事件且意图表去掉证据豁免"
+
+  - id: reclone-agent-kickoff-resumed-runtime-event
+    intent_stem: "011_reclone_resumes_agent_kickoff"
+    event: AgentKickoffResumed
+    reason: "onlineServiceJS 容器内 runtime-event HTTP（emitRuntimeEvent），非 Kafka 领域事件"
+    future_mq_contract: AGENT_KICKOFF_RESUME
+    future_action: >
+      若需跨服务编排，在 Cloud runtime-event 入站后 PublishEvent(AGENT_KICKOFF_RESUME)。
+    remove_when: "已发布 AGENT_KICKOFF_RESUME Kafka 事件且意图表去掉证据豁免"

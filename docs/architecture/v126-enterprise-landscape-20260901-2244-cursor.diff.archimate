@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v126 变迁 (v125→v126)" id="id-v126eldiff01">
+  <folder name="Business" id="id-v126el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v126-biz-member" name="租户成员"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v126-biz-create" name="工作面板创建自动运行任务 [MODIFIED v126]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v126-biz-autorun" name="【自动运行】评论克隆/推送"/>
+  </folder>
+  <folder name="Application" id="id-v126el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126el-app-task" name="taskTaskService [MODIFIED v126]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126el-app-proj" name="taskProjectService"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v126el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v126el-pl-v125" name="Plateau v125 ImageMarket"/>
+    <element xsi:type="archimate:Plateau" id="id-v126el-pl-v126" name="Plateau v126 项目 L2 可种自动运行"/>
+    <element xsi:type="archimate:Gap" id="id-v126el-gap" name="Gap: 创建任务不认项目页授权"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v126el-wp" name="WP-project-l2-seed-autorun-comment"/>
+  </folder>
+  <folder name="Relations" id="id-v126el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v126el-rel-member-create" source="id-v126-biz-member" target="id-v126-biz-create"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v126el-rel-create-autorun" source="id-v126-biz-create" target="id-v126-biz-autorun" name="种下后换票"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v126el-rel-task-proj" source="id-v126el-app-task" target="id-v126el-app-proj" name="GET internal grant"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v126el-rel-pl-gap" source="id-v126el-pl-v125" target="id-v126el-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v126el-rel-wp-gap" source="id-v126el-wp" target="id-v126el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v126el-rel-wp-pl" source="id-v126el-wp" target="id-v126el-pl-v126"/>
+  </folder>
+  <folder name="Views" id="id-v126el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v126el-view-mig" name="架构变迁 v125→v126 — 项目 L2 种下自动运行评论">
+      <child xsi:type="archimate:DiagramObject" id="id-v126el-do-pl125" archimateElement="id-v126el-pl-v125">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126el-c-pl-gap" source="id-v126el-do-pl125" target="id-v126el-do-gap" archimateRelationship="id-v126el-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126el-do-gap" targetConnections="id-v126el-c-pl-gap id-v126el-c-wp-gap" archimateElement="id-v126el-gap">
+        <bounds x="340" y="48" width="420" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126el-do-wp" archimateElement="id-v126el-wp">
+        <bounds x="340" y="140" width="420" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126el-c-wp-gap" source="id-v126el-do-wp" target="id-v126el-do-gap" archimateRelationship="id-v126el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126el-c-wp-pl" source="id-v126el-do-wp" target="id-v126el-do-pl126" archimateRelationship="id-v126el-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126el-do-pl126" targetConnections="id-v126el-c-wp-pl" archimateElement="id-v126el-pl-v126">
+        <bounds x="800" y="140" width="300" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v126el-view-topo" name="v126 Target — 创建自动运行不再二次 OAuth">
+      <child xsi:type="archimate:DiagramObject" id="id-v126el-do-member" archimateElement="id-v126-biz-member">
+        <bounds x="48" y="80" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126el-c-member-create" source="id-v126el-do-member" target="id-v126el-do-create" archimateRelationship="id-v126el-rel-member-create"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126el-do-create" targetConnections="id-v126el-c-member-create" archimateElement="id-v126-biz-create">
+        <bounds x="240" y="80" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126el-c-create-autorun" source="id-v126el-do-create" target="id-v126el-do-autorun" archimateRelationship="id-v126el-rel-create-autorun"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126el-do-autorun" targetConnections="id-v126el-c-create-autorun" archimateElement="id-v126-biz-autorun">
+        <bounds x="560" y="80" width="240" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126el-do-task" archimateElement="id-v126el-app-task">
+        <bounds x="240" y="180" width="240" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126el-c-task-proj" source="id-v126el-do-task" target="id-v126el-do-proj" archimateRelationship="id-v126el-rel-task-proj"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126el-do-proj" targetConnections="id-v126el-c-task-proj" archimateElement="id-v126el-app-proj">
+        <bounds x="520" y="180" width="200" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

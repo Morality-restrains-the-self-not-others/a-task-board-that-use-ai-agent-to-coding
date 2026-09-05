@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v122 变迁 (v121→v122)" id="id-v122eldiff01">
+  <folder name="Business" id="id-v122el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v122-el-dev" name="研发"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v122-el-ops" name="平台运维"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v122-el-pub" name="发布产物"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v122-el-dep" name="钉版本并部署"/>
+  </folder>
+  <folder name="Application" id="id-v122el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122-el-runall" name="runAll :9999"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v122-el-bins" name="Go 二进制 + taskEvents + taskFE dist"/>
+  </folder>
+  <folder name="Technology" id="id-v122el-tech" type="technology">
+    <element xsi:type="archimate:Artifact" id="id-v122-el-src" name="源码仓 GitHub"/>
+    <element xsi:type="archimate:Artifact" id="id-v122-el-cfg" name="daydaymoney-deploy"/>
+    <element xsi:type="archimate:Artifact" id="id-v122-el-pkg" name="GitHub Packages"/>
+    <element xsi:type="archimate:Node" id="id-v122-el-host" name="部署机 DEPLOY_ROOT"/>
+    <element xsi:type="archimate:Artifact" id="id-v122-el-oldconf" name="源码仓 conf 运行时 SSOT"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v122el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v122-el-pl121" name="Plateau v121"/>
+    <element xsi:type="archimate:Plateau" id="id-v122-el-pl122" name="Plateau v122 二进制+配置仓"/>
+    <element xsi:type="archimate:Gap" id="id-v122-el-gap" name="Gap: 源码与运行时 conf 同树"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v122-el-wp" name="WP-binary-deploy-config-repo"/>
+  </folder>
+  <folder name="Relations" id="id-v122el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v122-el-rel-dev-pub" source="id-v122-el-dev" target="id-v122-el-pub"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v122-el-rel-ops-dep" source="id-v122-el-ops" target="id-v122-el-dep"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122-el-rel-src-pkg" source="id-v122-el-src" target="id-v122-el-pkg" name="CI publish"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122-el-rel-cfg-host" source="id-v122-el-cfg" target="id-v122-el-host" name="git pull conf/配方"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v122-el-rel-pkg-host" source="id-v122-el-pkg" target="id-v122-el-host" name="deploy-sync 按钉拉取"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v122-el-rel-host-runall" source="id-v122-el-host" target="id-v122-el-runall" name="exec last-good"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v122-el-rel-runall-bins" source="id-v122-el-runall" target="id-v122-el-bins" name="start_command"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v122-el-rel-runall-cfg" source="id-v122-el-runall" target="id-v122-el-cfg" name="CONF_ROOT"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v122-el-rel-old-src" source="id-v122-el-oldconf" target="id-v122-el-src" name="曾同树"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v122-el-rel-pl-gap" source="id-v122-el-pl121" target="id-v122-el-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v122-el-rel-wp-gap" source="id-v122-el-wp" target="id-v122-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v122-el-rel-wp-pl" source="id-v122-el-wp" target="id-v122-el-pl122"/>
+  </folder>
+  <folder name="Views" id="id-v122el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v122-el-view-mig" name="架构变迁 v121→v122 — binary-deploy-config-repo">
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-pl121" archimateElement="id-v122-el-pl121">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-el-c-pl-gap" source="id-v122-el-do-pl121" target="id-v122-el-do-gap" archimateRelationship="id-v122-el-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-gap" targetConnections="id-v122-el-c-pl-gap id-v122-el-c-wp-gap" archimateElement="id-v122-el-gap">
+        <bounds x="280" y="48" width="420" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-wp" archimateElement="id-v122-el-wp">
+        <bounds x="280" y="140" width="420" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-el-c-wp-gap" source="id-v122-el-do-wp" target="id-v122-el-do-gap" archimateRelationship="id-v122-el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-el-c-wp-pl" source="id-v122-el-do-wp" target="id-v122-el-do-pl122" archimateRelationship="id-v122-el-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-pl122" targetConnections="id-v122-el-c-wp-pl" archimateElement="id-v122-el-pl122">
+        <bounds x="740" y="140" width="260" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v122-el-view-topo" name="v122 Target — 二进制部署与配置仓">
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-dev" archimateElement="id-v122-el-dev">
+        <bounds x="48" y="48" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-el-c-dev-pub" source="id-v122-el-do-dev" target="id-v122-el-do-pub" archimateRelationship="id-v122-el-rel-dev-pub"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-ops" archimateElement="id-v122-el-ops">
+        <bounds x="48" y="160" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-el-c-ops-dep" source="id-v122-el-do-ops" target="id-v122-el-do-dep" archimateRelationship="id-v122-el-rel-ops-dep"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-pub" targetConnections="id-v122-el-c-dev-pub" archimateElement="id-v122-el-pub">
+        <bounds x="220" y="48" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-dep" targetConnections="id-v122-el-c-ops-dep" archimateElement="id-v122-el-dep">
+        <bounds x="220" y="160" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-src" targetConnections="id-v122-el-c-old-src" archimateElement="id-v122-el-src">
+        <bounds x="420" y="32" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-el-c-src-pkg" source="id-v122-el-do-src" target="id-v122-el-do-pkg" archimateRelationship="id-v122-el-rel-src-pkg"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-pkg" targetConnections="id-v122-el-c-src-pkg" archimateElement="id-v122-el-pkg">
+        <bounds x="640" y="32" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-el-c-pkg-host" source="id-v122-el-do-pkg" target="id-v122-el-do-host" archimateRelationship="id-v122-el-rel-pkg-host"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-cfg" targetConnections="id-v122-el-c-runall-cfg" archimateElement="id-v122-el-cfg">
+        <bounds x="420" y="160" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-el-c-cfg-host" source="id-v122-el-do-cfg" target="id-v122-el-do-host" archimateRelationship="id-v122-el-rel-cfg-host"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-host" targetConnections="id-v122-el-c-pkg-host id-v122-el-c-cfg-host" archimateElement="id-v122-el-host">
+        <bounds x="640" y="160" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-el-c-host-runall" source="id-v122-el-do-host" target="id-v122-el-do-runall" archimateRelationship="id-v122-el-rel-host-runall"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-runall" targetConnections="id-v122-el-c-host-runall" archimateElement="id-v122-el-runall">
+        <bounds x="420" y="280" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-el-c-runall-bins" source="id-v122-el-do-runall" target="id-v122-el-do-bins" archimateRelationship="id-v122-el-rel-runall-bins"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-el-c-runall-cfg" source="id-v122-el-do-runall" target="id-v122-el-do-cfg" archimateRelationship="id-v122-el-rel-runall-cfg"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-bins" targetConnections="id-v122-el-c-runall-bins" archimateElement="id-v122-el-bins">
+        <bounds x="640" y="280" width="220" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v122-el-do-oldconf" archimateElement="id-v122-el-oldconf">
+        <bounds x="48" y="280" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v122-el-c-old-src" source="id-v122-el-do-oldconf" target="id-v122-el-do-src" archimateRelationship="id-v122-el-rel-old-src"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

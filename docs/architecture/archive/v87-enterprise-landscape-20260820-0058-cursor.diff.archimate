@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v87 diff (v85→v87)" id="id-v87eldiff01">
+  <folder name="Application" id="id-v87eld-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v87eld-gw" name="API Gateway"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v87eld-fe" name="taskFE [MODIFIED v87]"/>
+  </folder>
+  <folder name="Technology" id="id-v87eld-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v87eld-ngx" name="taskfe-nginx Docker [NEW v87]"/>
+    <element xsi:type="archimate:Node" id="id-v87eld-edge" name="SH Edge nginx"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v87eld-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v87eld-pl85" name="Plateau v85"/>
+    <element xsi:type="archimate:Plateau" id="id-v87eld-pl87" name="Plateau v87"/>
+    <element xsi:type="archimate:Gap" id="id-v87eld-gap" name="Gap: SPA 绑 vite preview，stop 即 502"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v87eld-wp" name="WP-taskfe-nginx-static-resident"/>
+  </folder>
+  <folder name="Relations" id="id-v87eld-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v87eld-rel-gw-fe" source="id-v87eld-gw" target="id-v87eld-fe" name="SPA 静态资源"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v87eld-rel-ngx-fe" source="id-v87eld-ngx" target="id-v87eld-fe" name="Docker nginx 常驻 :4000"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v87eld-rel-edge-gw" source="id-v87eld-edge" target="id-v87eld-gw" name="www :443"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v87eld-rel-pl85-gap" source="id-v87eld-pl85" target="id-v87eld-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v87eld-rel-wp-gap" source="id-v87eld-wp" target="id-v87eld-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v87eld-rel-wp-pl87" source="id-v87eld-wp" target="id-v87eld-pl87"/>
+  </folder>
+  <folder name="Views" id="id-v87eld-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v87eld-view-mig" name="架构变迁 v85→v87 — taskfe-nginx-static-resident">
+      <child xsi:type="archimate:DiagramObject" id="id-v87eld-do-pl85" archimateElement="id-v87eld-pl85">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87eld-c-pl85-gap" source="id-v87eld-do-pl85" target="id-v87eld-do-gap" archimateRelationship="id-v87eld-rel-pl85-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87eld-do-gap" targetConnections="id-v87eld-c-pl85-gap id-v87eld-c-wp-gap" archimateElement="id-v87eld-gap">
+        <bounds x="240" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87eld-do-wp" archimateElement="id-v87eld-wp">
+        <bounds x="240" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87eld-c-wp-gap" source="id-v87eld-do-wp" target="id-v87eld-do-gap" archimateRelationship="id-v87eld-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87eld-c-wp-pl87" source="id-v87eld-do-wp" target="id-v87eld-do-pl87" archimateRelationship="id-v87eld-rel-wp-pl87"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87eld-do-pl87" targetConnections="id-v87eld-c-wp-pl87" archimateElement="id-v87eld-pl87">
+        <bounds x="620" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v87eld-view-flow" name="关系变更 diff — v85 vs v87 SPA serving">
+      <child xsi:type="archimate:DiagramObject" id="id-v87eld-d-edge" archimateElement="id-v87eld-edge">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87eld-c-edge-gw" source="id-v87eld-d-edge" target="id-v87eld-d-gw" archimateRelationship="id-v87eld-rel-edge-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87eld-d-gw" targetConnections="id-v87eld-c-edge-gw" archimateElement="id-v87eld-gw">
+        <bounds x="260" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87eld-c-gw-fe" source="id-v87eld-d-gw" target="id-v87eld-d-fe" archimateRelationship="id-v87eld-rel-gw-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87eld-d-ngx" archimateElement="id-v87eld-ngx">
+        <bounds x="260" y="160" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v87eld-c-ngx-fe" source="id-v87eld-d-ngx" target="id-v87eld-d-fe" archimateRelationship="id-v87eld-rel-ngx-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v87eld-d-fe" targetConnections="id-v87eld-c-gw-fe id-v87eld-c-ngx-fe" archimateElement="id-v87eld-fe">
+        <bounds x="520" y="80" width="180" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

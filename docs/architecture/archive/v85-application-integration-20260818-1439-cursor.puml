@@ -1,0 +1,98 @@
+' @title: 可插拔多区域 gitService
+' @view: application-integration
+' @status: archived
+' @version: 85
+' @iteration: pluggable-multi-region-gitservice
+' @author: cursor
+' @based_on: v84 (v84-application-integration-20260816-1328-cursor.puml)
+' @updated: 2026-08-18 15:50
+' @description: 保留现网 GitLab；SH 新增 tencent-sh-1；billing_gitlab_region 可插拔；租户无默认须选购；开通按 region 路由
+
+@startuml
+!include <archimate/Archimate>
+
+title v85 — Pluggable multi-region gitService Current 2026-08-18 15:50
+
+Application_Component(taskFE, "taskFE\nSystemAdmin + 租户选购")
+note right of taskFE
+  多区域目录；无默认须显式选购
+  pending 开通可重试
+end note
+
+Application_Component(taskBill, "taskBill (Go :8004)")
+note right of taskBill
+  ensureTenantGitlabGroupForRegion
+  禁止静默 defaultGitlabRegion
+  hybrid 开通（失败→pending）
+end note
+
+Application_Component(taskAuth, "taskAuth (Go)")
+note right of taskAuth
+  多 GitLab OIDC client / redirect
+end note
+
+Application_Component(gitSvcExisting, "gitService 现网\n(tencent-shanghai-5)")
+note right of gitSvcExisting
+  无标记 — 保留
+  web: gitlab.${baseDomain}
+end note
+
+Application_Component(gitSvcSh1, "gitService @ SH\n(tencent-sh-1)")
+note right of gitSvcSh1
+  web: gitlab-tencent-sh-1.${baseDomain}
+  HTTP :8014 / SSH host :2223
+  精简 memLimit≈2g
+end note
+
+Application_DataObject(regionReg, "billing_gitlab_region")
+note right of regionReg
+  可插拔注册表：api_base/web_url/token/容量
+end note
+
+Application_DataObject(tenantQuota, "billing_tenant_gitlab_resource\n(tenant_id, region)")
+note right of tenantQuota
+  provisioning_status:
+  provisioning|active|pending
+end note
+
+Application_Event(purchased, "TenantGitlabResourcePurchased")
+Application_Event(provisioned, "TenantGitlabRegionProvisioned")
+Application_Event(provPending, "TenantGitlabRegionProvisioningPending")
+
+Technology_Node(edgeNginx, "SH 边缘 nginx")
+note right of edgeNginx
+  server gitlab-tencent-sh-1
+  upstream :8014
+end note
+
+Technology_Service(gitlabExisting, "GitLab CE 现网 (:8012 tunnel)")
+Technology_Service(gitlabSh1, "GitLab CE SH-1 (:8014)")
+note right of gitlabSh1
+  独立实例数据隔离
+end note
+
+Rel_Flow(taskFE, taskBill, "选购 region + 配额")
+Rel_Access(taskBill, regionReg, "读路由")
+Rel_Access(taskBill, tenantQuota, "写配额/开通状态")
+Rel_Flow(taskBill, purchased, "购买成功")
+Rel_Flow(purchased, taskBill, "触发开通")
+Rel_Flow(taskBill, gitlabExisting, "Admin API if region=A")
+Rel_Flow(taskBill, gitlabSh1, "Admin API if region=sh-1")
+Rel_Flow(taskBill, provisioned, "开通成功")
+Rel_Flow(taskBill, provPending, "开通失败")
+Rel_Flow(taskAuth, gitlabExisting, "OIDC issuer/callback")
+Rel_Flow(taskAuth, gitlabSh1, "OIDC client 独立")
+Rel_Serving(gitSvcExisting, gitlabExisting, "compose")
+Rel_Serving(gitSvcSh1, gitlabSh1, "compose slim")
+Rel_Flow(edgeNginx, gitlabExisting, "gitlab.${baseDomain}")
+Rel_Flow(edgeNginx, gitlabSh1, "gitlab-tencent-sh-1")
+
+Implementation_Plateau(plateauV84, "Plateau v84 current")
+Implementation_Plateau(plateauV85, "Plateau v85 multi-region gitService")
+Implementation_Gap(gapSingle, "Gap: 单实例隐形默认 + 开通不按 region 路由")
+Implementation_WorkPackage(wpPlug, "WP-pluggable-multi-region-gitservice")
+Rel_Triggering(plateauV84, gapSingle, "identifies")
+Rel_Realization(wpPlug, gapSingle, "closes")
+Rel_Realization(wpPlug, plateauV85, "delivers")
+
+@enduml

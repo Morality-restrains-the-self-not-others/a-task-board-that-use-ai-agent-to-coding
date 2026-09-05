@@ -1,0 +1,5 @@
+# SSO 桥接密钥（taskGitOauth BridgeJWTSecret / Django GITOAUTH_BRIDGE_JWT_SECRET）
+# 同源 conf/core/sso/config.yaml 的 ssoJwtSecret（OPT-20260806-062 轮换后的强随机值）。
+# 轮换时两处同步更新；消费方 taskProjectService / taskCredentialService 经
+# TASK2APP_SSO_JWT_SECRET env（可选）或各自兜底值对齐，见 OPT-20260807-071。
+ssoJwtSecret: ""

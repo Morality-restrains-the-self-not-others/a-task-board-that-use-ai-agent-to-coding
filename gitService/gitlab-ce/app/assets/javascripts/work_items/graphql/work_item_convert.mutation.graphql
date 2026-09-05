@@ -1,0 +1,10 @@
+#import "ee_else_ce/work_items/graphql/work_item.fragment.graphql"
+
+mutation workItemConvert($input: WorkItemConvertInput!, $useWorkItemFeatures: Boolean = false) {
+  workItemConvert(input: $input) {
+    workItem {
+      ...WorkItem
+    }
+    errors
+  }
+}

@@ -1,0 +1,11 @@
+---
+table_name: sbom_occurrences_vulnerabilities
+classes:
+- Sbom::OccurrencesVulnerability
+feature_categories:
+- dependency_management
+milestone: '16.7'
+gitlab_schema: gitlab_sec
+sharding_key:
+  project_id: projects
+table_size: medium

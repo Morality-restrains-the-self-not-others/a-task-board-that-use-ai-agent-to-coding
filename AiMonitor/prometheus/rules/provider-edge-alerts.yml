@@ -1,0 +1,38 @@
+groups:
+  - name: provider-edge
+    interval: 30s
+    rules:
+      # provider.daydaymoney.com 镜像市场公网探活（RT-20260901-0126）。
+      # 2026-09-01 故障：SH 反向隧道 8010 半开 — TLS 通、HTTP 0 字节超时，浏览器转圈。
+      # 处置先查 ensure-edge-tunnels.sh 半开重建，禁止先改 taskFE SSO href。
+      - alert: ProviderPublicDown
+        expr: probe_success{job="provider-public"} == 0
+        for: 3m
+        labels:
+          severity: critical
+          component: provider-edge
+          category: infrastructure
+        annotations:
+          summary: "provider.daydaymoney.com 不可达或非 SPA HTML"
+          description: >
+            Blackbox 探活 https://provider.daydaymoney.com/ 已失败 3 分钟（期望最终 200 且 body 含
+            <!DOCTYPE html>）。RT-20260901-0126 曾因 SH 反向隧道 8010 半开：TLS 通但 HTTP 0 字节
+            超时。先检查 SH :8010 隧道与 ensure-edge-tunnels.sh 半开重建，不要先改 taskFE SSO href。
+            复现：curl -sS -m 8 https://provider.daydaymoney.com/ | head -c 200
+
+      # 本机 taskAiProvider :8010 探活 — 与 provider-public 联动定位故障侧。
+      - alert: ProviderLocal8010Down
+        expr: probe_success{job="provider-local-8010"} == 0
+        for: 3m
+        labels:
+          severity: warning
+          component: provider-edge
+          category: infrastructure
+        annotations:
+          summary: "本机 taskAiProvider :8010 不可达"
+          description: >
+            Blackbox 探活 http://host.docker.internal:8010/ 已失败 3 分钟：本机 taskAiProvider
+            服务异常（非隧道问题）。若 provider.daydaymoney.com 挂而本机 8010 正常，则故障在 SH
+            反向隧道半开，重建 ensure-edge-tunnels.sh 的 -R 8010 channel；若 8010 也挂，先查
+            taskAiProvider 容器/进程。不要先改 taskFE SSO href。
+            复现：curl -sS -m 8 http://127.0.0.1:8010/ | head -c 200

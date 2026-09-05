@@ -1,0 +1,8 @@
+---
+name: create_badge
+description: Grants the ability to create badges
+boundaries:
+  - project
+  - group
+permissions:
+  - create_badge

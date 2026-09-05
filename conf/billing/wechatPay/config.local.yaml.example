@@ -1,0 +1,10 @@
+# 复制为本目录 config.local.yaml 后填写（该文件已 gitignore，禁止提交）。
+#   cp conf/billing/wechatPay/config.local.yaml.example \
+#      conf/billing/wechatPay/config.local.yaml
+#
+# 只覆盖密钥项；mchid / appid / notify_url 仍以 conf.yaml 为准。
+# 商户 API 证书私钥放到同目录 apiclient_key.pem。
+
+merchant_serial_no: "<商户API证书序列号>"
+api_v3_key: "<32位APIv3密钥>"
+# merchant_private_key_path: apiclient_key.pem

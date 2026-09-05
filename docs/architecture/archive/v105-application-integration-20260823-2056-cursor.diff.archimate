@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v105 变迁 (v104→v105)" id="id-v105aidiff01">
+  <folder name="Application" id="id-v105aid-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v105-app-fe" name="taskFE SPA"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v105-app-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v105-app-auth" name="taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v105-app-bill" name="taskBill"/>
+    <element xsi:type="archimate:DataObject" id="id-v105-data-user" name="auth_user.is_tester"/>
+    <element xsi:type="archimate:DataObject" id="id-v105-data-region" name="billing_gitlab_region.access_mode"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v105-ev-tester" name="UserTesterFlagChanged"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v105-ev-mode" name="GitlabRegionAccessModeChanged"/>
+  </folder>
+  <folder name="Technology" id="id-v105aid-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v105-tech-kafka" name="Kafka"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v105aid-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v105-pl-v104" name="Plateau v104"/>
+    <element xsi:type="archimate:Plateau" id="id-v105-pl-v105" name="Plateau v105"/>
+    <element xsi:type="archimate:Gap" id="id-v105-gap" name="Gap: 无测试角色/开发区门禁"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v105-wp" name="WP-tester-gitlab-access-mode"/>
+  </folder>
+  <folder name="Relations" id="id-v105aid-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v105-rel-fe-gw" source="id-v105-app-fe" target="id-v105-app-gw" name="PATCH/PUT"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v105-rel-gw-auth" source="id-v105-app-gw" target="id-v105-app-auth" name="X-User-Is-Tester"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v105-rel-gw-bill" source="id-v105-app-gw" target="id-v105-app-bill" name="regions"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v105-rel-auth-user" source="id-v105-app-auth" target="id-v105-data-user" name="PATCH is_tester"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v105-rel-bill-region" source="id-v105-app-bill" target="id-v105-data-region" name="PUT access_mode"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v105-rel-auth-ev" source="id-v105-app-auth" target="id-v105-ev-tester" name="publish"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v105-rel-bill-ev" source="id-v105-app-bill" target="id-v105-ev-mode" name="publish"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v105-rel-ev-k1" source="id-v105-ev-tester" target="id-v105-tech-kafka" name="user-tester-flag-changed"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v105-rel-ev-k2" source="id-v105-ev-mode" target="id-v105-tech-kafka" name="gitlab-region-access-mode-changed"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v105-rel-pl104-gap" source="id-v105-pl-v104" target="id-v105-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v105-rel-wp-gap" source="id-v105-wp" target="id-v105-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v105-rel-wp-pl105" source="id-v105-wp" target="id-v105-pl-v105"/>
+  </folder>
+  <folder name="Views" id="id-v105aid-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v105-view-mig" name="架构变迁 v104→v105 — tester-gitlab-access-mode">
+      <child xsi:type="archimate:DiagramObject" id="id-v105-do-pl104" archimateElement="id-v105-pl-v104">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105-c-pl104-gap" source="id-v105-do-pl104" target="id-v105-do-gap" archimateRelationship="id-v105-rel-pl104-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105-do-gap" targetConnections="id-v105-c-pl104-gap id-v105-c-wp-gap" archimateElement="id-v105-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105-do-wp" archimateElement="id-v105-wp">
+        <bounds x="240" y="160" width="400" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105-c-wp-gap" source="id-v105-do-wp" target="id-v105-do-gap" archimateRelationship="id-v105-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105-c-wp-pl105" source="id-v105-do-wp" target="id-v105-do-pl105" archimateRelationship="id-v105-rel-wp-pl105"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105-do-pl105" targetConnections="id-v105-c-wp-pl105" archimateElement="id-v105-pl-v105">
+        <bounds x="680" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v105-view-topo" name="v105 Target — tester + region access_mode">
+      <child xsi:type="archimate:DiagramObject" id="id-v105-do-fe" archimateElement="id-v105-app-fe">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105-c-fe-gw" source="id-v105-do-fe" target="id-v105-do-gw" archimateRelationship="id-v105-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105-do-gw" targetConnections="id-v105-c-fe-gw" archimateElement="id-v105-app-gw">
+        <bounds x="240" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105-c-gw-auth" source="id-v105-do-gw" target="id-v105-do-auth" archimateRelationship="id-v105-rel-gw-auth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105-c-gw-bill" source="id-v105-do-gw" target="id-v105-do-bill" archimateRelationship="id-v105-rel-gw-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105-do-auth" targetConnections="id-v105-c-gw-auth" archimateElement="id-v105-app-auth">
+        <bounds x="460" y="16" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105-c-auth-user" source="id-v105-do-auth" target="id-v105-do-user" archimateRelationship="id-v105-rel-auth-user"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105-c-auth-ev" source="id-v105-do-auth" target="id-v105-do-ev-t" archimateRelationship="id-v105-rel-auth-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105-do-bill" targetConnections="id-v105-c-gw-bill" archimateElement="id-v105-app-bill">
+        <bounds x="460" y="96" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105-c-bill-region" source="id-v105-do-bill" target="id-v105-do-region" archimateRelationship="id-v105-rel-bill-region"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105-c-bill-ev" source="id-v105-do-bill" target="id-v105-do-ev-m" archimateRelationship="id-v105-rel-bill-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105-do-user" targetConnections="id-v105-c-auth-user" archimateElement="id-v105-data-user">
+        <bounds x="660" y="16" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105-do-region" targetConnections="id-v105-c-bill-region" archimateElement="id-v105-data-region">
+        <bounds x="660" y="96" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105-do-ev-t" targetConnections="id-v105-c-auth-ev" archimateElement="id-v105-ev-tester">
+        <bounds x="660" y="176" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105-c-ev-k1" source="id-v105-do-ev-t" target="id-v105-do-k" archimateRelationship="id-v105-rel-ev-k1"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105-do-ev-m" targetConnections="id-v105-c-bill-ev" archimateElement="id-v105-ev-mode">
+        <bounds x="660" y="256" width="260" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105-c-ev-k2" source="id-v105-do-ev-m" target="id-v105-do-k" archimateRelationship="id-v105-rel-ev-k2"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105-do-k" targetConnections="id-v105-c-ev-k1 id-v105-c-ev-k2" archimateElement="id-v105-tech-kafka">
+        <bounds x="960" y="216" width="120" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

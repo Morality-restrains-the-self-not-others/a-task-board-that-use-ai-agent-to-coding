@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v104 变迁 (v103→v104)" id="id-v104aidiff01">
+  <folder name="Application" id="id-v104aid-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v104-app-fe" name="taskFE SPA"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v104-app-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v104-app-cloud" name="taskCloudService"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v104-app-osjs" name="onlineServiceJS"/>
+    <element xsi:type="archimate:DataObject" id="id-v104-data-snap" name="cloud_layer_graph_snapshot"/>
+    <element xsi:type="archimate:DataObject" id="id-v104-data-ptr" name="cloud_job_step_full_object"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v104-ev-arch" name="JobStepFullArchived"/>
+  </folder>
+  <folder name="Technology" id="id-v104aid-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v104-tech-cos" name="Tencent COS"/>
+    <element xsi:type="archimate:Node" id="id-v104-tech-kafka" name="Kafka"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v104aid-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v104-pl-v103" name="Plateau v103"/>
+    <element xsi:type="archimate:Plateau" id="id-v104-pl-v104" name="Plateau v104"/>
+    <element xsi:type="archimate:Gap" id="id-v104-gap" name="Gap: step_full 随容器释放丢失"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v104-wp" name="WP-ztree-step-full-cos"/>
+  </folder>
+  <folder name="Relations" id="id-v104aid-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v104-rel-osjs-cloud" source="id-v104-app-osjs" target="id-v104-app-cloud" name="job-step-full-push"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v104-rel-fe-gw" source="id-v104-app-fe" target="id-v104-app-gw" name="GET exec-log / PATCH COS"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v104-rel-gw-cloud" source="id-v104-app-gw" target="id-v104-app-cloud" name="forward"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v104-rel-cloud-cos" source="id-v104-app-cloud" target="id-v104-tech-cos" name="PutObject/GetObject"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v104-rel-cloud-ptr" source="id-v104-app-cloud" target="id-v104-data-ptr" name="UPSERT pointer"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v104-rel-cloud-ev" source="id-v104-app-cloud" target="id-v104-ev-arch" name="publish"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v104-rel-ev-k" source="id-v104-ev-arch" target="id-v104-tech-kafka" name="job-step-full-archived"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v104-rel-pl103-gap" source="id-v104-pl-v103" target="id-v104-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v104-rel-wp-gap" source="id-v104-wp" target="id-v104-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v104-rel-wp-pl104" source="id-v104-wp" target="id-v104-pl-v104"/>
+  </folder>
+  <folder name="Views" id="id-v104aid-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v104-view-mig" name="架构变迁 v103→v104 — ztree-step-full-cos">
+      <child xsi:type="archimate:DiagramObject" id="id-v104-do-pl103" archimateElement="id-v104-pl-v103">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-c-pl103-gap" source="id-v104-do-pl103" target="id-v104-do-gap" archimateRelationship="id-v104-rel-pl103-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-do-gap" targetConnections="id-v104-c-pl103-gap id-v104-c-wp-gap" archimateElement="id-v104-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-do-wp" archimateElement="id-v104-wp">
+        <bounds x="240" y="160" width="400" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-c-wp-gap" source="id-v104-do-wp" target="id-v104-do-gap" archimateRelationship="id-v104-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-c-wp-pl104" source="id-v104-do-wp" target="id-v104-do-pl104" archimateRelationship="id-v104-rel-wp-pl104"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-do-pl104" targetConnections="id-v104-c-wp-pl104" archimateElement="id-v104-pl-v104">
+        <bounds x="680" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v104-view-topo" name="v104 Target — step_full COS 数据流">
+      <child xsi:type="archimate:DiagramObject" id="id-v104-do-osjs" archimateElement="id-v104-app-osjs">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-c-osjs-cloud" source="id-v104-do-osjs" target="id-v104-do-cloud" archimateRelationship="id-v104-rel-osjs-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-do-fe" archimateElement="id-v104-app-fe">
+        <bounds x="48" y="160" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-c-fe-gw" source="id-v104-do-fe" target="id-v104-do-gw" archimateRelationship="id-v104-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-do-gw" targetConnections="id-v104-c-fe-gw" archimateElement="id-v104-app-gw">
+        <bounds x="260" y="160" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-c-gw-cloud" source="id-v104-do-gw" target="id-v104-do-cloud" archimateRelationship="id-v104-rel-gw-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-do-cloud" targetConnections="id-v104-c-osjs-cloud id-v104-c-gw-cloud" archimateElement="id-v104-app-cloud">
+        <bounds x="480" y="96" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-c-cloud-cos" source="id-v104-do-cloud" target="id-v104-do-cos" archimateRelationship="id-v104-rel-cloud-cos"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-c-cloud-ptr" source="id-v104-do-cloud" target="id-v104-do-ptr" archimateRelationship="id-v104-rel-cloud-ptr"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-c-cloud-ev" source="id-v104-do-cloud" target="id-v104-do-ev" archimateRelationship="id-v104-rel-cloud-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-do-cos" targetConnections="id-v104-c-cloud-cos" archimateElement="id-v104-tech-cos">
+        <bounds x="720" y="48" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-do-ptr" targetConnections="id-v104-c-cloud-ptr" archimateElement="id-v104-data-ptr">
+        <bounds x="720" y="128" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-do-ev" targetConnections="id-v104-c-cloud-ev" archimateElement="id-v104-ev-arch">
+        <bounds x="720" y="208" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-c-ev-k" source="id-v104-do-ev" target="id-v104-do-k" archimateRelationship="id-v104-rel-ev-k"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-do-k" targetConnections="id-v104-c-ev-k" archimateElement="id-v104-tech-kafka">
+        <bounds x="960" y="208" width="120" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

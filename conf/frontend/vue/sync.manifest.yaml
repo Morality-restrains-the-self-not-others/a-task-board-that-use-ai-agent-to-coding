@@ -1,0 +1,5 @@
+version: "1"
+fragments:
+  - from: ../../infra/git-service/config.yaml
+    to: git-service.yaml
+    pick: [publicUrl]

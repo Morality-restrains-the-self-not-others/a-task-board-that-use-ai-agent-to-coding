@@ -1,0 +1,21 @@
+# frozen_string_literal: true
+
+require 'spec_helper'
+
+RSpec.describe BlobViewer::Markup do
+  include FakeBlobHelpers
+
+  let(:project) { create(:project, :repository) }
+  let(:blob) { fake_blob(path: 'CHANGELOG.md') }
+
+  subject { described_class.new(blob) }
+
+  describe '#banzai_render_context' do
+    it 'returns context needed for banzai rendering' do
+      expect(subject.banzai_render_context.keys).to match_array([:issuable_reference_expansion_enabled, :cache_key,
+        :commit_id])
+      expect(subject.banzai_render_context[:issuable_reference_expansion_enabled]).to be(true)
+      expect(subject.banzai_render_context[:commit_id]).to eq(blob.commit_id)
+    end
+  end
+end

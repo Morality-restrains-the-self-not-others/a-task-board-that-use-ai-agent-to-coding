@@ -1,0 +1,50 @@
+groups:
+  - name: github-oauth-edge
+    interval: 60s
+    rules:
+      # GitHub 回调 authorization_code 换票连续失败（OPT-20260818-006）。
+      # 根因：github.com 边缘 IP「TCP 通但 HTTP 挂起」，taskGitOauth 已 demote + 重试；
+      # 运维侧需主动告警而非等用户 Toast。
+      - alert: GitHubOauthExchangeFailureRateHigh
+        expr: |
+          sum(
+            count_over_time(
+              {job="task-git-oauth"}
+              |~ "authorization_code 换票失败"
+              [5m]
+            )
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: task-git-oauth
+          category: oauth
+        annotations:
+          summary: "GitHub OAuth authorization_code 换票连续失败 ({{ $value }}/5m)"
+          description: >
+            近 5 分钟出现 {{ $value }} 次 GitHub 回调 authorization_code 换票失败。
+            边缘 IP 可达性随路由抖动变化，检查 taskGitOauth 日志中 github.com dial
+            endpoint 是否被 demote、回调 URL / provider 配置是否正确。
+            参考失败经验 90（github_oauth_exchange_failed_dns_edge_unreachable）。
+
+      # github.com dial endpoint 连续 demote（TCP 通但 HTTP 挂起）。
+      - alert: GitHubOauthDialEndpointDemoteHigh
+        expr: |
+          sum(
+            count_over_time(
+              {job="task-git-oauth"}
+              |~ "dial endpoint demoted"
+              [5m]
+            )
+          ) > 3
+        for: 5m
+        labels:
+          severity: warning
+          component: task-git-oauth
+          category: oauth
+        annotations:
+          summary: "GitHub dial endpoint 连续 demote ({{ $value }}/5m)"
+          description: >
+            近 5 分钟 {{ $value }} 次 github.com dial endpoint demote，表示多个边缘 IP
+            出现 TCP 通但 HTTP 挂起，authorization_code 换票大概率失败。
+            可在任务页 create-project 直接观察 exchange_failed trace。

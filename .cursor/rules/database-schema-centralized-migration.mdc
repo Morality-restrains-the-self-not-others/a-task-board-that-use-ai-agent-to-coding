@@ -1,0 +1,150 @@
+---
+description: 数据库 Schema 集中迁移规范 — 禁止 runMigrations 函数，所有 DDL 必须放在 dataMigrate/ 目录，由统一入口自动管理
+globs: "**/*.go,**/*.py,**/db.go,**/infrastructure/*.go,**/src/migrate.go,**/src/db.go"
+alwaysApply: true
+---
+
+# 数据库 Schema 集中迁移规范 v2（元规则）
+
+适用于整个 monorepo 的所有服务（Go / Python / 未来语言）。本规则是**元规则**，优先级高于各语言局部惯例。
+
+详细设计文档：`.ai/01_project_constraints/34_data_migrate_directory_standard.md`
+
+## 核心原则
+
+1. **所有数据库 Schema 变更（DDL）和初始数据（seed）必须放在 `dataMigrate/<service>/` 目录中。**
+2. **应用程序代码中禁止存在 `runMigrations()` 函数。** 包括空桩（no-op stub）。
+3. **业务应用进程禁止在启动路径执行迁移**（见 `.ai/01_project_constraints/40_app_process_independent_of_db_migrate.md`）。
+4. **`http://<host>:9999/`（如 `http://10.2.150.68:9999/`）的「初始化全部数据库」是迁移权威入口。**
+   新增 SQL 放入 `dataMigrate/` 后，经 9999 / `migrate.sh` 生效——**不是**靠重启业务进程。
+
+## 强制要求
+
+### 1. DDL 位置：`dataMigrate/<service>/NNN_description.sql`
+
+- 每个服务的 DDL/seed 必须放在 `dataMigrate/<service>/`，三位数字编号 + 描述命名
+- **禁止**在 `db.go`、`infrastructure/*.go`、`src/db.go` 中内嵌 `CREATE TABLE` / `ALTER TABLE` / `CREATE INDEX` 字符串
+- **禁止**存在 `runMigrations()` 函数（无论是否有实际逻辑）
+- **禁止**在 Go 代码中通过 `db.Exec("CREATE TABLE ...")` 创建业务表（`data_migrate_log` 除外，且仅限迁移执行器）
+- 编号按服务独立，每个服务从 001 开始
+
+### 2. 业务进程与迁移解耦（强制）
+
+```go
+// ✅ 正确：openDB 只连库
+func openDB(dsn string) error {
+    // sql.Open + 连接池 + Ping
+    return nil
+}
+
+// ✅ 正确：仅显式 migrate CLI / migrate.sh / 9999 调用
+// go run ./src migrate
+```
+
+```go
+// ❌ 禁止：业务启动或 openDB 内跑迁移
+func openDB(dsn string) error {
+    // ...
+    return runDataMigrate(repoRoot()) // ❌
+}
+```
+
+验收：`python3 dataMigrate/check_no_startup_migrate.py`
+
+### 3. `runDataMigrate()` 事务安全
+
+每个 SQL 文件必须在数据库事务中执行，防止部分执行的不一致状态。仅允许在迁移 CLI / `apply_datamigrate.sh` 路径调用。
+
+### 4. 追踪表：`data_migrate_log`
+
+每个服务必须在目标数据库维护一张 `data_migrate_log` 表：
+
+```sql
+CREATE TABLE IF NOT EXISTS data_migrate_log (
+    step_key VARCHAR(255) PRIMARY KEY,
+    applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    checksum VARCHAR(64) NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+三层防重复保障（缺一不可）：
+- **L1 追踪表** — `data_migrate_log` 记录已执行的 step_key
+- **L2 稳定存在性检查** — 用不可变的业务条件判断数据是否已存在（如 `WHERE is_default=1`，禁止用 `WHERE name='xxx'` — 名称可被用户修改）
+- **L3 SQL 幂等** — `CREATE TABLE IF NOT EXISTS` / `INSERT OR IGNORE`
+
+### 4. `db/<service>/migrate.sh` 脚本
+
+- `db/<service>/migrate.sh` 必须指向 `dataMigrate/<service>/` 加载 SQL 文件
+- 禁止 claim "schema 由应用代码管理" 而为 no-op
+- 模式参考：`db/ai-provider/migrate.sh`（✅ 正确范例）
+
+## 明确禁止
+
+| 禁止 | 替代方案 |
+|------|---------|
+| **声明 `func runMigrations()`（即使是空桩）** | **删除函数和调用，仅保留 `runDataMigrate()`** |
+| 在 `db.go` 中内嵌 `CREATE TABLE` 字符串 | 提取为 `dataMigrate/<app>/NNN_schema.sql` |
+| 在 `db.go` 中内嵌 `seedDefaults()` / `ensureXxxSchema()` | 提取为 `dataMigrate/<app>/` SQL 文件 |
+| 在 Go 代码中拼接 DDL（`db.Exec("CREATE TABLE..."` ) | 写入 dataMigrate SQL 文件 |
+| **在 `runMigrations()` 中内嵌 ALTER TABLE / CREATE INDEX** | **新增 `dataMigrate/<app>/NNN_description.sql`** |
+| `runDataMigrate()` 不使用事务包装 | 必须用 `db.Begin()` / `tx.Commit()` 包装 |
+| 用可变的业务字段作为存在性检查的唯一条件 | 使用 `is_default=1`、`is_system=1` 等语义稳定字段 |
+| 多服务共用 `dataMigrate/` 子目录 | 每个服务独立子目录 |
+| 跳过 L1 追踪表仅靠 `IF NOT EXISTS` | 三层保障缺一不可 |
+
+## 统一迁移入口
+
+`http://<host>:9999/`（例：`http://10.2.150.68:9999/`）「初始化全部数据库」：
+
+```
+9999 UI → POST /api/dev/init-databases → InitAllDatabases()
+  → db/registry.yaml
+  → 逐库 migrate_script（通常 apply_datamigrate.sh）
+  → 读取 dataMigrate/<service>/*.sql → 幂等执行
+```
+
+**关键保证**：新增 SQL 放入 `dataMigrate/<service>/` 后，经 9999 / `migrate.sh` 生效；**业务进程启动不再自动迁移**。
+
+辅助脚本：`db/scripts/apply_datamigrate.sh <db_name> <dataMigrate_dir>`  
+门禁：`python3 dataMigrate/check_no_startup_migrate.py`
+
+## 存量迁移状态
+
+跟踪各服务 DDL 从应用代码迁移到 `dataMigrate/` 的进度（2026-08-03 更新）：
+
+| 服务 | runMigrations 状态 | dataMigrate 状态 |
+|------|-------------------|-----------------|
+| ✅ taskTenantService | ~~已删除~~（v2 清理） | ✅ `001_schema.sql` + `002_rename_tables.sql` |
+| ✅ taskProjectService | ~~已删除~~（v2 清理） | ✅ `001_schema.sql` ~ `005_*` |
+| ✅ taskCloudService | ~~已删除~~（v2 清理） | ✅ `001_schema.sql` ~ `009_*` |
+| ✅ taskAIComment | ~~已删除~~（v2 清理） | ✅ `001_schema.sql` ~ `003_*` |
+| ✅ taskTaskService | ~~已删除~~（v2 清理，含内嵌 CREATE INDEX） | ✅ `001_schema.sql` ~ `005_*` |
+| ✅ taskAuth | `migrate.go` → 读 dataMigrate SQL；Go DDL `createDeliveryAttemptsTable` ~~已删除~~（v2） | ✅ `001_*` ~ `018_*` |
+| ✅ taskBill | `migrate.go` → 读 dataMigrate SQL（无内嵌 DDL） | ✅ `001_*` ~ `032_*` |
+| ✅ taskReferral | `migrate.go` → 读 dataMigrate SQL（无内嵌 DDL） | ✅ `001_*` ~ `003_*` |
+| ✅ taskGitOauth | `infrastructure/db.go` EnsureSchema → 读 dataMigrate SQL | ✅ `001_schema.sql` + `002_*` |
+| ✅ taskAiProvider | infrastructure 包读 dataMigrate SQL（测试 runMigrations ~~仅测试用途~~） | ✅ `001_create_tables.sql` + `002_*` |
+| ✅ taskCredentialService | infrastructure 包读 dataMigrate SQL | ✅ `001_create_tables.sql` |
+| ✅ taskBudget | taskCloudService budget_db.go → 读 dataMigrate SQL | ✅ `001_schema.sql` |
+
+**图例**: ✅=完成（无 runMigrations 内嵌 DDL）, N/A=不适用
+
+### 追踪表统一状态
+
+所有服务统一使用 `data_migrate_log` 追踪已应用的迁移：
+
+| 服务 | 旧追踪表 | 新追踪表 | 回填 |
+|------|---------|---------|------|
+| taskAuth | `taskauth_schema_migrations` | `data_migrate_log` | ✅ 自动回填 |
+| taskBill | `taskbill_schema_migrations` | `data_migrate_log` | ✅ 自动回填 |
+| taskReferral | `taskreferral_schema_migrations` | `data_migrate_log` | ✅ 自动回填 |
+| 其余全部 | (无旧表) | `data_migrate_log` | ✅ 新建 |
+
+## Code Review 门禁
+
+- 新增或修改 `CREATE TABLE` / `ALTER TABLE` / `CREATE INDEX` 时，Reviewer 必须检查是否放在 `dataMigrate/<service>/` 目录
+- **PR 中出现 `func runMigrations()` 声明（包括空桩）→ 立即拒绝**
+- 禁止「先内嵌在 db.go，后续再提取到 dataMigrate」的拖延模式 — 新增 DDL 必须首日放入 dataMigrate
+- CI 静态检查：
+  - `bash dataMigrate/check_inline_ddl.sh` — 检测 Go 文件中内嵌的 `CREATE TABLE`
+  - 新增 `grep -rn 'func runMigrations'` — 检测残留的 runMigrations 函数声明

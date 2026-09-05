@@ -1,0 +1,386 @@
+  .dev-log-select:focus-visible {
+    outline: 2px solid var(--ra-focus-ring);
+    outline-offset: 1px;
+  }
+  .proxy-toggle-btn {
+    border-color: #7c3aed;
+    color: #ddd6fe;
+    flex-shrink: 0;
+    min-width: 100px;
+    text-align: center;
+  }
+  .proxy-toggle-btn.proxy-on {
+    background: #4c1d95;
+    border-color: #a78bfa;
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.75), 0 0 14px rgba(167, 139, 250, 0.55);
+  }
+  .proxy-toggle-btn.proxy-off {
+    background: #1e293b;
+    border-color: #475569;
+    color: #94a3b8;
+  }
+  /* ---- Start-All Progress Panel ---- */
+  .start-all-progress {
+    display: none;
+    margin: 8px 0 12px 0;
+    padding: 14px 18px;
+    background: var(--ra-bg-card);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    flex-shrink: 0;
+    opacity: 1;
+    max-height: 400px;
+    overflow: hidden;
+    transition: opacity 500ms ease, max-height 500ms ease 300ms, margin 500ms ease 300ms, padding 500ms ease 300ms, border-width 500ms ease 300ms;
+  }
+  .start-all-progress.is-active {
+    display: block;
+    overflow-y: auto;
+  }
+  .start-all-progress.is-done {
+    border-color: #059669;
+  }
+  .start-all-progress.has-errors {
+    border-color: #dc2626;
+  }
+  .start-all-progress.is-cancelled {
+    border-color: #d97706;
+  }
+  .start-all-progress.is-fading {
+    opacity: 0;
+    max-height: 0;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+    overflow: hidden;
+  }
+  .progress-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .progress-header-actions {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .progress-copy-logs-btn {
+    margin-top: 0;
+  }
+  .progress-cancel-btn {
+    padding: 4px 12px;
+    background: #451a03;
+    border: 1px solid #ea580c;
+    border-radius: 4px;
+    color: #fed7aa;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .progress-cancel-btn:hover { background: #7c2d12; color: #fff; }
+  .progress-cancel-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .progress-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e0e0e0;
+  }
+  .progress-stats {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    color: #94a3b8;
+  }
+  .progress-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .progress-stat .val {
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .progress-stat.started .val { color: #34d399; }
+  .progress-stat.remaining .val { color: #60a5fa; }
+  .progress-stat.failed .val { color: #f87171; }
+  .progress-bar-track {
+    width: 100%;
+    height: 6px;
+    background: #1e293b;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #059669, #34d399);
+    border-radius: 3px;
+    transition: width 300ms ease;
+    width: 0%;
+  }
+  .progress-bar-fill.has-errors {
+    background: linear-gradient(90deg, #059669, #f87171);
+  }
+  .progress-bar-fill.is-indeterminate {
+    width: 60% !important;
+    background: linear-gradient(90deg, #065f46, #34d399, #6ee7b7, #34d399, #065f46);
+    background-size: 200% 100%;
+    animation: prog-indeterminate 1.6s ease-in-out infinite;
+    transition: none;
+  }
+  @keyframes prog-indeterminate {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+  }
+  .progress-current {
+    font-size: 12px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .progress-current .spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #475569;
+    border-top-color: #34d399;
+    border-radius: 50%;
+    animation: spin 600ms linear infinite;
+  }
+  .progress-error {
+    margin-top: 6px;
+    padding: 6px 10px;
+    background: #3b1111;
+    border: 1px solid #dc2626;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #fca5a5;
+    font-family: monospace;
+    display: none;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .progress-error.is-visible { display: block; }
+  .progress-errors-list {
+    margin-top: 4px;
+    padding: 6px 10px;
+    background: #1a0f0f;
+    border: 1px solid #7f1d1d;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #fca5a5;
+    font-family: monospace;
+    max-height: 140px;
+    overflow-y: auto;
+  }
+  .progress-errors-list ul { margin: 0; padding-left: 18px; list-style: square; }
+  .progress-errors-list li { margin-bottom: 2px; word-break: break-all; }
+  .progress-copy-btn {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 3px 10px;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #94a3b8;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 120ms, color 120ms, border-color 120ms;
+  }
+  .progress-copy-btn:hover { background: #273449; color: #e0e0e0; border-color: #60a5fa; }
+  .progress-copy-btn.is-copied { background: #064e3b; border-color: #34d399; color: #a7f3d0; }
+  .progress-clear-logs-btn { border-color: #b45309; color: #fed7aa; }
+  .progress-clear-logs-btn:hover { background: #7c2d12; color: #fff; border-color: #f97316; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .request-error-banner {
+    display: none;
+    margin: 8px 0 4px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: #7f1d1d;
+    border: 1px solid #ef4444;
+    color: #fecaca;
+    font-size: 13px;
+    white-space: pre-wrap;
+  }
+  .request-error-banner.is-visible { display: block; }
+  /* ── Toast Notification System ── */
+  .toast-container {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+    max-width: 420px;
+  }
+  .toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #1e293b;
+    border: 1px solid #475569;
+    color: #e0e0e0;
+    font-size: 13px;
+    line-height: 1.45;
+    pointer-events: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    animation: toast-slide-in 280ms ease;
+    transition: opacity 250ms ease, transform 250ms ease;
+  }
+  .toast.toast-error {
+    border-color: #ef4444;
+    background: #1f1212;
+    color: #fecaca;
+  }
+  .toast.toast-success {
+    border-color: #22c55e;
+    background: #0f1f14;
+    color: #bbf7d0;
+  }
+  .toast.toast-warning {
+    border-color: #f59e0b;
+    background: #1f1a0e;
+    color: #fde68a;
+  }
+  .toast.toast-info {
+    border-color: #3b82f6;
+    background: #0f172a;
+    color: #bfdbfe;
+  }
+  .toast.toast-removing {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  .toast-icon { flex-shrink: 0; font-size: 15px; line-height: 1.3; }
+  .toast-body { flex: 1; min-width: 0; word-break: break-word; }
+  .toast-close {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 2px;
+    opacity: 0.7;
+    transition: opacity 120ms;
+  }
+  .toast-close:hover { opacity: 1; color: #e0e0e0; }
+  @keyframes toast-slide-in {
+    from { opacity: 0; transform: translateX(60px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  /* ── Queue Status Bar ── */
+  .queue-status-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    margin: 0 0 8px 0;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: #1e1a3a;
+    border: 1px solid #6366f1;
+    color: #c7d2fe;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .queue-current {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: #e0e0e0;
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+  .queue-progress-detail {
+    font-weight: 400;
+    color: #a5b4fc;
+    font-size: 12px;
+    max-width: min(72vw, 720px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .queue-current .spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #475569;
+    border-top-color: #818cf8;
+    border-radius: 50%;
+    animation: spin 600ms linear infinite;
+  }
+  .queue-pending {
+    color: #a5b4fc;
+  }
+  .queue-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 8px;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 12px;
+    color: #c7d2fe;
+    font-size: 12px;
+  }
+  .queue-item-cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    margin-left: 2px;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .queue-item-cancel-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #fecaca;
+  }
+  .queue-cancel-all-btn {
+    padding: 3px 10px;
+    background: #451a03;
+    border: 1px solid #ea580c;
+    border-radius: 4px;
+    color: #fed7aa;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .queue-cancel-all-btn:hover { background: #7c2d12; color: #fff; }
+  .queue-interrupt-btn {
+    padding: 3px 10px;
+    background: #451a03;
+    border: 1px solid #dc2626;
+    border-radius: 4px;
+    color: #fecaca;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .queue-interrupt-btn:hover { background: #7f1d1d; color: #fff; }

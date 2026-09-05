@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v80 变迁 (v79→v80)" id="id-v80els-diff01">
+  <folder name="Application" id="id-v80elsd-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v80elsd-fe" name="taskFE [MOD]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v80elsd-cloud" name="taskCloudService [MOD]"/>
+    <element xsi:type="archimate:DataObject" id="id-v80elsd-db" name="taskCloud DB [MOD]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v80elsd-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v80elsd-pl79" name="Plateau v79"/>
+    <element xsi:type="archimate:Plateau" id="id-v80elsd-pl80" name="Plateau v80"/>
+    <element xsi:type="archimate:Gap" id="id-v80elsd-gap" name="Gap: task-level CSC still stores Starting/Running"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v80elsd-wp" name="WP-task-running-comment-counts"/>
+  </folder>
+  <folder name="Relations" id="id-v80elsd-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v80elsd-rel-fe" source="id-v80elsd-fe" target="id-v80elsd-cloud" name="indicators + comment runtime"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v80elsd-rel-db" source="id-v80elsd-cloud" target="id-v80elsd-db" name="template + two counts"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v80elsd-rel-pl79-gap" source="id-v80elsd-pl79" target="id-v80elsd-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v80elsd-rel-wp-gap" source="id-v80elsd-wp" target="id-v80elsd-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v80elsd-rel-wp-pl80" source="id-v80elsd-wp" target="id-v80elsd-pl80"/>
+  </folder>
+  <folder name="Views" id="id-v80elsd-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v80elsd-view-mig" name="架构变迁 v79→v80 — task-running-comment-counts">
+      <child xsi:type="archimate:DiagramObject" id="id-v80elsd-do-pl79" archimateElement="id-v80elsd-pl79">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80elsd-c-pl79-gap" source="id-v80elsd-do-pl79" target="id-v80elsd-do-gap" archimateRelationship="id-v80elsd-rel-pl79-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v80elsd-do-gap" targetConnections="id-v80elsd-c-pl79-gap id-v80elsd-c-wp-gap" archimateElement="id-v80elsd-gap">
+        <bounds x="240" y="48" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v80elsd-do-wp" archimateElement="id-v80elsd-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80elsd-c-wp-gap" source="id-v80elsd-do-wp" target="id-v80elsd-do-gap" archimateRelationship="id-v80elsd-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80elsd-c-wp-pl80" source="id-v80elsd-do-wp" target="id-v80elsd-do-pl80" archimateRelationship="id-v80elsd-rel-wp-pl80"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v80elsd-do-pl80" targetConnections="id-v80elsd-c-wp-pl80" archimateElement="id-v80elsd-pl80">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v80elsd-view-flow" name="v80 Target — task running counts">
+      <child xsi:type="archimate:DiagramObject" id="id-v80elsd-d-fe" archimateElement="id-v80elsd-fe">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80elsd-c-fe" source="id-v80elsd-d-fe" target="id-v80elsd-d-cloud" archimateRelationship="id-v80elsd-rel-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v80elsd-d-cloud" targetConnections="id-v80elsd-c-fe" archimateElement="id-v80elsd-cloud">
+        <bounds x="260" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v80elsd-c-db" source="id-v80elsd-d-cloud" target="id-v80elsd-d-db" archimateRelationship="id-v80elsd-rel-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v80elsd-d-db" targetConnections="id-v80elsd-c-db" archimateElement="id-v80elsd-db">
+        <bounds x="500" y="48" width="200" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

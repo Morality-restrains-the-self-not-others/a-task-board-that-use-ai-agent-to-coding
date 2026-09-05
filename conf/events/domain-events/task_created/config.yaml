@@ -1,0 +1,13 @@
+intents:
+  1_fanout_work_panel_sse:
+    host: 0.0.0.0
+    port: 18050
+    groupId: task-events-task-created-1-fanout-work-panel-sse
+    events:
+    - TASK_CREATED
+  2_create_task_post:
+    host: 0.0.0.0
+    port: 18052
+    groupId: task-events-task-created-2-create-task-post
+    events:
+    - TASK_CREATED

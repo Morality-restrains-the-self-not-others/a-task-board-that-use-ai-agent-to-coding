@@ -1,0 +1,179 @@
+@import '../highlight/common';
+
+.file-content.code {
+  border: 0;
+  box-shadow: none;
+  margin: 0;
+  padding: 0;
+  table-layout: fixed;
+
+  pre {
+    line-height: 0;
+    border: 0;
+    border-radius: 0 0 $gl-border-radius-base;
+    font-family: $monospace-font;
+    font-size: $code-font-size;
+    margin: 0;
+    overflow: auto;
+    overflow-y: hidden;
+    white-space: pre;
+    word-wrap: normal;
+    border-left: 1px solid;
+
+    code {
+      display: inline-block;
+      min-width: 100%;
+      font-family: $monospace-font;
+      white-space: normal;
+      word-wrap: normal;
+      padding: 0;
+
+      .line {
+        display: block;
+        width: 100%;
+        padding-left: 10px;
+        padding-right: 10px;
+        white-space: pre;
+
+        &:empty::before, span:empty::before {
+          content: '\200b';
+        }
+
+        .selected-inline-item-mark {
+          background: #2575c6 !important;
+        }
+
+        .inline-item-mark {
+          padding: 0 5px;
+          margin-right: 5px;
+          border-radius: 4px;
+          background: $gray-500;
+          color: $white;
+        }
+
+        .inline-section-marker {
+          padding-right: 2px;
+          border-radius: 4px;
+        }
+      }
+    }
+  }
+
+  .line-numbers {
+    padding: 0 10px;
+    line-height: 19px;
+    text-align: right;
+    float: left;
+    border-bottom-left-radius: $gl-border-radius-base;
+
+    a {
+      font-family: $monospace-font;
+      white-space: nowrap;
+      display: flex;
+      justify-content: flex-end;
+      position: relative;
+
+      i,
+      svg {
+        float: left;
+        margin-top: 3px;
+        margin-right: 5px;
+        visibility: hidden;
+      }
+
+      &:hover,
+      &:focus {
+        outline: none;
+
+        i,
+        svg {
+          visibility: visible;
+        }
+      }
+
+      &::after {
+        content: ' ';
+        display: block;
+        height: 24px;
+        position: absolute;
+        top: 50%;
+        right: 0;
+        width: 24px;
+        transform: translateY(-50%);
+      }
+    }
+
+    &:last-of-type {
+     border-bottom-left-radius: $gl-border-radius-base-inner;
+    }
+  }
+
+  pre .line,
+  pre .plain-lines,
+  .line-numbers a {
+    font-size: 0.8125rem;
+    line-height: 1.1875rem;
+    min-height: 1.1875rem;
+  }
+
+  .mark-multiple-line-expand-button {
+    @include diff-expansion($gray-100, $gray-400, $gray-100, $gray-400);
+  }
+}
+
+// Vertically aligns <table> line numbers (eg. blame view)
+// see https://gitlab.com/gitlab-org/gitlab-foss/issues/54048
+td.line-numbers {
+  line-height: 1;
+}
+
+.project-highlight-puc .unicode-bidi::before {
+  content: '\FFFD';
+  cursor: pointer;
+  text-decoration: underline wavy $red-500;
+}
+
+.blob-viewer {
+  --blame-line-height: 1.1875rem;
+
+  .line-numbers {
+    min-width: 6rem;
+    // for server-side-rendering
+    .line-links {
+      display: flex;
+    }
+
+    // for client
+    &.line-links {
+      border-bottom-left-radius: 0;
+
+      + pre {
+        margin-left: 6rem;
+      }
+    }
+  }
+
+  .line-numbers:not(.line-links) a:hover::before,
+  .line-numbers:not(.line-links) a:focus-within::before,
+  .line-links:hover a::before,
+  .line-links:focus-within a::before {
+    visibility: visible;
+  }
+
+
+  .file-line-num {
+    justify-content: flex-end;
+    flex-grow: 1;
+    padding-right: $gl-spacing-scale-3;
+  }
+
+  .file-line-blame {
+    margin-left: $gl-spacing-scale-3;
+  }
+
+  .file-line-num,
+  .file-line-blame {
+    align-items: center;
+    display: flex;
+  }
+}

@@ -1,0 +1,73 @@
+-- 001_migrate_tasks_from_django.sql
+-- 从 Django saas.sqlite3 迁移历史任务数据到 taskTaskService task_task.db
+-- Phase 4 (2026-07-26): /api/tenant/*/workspace/*/todos 端点从 Django 迁至 taskTaskService
+-- 本脚本在 taskTaskService 启动时由 runDataMigrate() 自动执行
+-- 幂等：INSERT OR IGNORE 跳过已存在的任务
+
+-- [MySQL compat] ATTACH/DETACH not supported. Run as separate connection.
+-- ATTACH DATABASE 'db/saas/saas.sqlite3' AS saas;
+
+-- ============================================================================
+-- Step 1: 迁移任务主数据 (projects_todo → tasks)
+-- ============================================================================
+INSERT IGNORE INTO tasks (
+    id, tenant_id, title, description, completed, priority, order_num,
+    workspace_id, owner_id, operator_id, deliverable_obj_id, progress_column_id,
+    parent_task_id, fork_from_id, installed_image_id, auto_run,
+    auto_commit_after_agent_complete, feature_params_source,
+    personal_feature_params_config_id, task_kind, code_lang, created_at, updated_at
+)
+SELECT
+    CAST(t.id AS CHAR),
+    CAST(w.company_id AS CHAR),
+    t.title,
+    COALESCE(t.description, ''),
+    CASE WHEN t.completed THEN 1 ELSE 0 END,
+    COALESCE(t.priority, 0),
+    COALESCE(t.`order`, 0),
+    CAST(t.workspace_id AS CHAR),
+    CAST(t.owner_id AS CHAR),
+    '',
+    CAST(t.deliverable_obj_id_id AS CHAR),
+    COALESCE(t.progress_column_id, ''),
+    CAST(t.parent_task_id AS CHAR),
+    CAST(t.fork_from_id AS CHAR),
+    CAST(COALESCE(t.installed_image_id, t.container_image_id) AS CHAR),
+    COALESCE(t.auto_run, 0),
+    0,
+    'company',
+    '',
+    '',
+    '',
+    COALESCE(t.created_at, NOW()),
+    COALESCE(t.updated_at, NOW())
+FROM saas.projects_todo t
+JOIN saas.projects_workspace w ON w.id = t.workspace_id
+WHERE t.workspace_id IS NOT NULL;
+
+-- ============================================================================
+-- Step 2: 迁移任务指派人 (projects_todo_assignees → task_assignees)
+-- ============================================================================
+INSERT IGNORE INTO task_assignees (task_id, company_member_id)
+SELECT
+    CAST(ta.todo_id AS CHAR),
+    CAST(ta.companymember_id AS CHAR)
+FROM saas.projects_todo_assignees ta
+WHERE EXISTS (
+    SELECT 1 FROM tasks WHERE id = CAST(ta.todo_id AS CHAR)
+);
+
+-- Step 2b: 兼容旧版单 assignee FK（projects_todo.assignee_id）
+INSERT IGNORE INTO task_assignees (task_id, company_member_id)
+SELECT
+    CAST(t.id AS CHAR),
+    CAST(t.assignee_id AS CHAR)
+FROM saas.projects_todo t
+WHERE t.assignee_id IS NOT NULL
+  AND CAST(t.assignee_id AS CHAR) != ''
+  AND EXISTS (
+    SELECT 1 FROM tasks WHERE id = CAST(t.id AS CHAR)
+  );
+
+-- [MySQL compat] ATTACH/DETACH not supported. Run as separate connection.
+-- DETACH DATABASE saas;

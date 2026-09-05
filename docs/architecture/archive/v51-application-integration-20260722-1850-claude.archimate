@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v51-comment-execution-details-20260722-1850">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v51 Target (comment-execution-details)</name>
+  <purpose>Comment-level ExecutionDetails; ContainerConnectionStatus + LayerAssociation under activeExecutionCommentId; CommentExecutionContext frontend contract</purpose>
+
+  <folder name="Motivation" id="id-v51-f-mot" type="motivation">
+    <element xsi:type="archimate:Principle" name="Principle 执行状态归属评论" id="id-v51-principle-affinity"/>
+    <element xsi:type="archimate:Principle" name="Principle 依赖模式可扩展并行编排" id="id-v51-principle-parallel"/>
+    <element xsi:type="archimate:Constraint" name="Constraint MVP 纯前端无新 HTTP" id="id-v51-constraint-frontend"/>
+  </folder>
+  <folder name="Application" id="id-v51-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue TaskDetail Feed+Runtime 重组 [MODIFIED v51]" id="id-v51-vue-detail"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟢 TaskDetailCommentExecutionDetails [NEW v51]" id="id-v51-exec-details"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟢 TaskDetailContainerConnectionStatus [NEW v51]" id="id-v51-conn-status"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 TaskDetailServerStartStatusPanel SSE only [MODIFIED v51]" id="id-v51-server-start"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 TaskDetailTaskLayerAssociationPanel active comment [MODIFIED v51]" id="id-v51-layer"/>
+    <element xsi:type="archimate:DataObject" name="🟢 CommentExecutionContext [NEW v51]" id="id-v51-ctx"/>
+    <element xsi:type="archimate:DataObject" name="🟢 CommentExecutionBinding [NEW v51]" id="id-v51-binding"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskAIComment container_agent read" id="id-v51-tac"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTaskService layer jobs" id="id-v51-tts"/>
+  </folder>
+  <folder name="Technology" id="id-v51-f-tech" type="technology">
+    <element xsi:type="archimate:Artifact" name="server-startup-status-sse" id="id-v51-sse"/>
+    <element xsi:type="archimate:Artifact" name="container heartbeat probe" id="id-v51-hb"/>
+  </folder>
+  <folder name="Relations" id="id-v51-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v51-flow-detail-exec" source="id-v51-vue-detail" target="id-v51-exec-details" name="per comment"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v51-comp-exec-conn" source="id-v51-exec-details" target="id-v51-conn-status" name="active"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v51-comp-exec-layer" source="id-v51-exec-details" target="id-v51-layer" name="activeExecutionCommentId"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v51-flow-detail-start" source="id-v51-vue-detail" target="id-v51-server-start" name="Runtime"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v51-acc-exec-ctx" source="id-v51-exec-details" target="id-v51-ctx" name="R/W local"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v51-real-ctx-bind" source="id-v51-ctx" target="id-v51-binding" name="maps"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v51-flow-detail-tac" source="id-v51-vue-detail" target="id-v51-tac" name="read agents"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v51-flow-layer-tts" source="id-v51-layer" target="id-v51-tts" name="layer jobs"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v51-flow-conn-sse" source="id-v51-conn-status" target="id-v51-sse" name="subscribe"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v51-flow-conn-hb" source="id-v51-conn-status" target="id-v51-hb" name="probe"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v51-inf-affinity" source="id-v51-principle-affinity" target="id-v51-exec-details" name="挂载点"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v51-inf-parallel" source="id-v51-principle-parallel" target="id-v51-binding" name="dependencyMode"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v51-inf-fe" source="id-v51-constraint-frontend" target="id-v51-vue-detail" name="无新 API"/>
+  </folder>
+  <folder name="Implementation" id="id-v51-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v48 — current" id="id-v51-plat-v48"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v51 — comment-execution-details (target)" id="id-v51-plat-v51"/>
+    <element xsi:type="archimate:Gap" name="Gap: 执行 UI 与评论 Feed 脱节" id="id-v51-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v51-comment-execution-details" id="id-v51-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v51-rel-plat48-gap" source="id-v51-plat-v48" target="id-v51-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v51-rel-wp-gap" source="id-v51-wp" target="id-v51-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v51-rel-wp-plat51" source="id-v51-wp" target="id-v51-plat-v51"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v51-rel-plat51-exec" source="id-v51-plat-v51" target="id-v51-exec-details"/>
+  </folder>
+  <folder name="Views" id="id-v51-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v48→v51 — comment-execution-details" id="id-v51-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-plat48" archimateElement="id-v51-plat-v48">
+        <bounds x="48" y="100" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-plat48-gap"
+          source="id-v51-do-plat48" target="id-v51-do-gap"
+          archimateRelationship="id-v51-rel-plat48-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-gap" archimateElement="id-v51-gap"
+        targetConnections="id-v51-conn-plat48-gap id-v51-conn-wp-gap">
+        <bounds x="380" y="100" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-wp" archimateElement="id-v51-wp">
+        <bounds x="820" y="60" width="360" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-wp-gap"
+          source="id-v51-do-wp" target="id-v51-do-gap"
+          archimateRelationship="id-v51-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-wp-plat51"
+          source="id-v51-do-wp" target="id-v51-do-plat51"
+          archimateRelationship="id-v51-rel-wp-plat51"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-plat51" archimateElement="id-v51-plat-v51"
+        targetConnections="id-v51-conn-wp-plat51">
+        <bounds x="820" y="160" width="360" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-plat51-exec"
+          source="id-v51-do-plat51" target="id-v51-do-exec-m"
+          archimateRelationship="id-v51-rel-plat51-exec"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-exec-m" archimateElement="id-v51-exec-details"
+        targetConnections="id-v51-conn-plat51-exec">
+        <bounds x="820" y="250" width="360" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v51 Target — comment execution 数据流" id="id-v51-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-detail" archimateElement="id-v51-vue-detail">
+        <bounds x="40" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-detail-exec"
+          source="id-v51-do-detail" target="id-v51-do-exec"
+          archimateRelationship="id-v51-flow-detail-exec"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-detail-start"
+          source="id-v51-do-detail" target="id-v51-do-start"
+          archimateRelationship="id-v51-flow-detail-start"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-detail-tac"
+          source="id-v51-do-detail" target="id-v51-do-tac"
+          archimateRelationship="id-v51-flow-detail-tac"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-inf-fe"
+          source="id-v51-do-constraint" target="id-v51-do-detail"
+          archimateRelationship="id-v51-inf-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-exec" archimateElement="id-v51-exec-details"
+        targetConnections="id-v51-conn-detail-exec id-v51-conn-inf-affinity">
+        <bounds x="300" y="40" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-exec-conn"
+          source="id-v51-do-exec" target="id-v51-do-conn"
+          archimateRelationship="id-v51-comp-exec-conn"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-exec-layer"
+          source="id-v51-do-exec" target="id-v51-do-layer"
+          archimateRelationship="id-v51-comp-exec-layer"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-exec-ctx"
+          source="id-v51-do-exec" target="id-v51-do-ctx"
+          archimateRelationship="id-v51-acc-exec-ctx"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-conn" archimateElement="id-v51-conn-status"
+        targetConnections="id-v51-conn-exec-conn">
+        <bounds x="300" y="140" width="240" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-conn-sse"
+          source="id-v51-do-conn" target="id-v51-do-sse"
+          archimateRelationship="id-v51-flow-conn-sse"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-conn-hb"
+          source="id-v51-do-conn" target="id-v51-do-hb"
+          archimateRelationship="id-v51-flow-conn-hb"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-layer" archimateElement="id-v51-layer"
+        targetConnections="id-v51-conn-exec-layer">
+        <bounds x="560" y="140" width="240" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-layer-tts"
+          source="id-v51-do-layer" target="id-v51-do-tts"
+          archimateRelationship="id-v51-flow-layer-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-start" archimateElement="id-v51-server-start"
+        targetConnections="id-v51-conn-detail-start">
+        <bounds x="40" y="180" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-ctx" archimateElement="id-v51-ctx"
+        targetConnections="id-v51-conn-exec-ctx id-v51-conn-ctx-bind">
+        <bounds x="620" y="40" width="200" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-ctx-bind"
+          source="id-v51-do-ctx" target="id-v51-do-binding"
+          archimateRelationship="id-v51-real-ctx-bind"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-binding" archimateElement="id-v51-binding"
+        targetConnections="id-v51-conn-ctx-bind id-v51-conn-inf-parallel">
+        <bounds x="860" y="40" width="200" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-tac" archimateElement="id-v51-tac"
+        targetConnections="id-v51-conn-detail-tac">
+        <bounds x="40" y="280" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-tts" archimateElement="id-v51-tts"
+        targetConnections="id-v51-conn-layer-tts">
+        <bounds x="860" y="140" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-sse" archimateElement="id-v51-sse"
+        targetConnections="id-v51-conn-conn-sse">
+        <bounds x="300" y="240" width="180" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-hb" archimateElement="id-v51-hb"
+        targetConnections="id-v51-conn-conn-hb">
+        <bounds x="500" y="240" width="180" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-principle-affinity" archimateElement="id-v51-principle-affinity">
+        <bounds x="300" y="320" width="220" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-inf-affinity"
+          source="id-v51-do-principle-affinity" target="id-v51-do-exec"
+          archimateRelationship="id-v51-inf-affinity"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-principle-parallel" archimateElement="id-v51-principle-parallel">
+        <bounds x="560" y="320" width="240" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v51-conn-inf-parallel"
+          source="id-v51-do-principle-parallel" target="id-v51-do-binding"
+          archimateRelationship="id-v51-inf-parallel"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v51-do-constraint" archimateElement="id-v51-constraint-frontend">
+        <bounds x="40" y="360" width="220" height="45"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

@@ -1,0 +1,105 @@
+---
+stage: Software Supply Chain Security
+group: Authentication
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see <https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments>
+description: Unlock accounts that are locked after failed sign-in attempts.
+title: Locked user accounts
+---
+
+GitLab locks a user account after the user unsuccessfully attempts to sign in several times.
+
+## GitLab.com users
+
+{{< details >}}
+
+- Tier: Free, Premium, Ultimate
+- Offering: GitLab.com
+
+{{< /details >}}
+
+If two-factor authentication (2FA) is enabled, accounts are locked after three failed sign-in attempts. Accounts are unlocked automatically after 30 minutes.
+
+If 2FA is not enabled user accounts are locked after three failed sign-in attempts within 24 hours. Accounts remain locked until either:
+
+- The user signs in again and confirms their identity with an [email verification code](email_verification.md).
+- GitLab Support verifies the identity of the user and manually unlocks the account.
+
+## GitLab Self-Managed and GitLab Dedicated users
+
+{{< details >}}
+
+- Tier: Free, Premium, Ultimate
+- Offering: GitLab Self-Managed, GitLab Dedicated
+
+{{< /details >}}
+
+{{< history >}}
+
+- Configurable locked user policy [introduced](https://gitlab.com/gitlab-org/gitlab/-/issues/27048) in GitLab 16.5.
+
+{{< /history >}}
+
+By default, user accounts are locked after 10 failed sign-in attempts. Accounts are unlocked automatically after 10 minutes.
+
+In GitLab 16.5 and later, administrators can use the [Application settings API](../api/settings.md#update-application-settings) to modify the `max_login_attempts` or `failed_login_attempts_unlock_period_in_minutes` settings.
+
+Administrators can unlock accounts immediately by using the following tasks:
+
+### Unlock user accounts from the Admin area
+
+Prerequisites
+
+- You must be an administrator of GitLab Self-Managed.
+
+To unlock an account from the Admin area:
+
+1. In the upper-right corner, select **Admin**.
+1. Select **Overview** > **Users**.
+1. Use the search bar to find the locked user.
+1. From the **User administration** dropdown list, select **Unlock**.
+
+The user can now sign in.
+
+### Unlock user accounts from a Rails console
+
+Prerequisites
+
+- You must be an administrator of GitLab Self-Managed.
+- You must know the associated username, user ID, or email address.
+
+To unlock a user account from a Rails console:
+
+1. Start a [Rails console session](../administration/operations/rails_console.md#starting-a-rails-console-session).
+1. Find the user to unlock:
+
+   - By username:
+
+     ```ruby
+     user = User.find_by_username('exampleuser')
+     ```
+
+   - By user ID:
+
+     ```ruby
+     user = User.find(123)
+     ```
+
+   - By email address:
+
+     ```ruby
+     user = User.find_by(email: 'user@example.com')
+     ```
+
+1. Unlock the user:
+
+   ```ruby
+   user.unlock_access!
+   ```
+
+1. Exit the console:
+
+   ```ruby
+   exit
+   ```
+
+The user can now sign in.

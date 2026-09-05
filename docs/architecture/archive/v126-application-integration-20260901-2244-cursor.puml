@@ -1,0 +1,73 @@
+' @title: 项目 L2 种下自动运行评论（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 126
+' @iteration: 项目 L2 种下自动运行评论
+' @author: cursor
+' @based_on: v125 (v125-application-integration-20260901-1405-cursor.puml)
+' @updated: 2026-09-01 23:10
+' @description: 创建/Fork 自动运行门禁认项目 L2；ensureAutoRunAtComment 从 project_git_oauth_grant 种评论标记
+
+@startuml
+!include <archimate/Archimate>
+
+title 项目 L2 种下自动运行 — v126 Current Architecture (2026-09-01 23:10)
+
+Application_Component(feProj, "taskFE ProjectDetail")
+Application_Component(feCreate, "taskFE CreateTask/Fork")
+note right of feCreate
+  bound = session ticket OR
+  validate-git-repos(project_id) token_available
+  @author: cursor @2026-09-01 23:10
+end note
+
+Application_Component(gw, "taskGateway APISIX")
+Application_Component(gitoauth, "taskGitOauth")
+Application_Component(proj, "taskProjectService")
+note top of proj
+  GET /api/internal/projects/git-oauth-grant/
+  @author: cursor @2026-09-01 23:10
+end note
+
+Application_Component(task, "taskTaskService")
+note top of task
+  ensureAutoRunAtComment
+  seed from project L2 after ticket
+  @author: cursor @2026-09-01 23:10
+end note
+
+Application_DataObject(l1, "git_oauth_appusercredential")
+Application_DataObject(pgrant, "project_git_oauth_grant")
+Application_DataObject(cgrant, "comment repo_identities oauth")
+note right of cgrant
+  via=project_l2_seed
+  @author: cursor @2026-09-01 23:10
+end note
+
+Application_DataObject(ticket, "git_oauth_grant_ticket")
+
+Rel_Flow(feProj, gw, "OAuth start grant_kind=project")
+Rel_Flow(gw, gitoauth, "github/gitlab-start")
+Rel_Flow(gitoauth, pgrant, "MarkGrant")
+Rel_Access_w(gitoauth, l1, "upsert L1")
+Rel_Flow(feCreate, gw, "validate-git-repos + create task")
+Rel_Flow(gw, proj, "validate with project_id")
+Rel_Flow(gw, task, "POST task auto_run")
+Rel_Flow(task, proj, "GET internal grant")
+note on link
+  只读查询 has_grant + remote_user_id
+end note
+Rel_Access_r(proj, pgrant, "lookup")
+Rel_Access_w(task, cgrant, "stamp L2")
+Rel_Flow(gitoauth, ticket, "pending fallback")
+Rel_Flow(task, ticket, "consume if present")
+
+Implementation_Plateau(p125, "Plateau v125 ImageMarket")
+Implementation_Plateau(p126, "Plateau v126 项目 L2 seed")
+Implementation_Gap(gap, "Gap: 创建任务只认 session grant_ticket")
+Implementation_WorkPackage(wp, "WP-project-l2-seed-autorun-comment")
+Rel_Triggering(p125, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p126, "delivers")
+
+@enduml

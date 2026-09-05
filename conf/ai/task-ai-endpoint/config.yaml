@@ -1,0 +1,16 @@
+# 0.0.0.0：供边缘 nginx（LAN IP:8013）反代；勿仅绑 127.0.0.1（见 daydaymoney.hk.nginx.example）
+host: 0.0.0.0
+port: 8013
+logging:
+  log_file: logs/task-ai-endpoint/endpoint.log
+enabled: true
+publicBaseUrl: ${scheme}://${subdomains.aiendpoint}
+# Django internal 已不再用于 Budget / route / credentials / validate（保留字段兼容旧部署）
+internalSecret: ""
+upstreamTimeoutSec: 300
+taskCloudService:
+  url: http://127.0.0.1:8018
+  # empty = Cloud requireInternalSecret allows when InternalSecret unset
+  internalSecret: ""
+taskCredentialService:
+  url: http://127.0.0.1:8015

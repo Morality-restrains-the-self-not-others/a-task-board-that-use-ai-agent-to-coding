@@ -1,0 +1,148 @@
+#!/bin/bash
+# taskChromePlugin pre-commit（task2app 随机单测模式 + 登录 E2E）：
+# 1) 暂存的 test/*.test.js 优先跑
+# 2) 其余 unit 测例按比例随机抽测（每次提交至少 1 个）
+# 3) 暂存插件源码时跑 npm test
+# 4) 涉及登录链路时跑 Playwright E2E
+
+set -u
+# Session Hub 提交锁校验（v1.1.0，可选 — 二进制缺失时放行）
+SES_LIB="$(cd "$(dirname "$0")" && pwd)/lib/session_lock_check.sh"
+if [ -f "$SES_LIB" ]; then source "$SES_LIB"; session_hub_lock_check; fi
+
+
+cleanup() {
+    echo "如果有测例失败，记得修复"
+}
+trap cleanup SIGINT SIGTERM EXIT
+
+# 兼容子模块（gitdir 重定位到 ../.git/modules/<name>）场景：
+# 用 git 自身解析工作树根目录，而非相对 hooks 路径
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+# 仅变更 hooks/文档时跳过抽测，便于自举提交钩子模板
+_bootstrap_staged="$(git diff --cached --name-only 2>/dev/null || true)"
+if [ -n "$_bootstrap_staged" ]; then
+    _only_hooks=1
+    while IFS= read -r _f; do
+        [ -z "$_f" ] && continue
+        case "$_f" in
+            scripts/hooks/*|.githooks/*|README.md) ;;
+            *) _only_hooks=0; break ;;
+        esac
+    done <<< "$_bootstrap_staged"
+    if [ "$_only_hooks" -eq 1 ]; then
+        echo "Pre-commit bootstrap: only hooks/docs staged; skip random unit tests."
+        exit 0
+    fi
+fi
+
+echo "Running pre-commit Node tests in $(pwd)..."
+
+export PRE_COMMIT=1
+TEST_RATIO="${PRECOMMIT_TEST_RATIO:-30}"
+STAGED_FILES="$(git diff --cached --name-only 2>/dev/null || true)"
+
+should_run_all=false
+should_run_login_e2e=false
+while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    case "$f" in
+        lib/*|devtools/*|background/*|panel/*|popup/*|test/*|e2e/*|package.json)
+            should_run_all=true
+            ;;
+    esac
+    case "$f" in
+        # 仅登录/OAuth 相关路径触发生产登录 E2E；勿用 e2e/* 或整份 background
+        # —— 否则「清空列表」等无关改动会被不稳定的公网登录 e2e 阻断。
+        popup/*|\
+        lib/api.js|lib/storage.js|lib/async-timeout.js|lib/login-finalize.js|\
+        lib/oauth-pkce.js|lib/oauth-callback.js|lib/oauth-callback-boot.js|\
+        oauth-callback.html|\
+        e2e/oauth*|e2e/*login*|e2e/real-extension-messaging*)
+            should_run_login_e2e=true
+            ;;
+        background/service-worker.js)
+            # SW 含 oauthStart/oauthCallback；仅当暂存 diff 触及 OAuth 关键字时才跑登录 E2E
+            if git diff --cached -U0 -- background/service-worker.js 2>/dev/null \
+                | grep -Eiq 'oauth|login-finalize|Bearer|pkce|authorization_code'; then
+                should_run_login_e2e=true
+            fi
+            ;;
+    esac
+done <<< "$STAGED_FILES"
+
+collect_unit_tests() {
+    find test -type f -name '*.test.js' 2>/dev/null | sed 's#^\./##' | sort -u
+}
+
+TMP_ALL="$(mktemp)"
+TMP_STAGED="$(mktemp)"
+TMP_TO_RUN="$(mktemp)"
+trap 'rm -f "$TMP_ALL" "$TMP_STAGED" "$TMP_TO_RUN"' EXIT
+
+collect_unit_tests > "$TMP_ALL"
+
+while IFS= read -r test_file; do
+    [ -z "$test_file" ] && continue
+    if echo "$STAGED_FILES" | grep -qxF "$test_file" 2>/dev/null; then
+        echo "$test_file" >> "$TMP_STAGED"
+    fi
+done < "$TMP_ALL"
+
+if [ -s "$TMP_STAGED" ]; then
+    echo "Running staged unit tests..."
+    while IFS= read -r t; do
+        [ -z "$t" ] && continue
+        echo "Running: node --test $t"
+        node --test "$t" || exit 1
+    done < "$TMP_STAGED"
+fi
+
+if [ -s "$TMP_ALL" ]; then
+    echo "Running random unit tests (ratio=${TEST_RATIO}%)..."
+    while IFS= read -r t; do
+        [ -z "$t" ] && continue
+        [ -s "$TMP_STAGED" ] && grep -qxF "$t" "$TMP_STAGED" 2>/dev/null && continue
+        [ "$((RANDOM % 100))" -lt "$TEST_RATIO" ] && echo "$t" >> "$TMP_TO_RUN"
+    done < "$TMP_ALL"
+    if [ ! -s "$TMP_TO_RUN" ]; then
+        TMP_NS="$(mktemp)"
+        while IFS= read -r t; do
+            [ -z "$t" ] && continue
+            [ -s "$TMP_STAGED" ] && grep -qxF "$t" "$TMP_STAGED" 2>/dev/null && continue
+            echo "$t" >> "$TMP_NS"
+        done < "$TMP_ALL"
+        if [ -s "$TMP_NS" ]; then
+            lc=$(wc -l < "$TMP_NS" | tr -d ' ')
+            sed -n "$((RANDOM % lc + 1))p" "$TMP_NS" >> "$TMP_TO_RUN"
+            echo "(No test selected by random; running one at random)"
+        fi
+        rm -f "$TMP_NS"
+    fi
+    while IFS= read -r t; do
+        [ -z "$t" ] && continue
+        echo "Running: node --test $t"
+        node --test "$t" || exit 1
+    done < "$TMP_TO_RUN"
+fi
+
+if [ "$should_run_all" = true ]; then
+    echo "Staged plugin source changed; running npm test..."
+    npm test || exit 1
+fi
+
+if [ "$should_run_login_e2e" = true ]; then
+    echo "Staged login-related files; running login Playwright E2E..."
+    export CI=1
+    export PRE_COMMIT=1
+    # OPT-20260808-024：旧 popup-token-login e2e 已删除，OAuth2+PKCE e2e 阶段 2 落地；
+    # 当前回退到真实扩展消息通道 e2e（登录链路烟雾）。
+    E2E_SCRIPT="e2e/oauth-pkce-login.playwright.test.js.sh"
+    if [ ! -f "$E2E_SCRIPT" ]; then
+        E2E_SCRIPT="e2e/real-extension-messaging.playwright.test.js.sh"
+    fi
+    bash "$E2E_SCRIPT" || exit 1
+fi
+
+echo "taskChromePlugin pre-commit checks passed."

@@ -1,0 +1,156 @@
+' @title: RBAC 含小组角色与资源分配 — Application Integration
+' @view: application-integration
+' @status: target
+' @version: 62
+' @iteration: rbac-with-groups-resource-assignment
+' @author: claude
+' @based_on: v61 (v61-application-integration-20260804-1600-claude.puml)
+' @updated: 2026-08-04 16:30
+' @description: 在 v61 RBAC 基础上增加 group_admin 角色 + 资源→小组分配 + 组内成员管理鉴权 + 组资源继承
+
+@startuml
+!include <archimate/Archimate>
+
+title v62 — RBAC 含小组与资源分配 (Target, 2026-08-04 16:30)
+
+legend right
+  |<#LightGreen>  </>| 🟢 [NEW v62] |
+  |<#LightYellow> </>| 🟡 [MODIFIED v62] |
+  |<#LightPink>   </>| 🔴 [DEPRECATED v62] |
+  |<#White>       </>| 未变 |
+endlegend
+
+' ═══ Services ═══
+
+Application_Component(taskAuth, "taskAuth (:8003)")
+note right of taskAuth
+  🟡 [MODIFIED v62]
+  +4 RBAC 表 + PDP
+  forward-auth 注入 X-User-Roles
+end note
+
+Application_Component(taskTenant, "taskTenantService (:8020)")
+note right of taskTenant
+  🟡 [MODIFIED v62]
+  + tenant_group_admin
+  + tenant_resource_group_assignment
+  + /api/tenant/groups/
+  + /api/tenant/group-admin/
+  + /api/tenant/group-members/
+  + /api/tenant/resource-group/
+  group_handlers: requireCompanyMember
+    → RequireGroupAdmin
+end note
+
+Application_Component(taskProject, "taskProjectService (:8016)")
+note right of taskProject
+  🟡 + 组资源继承检查
+  checkResourceAccess() →
+  hasDirectAccess || hasGroupAccess
+end note
+
+Application_Component(taskTask, "taskTaskService (:8021)")
+Application_Component(taskAIComment, "taskAIComment (:8022)")
+
+Application_Component(taskCloud, "taskCloudService (:8018)")
+note right of taskCloud
+  🟡 + 组资源继承检查
+end note
+
+Application_Component(taskBill, "taskBill (:8004)")
+note right of taskBill
+  🟡 hand-rolled → authz.RequireRole()
+end note
+
+Application_Component(taskEvents, "taskEvents (:8023)")
+note right of taskEvents
+  🟡 + GroupAdminAssigned/Revoked
+  + ResourceAssignedToGroup
+  + MemberAddedToGroup/Removed
+  → 缓存失效 + 权限刷新
+end note
+
+Application_Component(shareLibAuthz, "shareLib/authz\n(薄客户端)")
+note right of shareLibAuthz
+  🟢 [NEW v62]
+  + RequireGroupAdmin()
+  + RequireGroupResourceAccess()
+  + HasGroupResourceAccess()
+end note
+
+Application_Component(kafkaConsumers, "Kafka Consumers")
+Application_Component(gateway, "APISIX Gateway (:18081)")
+
+' ═══ Data ═══
+Application_DataObject(kafkaBroker, "Kafka")
+Application_DataObject(taskAuthDB, "taskAuth DB\n(+4 RBAC 表)")
+Application_DataObject(taskTenantDB, "taskTenant DB")
+note bottom of taskTenantDB
+  🟡 + tenant_group_admin
+  + tenant_resource_group_assignment
+end note
+
+Application_DataObject(taskProjectDB, "taskProject DB")
+Application_DataObject(taskTaskDB, "taskTask DB")
+Application_DataObject(taskCloudDB, "taskCloud DB")
+Application_DataObject(taskBillDB, "taskBill DB")
+
+' ═══ Events ═══
+Application_Event(evtGroupAdmin, "GroupAdminAssigned")
+Application_Event(evtResourceGroup, "ResourceAssignedToGroup")
+Application_Event(evtMemberGroup, "MemberAddedToGroup")
+
+' ═══ Roles ═══
+Business_Role(roleGroupAdmin, "group_admin\n(p=75) 🆕")
+note right of roleGroupAdmin
+  🟢 组管理员
+  管理组内成员
+  查看组资源
+  scope=group_id
+end note
+
+Business_Role(roleTenantAdmin, "tenant_admin\n(p=100)")
+Business_Role(roleMember, "member\n(p=50)")
+
+' ═══ Deprecated ═══
+Application_Component(oldIsAdmin, "is_admin 直接鉴权 [DEPRECATED]")
+
+' ═══ Relationships ═══
+
+' Gateway
+Rel_Flow(gateway, taskAuth, "forward-auth → PDP")
+Rel_Flow(gateway, taskTenant, "/api/tenant/...")
+Rel_Flow(gateway, taskProject, "/api/projects/...")
+Rel_Flow(gateway, taskTask, "/api/tasks/...")
+Rel_Flow(gateway, taskCloud, "/api/cloud/..., /api/system-admin/...")
+Rel_Flow(gateway, taskBill, "/api/billing/..., /api/system-admin/...")
+
+' authz thin client
+Rel_Serving(shareLibAuthz, taskAuth, "RequireRole")
+Rel_Serving(shareLibAuthz, taskTenant, "RequireTenantRole\n🟡 +RequireGroupAdmin")
+Rel_Serving(shareLibAuthz, taskCloud, "RequireRole")
+Rel_Serving(shareLibAuthz, taskBill, "RequireRole")
+Rel_Serving(shareLibAuthz, taskProject, "🟡 +HasGroupResourceAccess")
+Rel_Serving(shareLibAuthz, taskTask, "RequireTenantRole")
+
+' Role hierarchy
+Rel_Composition(roleTenantAdmin, roleGroupAdmin, "管理")
+Rel_Composition(roleGroupAdmin, roleMember, "管理组内成员")
+
+' Events
+Rel_Flow(taskTenant, evtGroupAdmin, "publish")
+Rel_Flow(taskTenant, evtResourceGroup, "publish")
+Rel_Flow(taskTenant, evtMemberGroup, "publish")
+Rel_Flow(evtGroupAdmin, kafkaBroker, "→")
+Rel_Flow(evtResourceGroup, kafkaBroker, "→")
+Rel_Flow(evtMemberGroup, kafkaBroker, "→")
+
+' Data ownership
+Rel_Access_w(taskAuth, taskAuthDB, "users, roles")
+Rel_Access_w(taskTenant, taskTenantDB, "companies, members, groups\n🟡 +group_admin, resource_assignments")
+Rel_Access_w(taskProject, taskProjectDB, "projects")
+Rel_Access_w(taskTask, taskTaskDB, "todos")
+Rel_Access_w(taskCloud, taskCloudDB, "cloud resources")
+Rel_Access_w(taskBill, taskBillDB, "billing")
+
+@enduml

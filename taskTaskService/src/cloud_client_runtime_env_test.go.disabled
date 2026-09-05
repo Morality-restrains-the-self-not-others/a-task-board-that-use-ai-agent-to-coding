@@ -1,0 +1,121 @@
+//go:build ignore
+
+// Excluded: references AIProviderBaseURL / lookupImageRuntimeEnvironments removed from TTS.
+// Tracked as unit-test debt until rewritten against current cloud client.
+
+package main
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
+
+func TestLookupImageRuntimeEnvironmentsUsesAIProviderExternalID(t *testing.T) {
+	var gotPath, gotImageID string
+	aiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotImageID = r.URL.Query().Get("image_id")
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode([]map[string]interface{}{
+			{"platform_type": "aliyun", "region": "cn-hongkong"},
+		})
+	}))
+	t.Cleanup(aiSrv.Close)
+
+	cloudSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.URL.Path, "tenant-installed-images/lookup") {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"id":                "installed-1",
+			"name":              "demo",
+			"external_image_id": "9001",
+		})
+	}))
+	t.Cleanup(cloudSrv.Close)
+
+	prevCloud := cfg.CloudServiceURL
+	prevAI := cfg.AIProviderBaseURL
+	prevSecret := cfg.InternalSecret
+	prevLookup := lookupInstalledImageFn
+	prevEnv := imageRuntimeEnvironmentsFn
+	t.Cleanup(func() {
+		cfg.CloudServiceURL = prevCloud
+		cfg.AIProviderBaseURL = prevAI
+		cfg.InternalSecret = prevSecret
+		lookupInstalledImageFn = prevLookup
+		imageRuntimeEnvironmentsFn = prevEnv
+	})
+
+	cfg.CloudServiceURL = cloudSrv.URL
+	cfg.AIProviderBaseURL = aiSrv.URL
+	cfg.InternalSecret = "sec"
+	lookupInstalledImageFn = lookupInstalledImage
+	imageRuntimeEnvironmentsFn = lookupImageRuntimeEnvironments
+
+	envs, err := lookupImageRuntimeEnvironments("t1", "installed-1")
+	if err != nil {
+		t.Fatalf("lookup: %v", err)
+	}
+	if gotPath != "/api/public/image-runtime-environments/" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	if gotImageID != "9001" {
+		t.Fatalf("image_id=%q want 9001 (external)", gotImageID)
+	}
+	if len(envs) != 1 || envs[0]["region"] != "cn-hongkong" {
+		t.Fatalf("envs=%v", envs)
+	}
+}
+
+func TestLookupImageRuntimeEnvironmentsAIProvider404(t *testing.T) {
+	aiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	t.Cleanup(aiSrv.Close)
+
+	prevAI := cfg.AIProviderBaseURL
+	prevLookup := lookupInstalledImageFn
+	prevEnv := imageRuntimeEnvironmentsFn
+	t.Cleanup(func() {
+		cfg.AIProviderBaseURL = prevAI
+		lookupInstalledImageFn = prevLookup
+		imageRuntimeEnvironmentsFn = prevEnv
+	})
+	cfg.AIProviderBaseURL = aiSrv.URL
+	lookupInstalledImageFn = func(tenantID, imageID string) (*InstalledImageLookup, error) {
+		return &InstalledImageLookup{ID: imageID, ExternalImageID: "42"}, nil
+	}
+	imageRuntimeEnvironmentsFn = lookupImageRuntimeEnvironments
+
+	_, err := lookupImageRuntimeEnvironments("t1", "img1")
+	if err == nil || !strings.Contains(err.Error(), "ai provider runtime environments status 404") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestValidateAutoRunPrerequisitesRuntimeEnvEmpty(t *testing.T) {
+	prevCloud := cfg.CloudServiceURL
+	prevEnv := imageRuntimeEnvironmentsFn
+	t.Cleanup(func() {
+		cfg.CloudServiceURL = prevCloud
+		imageRuntimeEnvironmentsFn = prevEnv
+	})
+	cfg.CloudServiceURL = "http://127.0.0.1:9"
+	imageRuntimeEnvironmentsFn = func(tenantID, imageID string) ([]map[string]interface{}, error) {
+		return []map[string]interface{}{}, nil
+	}
+	_, err := validateAutoRunPrerequisites("t1", "img1", []string{"p1"})
+	e, ok := err.(*autoRunGateError)
+	if !ok || e.Code != "AUTO_RUN_RUNTIME_ENV_REQUIRED" {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(e.Message, "暂无可用运行环境") {
+		t.Fatalf("msg=%s", e.Message)
+	}
+}

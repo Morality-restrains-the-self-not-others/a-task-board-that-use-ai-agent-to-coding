@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v79 变迁 (v13→v79)" id="id-v79els-diff01">
+  <folder name="Application" id="id-v79elsd-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v79elsd-fe" name="taskFE [MOD]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v79elsd-aip" name="taskAiProvider [MOD]"/>
+  </folder>
+  <folder name="Technology" id="id-v79elsd-tech" type="technology">
+    <element xsi:type="archimate:TechnologyService" id="id-v79elsd-cos" name="Tencent COS ai-provider-1259712831 [NEW]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v79elsd-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v79elsd-pl13" name="Plateau v13"/>
+    <element xsi:type="archimate:Plateau" id="id-v79elsd-pl79" name="Plateau v79"/>
+    <element xsi:type="archimate:Gap" id="id-v79elsd-gap" name="Gap: vendor docs on local disk"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v79elsd-wp" name="WP-vendor-docs-cos-presign"/>
+  </folder>
+  <folder name="Relations" id="id-v79elsd-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v79elsd-rel-put" source="id-v79elsd-fe" target="id-v79elsd-cos" name="presigned PUT"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v79elsd-rel-sdk" source="id-v79elsd-aip" target="id-v79elsd-cos" name="sign / Head / Get"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v79elsd-rel-pl13-gap" source="id-v79elsd-pl13" target="id-v79elsd-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v79elsd-rel-wp-gap" source="id-v79elsd-wp" target="id-v79elsd-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v79elsd-rel-wp-pl79" source="id-v79elsd-wp" target="id-v79elsd-pl79"/>
+  </folder>
+  <folder name="Views" id="id-v79elsd-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v79elsd-view-mig" name="架构变迁 v13→v79 — vendor-docs-cos-presign">
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsd-d-pl13" archimateElement="id-v79elsd-pl13">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsd-c-pl13-gap" source="id-v79elsd-d-pl13" target="id-v79elsd-d-gap" archimateRelationship="id-v79elsd-rel-pl13-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsd-d-gap" targetConnections="id-v79elsd-c-pl13-gap id-v79elsd-c-wp-gap" archimateElement="id-v79elsd-gap">
+        <bounds x="240" y="48" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsd-d-wp" archimateElement="id-v79elsd-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsd-c-wp-gap" source="id-v79elsd-d-wp" target="id-v79elsd-d-gap" archimateRelationship="id-v79elsd-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsd-c-wp-pl79" source="id-v79elsd-d-wp" target="id-v79elsd-d-pl79" archimateRelationship="id-v79elsd-rel-wp-pl79"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsd-d-pl79" targetConnections="id-v79elsd-c-wp-pl79" archimateElement="id-v79elsd-pl79">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v79elsd-view-flow" name="v79 Target — COS 证照数据流">
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsd-d-fe" archimateElement="id-v79elsd-fe">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsd-c-put" source="id-v79elsd-d-fe" target="id-v79elsd-d-cos" archimateRelationship="id-v79elsd-rel-put"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsd-d-aip" archimateElement="id-v79elsd-aip">
+        <bounds x="48" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsd-c-sdk" source="id-v79elsd-d-aip" target="id-v79elsd-d-cos" archimateRelationship="id-v79elsd-rel-sdk"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsd-d-cos" targetConnections="id-v79elsd-c-put id-v79elsd-c-sdk" archimateElement="id-v79elsd-cos">
+        <bounds x="280" y="88" width="260" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

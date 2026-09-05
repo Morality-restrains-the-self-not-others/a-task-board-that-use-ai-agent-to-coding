@@ -1,0 +1,231 @@
+.review-docs:
+  extends:
+    - .default-retry
+    - .docs:rules:review-docs
+  image: ${GITLAB_DEPENDENCY_PROXY_ADDRESS}ruby:${RUBY_VERSION}-alpine
+  stage: review
+  needs: []
+  variables:
+    GIT_DEPTH: 1
+    # By default, deploy the Review App using the `main` branch of the `gitlab-org/technical-writing/docs-gitlab-com` project
+    DOCS_BRANCH: main
+  environment:
+    name: review-docs/mr-${CI_MERGE_REQUEST_IID}
+    auto_stop_in: 2 weeks
+    url: https://docs.gitlab.com/upstream-review-mr-${DOCS_GITLAB_REPO_SUFFIX}-${CI_MERGE_REQUEST_IID}
+    on_stop: review-docs-cleanup
+  before_script:
+    - source ./scripts/utils.sh
+    - install_gitlab_gem
+
+# Deploy documentation review app by using GitLab Docs project (gitlab-org/technical-writing/docs-gitlab-com)
+review-docs-deploy:
+  extends: .review-docs
+  script:
+    - ./scripts/trigger-build.rb docs deploy
+
+# Cleanup remote environment of gitlab-org/technical-writing/docs-gitlab-com
+review-docs-cleanup:
+  extends: .review-docs
+  environment:
+    name: review-docs/mr-${CI_MERGE_REQUEST_IID}
+    action: stop
+  script:
+    - ./scripts/trigger-build.rb docs cleanup
+
+.docs-markdown-lint-image:
+  # When updating the image version here, update it in /scripts/lint-doc.sh too.
+  image: ${REGISTRY_HOST}/${REGISTRY_GROUP}/technical-writing/docs-gitlab-com/lint-markdown:alpine-3.22-vale-3.13.0-markdownlint2-0.19.0-lychee-0.21.0
+
+docs-lint markdown:
+  extends:
+    - .docs:rules:docs-lint
+    - .docs-markdown-lint-image
+    - .lint-base
+  stage: lint
+  script:
+    - |
+      cat << EOF >> .markdownlint-cli2.yaml
+      outputFormatters:
+        - - 'markdownlint-cli2-formatter-default'
+        - - 'markdownlint-cli2-formatter-codequality'
+          - severity: 'blocker'
+      EOF
+    - source ./scripts/utils.sh
+    - install_gitlab_gem
+    - scripts/lint-doc.sh
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths:
+      - markdownlint-cli2-codequality.json
+    reports:
+      codequality: markdownlint-cli2-codequality.json
+
+docs-lint mermaid:
+  extends:
+    - .docs:rules:docs-lint
+    - .docs-markdown-lint-image
+    - .yarn-cache
+    - .lint-base
+  stage: lint
+  script:
+    - source ./scripts/utils.sh
+    - yarn_install_script
+    - scripts/lint/check_mermaid.mjs
+
+docs code_quality:
+  extends:
+    - .reports:rules:docs_code_quality
+    - .docs-markdown-lint-image
+    - .lint-base
+  stage: lint
+  allow_failure: true
+  script:
+    - vale --output=doc/.vale/vale-json.tmpl --minAlertLevel warning doc > gl-code-quality-report-docs.json || exit_code=$?
+  artifacts:
+    reports:
+      codequality: gl-code-quality-report-docs.json
+    paths:
+      - gl-code-quality-report-docs.json
+    expire_in: 2 weeks
+    when: always
+
+docs hugo_build:
+  image: ${REGISTRY_HOST}/${REGISTRY_GROUP}/technical-writing/docs-gitlab-com/docs-gitlab-com-builder:hugo-0.150.1
+  extends:
+    - .docs:rules:docs-all-lint
+    - .lint-base
+  stage: lint
+  variables:
+    DOCS_BRANCH: "main"
+  before_script:
+    # Check if this a release branch, which would be the case for a backport.
+    # If this is a backport MR, we need to checkout the appropriate version
+    # of the Docs website.
+    - |
+      if [[ $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ [0-9]+-[0-9]+-stable ]]; then
+        BRANCH_NAME=$CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+        echo "Detected merge request to stable branch: $BRANCH_NAME"
+      # Check if we're directly on a stable branch (direct push/commit)
+      elif [[ $CI_COMMIT_BRANCH =~ [0-9]+-[0-9]+-stable ]]; then
+        BRANCH_NAME=$CI_COMMIT_BRANCH
+        echo "Detected direct commit to stable branch: $BRANCH_NAME"
+      fi
+
+      # Extract version info if we found a stable branch
+      if [[ -n $BRANCH_NAME ]]; then
+        MAJOR=$(echo $BRANCH_NAME | cut -d '-' -f 1)
+        MINOR=$(echo $BRANCH_NAME | cut -d '-' -f 2)
+        # Convert GitLab style (17-9-stable-ee) to Docs style (17.9)
+        DOCS_BRANCH_CANDIDATE="$MAJOR.$MINOR"
+
+        # Check if the branch exists in the Docs website repo, fallback to main if not
+        if git ls-remote --heads --exit-code https://gitlab.com/gitlab-org/technical-writing/docs-gitlab-com.git "refs/heads/$DOCS_BRANCH_CANDIDATE" >/dev/null 2>&1; then
+          DOCS_BRANCH="$DOCS_BRANCH_CANDIDATE"
+          echo "Using docs-gitlab-com branch $DOCS_BRANCH for release branch"
+        else
+          DOCS_BRANCH="main"
+          echo "Branch $DOCS_BRANCH_CANDIDATE does not exist, falling back to main"
+        fi
+      fi
+    # Clone the Docs website project
+    - git clone --depth 1 --filter=tree:0 --branch $DOCS_BRANCH https://gitlab.com/gitlab-org/technical-writing/docs-gitlab-com.git
+    - cd docs-gitlab-com
+    - make add-latest-icons
+  script:
+    # Test that Hugo will build
+    - hugo --gc --printPathWarnings --panicOnWarning  --environment test
+    # Test for invalid index pages
+    # See https://gitlab.com/gitlab-org/technical-writing/docs-gitlab-com/-/blob/main/scripts/check-index-filenames.sh
+    - make check-index-pages SEARCH_DIR="../doc"
+    - make check-index-pages SEARCH_DIR="../doc-locale"
+
+docs-lint links:
+  extends:
+    - .docs:rules:docs-lint
+    - .docs-markdown-lint-image
+    - .lint-base
+  stage: lint
+  before_script:
+    - source scripts/utils.sh
+  script:
+    - lychee --offline --no-progress --include-fragments doc
+
+docs-lint deprecations-and-removals:
+  variables:
+    SETUP_DB: "false"
+  extends:
+    - .ruby-cache
+    - .default-before_script
+    - .docs:rules:deprecations-and-removals
+    - .lint-base
+  stage: lint
+  needs:
+    - !reference [.lint-base, needs]
+    - job: cache:ruby-gems
+      optional: true
+  script:
+    - bundle exec rake gitlab:docs:check_deprecations
+    - bundle exec rake gitlab:docs:check_windows
+
+docs-lint redirects:
+  image: ${GITLAB_DEPENDENCY_PROXY_ADDRESS}ruby:${RUBY_VERSION}-alpine
+  stage: lint
+  extends:
+    - .docs:rules:redirect-check
+    - .lint-base
+  before_script:
+    - source scripts/utils.sh
+  script: ./scripts/lint-docs-redirects.rb
+
+docs-i18n-lint markdown:
+  extends:
+    - .docs:rules:docs-i18n-lint
+    - .docs-markdown-lint-image
+    - .lint-base
+  stage: lint
+  script:
+    - source ./scripts/utils.sh
+    - install_gitlab_gem
+    - scripts/i18n_lint_doc.sh
+
+docs-i18n-lint links:
+  extends:
+    - .docs:rules:docs-i18n-lint
+    - .docs-markdown-lint-image
+    - .lint-base
+  stage: lint
+  allow_failure: true
+  before_script:
+    - source scripts/utils.sh
+  script:
+    - lychee --offline --include-fragments --exclude "\.(png|jpg|gif|svg)$" --exclude "ja-jp/development.*#" doc-locale
+
+# Japanese-specific Vale linting with language-specific rules
+docs-i18n-lint japanese-vale:
+  extends:
+    - .docs:rules:docs-i18n-lint-japanese
+    - .docs-markdown-lint-image
+    - .lint-base
+  stage: lint
+  variables:
+    LANGUAGE_CODE: "ja-jp"
+    LANGUAGE_NAME: "Japanese"
+  script:
+    - source ./scripts/utils.sh
+    - install_gitlab_gem
+    - scripts/i18n_lint_language_vale.sh
+
+# Verify localized documentation files have corresponding English versions
+docs-i18n-lint paths:
+  extends:
+    - .docs:rules:docs-i18n-lint
+    - .docs-markdown-lint-image
+    - .lint-base
+  allow_failure: true
+  stage: lint
+  script:
+    - source ./scripts/utils.sh
+    - install_gitlab_gem
+    - scripts/i18n_verify_paths.sh

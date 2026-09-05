@@ -1,0 +1,4 @@
+---
+Gettext/StaticIdentifier:
+  Exclude:
+    - 'lib/gitlab/github_import/settings.rb'

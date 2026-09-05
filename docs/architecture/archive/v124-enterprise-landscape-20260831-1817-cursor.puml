@@ -1,0 +1,78 @@
+' @title: 新节点 clone-run（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 124
+' @iteration: daydaymoney-deploy-new-node-clone
+' @author: cursor
+' @based_on: v123 (v123-enterprise-landscape-20260831-1703-cursor.puml)
+' @updated: 2026-08-31 18:55
+' @description: 机密面只拷 conf-local（含网关/OIDC PEM）；up.sh 自动拉含 MergeConfLocal 的 Release；须 INFRA_HOST + Docker
+
+@startuml
+!include <archimate/Archimate>
+
+title 新节点 clone-run — v124 Current Architecture (2026-08-31 18:55)
+
+rectangle "Business" {
+  Business_Actor(ops, "平台运维")
+  note right of ops
+    机密面只拷 conf-local
+    （含网关 TLS + OIDC 签名钥）
+    产物由 up.sh deploy-sync 自动拉
+    另设 INFRA_HOST 并起 Docker
+    @author: cursor @2026-08-31 18:55
+  end note
+  Business_Process(cloneRun, "clone + overlay + up.sh")
+}
+
+rectangle "Application" {
+  Application_Component(runAll, "runAll :9999")
+  note top of runAll
+    deploy-sync 钉新 Release
+  end note
+  Application_Component(confload, "confload / conf_loader")
+  Application_Component(gw, "taskGateway APISIX")
+  note top of gw
+    setup_tls 从 conf-local staging 到 certs/
+    DEPLOY_MODE 缺 PEM 失败
+  end note
+  Application_Component(auth, "taskAuth")
+  note top of auth
+    签名钥读 conf-local
+    DEPLOY_MODE 缺文件失败（不 mint）
+  end note
+}
+
+rectangle "Technology" {
+  Technology_Node(host, "部署机 DEPLOY_ROOT")
+  Technology_Artifact(cfgRepo, "daydaymoney-deploy")
+  Technology_Artifact(conflocal, "conf-local/")
+  note right of conflocal
+    YAML + 支付 PEM
+    + gateway/*.pem + oidc_signing_key.pem
+  end note
+  Technology_Artifact(ghRel, "GitHub Release")
+  note right of ghRel
+    含 MergeConfLocal 的新 tag
+    up.sh 自动 download + deploy-sync
+  end note
+}
+
+Rel_Assignment(ops, cloneRun)
+Rel_Flow(cfgRepo, host, "git clone 非机密")
+Rel_Flow(ghRel, host, "up.sh 自动拉 ELF")
+Rel_Flow(ops, conflocal, "rsync 机密面")
+Rel_Serving(host, runAll, "exec")
+Rel_Access_r(confload, conflocal, "唯一 overlay")
+Rel_Flow(gw, conflocal, "staging TLS PEM")
+Rel_Access_r(auth, conflocal, "OIDC 签名钥")
+
+Implementation_Plateau(p123, "Plateau v123 conf-local overlay")
+Implementation_Plateau(p124, "Plateau v124 clone-run + PEM in conf-local")
+Implementation_Gap(gap, "Gap: seed 仍叠 *.local.yaml；PEM 树外；旧 Release")
+Implementation_WorkPackage(wp, "WP-daydaymoney-deploy-new-node-clone")
+Rel_Triggering(p123, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p124, "delivers")
+
+@enduml

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionEnd": [
+      {
+        "command": ".cursor/hooks/auto-commit-session-end.sh",
+        "timeout": 900
+      }
+    ],
+    "stop": [
+      {
+        "command": ".cursor/hooks/auto-commit-stop.sh",
+        "timeout": 900
+      }
+    ]
+  }
+}

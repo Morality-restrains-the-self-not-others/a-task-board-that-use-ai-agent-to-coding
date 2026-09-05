@@ -1,0 +1,1578 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.archimatetool.com/archimate http://www.archimatetool.com/archimate"
+    identifier="model-v68-full-20260808">
+
+  <name xml:lang="en">v68 全量 — 插件 OIDC 白名单管理 (post-change)</name>
+  <purpose>v65 target (2026-08-05): Nightly (00:00-08:00) random unit-test sweep across all ~40 sub-repos (shared lib random_test_runner.sh SSOT, 30% ratio), auto-fix via claude-agent headless Claude Code (reproduce → fix → re-verify → commit → push to main), unresolved failures appended to UNIT_TEST_DEBT.md ledger (7-day dedup), daily report. Base = v64 WeChat identity (target). Includes migration view (v64→v65) and sweep topology view.
+v66 全量模型：合并「多会话互知」变更后的完整架构。
+v67 全量模型：合并「任务帖存续期」变更后的完整架构。
+v68 全量模型：合并「插件 OIDC 白名单管理」变更后的完整架构。</purpose>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- FOLDER: Application Layer -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <folder name="Application" id="folder-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="taskAuth (:8003) [MODIFIED v68: +GET/PUT /api/system-admin/oidc-extension/ +seed managed_by='admin' 行 INSERT-only]" id="taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskGitOauth (:8002)" id="taskGitOauth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTenantService (:8020) [MODIFIED v63]" id="taskTenant"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskProjectService (:8016) [MODIFIED v63]" id="taskProject"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTaskService (:8021) [MODIFIED v67: +post_expires_at +/tasks/{id}/renew/ +到期校验]" id="taskTask"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskAIComment (:8022)" id="taskAIComment"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskCloudService (:8018) [MODIFIED v67: bill_client chargeServerStart 退役]" id="taskCloud"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskBill (:8004) [MODIFIED v67: server_start 执行费→创建帖费 +server_start_renewal +consume-task-post-renewal]" id="taskBill"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskEvents (:8023) [MODIFIED v67: +TASK_POST_RENEWED/EXPIRED +每日到期扫描]" id="taskEvents"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskFE (SPA) [MODIFIED v68: SystemAdmin「浏览器插件」页 +/system-admin/oidc-extension/ 路由]" id="taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" name="shareLib/authz Thin Client [MODIFIED v63]" id="shareLibAuthz"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Kafka Consumers (Go)" id="kafkaConsumers"/>
+    <element xsi:type="archimate:ApplicationComponent" name="APISIX Gateway (:18081) [MODIFIED v68: +/api/system-admin/oidc-extension/* 路由]" id="gateway"/>
+    <element xsi:type="archimate:DataObject" name="Kafka" id="kafkaBroker"/>
+    <element xsi:type="archimate:DataObject" name="taskAuth DB (+auth_oidc_client.managed_by 🆕 redirect_uris 写库)" id="taskAuthDB"/>
+    <element xsi:type="archimate:DataObject" name="taskGitOauth DB" id="taskGitOauthDB"/>
+    <element xsi:type="archimate:DataObject" name="taskTenant DB (+member_role +group_role) [MODIFIED v63]" id="taskTenantDB"/>
+    <element xsi:type="archimate:DataObject" name="taskProject DB" id="taskProjectDB"/>
+    <element xsi:type="archimate:DataObject" name="taskTask DB (+post_expires_at 🆕)" id="taskTaskDB"/>
+    <element xsi:type="archimate:DataObject" name="taskCloud DB" id="taskCloudDB"/>
+    <element xsi:type="archimate:DataObject" name="taskBill DB (+server_start_renewal 单位)" id="taskBillDB"/>
+    <element xsi:type="archimate:ApplicationEvent" name="RoleChanged [NEW v63]" id="evtRoleChanged"/>
+    <element xsi:type="archimate:ApplicationEvent" name="TenantMemberRoleChanged" id="evtTenantRole"/>
+    <element xsi:type="archimate:ApplicationEvent" name="TenantGroupRoleChanged [NEW v63]" id="evtGroupRole"/>
+    <element xsi:type="archimate:ApplicationEvent" name="CompanyCreated (existing)" id="evtCompanyCreated"/>
+    <element xsi:type="archimate:ApplicationEvent" name="CompanyMemberAdded (existing)" id="evtMemberAdded"/>
+    <element xsi:type="archimate:ApplicationEvent" name="GroupAdminAssigned/Revoked [NEW v63]" id="evtGroupAdmin"/>
+    <element xsi:type="archimate:ApplicationEvent" name="ResourceAssigned/RevokedFromGroup [NEW v63]" id="evtResAssign"/>
+    <element xsi:type="archimate:ApplicationEvent" name="MemberAdded/RemovedFromGroup [NEW v63]" id="evtGroupMember"/>
+
+    <element xsi:type="archimate:ApplicationEvent" name="WechatIdentityLinked [NEW v64]" id="evtWxLinked"/>
+    <element xsi:type="archimate:ApplicationEvent" name="WechatIdentityConflict [NEW v64]" id="evtWxConflict"/>
+    <element xsi:type="archimate:ApplicationEvent" name="WechatBound [NEW v64]" id="evtWxBound"/>
+    <element xsi:type="archimate:ApplicationEvent" name="WechatUnbound [NEW v64]" id="evtWxUnbound"/>
+    <element xsi:type="archimate:ApplicationEvent" name="PAYMENT_SUCCEEDED [NEW v64]" id="evtPaySucceeded"/>
+    <element xsi:type="archimate:ApplicationComponent" name="is_admin/is_superuser direct check [DEPRECATED v63]" id="oldIsAdmin"/>
+    <element xsi:type="archimate:ApplicationComponent" name="policy.go creator hardcode [DEPRECATED v63]" id="oldPolicy"/>
+    <element xsi:type="archimate:ApplicationComponent" name="RequireRole priority check [DEPRECATED v63]" id="oldRequireRole"/>
+    <!-- v65 Nightly sweep -->
+    <element xsi:type="archimate:ApplicationComponent" name="40+ 子模块仓库 (16 Go 服务 + taskFE + 基建仓) [MODIFIED v66: 仓库级锁 + pre-commit v1.1.0]" id="devRepos"/>
+    <element xsi:type="archimate:ApplicationComponent" name="claude-agent (无头修复执行器) [MODIFIED v66: run 内建注册+加锁+冲突升级]" id="claudeAgent"/>
+    <element xsi:type="archimate:DataObject" name=".learnings/UNIT_TEST_DEBT.md (债台账)" id="debtLedger"/>
+    <element xsi:type="archimate:DataObject" name="logs/nightly-test-sweep-report-*.md (每日报告)" id="sweepReport"/>
+  
+  <element xsi:type="archimate:ApplicationComponent" name="Session Hub (logs/sessions/ — 注册表/锁/心跳/audit) [NEW v66]" id="sessionHub"/>
+  <element xsi:type="archimate:ApplicationComponent" name="claude-agent session CLI (Go + sessionctl.sh) [NEW v66]" id="sessionCLI"/>
+  <element xsi:type="archimate:ApplicationComponent" name="charge-server-start 按次扣费 [DEPRECATED v67]" id="oldChargeServerStart"/>
+  <element xsi:type="archimate:ApplicationEvent" name="TASK_POST_RENEWED 🆕" id="evtPostRenewed"/>
+  <element xsi:type="archimate:ApplicationEvent" name="TASK_POST_EXPIRED 🆕" id="evtPostExpired"/></folder>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- FOLDER: Technology Layer -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <folder name="Technology" id="folder-tech" type="technology">
+    <element xsi:type="archimate:Node" name="宿主机 cron (00:20 每日)" id="cronHost"/>
+    <element xsi:type="archimate:TechnologyProcess" name="Nightly Test Sweep (00:00–08:00 / flock 互斥) [MODIFIED v66: 活跃会话仓跳过]" id="nightlySweep"/>
+    <element xsi:type="archimate:Artifact" name="scripts/lib/random_test_runner.sh (共享抽测库 SSOT)" id="sharedRunner"/>
+  </folder>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- FOLDER: Implementation & Migration -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+    <folder name="Implementation" id="folder-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v63 — RBAC current (custom roles + group resources)" id="plateauV63"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v64 — WeChat identity unified (target)" id="plateauV64"/>
+    <element xsi:type="archimate:Gap" name="Gap v63→v64: single-app WeChat login, bare openid, no bind/unbind, in-memory pending" id="gapWx"/>
+    <element xsi:type="archimate:WorkPackage" name="WP1 (v64): wechat_identity + multi-app OAuth + matching + bind/unbind (D1-D5)" id="wpIdentity"/>
+    <element xsi:type="archimate:WorkPackage" name="WP2 (v64): taskBill callback chain — persistent pending + idempotent fulfill (D6-D8)" id="wpPayment"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v65 — 夜间巡检自愈 (2026-08-05)" id="plateauV65"/>
+    <element xsi:type="archimate:Gap" name="Gap: random unit-test gate fires only on commit — low-frequency repos hide failures for long; no auto-fix loop at night" id="gapSweep"/>
+    <element xsi:type="archimate:WorkPackage" name="WP1: extract shared random_test_runner.sh + refactor 6 pre-commit templates + deploy lib to sub-repos + CI check (D1)" id="wpLib"/>
+    <element xsi:type="archimate:WorkPackage" name="WP2: nightly_test_sweep.py orchestrator + bash entry (window guard, flock, budget, dry-run) (D2)" id="wpSweep"/>
+    <element xsi:type="archimate:WorkPackage" name="WP3: claude-agent fix loop + UNIT_TEST_DEBT ledger + cron install + daily report (D3-D4)" id="wpFix"/>
+  
+  <element xsi:type="archimate:Plateau" name="Plateau v66 — 多会话互知 (2026-08-06)" id="plateauV66"/>
+  <element xsi:type="archimate:Gap" name="Gap: 多会话并发编辑无互知、无锁/租约；冲突只能事后 git 处理" id="gapSession"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-session-coordination (P0 CLI/注册表/锁 → P1 hooks 分发 → P2 sweep/CI → P3 pause/shadow → P4 交付)" id="wpSession"/>
+  <element xsi:type="archimate:Plateau" name="Plateau v67 — 任务帖存续期 (2026-08-07)" id="plateauV67"/>
+  <element xsi:type="archimate:Gap" name="Gap: 帖子无存续期概念、执行按次扣费、无续存入口" id="gapPost"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-post-lifecycle (P1 DB迁移+存量回填 → P2 taskBill 计费改造 → P3 taskTask 存续期/renew → P4 events/扫描 → P5 FE)" id="wpPost"/>
+  <element xsi:type="archimate:Plateau" name="Plateau v68 — 插件 OIDC 白名单管理 (2026-08-08)" id="plateauV68"/>
+  <element xsi:type="archimate:Gap" name="Gap: 插件 ID 硬编码 conf + bootstrap 自愈覆盖管理员改库 → 不可运维" id="gapExt"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-oidc-extension-admin (P1 migration 031+seed 语义 → P2 taskAuth 管理端点 → P3 gateway 路由+FE 页 → P4 部署验证+OPT-024 联动)" id="wpExt"/></folder>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- FOLDER: Relations -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <folder name="Relations" id="folder-rels" type="relations">
+    <!-- Gateway routing -->
+    <element xsi:type="archimate:FlowRelationship" name="forward-auth → PDP ← X-User-Roles, X-Tenant-Perms" id="rel-gw-auth" source="gateway" target="taskAuth"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-gw-tenant" source="gateway" target="taskTenant"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-gw-project" source="gateway" target="taskProject"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-gw-task" source="gateway" target="taskTask"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-gw-aicomment" source="gateway" target="taskAIComment"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-gw-cloud" source="gateway" target="taskCloud"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-gw-bill" source="gateway" target="taskBill"/>
+    <element xsi:type="archimate:FlowRelationship" name="SPA static assets" id="rel-gw-fe" source="gateway" target="taskFE"/>
+    <!-- authz thin client → services (permission-code driven) -->
+    <element xsi:type="archimate:ServingRelationship" name="CheckPerm HTTP fallback" id="rel-authz-auth" source="shareLibAuthz" target="taskAuth"/>
+    <element xsi:type="archimate:ServingRelationship" name="RequirePerm(member:*)" id="rel-authz-tenant" source="shareLibAuthz" target="taskTenant"/>
+    <element xsi:type="archimate:ServingRelationship" name="RequirePerm(cloud:*)" id="rel-authz-cloud" source="shareLibAuthz" target="taskCloud"/>
+    <element xsi:type="archimate:ServingRelationship" name="RequirePerm(billing:*)" id="rel-authz-bill" source="shareLibAuthz" target="taskBill"/>
+    <element xsi:type="archimate:ServingRelationship" name="RequirePerm(project:*)" id="rel-authz-project" source="shareLibAuthz" target="taskProject"/>
+    <element xsi:type="archimate:ServingRelationship" name="RequirePerm(task:*)" id="rel-authz-task" source="shareLibAuthz" target="taskTask"/>
+    <!-- Kafka event flow -->
+    <element xsi:type="archimate:FlowRelationship" name="consume" id="rel-kafka-consumers" source="kafkaBroker" target="kafkaConsumers"/>
+    <element xsi:type="archimate:FlowRelationship" name="+CompanyCreated→tenant_admin, +MemberAdded→member" id="rel-cons-tenant" source="kafkaConsumers" target="taskTenant"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-cons-auth" source="kafkaConsumers" target="taskAuth"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-cons-project" source="kafkaConsumers" target="taskProject"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="rel-cons-cloud" source="kafkaConsumers" target="taskCloud"/>
+    <element xsi:type="archimate:FlowRelationship" name="+RoleChanged→cache invalidation" id="rel-cons-events" source="kafkaConsumers" target="taskEvents"/>
+    <!-- Data ownership (Access) -->
+    <element xsi:type="archimate:AccessRelationship" name="write" id="rel-auth-db" source="taskAuth" target="taskAuthDB"/>
+    <element xsi:type="archimate:AccessRelationship" name="write" id="rel-git-db" source="taskGitOauth" target="taskGitOauthDB"/>
+    <element xsi:type="archimate:AccessRelationship" name="write" id="rel-tenant-db" source="taskTenant" target="taskTenantDB"/>
+    <element xsi:type="archimate:AccessRelationship" name="write" id="rel-project-db" source="taskProject" target="taskProjectDB"/>
+    <element xsi:type="archimate:AccessRelationship" name="write" id="rel-task-db" source="taskTask" target="taskTaskDB"/>
+    <element xsi:type="archimate:AccessRelationship" name="write" id="rel-cloud-db" source="taskCloud" target="taskCloudDB"/>
+    <element xsi:type="archimate:AccessRelationship" name="write" id="rel-bill-db" source="taskBill" target="taskBillDB"/>
+    <!-- Domain events -->
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-auth-roleevt" source="taskAuth" target="evtRoleChanged"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-tenant-roleevt" source="taskTenant" target="evtTenantRole"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-tenant-groupevt" source="taskTenant" target="evtGroupRole"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus (existing)" id="rel-coc-kafka" source="evtCompanyCreated" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus (existing)" id="rel-ma-kafka" source="evtMemberAdded" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-tenant-gradmin" source="taskTenant" target="evtGroupAdmin"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-tenant-resassign" source="taskTenant" target="evtResAssign"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-tenant-grpmmbr" source="taskTenant" target="evtGroupMember"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-gradmin-kafka" source="evtGroupAdmin" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-resassign-kafka" source="evtResAssign" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-grpmmbr-kafka" source="evtGroupMember" target="kafkaBroker"/>
+
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-roleevt-kafka" source="evtRoleChanged" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-tenantroleevt-kafka" source="evtTenantRole" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-groupevt-kafka" source="evtGroupRole" target="kafkaBroker"/>
+    <!-- Deprecated associations -->
+    <element xsi:type="archimate:AssociationRelationship" name="" id="rel-dep-isadmin-auth" source="oldIsAdmin" target="taskAuth"/>
+    <element xsi:type="archimate:AssociationRelationship" name="" id="rel-dep-isadmin-tenant" source="oldIsAdmin" target="taskTenant"/>
+    <element xsi:type="archimate:AssociationRelationship" name="" id="rel-dep-policy" source="oldPolicy" target="taskTenant"/>
+    <element xsi:type="archimate:AssociationRelationship" name="" id="rel-dep-requirerole" source="oldRequireRole" target="shareLibAuthz"/>
+    <!-- Migration: v63→v64 (WP closes gap, delivers plateau) -->
+    <element xsi:type="archimate:AssociationRelationship" name="triggers" id="rel-plateauV63-gap" source="plateauV63" target="gapWx"/>
+    <element xsi:type="archimate:RealizationRelationship" name="closes" id="rel-wp1-gap" source="wpIdentity" target="gapWx"/>
+    <element xsi:type="archimate:RealizationRelationship" name="closes" id="rel-wp2-gap" source="wpPayment" target="gapWx"/>
+    <element xsi:type="archimate:RealizationRelationship" name="delivers" id="rel-wp1-plateau" source="wpIdentity" target="plateauV64"/>
+    <element xsi:type="archimate:RealizationRelationship" name="delivers" id="rel-wp2-plateau" source="wpPayment" target="plateauV64"/>
+    <!-- v64 WeChat identity + payment events -->
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-auth-wxlinked" source="taskAuth" target="evtWxLinked"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-auth-wxconflict" source="taskAuth" target="evtWxConflict"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-auth-wxbound" source="taskAuth" target="evtWxBound"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-auth-wxunbound" source="taskAuth" target="evtWxUnbound"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="rel-bill-paysucceeded" source="taskBill" target="evtPaySucceeded"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-wxlinked-kafka" source="evtWxLinked" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-wxconflict-kafka" source="evtWxConflict" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-wxbound-kafka" source="evtWxBound" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-wxunbound-kafka" source="evtWxUnbound" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="rel-paysucceeded-kafka" source="evtPaySucceeded" target="kafkaBroker"/>
+    <!-- v65 Nightly sweep -->
+    <element xsi:type="archimate:TriggeringRelationship" name="00:20 每日触发 (窗口 00:00-08:00)" id="rel-cron-sweep" source="cronHost" target="nightlySweep"/>
+    <element xsi:type="archimate:FlowRelationship" name="随机抽测单测 (30% 比例, 脏工作区仓跳过)" id="rel-sweep-repos" source="nightlySweep" target="devRepos"/>
+    <element xsi:type="archimate:FlowRelationship" name="失败 → 修复任务 (失败明细 + 25min 限时)" id="rel-sweep-agent" source="nightlySweep" target="claudeAgent"/>
+    <element xsi:type="archimate:FlowRelationship" name="重跑复现 → 修复 → 复跑验证 → commit (规则 6/28/41) → push" id="rel-agent-repos" source="claudeAgent" target="devRepos"/>
+    <element xsi:type="archimate:AccessRelationship" name="未解失败追加 (7 天去重)" id="rel-sweep-debt" source="nightlySweep" target="debtLedger"/>
+    <element xsi:type="archimate:AccessRelationship" name="每日报告 (skip/pass/fixed/unfixed)" id="rel-sweep-report" source="nightlySweep" target="sweepReport"/>
+    <element xsi:type="archimate:ServingRelationship" name="随机抽测逻辑 (rt_* 函数)" id="rel-runner-sweep" source="sharedRunner" target="nightlySweep"/>
+    <element xsi:type="archimate:AssociationRelationship" name="pre-commit 钩子重构复用 (部署分发 lib)" id="rel-runner-repos" source="sharedRunner" target="devRepos"/>
+    <!-- Migration: v64→v65 (gap closes, WPs deliver plateau v65) -->
+    <element xsi:type="archimate:AssociationRelationship" name="triggers" id="rel-plateauV64-gap" source="plateauV64" target="gapSweep"/>
+    <element xsi:type="archimate:RealizationRelationship" name="closes" id="rel-wp1-gap65" source="wpLib" target="gapSweep"/>
+    <element xsi:type="archimate:RealizationRelationship" name="closes" id="rel-wp2-gap65" source="wpSweep" target="gapSweep"/>
+    <element xsi:type="archimate:RealizationRelationship" name="closes" id="rel-wp3-gap65" source="wpFix" target="gapSweep"/>
+    <element xsi:type="archimate:RealizationRelationship" name="delivers" id="rel-wp1-plateau65" source="wpLib" target="plateauV65"/>
+    <element xsi:type="archimate:RealizationRelationship" name="delivers" id="rel-wp2-plateau65" source="wpSweep" target="plateauV65"/>
+    <element xsi:type="archimate:RealizationRelationship" name="delivers" id="rel-wp3-plateau65" source="wpFix" target="plateauV65"/>
+  
+  <element xsi:type="archimate:FlowRelationship" id="rel-agent-cli" source="claudeAgent" target="sessionCLI"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-sweep-cli" source="nightlySweep" target="sessionCLI"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel-cli-hub" source="sessionCLI" target="sessionHub"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-hub-repos" source="sessionHub" target="devRepos"/>
+  <element xsi:type="archimate:AssociationRelationship" id="rel-cli-shadow" source="sessionCLI" target="devRepos"/>
+  <element xsi:type="archimate:TriggeringRelationship" id="rel-trigger" source="plateauV67" target="gapExt"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wpExt" target="gapExt"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-plat" source="wpExt" target="plateauV68"/>
+  <element xsi:type="archimate:TriggeringRelationship" id="rel-trigger-v66" source="plateauV65" target="gapSession"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap-v66" source="wpSession" target="gapSession"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-plat-v66" source="wpSession" target="plateauV66"/>
+  <element xsi:type="archimate:TriggeringRelationship" id="rel-trigger-v67" source="plateauV66" target="gapPost"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap-v67" source="wpPost" target="gapPost"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-plat-v67" source="wpPost" target="plateauV67"/>
+
+  <element xsi:type="archimate:ServingRelationship" id="rel-task-bill" source="taskTask" target="taskBill"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-task-renewed" source="taskTask" target="evtPostRenewed"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-events-expired" source="taskEvents" target="evtPostExpired"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-renewed-kafka" source="evtPostRenewed" target="kafkaBroker"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-expired-kafka" source="evtPostExpired" target="kafkaBroker"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel-cloud-old" source="taskCloud" target="oldChargeServerStart"/>
+  <element xsi:type="archimate:AssociationRelationship" id="rel-old-bill" source="oldChargeServerStart" target="taskBill"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-fe-gw" source="taskFE" target="gateway"/></folder>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- FOLDER: Views -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <folder name="Views" id="folder-views" type="diagrams">
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- VIEW 1: 架构变迁 v64→v65 — 夜间随机单测巡检与自愈 -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v64→v65 — 夜间随机单测巡检与自愈" id="view-migration-v65">
+      <documentation>Implementation &amp; Migration: Plateau v64 → Gap → WorkPackages (WP1 lib, WP2 sweep, WP3 fix) → Plateau v65</documentation>
+
+      <!-- Plateau v64 -->
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV64" archimateElement="plateauV64"
+        targetConnections="conn-wp1-plateauH conn-wp2-plateauH">
+        <bounds x="50" y="100" width="260" height="80"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v64-gap"
+          source="do-plateauV64" target="do-gapSweep"
+          archimateRelationship="rel-plateauV64-gap"/>
+      </child>
+
+      <!-- 历史参考: v63→v64 迁移链 (v64 版已展示, 此处保留连续性) -->
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV63" archimateElement="plateauV63">
+        <bounds x="760" y="100" width="240" height="80"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v63-gapH"
+          source="do-plateauV63" target="do-gapWxH"
+          archimateRelationship="rel-plateauV63-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gapWxH" archimateElement="gapWx"
+        targetConnections="conn-v63-gapH conn-wp1-gapH conn-wp2-gapH">
+        <bounds x="1080" y="100" width="280" height="80"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wpI" archimateElement="wpIdentity">
+        <bounds x="760" y="250" width="260" height="65"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp1-gapH"
+          source="do-wpI" target="do-gapWxH"
+          archimateRelationship="rel-wp1-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp1-plateauH"
+          source="do-wpI" target="do-plateauV64"
+          archimateRelationship="rel-wp1-plateau"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wpP" archimateElement="wpPayment">
+        <bounds x="760" y="340" width="260" height="65"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp2-gapH"
+          source="do-wpP" target="do-gapWxH"
+          archimateRelationship="rel-wp2-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp2-plateauH"
+          source="do-wpP" target="do-plateauV64"
+          archimateRelationship="rel-wp2-plateau"/>
+      </child>
+
+      <!-- Gap -->
+      <child xsi:type="archimate:DiagramObject" id="do-gapSweep" archimateElement="gapSweep"
+        targetConnections="conn-v64-gap conn-wp1-gap conn-wp2-gap conn-wp3-gap">
+        <bounds x="400" y="100" width="320" height="80"/>
+      </child>
+
+      <!-- WP1 Lib -->
+      <child xsi:type="archimate:DiagramObject" id="do-wp1" archimateElement="wpLib">
+        <bounds x="50" y="250" width="300" height="65"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp1-gap"
+          source="do-wp1" target="do-gapSweep"
+          archimateRelationship="rel-wp1-gap65"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp1-plateau"
+          source="do-wp1" target="do-plateauV65"
+          archimateRelationship="rel-wp1-plateau65"/>
+      </child>
+
+      <!-- WP2 Sweep -->
+      <child xsi:type="archimate:DiagramObject" id="do-wp2" archimateElement="wpSweep">
+        <bounds x="50" y="340" width="300" height="65"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp2-gap"
+          source="do-wp2" target="do-gapSweep"
+          archimateRelationship="rel-wp2-gap65"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp2-plateau"
+          source="do-wp2" target="do-plateauV65"
+          archimateRelationship="rel-wp2-plateau65"/>
+      </child>
+
+      <!-- WP3 Fix -->
+      <child xsi:type="archimate:DiagramObject" id="do-wp3" archimateElement="wpFix">
+        <bounds x="50" y="430" width="300" height="65"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp3-gap"
+          source="do-wp3" target="do-gapSweep"
+          archimateRelationship="rel-wp3-gap65"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp3-plateau"
+          source="do-wp3" target="do-plateauV65"
+          archimateRelationship="rel-wp3-plateau65"/>
+      </child>
+
+      <!-- Plateau v65 -->
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV65" archimateElement="plateauV65"
+        targetConnections="conn-wp1-plateau conn-wp2-plateau conn-wp3-plateau">
+        <bounds x="400" y="280" width="320" height="80"/>
+      </child>
+    </element>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- VIEW 2: v65 Target — 夜间巡检与自愈数据流 -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v65 Target — 夜间巡检与自愈数据流" id="view-sweep-topology">
+      <documentation>Target topology: cron → NightlyTestSweep → (random 30% unit-test sweep) 40+ sub-repos; on failure → claude-agent fix loop (reproduce → fix → re-verify → commit → push); unresolved → UNIT_TEST_DEBT.md; daily report. Shared random_test_runner.sh serves sweep + sub-repo pre-commit hooks.</documentation>
+
+      <!-- cronHost -->
+      <child xsi:type="archimate:DiagramObject" id="do-cronhost" archimateElement="cronHost">
+        <bounds x="24" y="24" width="150" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cron-sweep"
+          source="do-cronhost" target="do-sweep"
+          archimateRelationship="rel-cron-sweep"/>
+      </child>
+
+      <!-- NightlySweep -->
+      <child xsi:type="archimate:DiagramObject" id="do-sweep" archimateElement="nightlySweep"
+        targetConnections="conn-cron-sweep conn-runner-sweep">
+        <bounds x="220" y="24" width="180" height="70"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-sweep-repos"
+          source="do-sweep" target="do-repos"
+          archimateRelationship="rel-sweep-repos"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-sweep-agent"
+          source="do-sweep" target="do-agent"
+          archimateRelationship="rel-sweep-agent"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-sweep-debt"
+          source="do-sweep" target="do-debt"
+          archimateRelationship="rel-sweep-debt"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-sweep-report"
+          source="do-sweep" target="do-report"
+          archimateRelationship="rel-sweep-report"/>
+      </child>
+
+      <!-- sharedRunner -->
+      <child xsi:type="archimate:DiagramObject" id="do-runner" archimateElement="sharedRunner">
+        <bounds x="24" y="240" width="150" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-runner-sweep"
+          source="do-runner" target="do-sweep"
+          archimateRelationship="rel-runner-sweep"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-runner-repos"
+          source="do-runner" target="do-repos"
+          archimateRelationship="rel-runner-repos"/>
+      </child>
+
+      <!-- 40+ repos pool -->
+      <child xsi:type="archimate:DiagramObject" id="do-repos" archimateElement="devRepos"
+        targetConnections="conn-sweep-repos conn-agent-repos conn-runner-repos">
+        <bounds x="460" y="24" width="200" height="70"/>
+      </child>
+
+      <!-- claude-agent -->
+      <child xsi:type="archimate:DiagramObject" id="do-agent" archimateElement="claudeAgent"
+        targetConnections="conn-sweep-agent">
+        <bounds x="460" y="160" width="200" height="70"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-agent-repos"
+          source="do-agent" target="do-repos"
+          archimateRelationship="rel-agent-repos"/>
+      </child>
+
+      <!-- Debt ledger -->
+      <child xsi:type="archimate:DiagramObject" id="do-debt" archimateElement="debtLedger"
+        targetConnections="conn-sweep-debt">
+        <bounds x="460" y="300" width="200" height="60"/>
+      </child>
+
+      <!-- Report -->
+      <child xsi:type="archimate:DiagramObject" id="do-report" archimateElement="sweepReport"
+        targetConnections="conn-sweep-report">
+        <bounds x="720" y="300" width="200" height="60"/>
+      </child>
+    </element>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- VIEW 3: 既有核心服务拓扑与数据流 (v63/v64 不变) -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v63/v64 Target — 权限码 + 组资源驱动服务拓扑" id="view-topology">
+      <documentation>Target topology: Gateway → taskAuth PDP (X-Tenant-Perms injection) → Services (RequirePerm). Unchanged in v65 — nightly sweep does not alter runtime service topology.</documentation>
+
+      <!-- Gateway -->
+      <child xsi:type="archimate:DiagramObject" id="do-gw" archimateElement="gateway">
+        <bounds x="24" y="24" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-auth"
+          source="do-gw" target="do-auth"
+          archimateRelationship="rel-gw-auth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-tenant"
+          source="do-gw" target="do-tenant"
+          archimateRelationship="rel-gw-tenant"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-fe"
+          source="do-gw" target="do-fe"
+          archimateRelationship="rel-gw-fe"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-cloud"
+          source="do-gw" target="do-cloud"
+          archimateRelationship="rel-gw-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-bill"
+          source="do-gw" target="do-bill"
+          archimateRelationship="rel-gw-bill"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-project"
+          source="do-gw" target="do-project"
+          archimateRelationship="rel-gw-project"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-task"
+          source="do-gw" target="do-task"
+          archimateRelationship="rel-gw-task"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-aicomment"
+          source="do-gw" target="do-aicomment"
+          archimateRelationship="rel-gw-aicomment"/>
+      </child>
+
+      <!-- shareLib/authz [MODIFIED] -->
+      <child xsi:type="archimate:DiagramObject" id="do-authz" archimateElement="shareLibAuthz" targetConnections="conn-dep-rr">
+        <bounds x="210" y="24" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-authz-auth"
+          source="do-authz" target="do-auth"
+          archimateRelationship="rel-authz-auth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-authz-tenant"
+          source="do-authz" target="do-tenant"
+          archimateRelationship="rel-authz-tenant"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-authz-cloud"
+          source="do-authz" target="do-cloud"
+          archimateRelationship="rel-authz-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-authz-bill"
+          source="do-authz" target="do-bill"
+          archimateRelationship="rel-authz-bill"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-authz-project"
+          source="do-authz" target="do-project"
+          archimateRelationship="rel-authz-project"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-authz-task"
+          source="do-authz" target="do-task"
+          archimateRelationship="rel-authz-task"/>
+      </child>
+
+      <!-- taskAuth [MODIFIED] -->
+      <child xsi:type="archimate:DiagramObject" id="do-auth" archimateElement="taskAuth"
+        targetConnections="conn-gw-auth conn-authz-auth conn-cons-auth conn-dep-isadmin-auth">
+        <bounds x="420" y="24" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-db"
+          source="do-auth" target="do-authdb"
+          archimateRelationship="rel-auth-db"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-roleevt"
+          source="do-auth" target="do-roleevt"
+          archimateRelationship="rel-auth-roleevt"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-wxlinked"
+          source="do-auth" target="do-wxlinked"
+          archimateRelationship="rel-auth-wxlinked"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-wxconflict"
+          source="do-auth" target="do-wxconflict"
+          archimateRelationship="rel-auth-wxconflict"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-wxbound"
+          source="do-auth" target="do-wxbound"
+          archimateRelationship="rel-auth-wxbound"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-wxunbound"
+          source="do-auth" target="do-wxunbound"
+          archimateRelationship="rel-auth-wxunbound"/>
+      </child>
+
+      <!-- taskGitOauth -->
+      <child xsi:type="archimate:DiagramObject" id="do-git" archimateElement="taskGitOauth">
+        <bounds x="580" y="176" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-git-db"
+          source="do-git" target="do-gitdb"
+          archimateRelationship="rel-git-db"/>
+      </child>
+
+      <!-- taskAIComment -->
+      <child xsi:type="archimate:DiagramObject" id="do-aicomment" archimateElement="taskAIComment"
+        targetConnections="conn-gw-aicomment">
+        <bounds x="580" y="252" width="130" height="55"/>
+      </child>
+
+      <!-- taskGitOauth DB -->
+      <child xsi:type="archimate:DiagramObject" id="do-gitdb" archimateElement="taskGitOauthDB"
+        targetConnections="conn-git-db">
+        <bounds x="920" y="252" width="140" height="50"/>
+      </child>
+
+      <!-- taskFE [NEW] -->
+      <child xsi:type="archimate:DiagramObject" id="do-fe" archimateElement="taskFE"
+        targetConnections="conn-gw-fe">
+        <bounds x="420" y="352" width="130" height="55"/>
+      </child>
+
+      <!-- taskTenant [MODIFIED] -->
+      <child xsi:type="archimate:DiagramObject" id="do-tenant" archimateElement="taskTenant"
+        targetConnections="conn-gw-tenant conn-authz-tenant conn-cons-tenant conn-dep-isadmin-tenant conn-dep-policy">
+        <bounds x="420" y="100" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tenant-db"
+          source="do-tenant" target="do-tenantdb"
+          archimateRelationship="rel-tenant-db"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tenant-roleevt"
+          source="do-tenant" target="do-tenantroleevt"
+          archimateRelationship="rel-tenant-roleevt"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tenant-groupevt"
+          source="do-tenant" target="do-groupevt"
+          archimateRelationship="rel-tenant-groupevt"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tenant-gradmin"
+          source="do-tenant" target="do-gradmin"
+          archimateRelationship="rel-tenant-gradmin"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tenant-resassign"
+          source="do-tenant" target="do-resassign"
+          archimateRelationship="rel-tenant-resassign"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tenant-grpmmbr"
+          source="do-tenant" target="do-grpmmbr"
+          archimateRelationship="rel-tenant-grpmmbr"/>
+      </child>
+
+      <!-- taskCloud [MODIFIED] -->
+      <child xsi:type="archimate:DiagramObject" id="do-cloud" archimateElement="taskCloud"
+        targetConnections="conn-authz-cloud conn-gw-cloud conn-cons-cloud">
+        <bounds x="420" y="176" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cloud-db"
+          source="do-cloud" target="do-clouddb"
+          archimateRelationship="rel-cloud-db"/>
+      </child>
+
+      <!-- taskBill [MODIFIED] -->
+      <child xsi:type="archimate:DiagramObject" id="do-bill" archimateElement="taskBill"
+        targetConnections="conn-authz-bill conn-gw-bill">
+        <bounds x="420" y="252" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-bill-db"
+          source="do-bill" target="do-billdb"
+          archimateRelationship="rel-bill-db"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-bill-paysucceeded"
+          source="do-bill" target="do-paysucceeded"
+          archimateRelationship="rel-bill-paysucceeded"/>
+      </child>
+
+      <!-- taskProject [MODIFIED] -->
+      <child xsi:type="archimate:DiagramObject" id="do-project" archimateElement="taskProject"
+        targetConnections="conn-authz-project conn-gw-project conn-cons-project">
+        <bounds x="580" y="24" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-project-db"
+          source="do-project" target="do-projectdb"
+          archimateRelationship="rel-project-db"/>
+      </child>
+
+      <!-- taskTask [MODIFIED] -->
+      <child xsi:type="archimate:DiagramObject" id="do-task" archimateElement="taskTask"
+        targetConnections="conn-authz-task conn-gw-task">
+        <bounds x="580" y="100" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-task-db"
+          source="do-task" target="do-taskdb"
+          archimateRelationship="rel-task-db"/>
+      </child>
+
+      <!-- Kafka Consumers -->
+      <child xsi:type="archimate:DiagramObject" id="do-cons" archimateElement="kafkaConsumers" targetConnections="conn-kafka-cons">
+        <bounds x="210" y="440" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cons-tenant"
+          source="do-cons" target="do-tenant"
+          archimateRelationship="rel-cons-tenant"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cons-auth"
+          source="do-cons" target="do-auth"
+          archimateRelationship="rel-cons-auth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cons-project"
+          source="do-cons" target="do-project"
+          archimateRelationship="rel-cons-project"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cons-cloud"
+          source="do-cons" target="do-cloud"
+          archimateRelationship="rel-cons-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cons-events"
+          source="do-cons" target="do-events"
+          archimateRelationship="rel-cons-events"/>
+      </child>
+
+      <!-- Kafka Broker -->
+      <child xsi:type="archimate:DiagramObject" id="do-kafka" archimateElement="kafkaBroker" targetConnections="conn-roleevt-kafka conn-tenantroleevt-kafka conn-groupevt-kafka conn-coc-kafka conn-ma-kafka conn-gradmin-kafka conn-resassign-kafka conn-grpmmbr-kafka conn-wxlinked-kafka conn-wxconflict-kafka conn-wxbound-kafka conn-wxunbound-kafka conn-paysucceeded-kafka">
+        <bounds x="24" y="440" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-kafka-cons"
+          source="do-kafka" target="do-cons"
+          archimateRelationship="rel-kafka-consumers"/>
+      </child>
+
+      <!-- Events -->
+      <child xsi:type="archimate:DiagramObject" id="do-roleevt" archimateElement="evtRoleChanged"
+        targetConnections="conn-auth-roleevt">
+        <bounds x="760" y="24" width="140" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-roleevt-kafka"
+          source="do-roleevt" target="do-kafka"
+          archimateRelationship="rel-roleevt-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-tenantroleevt" archimateElement="evtTenantRole"
+        targetConnections="conn-tenant-roleevt">
+        <bounds x="760" y="100" width="140" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tenantroleevt-kafka"
+          source="do-tenantroleevt" target="do-kafka"
+          archimateRelationship="rel-tenantroleevt-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-groupevt" archimateElement="evtGroupRole"
+        targetConnections="conn-tenant-groupevt">
+        <bounds x="760" y="176" width="140" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-groupevt-kafka"
+          source="do-groupevt" target="do-kafka"
+          archimateRelationship="rel-groupevt-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-coc" archimateElement="evtCompanyCreated">
+        <bounds x="760" y="252" width="140" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-coc-kafka"
+          source="do-coc" target="do-kafka"
+          archimateRelationship="rel-coc-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-ma" archimateElement="evtMemberAdded">
+        <bounds x="760" y="328" width="140" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-ma-kafka"
+          source="do-ma" target="do-kafka"
+          archimateRelationship="rel-ma-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gradmin" archimateElement="evtGroupAdmin"
+        targetConnections="conn-tenant-gradmin">
+        <bounds x="760" y="404" width="160" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gradmin-kafka"
+          source="do-gradmin" target="do-kafka"
+          archimateRelationship="rel-gradmin-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-resassign" archimateElement="evtResAssign"
+        targetConnections="conn-tenant-resassign">
+        <bounds x="760" y="480" width="160" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-resassign-kafka"
+          source="do-resassign" target="do-kafka"
+          archimateRelationship="rel-resassign-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-grpmmbr" archimateElement="evtGroupMember"
+        targetConnections="conn-tenant-grpmmbr">
+        <bounds x="760" y="556" width="160" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-grpmmbr-kafka"
+          source="do-grpmmbr" target="do-kafka"
+          archimateRelationship="rel-grpmmbr-kafka"/>
+      </child>
+
+      <!-- Databases -->
+      <child xsi:type="archimate:DiagramObject" id="do-authdb" archimateElement="taskAuthDB"
+        targetConnections="conn-auth-db">
+        <bounds x="600" y="252" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-tenantdb" archimateElement="taskTenantDB"
+        targetConnections="conn-tenant-db">
+        <bounds x="600" y="328" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-projectdb" archimateElement="taskProjectDB"
+        targetConnections="conn-project-db">
+        <bounds x="760" y="430" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-taskdb" archimateElement="taskTaskDB"
+        targetConnections="conn-task-db">
+        <bounds x="920" y="430" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-clouddb" archimateElement="taskCloudDB"
+        targetConnections="conn-cloud-db">
+        <bounds x="600" y="430" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-billdb" archimateElement="taskBillDB"
+        targetConnections="conn-bill-db">
+        <bounds x="920" y="352" width="140" height="50"/>
+      </child>
+
+      <!-- Deprecated components -->
+      <child xsi:type="archimate:DiagramObject" id="do-oldisadmin" archimateElement="oldIsAdmin">
+        <bounds x="210" y="540" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-dep-isadmin-auth"
+          source="do-oldisadmin" target="do-auth"
+          archimateRelationship="rel-dep-isadmin-auth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-dep-isadmin-tenant"
+          source="do-oldisadmin" target="do-tenant"
+          archimateRelationship="rel-dep-isadmin-tenant"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-oldpolicy" archimateElement="oldPolicy">
+        <bounds x="440" y="540" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-dep-policy"
+          source="do-oldpolicy" target="do-tenant"
+          archimateRelationship="rel-dep-policy"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-oldrr" archimateElement="oldRequireRole">
+        <bounds x="670" y="540" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-dep-rr"
+          source="do-oldrr" target="do-authz"
+          archimateRelationship="rel-dep-requirerole"/>
+      </child>
+
+      <!-- v64 WeChat identity + payment events -->
+      <child xsi:type="archimate:DiagramObject" id="do-wxlinked" archimateElement="evtWxLinked"
+        targetConnections="conn-auth-wxlinked">
+        <bounds x="1120" y="24" width="170" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wxlinked-kafka"
+          source="do-wxlinked" target="do-kafka"
+          archimateRelationship="rel-wxlinked-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wxconflict" archimateElement="evtWxConflict"
+        targetConnections="conn-auth-wxconflict">
+        <bounds x="1120" y="84" width="170" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wxconflict-kafka"
+          source="do-wxconflict" target="do-kafka"
+          archimateRelationship="rel-wxconflict-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wxbound" archimateElement="evtWxBound"
+        targetConnections="conn-auth-wxbound">
+        <bounds x="1120" y="144" width="170" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wxbound-kafka"
+          source="do-wxbound" target="do-kafka"
+          archimateRelationship="rel-wxbound-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wxunbound" archimateElement="evtWxUnbound"
+        targetConnections="conn-auth-wxunbound">
+        <bounds x="1120" y="204" width="170" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wxunbound-kafka"
+          source="do-wxunbound" target="do-kafka"
+          archimateRelationship="rel-wxunbound-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-paysucceeded" archimateElement="evtPaySucceeded"
+        targetConnections="conn-bill-paysucceeded">
+        <bounds x="1120" y="324" width="190" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-paysucceeded-kafka"
+          source="do-paysucceeded" target="do-kafka"
+          archimateRelationship="rel-paysucceeded-kafka"/>
+      </child>
+
+      <!-- taskEvents [MODIFIED] -->
+      <child xsi:type="archimate:DiagramObject" id="do-events" archimateElement="taskEvents"
+        targetConnections="conn-cons-events">
+        <bounds x="440" y="440" width="130" height="55"/>
+      </child>
+    </element>
+  
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v66 全量拓扑 — 多会话互知" id="view-full-66">
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV63" archimateElement="plateauV63">
+        <bounds x="0" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-plateauV63-gap" source="do-f-plateauV63" target="do-f-gapWx" archimateRelationship="rel-plateauV63-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV64" archimateElement="plateauV64" targetConnections="cf-rel-wp1-plateau cf-rel-wp2-plateau">
+        <bounds x="240" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-plateauV64-gap" source="do-f-plateauV64" target="do-f-gapSweep" archimateRelationship="rel-plateauV64-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapWx" archimateElement="gapWx" targetConnections="cf-rel-plateauV63-gap cf-rel-wp1-gap cf-rel-wp2-gap">
+        <bounds x="480" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpIdentity" archimateElement="wpIdentity">
+        <bounds x="720" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp1-gap" source="do-f-wpIdentity" target="do-f-gapWx" archimateRelationship="rel-wp1-gap"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp1-plateau" source="do-f-wpIdentity" target="do-f-plateauV64" archimateRelationship="rel-wp1-plateau"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpPayment" archimateElement="wpPayment">
+        <bounds x="960" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp2-gap" source="do-f-wpPayment" target="do-f-gapWx" archimateRelationship="rel-wp2-gap"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp2-plateau" source="do-f-wpPayment" target="do-f-plateauV64" archimateRelationship="rel-wp2-plateau"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV65" archimateElement="plateauV65" targetConnections="cf-rel-wp1-plateau65 cf-rel-wp2-plateau65 cf-rel-wp3-plateau65">
+        <bounds x="1200" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-trigger" source="do-f-plateauV65" target="do-f-gapSession" archimateRelationship="rel-trigger-v66"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapSweep" archimateElement="gapSweep" targetConnections="cf-rel-plateauV64-gap cf-rel-wp1-gap65 cf-rel-wp2-gap65 cf-rel-wp3-gap65">
+        <bounds x="1440" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpLib" archimateElement="wpLib">
+        <bounds x="1680" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp1-gap65" source="do-f-wpLib" target="do-f-gapSweep" archimateRelationship="rel-wp1-gap65"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp1-plateau65" source="do-f-wpLib" target="do-f-plateauV65" archimateRelationship="rel-wp1-plateau65"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpSweep" archimateElement="wpSweep">
+        <bounds x="1920" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp2-gap65" source="do-f-wpSweep" target="do-f-gapSweep" archimateRelationship="rel-wp2-gap65"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp2-plateau65" source="do-f-wpSweep" target="do-f-plateauV65" archimateRelationship="rel-wp2-plateau65"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpFix" archimateElement="wpFix">
+        <bounds x="2160" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp3-gap65" source="do-f-wpFix" target="do-f-gapSweep" archimateRelationship="rel-wp3-gap65"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp3-plateau65" source="do-f-wpFix" target="do-f-plateauV65" archimateRelationship="rel-wp3-plateau65"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV66" archimateElement="plateauV66" targetConnections="cf-rel-wp-plat">
+        <bounds x="2400" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapSession" archimateElement="gapSession" targetConnections="cf-rel-trigger cf-rel-wp-gap">
+        <bounds x="2640" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpSession" archimateElement="wpSession">
+        <bounds x="2880" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp-gap" source="do-f-wpSession" target="do-f-gapSession" archimateRelationship="rel-wp-gap-v66"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp-plat" source="do-f-wpSession" target="do-f-plateauV66" archimateRelationship="rel-wp-plat-v66"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskAuth" archimateElement="taskAuth" targetConnections="cf-rel-gw-auth cf-rel-authz-auth cf-rel-cons-auth cf-rel-dep-isadmin-auth">
+        <bounds x="0" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-db" source="do-f-taskAuth" target="do-f-taskAuthDB" archimateRelationship="rel-auth-db"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-roleevt" source="do-f-taskAuth" target="do-f-evtRoleChanged" archimateRelationship="rel-auth-roleevt"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-wxlinked" source="do-f-taskAuth" target="do-f-evtWxLinked" archimateRelationship="rel-auth-wxlinked"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-wxconflict" source="do-f-taskAuth" target="do-f-evtWxConflict" archimateRelationship="rel-auth-wxconflict"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-wxbound" source="do-f-taskAuth" target="do-f-evtWxBound" archimateRelationship="rel-auth-wxbound"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-wxunbound" source="do-f-taskAuth" target="do-f-evtWxUnbound" archimateRelationship="rel-auth-wxunbound"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskGitOauth" archimateElement="taskGitOauth">
+        <bounds x="240" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-git-db" source="do-f-taskGitOauth" target="do-f-taskGitOauthDB" archimateRelationship="rel-git-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskTenant" archimateElement="taskTenant" targetConnections="cf-rel-gw-tenant cf-rel-authz-tenant cf-rel-cons-tenant cf-rel-dep-isadmin-tenant cf-rel-dep-policy">
+        <bounds x="480" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-db" source="do-f-taskTenant" target="do-f-taskTenantDB" archimateRelationship="rel-tenant-db"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-roleevt" source="do-f-taskTenant" target="do-f-evtTenantRole" archimateRelationship="rel-tenant-roleevt"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-groupevt" source="do-f-taskTenant" target="do-f-evtGroupRole" archimateRelationship="rel-tenant-groupevt"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-gradmin" source="do-f-taskTenant" target="do-f-evtGroupAdmin" archimateRelationship="rel-tenant-gradmin"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-resassign" source="do-f-taskTenant" target="do-f-evtResAssign" archimateRelationship="rel-tenant-resassign"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-grpmmbr" source="do-f-taskTenant" target="do-f-evtGroupMember" archimateRelationship="rel-tenant-grpmmbr"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskProject" archimateElement="taskProject" targetConnections="cf-rel-gw-project cf-rel-authz-project cf-rel-cons-project">
+        <bounds x="720" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-project-db" source="do-f-taskProject" target="do-f-taskProjectDB" archimateRelationship="rel-project-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskTask" archimateElement="taskTask" targetConnections="cf-rel-gw-task cf-rel-authz-task">
+        <bounds x="960" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-task-db" source="do-f-taskTask" target="do-f-taskTaskDB" archimateRelationship="rel-task-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskAIComment" archimateElement="taskAIComment" targetConnections="cf-rel-gw-aicomment">
+        <bounds x="1200" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskCloud" archimateElement="taskCloud" targetConnections="cf-rel-gw-cloud cf-rel-authz-cloud cf-rel-cons-cloud">
+        <bounds x="1440" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cloud-db" source="do-f-taskCloud" target="do-f-taskCloudDB" archimateRelationship="rel-cloud-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskBill" archimateElement="taskBill" targetConnections="cf-rel-gw-bill cf-rel-authz-bill">
+        <bounds x="1680" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-bill-db" source="do-f-taskBill" target="do-f-taskBillDB" archimateRelationship="rel-bill-db"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-bill-paysucceeded" source="do-f-taskBill" target="do-f-evtPaySucceeded" archimateRelationship="rel-bill-paysucceeded"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskEvents" archimateElement="taskEvents" targetConnections="cf-rel-cons-events">
+        <bounds x="1920" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskFE" archimateElement="taskFE" targetConnections="cf-rel-gw-fe">
+        <bounds x="2160" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-shareLibAuthz" archimateElement="shareLibAuthz" targetConnections="cf-rel-dep-requirerole">
+        <bounds x="2400" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-auth" source="do-f-shareLibAuthz" target="do-f-taskAuth" archimateRelationship="rel-authz-auth"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-tenant" source="do-f-shareLibAuthz" target="do-f-taskTenant" archimateRelationship="rel-authz-tenant"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-cloud" source="do-f-shareLibAuthz" target="do-f-taskCloud" archimateRelationship="rel-authz-cloud"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-bill" source="do-f-shareLibAuthz" target="do-f-taskBill" archimateRelationship="rel-authz-bill"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-project" source="do-f-shareLibAuthz" target="do-f-taskProject" archimateRelationship="rel-authz-project"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-task" source="do-f-shareLibAuthz" target="do-f-taskTask" archimateRelationship="rel-authz-task"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-kafkaConsumers" archimateElement="kafkaConsumers" targetConnections="cf-rel-kafka-consumers">
+        <bounds x="2640" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-tenant" source="do-f-kafkaConsumers" target="do-f-taskTenant" archimateRelationship="rel-cons-tenant"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-auth" source="do-f-kafkaConsumers" target="do-f-taskAuth" archimateRelationship="rel-cons-auth"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-project" source="do-f-kafkaConsumers" target="do-f-taskProject" archimateRelationship="rel-cons-project"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-cloud" source="do-f-kafkaConsumers" target="do-f-taskCloud" archimateRelationship="rel-cons-cloud"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-events" source="do-f-kafkaConsumers" target="do-f-taskEvents" archimateRelationship="rel-cons-events"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gateway" archimateElement="gateway">
+        <bounds x="2880" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-auth" source="do-f-gateway" target="do-f-taskAuth" archimateRelationship="rel-gw-auth"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-tenant" source="do-f-gateway" target="do-f-taskTenant" archimateRelationship="rel-gw-tenant"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-project" source="do-f-gateway" target="do-f-taskProject" archimateRelationship="rel-gw-project"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-task" source="do-f-gateway" target="do-f-taskTask" archimateRelationship="rel-gw-task"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-aicomment" source="do-f-gateway" target="do-f-taskAIComment" archimateRelationship="rel-gw-aicomment"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-cloud" source="do-f-gateway" target="do-f-taskCloud" archimateRelationship="rel-gw-cloud"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-bill" source="do-f-gateway" target="do-f-taskBill" archimateRelationship="rel-gw-bill"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-fe" source="do-f-gateway" target="do-f-taskFE" archimateRelationship="rel-gw-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-kafkaBroker" archimateElement="kafkaBroker" targetConnections="cf-rel-coc-kafka cf-rel-ma-kafka cf-rel-gradmin-kafka cf-rel-resassign-kafka cf-rel-grpmmbr-kafka cf-rel-roleevt-kafka cf-rel-tenantroleevt-kafka cf-rel-groupevt-kafka cf-rel-wxlinked-kafka cf-rel-wxconflict-kafka cf-rel-wxbound-kafka cf-rel-wxunbound-kafka cf-rel-paysucceeded-kafka">
+        <bounds x="3120" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-kafka-consumers" source="do-f-kafkaBroker" target="do-f-kafkaConsumers" archimateRelationship="rel-kafka-consumers"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskAuthDB" archimateElement="taskAuthDB" targetConnections="cf-rel-auth-db">
+        <bounds x="3360" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskGitOauthDB" archimateElement="taskGitOauthDB" targetConnections="cf-rel-git-db">
+        <bounds x="3600" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskTenantDB" archimateElement="taskTenantDB" targetConnections="cf-rel-tenant-db">
+        <bounds x="3840" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskProjectDB" archimateElement="taskProjectDB" targetConnections="cf-rel-project-db">
+        <bounds x="4080" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskTaskDB" archimateElement="taskTaskDB" targetConnections="cf-rel-task-db">
+        <bounds x="4320" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskCloudDB" archimateElement="taskCloudDB" targetConnections="cf-rel-cloud-db">
+        <bounds x="4560" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskBillDB" archimateElement="taskBillDB" targetConnections="cf-rel-bill-db">
+        <bounds x="4800" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtRoleChanged" archimateElement="evtRoleChanged" targetConnections="cf-rel-auth-roleevt">
+        <bounds x="5040" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-roleevt-kafka" source="do-f-evtRoleChanged" target="do-f-kafkaBroker" archimateRelationship="rel-roleevt-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtTenantRole" archimateElement="evtTenantRole" targetConnections="cf-rel-tenant-roleevt">
+        <bounds x="5280" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenantroleevt-kafka" source="do-f-evtTenantRole" target="do-f-kafkaBroker" archimateRelationship="rel-tenantroleevt-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtGroupRole" archimateElement="evtGroupRole" targetConnections="cf-rel-tenant-groupevt">
+        <bounds x="5520" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-groupevt-kafka" source="do-f-evtGroupRole" target="do-f-kafkaBroker" archimateRelationship="rel-groupevt-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtCompanyCreated" archimateElement="evtCompanyCreated">
+        <bounds x="5760" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-coc-kafka" source="do-f-evtCompanyCreated" target="do-f-kafkaBroker" archimateRelationship="rel-coc-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtMemberAdded" archimateElement="evtMemberAdded">
+        <bounds x="6000" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-ma-kafka" source="do-f-evtMemberAdded" target="do-f-kafkaBroker" archimateRelationship="rel-ma-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtGroupAdmin" archimateElement="evtGroupAdmin" targetConnections="cf-rel-tenant-gradmin">
+        <bounds x="6240" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gradmin-kafka" source="do-f-evtGroupAdmin" target="do-f-kafkaBroker" archimateRelationship="rel-gradmin-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtResAssign" archimateElement="evtResAssign" targetConnections="cf-rel-tenant-resassign">
+        <bounds x="6480" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-resassign-kafka" source="do-f-evtResAssign" target="do-f-kafkaBroker" archimateRelationship="rel-resassign-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtGroupMember" archimateElement="evtGroupMember" targetConnections="cf-rel-tenant-grpmmbr">
+        <bounds x="6720" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-grpmmbr-kafka" source="do-f-evtGroupMember" target="do-f-kafkaBroker" archimateRelationship="rel-grpmmbr-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtWxLinked" archimateElement="evtWxLinked" targetConnections="cf-rel-auth-wxlinked">
+        <bounds x="6960" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wxlinked-kafka" source="do-f-evtWxLinked" target="do-f-kafkaBroker" archimateRelationship="rel-wxlinked-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtWxConflict" archimateElement="evtWxConflict" targetConnections="cf-rel-auth-wxconflict">
+        <bounds x="7200" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wxconflict-kafka" source="do-f-evtWxConflict" target="do-f-kafkaBroker" archimateRelationship="rel-wxconflict-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtWxBound" archimateElement="evtWxBound" targetConnections="cf-rel-auth-wxbound">
+        <bounds x="7440" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wxbound-kafka" source="do-f-evtWxBound" target="do-f-kafkaBroker" archimateRelationship="rel-wxbound-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtWxUnbound" archimateElement="evtWxUnbound" targetConnections="cf-rel-auth-wxunbound">
+        <bounds x="7680" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wxunbound-kafka" source="do-f-evtWxUnbound" target="do-f-kafkaBroker" archimateRelationship="rel-wxunbound-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtPaySucceeded" archimateElement="evtPaySucceeded" targetConnections="cf-rel-bill-paysucceeded">
+        <bounds x="7920" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-paysucceeded-kafka" source="do-f-evtPaySucceeded" target="do-f-kafkaBroker" archimateRelationship="rel-paysucceeded-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-devRepos" archimateElement="devRepos" targetConnections="cf-rel-sweep-repos cf-rel-agent-repos cf-rel-runner-repos cf-rel-hub-repos cf-rel-cli-shadow">
+        <bounds x="8160" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-claudeAgent" archimateElement="claudeAgent" targetConnections="cf-rel-sweep-agent">
+        <bounds x="8400" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-agent-repos" source="do-f-claudeAgent" target="do-f-devRepos" archimateRelationship="rel-agent-repos"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-agent-cli" source="do-f-claudeAgent" target="do-f-sessionCLI" archimateRelationship="rel-agent-cli"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-debtLedger" archimateElement="debtLedger" targetConnections="cf-rel-sweep-debt">
+        <bounds x="8640" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sweepReport" archimateElement="sweepReport" targetConnections="cf-rel-sweep-report">
+        <bounds x="8880" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sessionHub" archimateElement="sessionHub" targetConnections="cf-rel-cli-hub">
+        <bounds x="9120" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-hub-repos" source="do-f-sessionHub" target="do-f-devRepos" archimateRelationship="rel-hub-repos"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sessionCLI" archimateElement="sessionCLI" targetConnections="cf-rel-agent-cli cf-rel-sweep-cli">
+        <bounds x="9360" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cli-hub" source="do-f-sessionCLI" target="do-f-sessionHub" archimateRelationship="rel-cli-hub"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cli-shadow" source="do-f-sessionCLI" target="do-f-devRepos" archimateRelationship="rel-cli-shadow"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-cronHost" archimateElement="cronHost">
+        <bounds x="0" y="500" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cron-sweep" source="do-f-cronHost" target="do-f-nightlySweep" archimateRelationship="rel-cron-sweep"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-nightlySweep" archimateElement="nightlySweep" targetConnections="cf-rel-cron-sweep cf-rel-runner-sweep">
+        <bounds x="240" y="500" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-repos" source="do-f-nightlySweep" target="do-f-devRepos" archimateRelationship="rel-sweep-repos"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-agent" source="do-f-nightlySweep" target="do-f-claudeAgent" archimateRelationship="rel-sweep-agent"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-debt" source="do-f-nightlySweep" target="do-f-debtLedger" archimateRelationship="rel-sweep-debt"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-report" source="do-f-nightlySweep" target="do-f-sweepReport" archimateRelationship="rel-sweep-report"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-cli" source="do-f-nightlySweep" target="do-f-sessionCLI" archimateRelationship="rel-sweep-cli"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sharedRunner" archimateElement="sharedRunner">
+        <bounds x="480" y="500" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-runner-sweep" source="do-f-sharedRunner" target="do-f-nightlySweep" archimateRelationship="rel-runner-sweep"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-runner-repos" source="do-f-sharedRunner" target="do-f-devRepos" archimateRelationship="rel-runner-repos"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-oldIsAdmin" archimateElement="oldIsAdmin">
+        <bounds x="0" y="620" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-dep-isadmin-auth" source="do-f-oldIsAdmin" target="do-f-taskAuth" archimateRelationship="rel-dep-isadmin-auth"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-dep-isadmin-tenant" source="do-f-oldIsAdmin" target="do-f-taskTenant" archimateRelationship="rel-dep-isadmin-tenant"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-oldPolicy" archimateElement="oldPolicy">
+        <bounds x="240" y="620" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-dep-policy" source="do-f-oldPolicy" target="do-f-taskTenant" archimateRelationship="rel-dep-policy"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-oldRequireRole" archimateElement="oldRequireRole">
+        <bounds x="480" y="620" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-dep-requirerole" source="do-f-oldRequireRole" target="do-f-shareLibAuthz" archimateRelationship="rel-dep-requirerole"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v67 全量拓扑 — 任务帖存续期" id="view-full-67">
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV63" archimateElement="plateauV63">
+        <bounds x="0" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-plateauV63-gap" source="do-f-plateauV63" target="do-f-gapWx" archimateRelationship="rel-plateauV63-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV64" archimateElement="plateauV64" targetConnections="cf-rel-wp1-plateau cf-rel-wp2-plateau">
+        <bounds x="240" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-plateauV64-gap" source="do-f-plateauV64" target="do-f-gapSweep" archimateRelationship="rel-plateauV64-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapWx" archimateElement="gapWx" targetConnections="cf-rel-plateauV63-gap cf-rel-wp1-gap cf-rel-wp2-gap">
+        <bounds x="480" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpIdentity" archimateElement="wpIdentity">
+        <bounds x="720" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp1-gap" source="do-f-wpIdentity" target="do-f-gapWx" archimateRelationship="rel-wp1-gap"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp1-plateau" source="do-f-wpIdentity" target="do-f-plateauV64" archimateRelationship="rel-wp1-plateau"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpPayment" archimateElement="wpPayment">
+        <bounds x="960" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp2-gap" source="do-f-wpPayment" target="do-f-gapWx" archimateRelationship="rel-wp2-gap"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp2-plateau" source="do-f-wpPayment" target="do-f-plateauV64" archimateRelationship="rel-wp2-plateau"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV65" archimateElement="plateauV65" targetConnections="cf-rel-wp1-plateau65 cf-rel-wp2-plateau65 cf-rel-wp3-plateau65">
+        <bounds x="1200" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapSweep" archimateElement="gapSweep" targetConnections="cf-rel-plateauV64-gap cf-rel-wp1-gap65 cf-rel-wp2-gap65 cf-rel-wp3-gap65">
+        <bounds x="1440" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpLib" archimateElement="wpLib">
+        <bounds x="1680" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp1-gap65" source="do-f-wpLib" target="do-f-gapSweep" archimateRelationship="rel-wp1-gap65"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp1-plateau65" source="do-f-wpLib" target="do-f-plateauV65" archimateRelationship="rel-wp1-plateau65"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpSweep" archimateElement="wpSweep">
+        <bounds x="1920" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp2-gap65" source="do-f-wpSweep" target="do-f-gapSweep" archimateRelationship="rel-wp2-gap65"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp2-plateau65" source="do-f-wpSweep" target="do-f-plateauV65" archimateRelationship="rel-wp2-plateau65"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpFix" archimateElement="wpFix">
+        <bounds x="2160" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp3-gap65" source="do-f-wpFix" target="do-f-gapSweep" archimateRelationship="rel-wp3-gap65"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp3-plateau65" source="do-f-wpFix" target="do-f-plateauV65" archimateRelationship="rel-wp3-plateau65"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV66" archimateElement="plateauV66">
+        <bounds x="2400" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-trigger" source="do-f-plateauV66" target="do-f-gapPost" archimateRelationship="rel-trigger-v67"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapSession" archimateElement="gapSession">
+        <bounds x="2640" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpSession" archimateElement="wpSession">
+        <bounds x="2880" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV67" archimateElement="plateauV67" targetConnections="cf-rel-wp-plat">
+        <bounds x="3120" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapPost" archimateElement="gapPost" targetConnections="cf-rel-trigger cf-rel-wp-gap">
+        <bounds x="3360" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpPost" archimateElement="wpPost">
+        <bounds x="3600" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp-gap" source="do-f-wpPost" target="do-f-gapPost" archimateRelationship="rel-wp-gap-v67"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp-plat" source="do-f-wpPost" target="do-f-plateauV67" archimateRelationship="rel-wp-plat-v67"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskAuth" archimateElement="taskAuth" targetConnections="cf-rel-gw-auth cf-rel-authz-auth cf-rel-cons-auth cf-rel-dep-isadmin-auth">
+        <bounds x="0" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-db" source="do-f-taskAuth" target="do-f-taskAuthDB" archimateRelationship="rel-auth-db"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-roleevt" source="do-f-taskAuth" target="do-f-evtRoleChanged" archimateRelationship="rel-auth-roleevt"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-wxlinked" source="do-f-taskAuth" target="do-f-evtWxLinked" archimateRelationship="rel-auth-wxlinked"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-wxconflict" source="do-f-taskAuth" target="do-f-evtWxConflict" archimateRelationship="rel-auth-wxconflict"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-wxbound" source="do-f-taskAuth" target="do-f-evtWxBound" archimateRelationship="rel-auth-wxbound"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-wxunbound" source="do-f-taskAuth" target="do-f-evtWxUnbound" archimateRelationship="rel-auth-wxunbound"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskGitOauth" archimateElement="taskGitOauth">
+        <bounds x="240" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-git-db" source="do-f-taskGitOauth" target="do-f-taskGitOauthDB" archimateRelationship="rel-git-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskTenant" archimateElement="taskTenant" targetConnections="cf-rel-gw-tenant cf-rel-authz-tenant cf-rel-cons-tenant cf-rel-dep-isadmin-tenant cf-rel-dep-policy">
+        <bounds x="480" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-db" source="do-f-taskTenant" target="do-f-taskTenantDB" archimateRelationship="rel-tenant-db"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-roleevt" source="do-f-taskTenant" target="do-f-evtTenantRole" archimateRelationship="rel-tenant-roleevt"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-groupevt" source="do-f-taskTenant" target="do-f-evtGroupRole" archimateRelationship="rel-tenant-groupevt"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-gradmin" source="do-f-taskTenant" target="do-f-evtGroupAdmin" archimateRelationship="rel-tenant-gradmin"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-resassign" source="do-f-taskTenant" target="do-f-evtResAssign" archimateRelationship="rel-tenant-resassign"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-grpmmbr" source="do-f-taskTenant" target="do-f-evtGroupMember" archimateRelationship="rel-tenant-grpmmbr"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskProject" archimateElement="taskProject" targetConnections="cf-rel-gw-project cf-rel-authz-project cf-rel-cons-project">
+        <bounds x="720" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-project-db" source="do-f-taskProject" target="do-f-taskProjectDB" archimateRelationship="rel-project-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskTask" archimateElement="taskTask" targetConnections="cf-rel-gw-task cf-rel-authz-task">
+        <bounds x="960" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-task-db" source="do-f-taskTask" target="do-f-taskTaskDB" archimateRelationship="rel-task-db"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-task-bill" source="do-f-taskTask" target="do-f-taskBill" archimateRelationship="rel-task-bill"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-task-renewed" source="do-f-taskTask" target="do-f-evtPostRenewed" archimateRelationship="rel-task-renewed"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskAIComment" archimateElement="taskAIComment" targetConnections="cf-rel-gw-aicomment">
+        <bounds x="1200" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskCloud" archimateElement="taskCloud" targetConnections="cf-rel-gw-cloud cf-rel-authz-cloud cf-rel-cons-cloud">
+        <bounds x="1440" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cloud-db" source="do-f-taskCloud" target="do-f-taskCloudDB" archimateRelationship="rel-cloud-db"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cloud-old" source="do-f-taskCloud" target="do-f-oldChargeServerStart" archimateRelationship="rel-cloud-old"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskBill" archimateElement="taskBill" targetConnections="cf-rel-gw-bill cf-rel-authz-bill cf-rel-task-bill cf-rel-old-bill">
+        <bounds x="1680" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-bill-db" source="do-f-taskBill" target="do-f-taskBillDB" archimateRelationship="rel-bill-db"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-bill-paysucceeded" source="do-f-taskBill" target="do-f-evtPaySucceeded" archimateRelationship="rel-bill-paysucceeded"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskEvents" archimateElement="taskEvents" targetConnections="cf-rel-cons-events">
+        <bounds x="1920" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-events-expired" source="do-f-taskEvents" target="do-f-evtPostExpired" archimateRelationship="rel-events-expired"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskFE" archimateElement="taskFE" targetConnections="cf-rel-gw-fe">
+        <bounds x="2160" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-shareLibAuthz" archimateElement="shareLibAuthz" targetConnections="cf-rel-dep-requirerole">
+        <bounds x="2400" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-auth" source="do-f-shareLibAuthz" target="do-f-taskAuth" archimateRelationship="rel-authz-auth"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-tenant" source="do-f-shareLibAuthz" target="do-f-taskTenant" archimateRelationship="rel-authz-tenant"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-cloud" source="do-f-shareLibAuthz" target="do-f-taskCloud" archimateRelationship="rel-authz-cloud"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-bill" source="do-f-shareLibAuthz" target="do-f-taskBill" archimateRelationship="rel-authz-bill"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-project" source="do-f-shareLibAuthz" target="do-f-taskProject" archimateRelationship="rel-authz-project"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-task" source="do-f-shareLibAuthz" target="do-f-taskTask" archimateRelationship="rel-authz-task"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-kafkaConsumers" archimateElement="kafkaConsumers" targetConnections="cf-rel-kafka-consumers">
+        <bounds x="2640" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-tenant" source="do-f-kafkaConsumers" target="do-f-taskTenant" archimateRelationship="rel-cons-tenant"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-auth" source="do-f-kafkaConsumers" target="do-f-taskAuth" archimateRelationship="rel-cons-auth"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-project" source="do-f-kafkaConsumers" target="do-f-taskProject" archimateRelationship="rel-cons-project"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-cloud" source="do-f-kafkaConsumers" target="do-f-taskCloud" archimateRelationship="rel-cons-cloud"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-events" source="do-f-kafkaConsumers" target="do-f-taskEvents" archimateRelationship="rel-cons-events"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gateway" archimateElement="gateway">
+        <bounds x="2880" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-auth" source="do-f-gateway" target="do-f-taskAuth" archimateRelationship="rel-gw-auth"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-tenant" source="do-f-gateway" target="do-f-taskTenant" archimateRelationship="rel-gw-tenant"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-project" source="do-f-gateway" target="do-f-taskProject" archimateRelationship="rel-gw-project"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-task" source="do-f-gateway" target="do-f-taskTask" archimateRelationship="rel-gw-task"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-aicomment" source="do-f-gateway" target="do-f-taskAIComment" archimateRelationship="rel-gw-aicomment"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-cloud" source="do-f-gateway" target="do-f-taskCloud" archimateRelationship="rel-gw-cloud"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-bill" source="do-f-gateway" target="do-f-taskBill" archimateRelationship="rel-gw-bill"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-fe" source="do-f-gateway" target="do-f-taskFE" archimateRelationship="rel-gw-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-kafkaBroker" archimateElement="kafkaBroker" targetConnections="cf-rel-coc-kafka cf-rel-ma-kafka cf-rel-gradmin-kafka cf-rel-resassign-kafka cf-rel-grpmmbr-kafka cf-rel-roleevt-kafka cf-rel-tenantroleevt-kafka cf-rel-groupevt-kafka cf-rel-wxlinked-kafka cf-rel-wxconflict-kafka cf-rel-wxbound-kafka cf-rel-wxunbound-kafka cf-rel-paysucceeded-kafka cf-rel-renewed-kafka cf-rel-expired-kafka">
+        <bounds x="3120" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-kafka-consumers" source="do-f-kafkaBroker" target="do-f-kafkaConsumers" archimateRelationship="rel-kafka-consumers"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskAuthDB" archimateElement="taskAuthDB" targetConnections="cf-rel-auth-db">
+        <bounds x="3360" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskGitOauthDB" archimateElement="taskGitOauthDB" targetConnections="cf-rel-git-db">
+        <bounds x="3600" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskTenantDB" archimateElement="taskTenantDB" targetConnections="cf-rel-tenant-db">
+        <bounds x="3840" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskProjectDB" archimateElement="taskProjectDB" targetConnections="cf-rel-project-db">
+        <bounds x="4080" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskTaskDB" archimateElement="taskTaskDB" targetConnections="cf-rel-task-db">
+        <bounds x="4320" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskCloudDB" archimateElement="taskCloudDB" targetConnections="cf-rel-cloud-db">
+        <bounds x="4560" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskBillDB" archimateElement="taskBillDB" targetConnections="cf-rel-bill-db">
+        <bounds x="4800" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtRoleChanged" archimateElement="evtRoleChanged" targetConnections="cf-rel-auth-roleevt">
+        <bounds x="5040" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-roleevt-kafka" source="do-f-evtRoleChanged" target="do-f-kafkaBroker" archimateRelationship="rel-roleevt-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtTenantRole" archimateElement="evtTenantRole" targetConnections="cf-rel-tenant-roleevt">
+        <bounds x="5280" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenantroleevt-kafka" source="do-f-evtTenantRole" target="do-f-kafkaBroker" archimateRelationship="rel-tenantroleevt-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtGroupRole" archimateElement="evtGroupRole" targetConnections="cf-rel-tenant-groupevt">
+        <bounds x="5520" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-groupevt-kafka" source="do-f-evtGroupRole" target="do-f-kafkaBroker" archimateRelationship="rel-groupevt-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtCompanyCreated" archimateElement="evtCompanyCreated">
+        <bounds x="5760" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-coc-kafka" source="do-f-evtCompanyCreated" target="do-f-kafkaBroker" archimateRelationship="rel-coc-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtMemberAdded" archimateElement="evtMemberAdded">
+        <bounds x="6000" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-ma-kafka" source="do-f-evtMemberAdded" target="do-f-kafkaBroker" archimateRelationship="rel-ma-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtGroupAdmin" archimateElement="evtGroupAdmin" targetConnections="cf-rel-tenant-gradmin">
+        <bounds x="6240" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gradmin-kafka" source="do-f-evtGroupAdmin" target="do-f-kafkaBroker" archimateRelationship="rel-gradmin-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtResAssign" archimateElement="evtResAssign" targetConnections="cf-rel-tenant-resassign">
+        <bounds x="6480" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-resassign-kafka" source="do-f-evtResAssign" target="do-f-kafkaBroker" archimateRelationship="rel-resassign-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtGroupMember" archimateElement="evtGroupMember" targetConnections="cf-rel-tenant-grpmmbr">
+        <bounds x="6720" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-grpmmbr-kafka" source="do-f-evtGroupMember" target="do-f-kafkaBroker" archimateRelationship="rel-grpmmbr-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtWxLinked" archimateElement="evtWxLinked" targetConnections="cf-rel-auth-wxlinked">
+        <bounds x="6960" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wxlinked-kafka" source="do-f-evtWxLinked" target="do-f-kafkaBroker" archimateRelationship="rel-wxlinked-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtWxConflict" archimateElement="evtWxConflict" targetConnections="cf-rel-auth-wxconflict">
+        <bounds x="7200" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wxconflict-kafka" source="do-f-evtWxConflict" target="do-f-kafkaBroker" archimateRelationship="rel-wxconflict-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtWxBound" archimateElement="evtWxBound" targetConnections="cf-rel-auth-wxbound">
+        <bounds x="7440" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wxbound-kafka" source="do-f-evtWxBound" target="do-f-kafkaBroker" archimateRelationship="rel-wxbound-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtWxUnbound" archimateElement="evtWxUnbound" targetConnections="cf-rel-auth-wxunbound">
+        <bounds x="7680" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wxunbound-kafka" source="do-f-evtWxUnbound" target="do-f-kafkaBroker" archimateRelationship="rel-wxunbound-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtPaySucceeded" archimateElement="evtPaySucceeded" targetConnections="cf-rel-bill-paysucceeded">
+        <bounds x="7920" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-paysucceeded-kafka" source="do-f-evtPaySucceeded" target="do-f-kafkaBroker" archimateRelationship="rel-paysucceeded-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-devRepos" archimateElement="devRepos" targetConnections="cf-rel-sweep-repos cf-rel-agent-repos cf-rel-runner-repos cf-rel-hub-repos cf-rel-cli-shadow">
+        <bounds x="8160" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-claudeAgent" archimateElement="claudeAgent" targetConnections="cf-rel-sweep-agent">
+        <bounds x="8400" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-agent-repos" source="do-f-claudeAgent" target="do-f-devRepos" archimateRelationship="rel-agent-repos"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-agent-cli" source="do-f-claudeAgent" target="do-f-sessionCLI" archimateRelationship="rel-agent-cli"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-debtLedger" archimateElement="debtLedger" targetConnections="cf-rel-sweep-debt">
+        <bounds x="8640" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sweepReport" archimateElement="sweepReport" targetConnections="cf-rel-sweep-report">
+        <bounds x="8880" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sessionHub" archimateElement="sessionHub" targetConnections="cf-rel-cli-hub">
+        <bounds x="9120" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-hub-repos" source="do-f-sessionHub" target="do-f-devRepos" archimateRelationship="rel-hub-repos"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sessionCLI" archimateElement="sessionCLI" targetConnections="cf-rel-agent-cli cf-rel-sweep-cli">
+        <bounds x="9360" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cli-hub" source="do-f-sessionCLI" target="do-f-sessionHub" archimateRelationship="rel-cli-hub"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cli-shadow" source="do-f-sessionCLI" target="do-f-devRepos" archimateRelationship="rel-cli-shadow"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtPostRenewed" archimateElement="evtPostRenewed" targetConnections="cf-rel-task-renewed">
+        <bounds x="9600" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-renewed-kafka" source="do-f-evtPostRenewed" target="do-f-kafkaBroker" archimateRelationship="rel-renewed-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtPostExpired" archimateElement="evtPostExpired" targetConnections="cf-rel-events-expired">
+        <bounds x="9840" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-expired-kafka" source="do-f-evtPostExpired" target="do-f-kafkaBroker" archimateRelationship="rel-expired-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-cronHost" archimateElement="cronHost">
+        <bounds x="0" y="500" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cron-sweep" source="do-f-cronHost" target="do-f-nightlySweep" archimateRelationship="rel-cron-sweep"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-nightlySweep" archimateElement="nightlySweep" targetConnections="cf-rel-cron-sweep cf-rel-runner-sweep">
+        <bounds x="240" y="500" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-repos" source="do-f-nightlySweep" target="do-f-devRepos" archimateRelationship="rel-sweep-repos"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-agent" source="do-f-nightlySweep" target="do-f-claudeAgent" archimateRelationship="rel-sweep-agent"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-debt" source="do-f-nightlySweep" target="do-f-debtLedger" archimateRelationship="rel-sweep-debt"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-report" source="do-f-nightlySweep" target="do-f-sweepReport" archimateRelationship="rel-sweep-report"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-cli" source="do-f-nightlySweep" target="do-f-sessionCLI" archimateRelationship="rel-sweep-cli"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sharedRunner" archimateElement="sharedRunner">
+        <bounds x="480" y="500" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-runner-sweep" source="do-f-sharedRunner" target="do-f-nightlySweep" archimateRelationship="rel-runner-sweep"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-runner-repos" source="do-f-sharedRunner" target="do-f-devRepos" archimateRelationship="rel-runner-repos"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-oldIsAdmin" archimateElement="oldIsAdmin">
+        <bounds x="0" y="620" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-dep-isadmin-auth" source="do-f-oldIsAdmin" target="do-f-taskAuth" archimateRelationship="rel-dep-isadmin-auth"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-dep-isadmin-tenant" source="do-f-oldIsAdmin" target="do-f-taskTenant" archimateRelationship="rel-dep-isadmin-tenant"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-oldPolicy" archimateElement="oldPolicy">
+        <bounds x="240" y="620" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-dep-policy" source="do-f-oldPolicy" target="do-f-taskTenant" archimateRelationship="rel-dep-policy"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-oldRequireRole" archimateElement="oldRequireRole">
+        <bounds x="480" y="620" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-dep-requirerole" source="do-f-oldRequireRole" target="do-f-shareLibAuthz" archimateRelationship="rel-dep-requirerole"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-oldChargeServerStart" archimateElement="oldChargeServerStart" targetConnections="cf-rel-cloud-old">
+        <bounds x="720" y="620" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-old-bill" source="do-f-oldChargeServerStart" target="do-f-taskBill" archimateRelationship="rel-old-bill"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v68 全量拓扑 — 插件 OIDC 白名单管理" id="view-full-68">
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV63" archimateElement="plateauV63">
+        <bounds x="0" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-plateauV63-gap" source="do-f-plateauV63" target="do-f-gapWx" archimateRelationship="rel-plateauV63-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV64" archimateElement="plateauV64" targetConnections="cf-rel-wp1-plateau cf-rel-wp2-plateau">
+        <bounds x="240" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-plateauV64-gap" source="do-f-plateauV64" target="do-f-gapSweep" archimateRelationship="rel-plateauV64-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapWx" archimateElement="gapWx" targetConnections="cf-rel-plateauV63-gap cf-rel-wp1-gap cf-rel-wp2-gap">
+        <bounds x="480" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpIdentity" archimateElement="wpIdentity">
+        <bounds x="720" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp1-gap" source="do-f-wpIdentity" target="do-f-gapWx" archimateRelationship="rel-wp1-gap"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp1-plateau" source="do-f-wpIdentity" target="do-f-plateauV64" archimateRelationship="rel-wp1-plateau"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpPayment" archimateElement="wpPayment">
+        <bounds x="960" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp2-gap" source="do-f-wpPayment" target="do-f-gapWx" archimateRelationship="rel-wp2-gap"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp2-plateau" source="do-f-wpPayment" target="do-f-plateauV64" archimateRelationship="rel-wp2-plateau"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV65" archimateElement="plateauV65" targetConnections="cf-rel-wp1-plateau65 cf-rel-wp2-plateau65 cf-rel-wp3-plateau65">
+        <bounds x="1200" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapSweep" archimateElement="gapSweep" targetConnections="cf-rel-plateauV64-gap cf-rel-wp1-gap65 cf-rel-wp2-gap65 cf-rel-wp3-gap65">
+        <bounds x="1440" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpLib" archimateElement="wpLib">
+        <bounds x="1680" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp1-gap65" source="do-f-wpLib" target="do-f-gapSweep" archimateRelationship="rel-wp1-gap65"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp1-plateau65" source="do-f-wpLib" target="do-f-plateauV65" archimateRelationship="rel-wp1-plateau65"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpSweep" archimateElement="wpSweep">
+        <bounds x="1920" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp2-gap65" source="do-f-wpSweep" target="do-f-gapSweep" archimateRelationship="rel-wp2-gap65"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp2-plateau65" source="do-f-wpSweep" target="do-f-plateauV65" archimateRelationship="rel-wp2-plateau65"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpFix" archimateElement="wpFix">
+        <bounds x="2160" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp3-gap65" source="do-f-wpFix" target="do-f-gapSweep" archimateRelationship="rel-wp3-gap65"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp3-plateau65" source="do-f-wpFix" target="do-f-plateauV65" archimateRelationship="rel-wp3-plateau65"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV66" archimateElement="plateauV66">
+        <bounds x="2400" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapSession" archimateElement="gapSession">
+        <bounds x="2640" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpSession" archimateElement="wpSession">
+        <bounds x="2880" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV67" archimateElement="plateauV67">
+        <bounds x="3120" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-trigger" source="do-f-plateauV67" target="do-f-gapExt" archimateRelationship="rel-trigger"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapPost" archimateElement="gapPost">
+        <bounds x="3360" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpPost" archimateElement="wpPost">
+        <bounds x="3600" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-plateauV68" archimateElement="plateauV68" targetConnections="cf-rel-wp-plat">
+        <bounds x="3840" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gapExt" archimateElement="gapExt" targetConnections="cf-rel-trigger cf-rel-wp-gap">
+        <bounds x="4080" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-wpExt" archimateElement="wpExt">
+        <bounds x="4320" y="40" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp-gap" source="do-f-wpExt" target="do-f-gapExt" archimateRelationship="rel-wp-gap"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wp-plat" source="do-f-wpExt" target="do-f-plateauV68" archimateRelationship="rel-wp-plat"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskAuth" archimateElement="taskAuth" targetConnections="cf-rel-gw-auth cf-rel-authz-auth cf-rel-cons-auth cf-rel-dep-isadmin-auth">
+        <bounds x="0" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-db" source="do-f-taskAuth" target="do-f-taskAuthDB" archimateRelationship="rel-auth-db"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-roleevt" source="do-f-taskAuth" target="do-f-evtRoleChanged" archimateRelationship="rel-auth-roleevt"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-wxlinked" source="do-f-taskAuth" target="do-f-evtWxLinked" archimateRelationship="rel-auth-wxlinked"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-wxconflict" source="do-f-taskAuth" target="do-f-evtWxConflict" archimateRelationship="rel-auth-wxconflict"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-wxbound" source="do-f-taskAuth" target="do-f-evtWxBound" archimateRelationship="rel-auth-wxbound"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-auth-wxunbound" source="do-f-taskAuth" target="do-f-evtWxUnbound" archimateRelationship="rel-auth-wxunbound"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskGitOauth" archimateElement="taskGitOauth">
+        <bounds x="240" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-git-db" source="do-f-taskGitOauth" target="do-f-taskGitOauthDB" archimateRelationship="rel-git-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskTenant" archimateElement="taskTenant" targetConnections="cf-rel-gw-tenant cf-rel-authz-tenant cf-rel-cons-tenant cf-rel-dep-isadmin-tenant cf-rel-dep-policy">
+        <bounds x="480" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-db" source="do-f-taskTenant" target="do-f-taskTenantDB" archimateRelationship="rel-tenant-db"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-roleevt" source="do-f-taskTenant" target="do-f-evtTenantRole" archimateRelationship="rel-tenant-roleevt"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-groupevt" source="do-f-taskTenant" target="do-f-evtGroupRole" archimateRelationship="rel-tenant-groupevt"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-gradmin" source="do-f-taskTenant" target="do-f-evtGroupAdmin" archimateRelationship="rel-tenant-gradmin"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-resassign" source="do-f-taskTenant" target="do-f-evtResAssign" archimateRelationship="rel-tenant-resassign"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenant-grpmmbr" source="do-f-taskTenant" target="do-f-evtGroupMember" archimateRelationship="rel-tenant-grpmmbr"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskProject" archimateElement="taskProject" targetConnections="cf-rel-gw-project cf-rel-authz-project cf-rel-cons-project">
+        <bounds x="720" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-project-db" source="do-f-taskProject" target="do-f-taskProjectDB" archimateRelationship="rel-project-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskTask" archimateElement="taskTask" targetConnections="cf-rel-gw-task cf-rel-authz-task">
+        <bounds x="960" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-task-db" source="do-f-taskTask" target="do-f-taskTaskDB" archimateRelationship="rel-task-db"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-task-bill" source="do-f-taskTask" target="do-f-taskBill" archimateRelationship="rel-task-bill"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-task-renewed" source="do-f-taskTask" target="do-f-evtPostRenewed" archimateRelationship="rel-task-renewed"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskAIComment" archimateElement="taskAIComment" targetConnections="cf-rel-gw-aicomment">
+        <bounds x="1200" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskCloud" archimateElement="taskCloud" targetConnections="cf-rel-gw-cloud cf-rel-authz-cloud cf-rel-cons-cloud">
+        <bounds x="1440" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cloud-db" source="do-f-taskCloud" target="do-f-taskCloudDB" archimateRelationship="rel-cloud-db"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cloud-old" source="do-f-taskCloud" target="do-f-oldChargeServerStart" archimateRelationship="rel-cloud-old"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskBill" archimateElement="taskBill" targetConnections="cf-rel-gw-bill cf-rel-authz-bill cf-rel-task-bill cf-rel-old-bill">
+        <bounds x="1680" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-bill-db" source="do-f-taskBill" target="do-f-taskBillDB" archimateRelationship="rel-bill-db"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-bill-paysucceeded" source="do-f-taskBill" target="do-f-evtPaySucceeded" archimateRelationship="rel-bill-paysucceeded"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskEvents" archimateElement="taskEvents" targetConnections="cf-rel-cons-events">
+        <bounds x="1920" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-events-expired" source="do-f-taskEvents" target="do-f-evtPostExpired" archimateRelationship="rel-events-expired"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskFE" archimateElement="taskFE" targetConnections="cf-rel-gw-fe">
+        <bounds x="2160" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-fe-gw" source="do-f-taskFE" target="do-f-gateway" archimateRelationship="rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-shareLibAuthz" archimateElement="shareLibAuthz" targetConnections="cf-rel-dep-requirerole">
+        <bounds x="2400" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-auth" source="do-f-shareLibAuthz" target="do-f-taskAuth" archimateRelationship="rel-authz-auth"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-tenant" source="do-f-shareLibAuthz" target="do-f-taskTenant" archimateRelationship="rel-authz-tenant"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-cloud" source="do-f-shareLibAuthz" target="do-f-taskCloud" archimateRelationship="rel-authz-cloud"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-bill" source="do-f-shareLibAuthz" target="do-f-taskBill" archimateRelationship="rel-authz-bill"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-project" source="do-f-shareLibAuthz" target="do-f-taskProject" archimateRelationship="rel-authz-project"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-authz-task" source="do-f-shareLibAuthz" target="do-f-taskTask" archimateRelationship="rel-authz-task"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-kafkaConsumers" archimateElement="kafkaConsumers" targetConnections="cf-rel-kafka-consumers">
+        <bounds x="2640" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-tenant" source="do-f-kafkaConsumers" target="do-f-taskTenant" archimateRelationship="rel-cons-tenant"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-auth" source="do-f-kafkaConsumers" target="do-f-taskAuth" archimateRelationship="rel-cons-auth"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-project" source="do-f-kafkaConsumers" target="do-f-taskProject" archimateRelationship="rel-cons-project"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-cloud" source="do-f-kafkaConsumers" target="do-f-taskCloud" archimateRelationship="rel-cons-cloud"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cons-events" source="do-f-kafkaConsumers" target="do-f-taskEvents" archimateRelationship="rel-cons-events"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-gateway" archimateElement="gateway" targetConnections="cf-rel-fe-gw">
+        <bounds x="2880" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-auth" source="do-f-gateway" target="do-f-taskAuth" archimateRelationship="rel-gw-auth"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-tenant" source="do-f-gateway" target="do-f-taskTenant" archimateRelationship="rel-gw-tenant"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-project" source="do-f-gateway" target="do-f-taskProject" archimateRelationship="rel-gw-project"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-task" source="do-f-gateway" target="do-f-taskTask" archimateRelationship="rel-gw-task"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-aicomment" source="do-f-gateway" target="do-f-taskAIComment" archimateRelationship="rel-gw-aicomment"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-cloud" source="do-f-gateway" target="do-f-taskCloud" archimateRelationship="rel-gw-cloud"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-bill" source="do-f-gateway" target="do-f-taskBill" archimateRelationship="rel-gw-bill"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gw-fe" source="do-f-gateway" target="do-f-taskFE" archimateRelationship="rel-gw-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-kafkaBroker" archimateElement="kafkaBroker" targetConnections="cf-rel-coc-kafka cf-rel-ma-kafka cf-rel-gradmin-kafka cf-rel-resassign-kafka cf-rel-grpmmbr-kafka cf-rel-roleevt-kafka cf-rel-tenantroleevt-kafka cf-rel-groupevt-kafka cf-rel-wxlinked-kafka cf-rel-wxconflict-kafka cf-rel-wxbound-kafka cf-rel-wxunbound-kafka cf-rel-paysucceeded-kafka cf-rel-renewed-kafka cf-rel-expired-kafka">
+        <bounds x="3120" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-kafka-consumers" source="do-f-kafkaBroker" target="do-f-kafkaConsumers" archimateRelationship="rel-kafka-consumers"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskAuthDB" archimateElement="taskAuthDB" targetConnections="cf-rel-auth-db">
+        <bounds x="3360" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskGitOauthDB" archimateElement="taskGitOauthDB" targetConnections="cf-rel-git-db">
+        <bounds x="3600" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskTenantDB" archimateElement="taskTenantDB" targetConnections="cf-rel-tenant-db">
+        <bounds x="3840" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskProjectDB" archimateElement="taskProjectDB" targetConnections="cf-rel-project-db">
+        <bounds x="4080" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskTaskDB" archimateElement="taskTaskDB" targetConnections="cf-rel-task-db">
+        <bounds x="4320" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskCloudDB" archimateElement="taskCloudDB" targetConnections="cf-rel-cloud-db">
+        <bounds x="4560" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-taskBillDB" archimateElement="taskBillDB" targetConnections="cf-rel-bill-db">
+        <bounds x="4800" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtRoleChanged" archimateElement="evtRoleChanged" targetConnections="cf-rel-auth-roleevt">
+        <bounds x="5040" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-roleevt-kafka" source="do-f-evtRoleChanged" target="do-f-kafkaBroker" archimateRelationship="rel-roleevt-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtTenantRole" archimateElement="evtTenantRole" targetConnections="cf-rel-tenant-roleevt">
+        <bounds x="5280" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-tenantroleevt-kafka" source="do-f-evtTenantRole" target="do-f-kafkaBroker" archimateRelationship="rel-tenantroleevt-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtGroupRole" archimateElement="evtGroupRole" targetConnections="cf-rel-tenant-groupevt">
+        <bounds x="5520" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-groupevt-kafka" source="do-f-evtGroupRole" target="do-f-kafkaBroker" archimateRelationship="rel-groupevt-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtCompanyCreated" archimateElement="evtCompanyCreated">
+        <bounds x="5760" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-coc-kafka" source="do-f-evtCompanyCreated" target="do-f-kafkaBroker" archimateRelationship="rel-coc-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtMemberAdded" archimateElement="evtMemberAdded">
+        <bounds x="6000" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-ma-kafka" source="do-f-evtMemberAdded" target="do-f-kafkaBroker" archimateRelationship="rel-ma-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtGroupAdmin" archimateElement="evtGroupAdmin" targetConnections="cf-rel-tenant-gradmin">
+        <bounds x="6240" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-gradmin-kafka" source="do-f-evtGroupAdmin" target="do-f-kafkaBroker" archimateRelationship="rel-gradmin-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtResAssign" archimateElement="evtResAssign" targetConnections="cf-rel-tenant-resassign">
+        <bounds x="6480" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-resassign-kafka" source="do-f-evtResAssign" target="do-f-kafkaBroker" archimateRelationship="rel-resassign-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtGroupMember" archimateElement="evtGroupMember" targetConnections="cf-rel-tenant-grpmmbr">
+        <bounds x="6720" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-grpmmbr-kafka" source="do-f-evtGroupMember" target="do-f-kafkaBroker" archimateRelationship="rel-grpmmbr-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtWxLinked" archimateElement="evtWxLinked" targetConnections="cf-rel-auth-wxlinked">
+        <bounds x="6960" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wxlinked-kafka" source="do-f-evtWxLinked" target="do-f-kafkaBroker" archimateRelationship="rel-wxlinked-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtWxConflict" archimateElement="evtWxConflict" targetConnections="cf-rel-auth-wxconflict">
+        <bounds x="7200" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wxconflict-kafka" source="do-f-evtWxConflict" target="do-f-kafkaBroker" archimateRelationship="rel-wxconflict-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtWxBound" archimateElement="evtWxBound" targetConnections="cf-rel-auth-wxbound">
+        <bounds x="7440" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wxbound-kafka" source="do-f-evtWxBound" target="do-f-kafkaBroker" archimateRelationship="rel-wxbound-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtWxUnbound" archimateElement="evtWxUnbound" targetConnections="cf-rel-auth-wxunbound">
+        <bounds x="7680" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-wxunbound-kafka" source="do-f-evtWxUnbound" target="do-f-kafkaBroker" archimateRelationship="rel-wxunbound-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtPaySucceeded" archimateElement="evtPaySucceeded" targetConnections="cf-rel-bill-paysucceeded">
+        <bounds x="7920" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-paysucceeded-kafka" source="do-f-evtPaySucceeded" target="do-f-kafkaBroker" archimateRelationship="rel-paysucceeded-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-devRepos" archimateElement="devRepos" targetConnections="cf-rel-sweep-repos cf-rel-agent-repos cf-rel-runner-repos cf-rel-hub-repos cf-rel-cli-shadow">
+        <bounds x="8160" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-claudeAgent" archimateElement="claudeAgent" targetConnections="cf-rel-sweep-agent">
+        <bounds x="8400" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-agent-repos" source="do-f-claudeAgent" target="do-f-devRepos" archimateRelationship="rel-agent-repos"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-agent-cli" source="do-f-claudeAgent" target="do-f-sessionCLI" archimateRelationship="rel-agent-cli"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-debtLedger" archimateElement="debtLedger" targetConnections="cf-rel-sweep-debt">
+        <bounds x="8640" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sweepReport" archimateElement="sweepReport" targetConnections="cf-rel-sweep-report">
+        <bounds x="8880" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sessionHub" archimateElement="sessionHub" targetConnections="cf-rel-cli-hub">
+        <bounds x="9120" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-hub-repos" source="do-f-sessionHub" target="do-f-devRepos" archimateRelationship="rel-hub-repos"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sessionCLI" archimateElement="sessionCLI" targetConnections="cf-rel-agent-cli cf-rel-sweep-cli">
+        <bounds x="9360" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cli-hub" source="do-f-sessionCLI" target="do-f-sessionHub" archimateRelationship="rel-cli-hub"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cli-shadow" source="do-f-sessionCLI" target="do-f-devRepos" archimateRelationship="rel-cli-shadow"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtPostRenewed" archimateElement="evtPostRenewed" targetConnections="cf-rel-task-renewed">
+        <bounds x="9600" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-renewed-kafka" source="do-f-evtPostRenewed" target="do-f-kafkaBroker" archimateRelationship="rel-renewed-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-evtPostExpired" archimateElement="evtPostExpired" targetConnections="cf-rel-events-expired">
+        <bounds x="9840" y="260" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-expired-kafka" source="do-f-evtPostExpired" target="do-f-kafkaBroker" archimateRelationship="rel-expired-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-cronHost" archimateElement="cronHost">
+        <bounds x="0" y="500" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-cron-sweep" source="do-f-cronHost" target="do-f-nightlySweep" archimateRelationship="rel-cron-sweep"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-nightlySweep" archimateElement="nightlySweep" targetConnections="cf-rel-cron-sweep cf-rel-runner-sweep">
+        <bounds x="240" y="500" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-repos" source="do-f-nightlySweep" target="do-f-devRepos" archimateRelationship="rel-sweep-repos"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-agent" source="do-f-nightlySweep" target="do-f-claudeAgent" archimateRelationship="rel-sweep-agent"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-debt" source="do-f-nightlySweep" target="do-f-debtLedger" archimateRelationship="rel-sweep-debt"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-report" source="do-f-nightlySweep" target="do-f-sweepReport" archimateRelationship="rel-sweep-report"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-sweep-cli" source="do-f-nightlySweep" target="do-f-sessionCLI" archimateRelationship="rel-sweep-cli"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-sharedRunner" archimateElement="sharedRunner">
+        <bounds x="480" y="500" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-runner-sweep" source="do-f-sharedRunner" target="do-f-nightlySweep" archimateRelationship="rel-runner-sweep"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-runner-repos" source="do-f-sharedRunner" target="do-f-devRepos" archimateRelationship="rel-runner-repos"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-oldIsAdmin" archimateElement="oldIsAdmin">
+        <bounds x="0" y="620" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-dep-isadmin-auth" source="do-f-oldIsAdmin" target="do-f-taskAuth" archimateRelationship="rel-dep-isadmin-auth"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-dep-isadmin-tenant" source="do-f-oldIsAdmin" target="do-f-taskTenant" archimateRelationship="rel-dep-isadmin-tenant"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-oldPolicy" archimateElement="oldPolicy">
+        <bounds x="240" y="620" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-dep-policy" source="do-f-oldPolicy" target="do-f-taskTenant" archimateRelationship="rel-dep-policy"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-oldRequireRole" archimateElement="oldRequireRole">
+        <bounds x="480" y="620" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-dep-requirerole" source="do-f-oldRequireRole" target="do-f-shareLibAuthz" archimateRelationship="rel-dep-requirerole"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-f-oldChargeServerStart" archimateElement="oldChargeServerStart" targetConnections="cf-rel-cloud-old">
+        <bounds x="720" y="620" width="220" height="55"/>
+<sourceConnection xsi:type="archimate:Connection" id="cf-rel-old-bill" source="do-f-oldChargeServerStart" target="do-f-taskBill" archimateRelationship="rel-old-bill"/>
+      </child>
+    </element></folder>
+</archimate:model>

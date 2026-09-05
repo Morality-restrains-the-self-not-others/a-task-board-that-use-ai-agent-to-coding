@@ -1,0 +1,39 @@
+' @title: 任务帖配额来源与订单消耗归属
+' @view: enterprise-landscape
+' @status: archived
+' @version: 91
+' @iteration: task-post-quota-source-and-order-consumption
+' @author: cursor
+' @based_on: v88 (v88-enterprise-landscape-20260820-1520-cursor.puml)
+' @updated: 2026-08-20 19:30
+' @description: 计费能力：配额来源可见、订单资源消耗可追溯
+
+@startuml
+!include <archimate/Archimate>
+
+title v91 Current — 计费配额来源可见性 2026-08-20 19:30
+
+Business_Service(billingView, "租户账单")
+note right of billingView
+  任务帖剩余拆赠送/购买
+  订单可查消耗归属
+end note
+
+Application_Component(fe, "taskFE")
+Application_Component(bill, "taskBill")
+note right of bill
+  统一资源批次
+end note
+
+Rel_Serving(fe, billingView, "SPA")
+Rel_Serving(bill, fe, "quotas/orders API")
+
+Implementation_Plateau(plateauV88, "Plateau v88")
+Implementation_Plateau(plateauV91, "Plateau v91")
+Implementation_Gap(gapSrc, "Gap: 配额来源与消耗归属不可见")
+Implementation_WorkPackage(wpSrc, "WP-task-post-quota-source")
+Rel_Triggering(plateauV88, gapSrc, "identifies")
+Rel_Realization(wpSrc, gapSrc, "closes")
+Rel_Realization(wpSrc, plateauV91, "delivers")
+
+@enduml

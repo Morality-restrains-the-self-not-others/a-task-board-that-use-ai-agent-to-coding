@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v91 全量 (post-change)" id="id-v91aifull01">
+  <folder name="Application" id="id-v91aif-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v91f-app-fe" name="taskFE Vue SPA [MODIFIED v91]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v91f-app-gw" name="API Gateway APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v91f-app-bill" name="taskBill [MODIFIED v91]"/>
+    <element xsi:type="archimate:DataObject" id="id-v91f-do-grant" name="billing_resource_grant [MODIFIED v91]"/>
+    <element xsi:type="archimate:DataObject" id="id-v91f-do-txn" name="billing_transaction [MODIFIED v91]"/>
+    <element xsi:type="archimate:DataObject" id="id-v91f-do-order" name="billing_resource_order"/>
+  </folder>
+  <folder name="Technology" id="id-v91aif-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v91f-tech-mysql" name="MySQL task_bill utf8mb4"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v91aif-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v91f-pl-v88" name="Plateau v88"/>
+    <element xsi:type="archimate:Plateau" id="id-v91f-pl-v91" name="Plateau v91"/>
+    <element xsi:type="archimate:Gap" id="id-v91f-gap" name="Gap: 配额合计无法区分来源、消耗无订单归属"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v91f-wp" name="WP-task-post-quota-source"/>
+  </folder>
+  <folder name="Relations" id="id-v91aif-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v91f-rel-fe-gw" source="id-v91f-app-fe" target="id-v91f-app-gw" name="GET quotas / orders"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v91f-rel-gw-bill" source="id-v91f-app-gw" target="id-v91f-app-bill" name="tenant_id"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v91f-rel-bill-grant" source="id-v91f-app-bill" target="id-v91f-do-grant" name="FEFO remaining"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v91f-rel-bill-txn" source="id-v91f-app-bill" target="id-v91f-do-txn" name="quota_consumption"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v91f-rel-bill-order" source="id-v91f-app-bill" target="id-v91f-do-order" name="loadOrder"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v91f-rel-mysql-grant" source="id-v91f-tech-mysql" target="id-v91f-do-grant" name="InnoDB"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v91f-rel-mysql-txn" source="id-v91f-tech-mysql" target="id-v91f-do-txn" name="InnoDB"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v91f-rel-mysql-order" source="id-v91f-tech-mysql" target="id-v91f-do-order" name="InnoDB"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v91f-rel-pl88-gap" source="id-v91f-pl-v88" target="id-v91f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v91f-rel-wp-gap" source="id-v91f-wp" target="id-v91f-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v91f-rel-wp-pl91" source="id-v91f-wp" target="id-v91f-pl-v91"/>
+  </folder>
+  <folder name="Views" id="id-v91aif-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v91f-view-topo" name="v91 全量拓扑 — 配额来源与订单消耗">
+      <child xsi:type="archimate:DiagramObject" id="id-v91f-d-fe" archimateElement="id-v91f-app-fe">
+        <bounds x="48" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91f-c-fe-gw" source="id-v91f-d-fe" target="id-v91f-d-gw" archimateRelationship="id-v91f-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91f-d-gw" targetConnections="id-v91f-c-fe-gw" archimateElement="id-v91f-app-gw">
+        <bounds x="260" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91f-c-gw-bill" source="id-v91f-d-gw" target="id-v91f-d-bill" archimateRelationship="id-v91f-rel-gw-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91f-d-bill" targetConnections="id-v91f-c-gw-bill" archimateElement="id-v91f-app-bill">
+        <bounds x="480" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91f-c-bill-grant" source="id-v91f-d-bill" target="id-v91f-d-grant" archimateRelationship="id-v91f-rel-bill-grant"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91f-c-bill-txn" source="id-v91f-d-bill" target="id-v91f-d-txn" archimateRelationship="id-v91f-rel-bill-txn"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91f-c-bill-order" source="id-v91f-d-bill" target="id-v91f-d-order" archimateRelationship="id-v91f-rel-bill-order"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91f-d-grant" targetConnections="id-v91f-c-bill-grant id-v91f-c-mysql-grant" archimateElement="id-v91f-do-grant">
+        <bounds x="480" y="140" width="260" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91f-d-txn" targetConnections="id-v91f-c-bill-txn id-v91f-c-mysql-txn" archimateElement="id-v91f-do-txn">
+        <bounds x="480" y="210" width="260" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91f-d-order" targetConnections="id-v91f-c-bill-order id-v91f-c-mysql-order" archimateElement="id-v91f-do-order">
+        <bounds x="480" y="280" width="260" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91f-d-mysql" archimateElement="id-v91f-tech-mysql">
+        <bounds x="48" y="140" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91f-c-mysql-grant" source="id-v91f-d-mysql" target="id-v91f-d-grant" archimateRelationship="id-v91f-rel-mysql-grant"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91f-c-mysql-txn" source="id-v91f-d-mysql" target="id-v91f-d-txn" archimateRelationship="id-v91f-rel-mysql-txn"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91f-c-mysql-order" source="id-v91f-d-mysql" target="id-v91f-d-order" archimateRelationship="id-v91f-rel-mysql-order"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v91f-view-mig" name="架构变迁 v88→v91 — task-post-quota-source">
+      <child xsi:type="archimate:DiagramObject" id="id-v91f-do-pl88" archimateElement="id-v91f-pl-v88">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91f-c-pl88-gap" source="id-v91f-do-pl88" target="id-v91f-do-gap" archimateRelationship="id-v91f-rel-pl88-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91f-do-gap" targetConnections="id-v91f-c-pl88-gap id-v91f-c-wp-gap" archimateElement="id-v91f-gap">
+        <bounds x="240" y="48" width="460" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91f-do-wp" archimateElement="id-v91f-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91f-c-wp-gap" source="id-v91f-do-wp" target="id-v91f-do-gap" archimateRelationship="id-v91f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v91f-c-wp-pl91" source="id-v91f-do-wp" target="id-v91f-do-pl91" archimateRelationship="id-v91f-rel-wp-pl91"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v91f-do-pl91" targetConnections="id-v91f-c-wp-pl91" archimateElement="id-v91f-pl-v91">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

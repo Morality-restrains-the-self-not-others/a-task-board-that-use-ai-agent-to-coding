@@ -1,0 +1,73 @@
+' @title: 租户角色管理（可复用角色 + 多角色并集）
+' @view: application-integration
+' @status: archived
+' @version: 75
+' @iteration: tenant-role-management-v75
+' @author: cursor
+' @based_on: v74 (v74-application-integration-20260811-2100-cursor.puml)
+' @updated: 2026-08-11 22:15
+' @description: 独立角色管理页 people.roles；访问管理改主体多角色分配；淘汰隐式访问·角色；RequirePerm 粗码本版不删
+
+@startuml
+!include <archimate/Archimate>
+
+title v75 — Tenant Role Management 2026-08-11 22:15
+
+Application_Component(taskFERoles, "taskFE PeopleRoles")
+note right of taskFERoles
+  /people/roles/ 角色 CRUD
+  + page/region view|operate 矩阵
+end note
+
+Application_Component(taskFEAccess, "taskFE PeopleAccess")
+note right of taskFEAccess
+  主体多选角色 + 有效权限只读预览
+  不再隐式创建「访问·…」
+end note
+
+Application_Component(taskAuth, "taskAuth")
+note right of taskAuth
+  种子 page people.roles*
+  角色 resource-groups 真源
+end note
+
+Application_Component(taskTenant, "taskTenantService")
+note right of taskTenant
+  member/group role_names[] replace-all
+  + DELETE 单角色
+end note
+
+Application_DataObject(authRole, "auth_role")
+note right of authRole
+  既有：可复用自定义角色
+end note
+
+Application_DataObject(rrg, "auth_role_resource_group")
+note right of rrg
+  既有：effect view|operate
+end note
+
+Application_DataObject(mrole, "tenant_member_role")
+note right of mrole
+  多行 = 多角色并集
+end note
+
+Application_DataObject(grole, "tenant_group_role")
+note right of grole
+  多行 = 组多角色
+end note
+
+Application_DataObject(seedRG, "auth_resource_group")
+note right of seedRG
+  people.roles page + regions
+end note
+
+Rel_Flow(taskFERoles, taskAuth, "roles CRUD + PUT resource-groups")
+Rel_Flow(taskFEAccess, taskTenant, "PUT/DELETE role_names")
+Rel_Access_W(taskAuth, authRole, "create/update/delete")
+Rel_Access_W(taskAuth, rrg, "bind grants")
+Rel_Access_W(taskAuth, seedRG, "seed catalog")
+Rel_Access_W(taskTenant, mrole, "replace-all / delete")
+Rel_Access_W(taskTenant, grole, "replace-all / delete")
+
+@enduml

@@ -1,0 +1,5 @@
+# Redis 连接地址。默认 127.0.0.1（同节点）；多节点部署时设置环境变量 INFRA_HOST=<内网IP>。
+# 参见 .ai/01_project_constraints/39_network_topology_aware_config.md
+host: ${INFRA_HOST:-10.2.150.68}
+port: 6379
+logging.log_file: logs/infra/docker-redis.log

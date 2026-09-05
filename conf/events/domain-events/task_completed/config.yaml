@@ -1,0 +1,7 @@
+intents:
+  1_process_task_completion:
+    host: 0.0.0.0
+    port: 18032
+    groupId: task-events-task-completed-1-process-task-completion
+    events:
+    - TASK_COMPLETED

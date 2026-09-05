@@ -1,0 +1,48 @@
+- can_update_merge_request = can?(current_user, :update_merge_request, @merge_request)
+- can_reopen_merge_request = can?(current_user, :reopen_merge_request, @merge_request)
+- are_close_and_open_buttons_hidden = merge_request_button_hidden?(@merge_request, true) && merge_request_button_hidden?(@merge_request, false)
+- hide_gutter_toggle = local_assigns.fetch(:hide_gutter_toggle, false)
+- cache_key = [@project, @merge_request, can_update_merge_request, can_reopen_merge_request, are_close_and_open_buttons_hidden, current_user&.preferred_language, "1.2-updated_header", true, hide_gutter_toggle, fluid_layout, Gitlab::CurrentSettings.gitpod_enabled, current_user&.gitpod_enabled]
+
+= cache(cache_key, expires_in: 1.day) do
+  - if @merge_request.closed_or_merged_without_fork?
+    = render Pajamas::AlertComponent.new(alert_options: { class: 'gl-mb-5' },
+      variant: :danger,
+      dismissible: false) do |c|
+      - c.with_body do
+        = _('The source project of this merge request has been removed.')
+
+  .detail-page-header.gl-flex.gl-pt-5.gl-gap-3.gl-flex-wrap.gl-mb-3{ class: "@sm/panel:gl-flex-nowrap @sm/panel:gl-mb-0 #{'is-merge-request' unless fluid_layout}" }
+    %h1.title.gl-heading-1.gl-self-center.gl-mb-0.gl-flex-1.gl-wrap-anywhere{ data: { testid: 'title-content' } }
+      = markdown_field(@merge_request, :title)
+
+    .gl-flex.gl-flex-row.gl-gap-3.gl-w-full.js-issuable-actions{ class: "@sm/panel:gl-w-auto" }
+      - if can_update_merge_request
+        - edit_action_description = _('Edit merge request')
+        - edit_action_shortcut = 'e'
+        - edit_button_title = "#{edit_action_description} <kbd class='flat !gl-ml-2' aria-hidden=true>#{edit_action_shortcut}</kbd>"
+        = render Pajamas::ButtonComponent.new(href: edit_project_merge_request_path(@project, @merge_request), button_options: { aria: {label: edit_action_description, keyshortcuts: edit_action_shortcut}, class: "gl-hidden @sm/panel:gl-inline-flex gl-self-start has-tooltip js-issuable-edit", data: { html: "true", testid: "edit-title-button" }, title: edit_button_title }) do
+          = _('Edit')
+      - if @merge_request.source_project
+        = render 'projects/merge_requests/code_dropdown'
+
+      - if current_user
+        - merge_request_data = { iid: @merge_request.iid, draft: @merge_request.draft, target_project_id: @merge_request.target_project_id }
+
+        .js-mr-more-dropdown{ data: {
+          merge_request: merge_request_data.to_json,
+          url: merge_request_url(@merge_request),
+          edit_url: edit_project_merge_request_path(@project, @merge_request),
+          is_current_user: issuable_author_is_current_user(@merge_request),
+          can_update_merge_request: can?(current_user, :update_merge_request, @merge_request),
+          open: @merge_request.open?,
+          merged: @merge_request.merged?,
+          source_project_missing: @merge_request.source_project_missing?,
+          clipboard_text: @merge_request.to_reference(full: true),
+          report_abuse_path: add_category_abuse_reports_path,
+          reported_user_id: @merge_request.author.id,
+        } }
+
+      - unless hide_gutter_toggle
+        = render Pajamas::ButtonComponent.new(icon: "chevron-double-lg-left", button_options: { class: "btn-icon gl-h-fit gutter-toggle js-sidebar-toggle @lg/panel:!gl-hidden" }) do
+          %span.gl-sr-only= _('Expand sidebar')

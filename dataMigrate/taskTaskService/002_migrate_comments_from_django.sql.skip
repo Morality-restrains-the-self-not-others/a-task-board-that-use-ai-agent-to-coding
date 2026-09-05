@@ -1,0 +1,35 @@
+-- 002_migrate_comments_from_django.sql
+-- 从 Django saas.sqlite3 迁移历史评论数据到 taskTaskService task_task.db
+-- OPT-20260726-022: 任务数据迁移后评论也应迁移，保证任务详情页评论历史完整
+-- 本脚本在 taskTaskService 启动时由 runDataMigrate() 自动执行
+-- 幂等：INSERT OR IGNORE 跳过已存在的评论
+
+-- [MySQL compat] ATTACH/DETACH not supported. Run as separate connection.
+-- ATTACH DATABASE 'db/saas/saas.sqlite3' AS saas;
+
+-- ============================================================================
+-- 迁移评论数据 (projects_comment → comments)
+-- ============================================================================
+INSERT IGNORE INTO comments (
+    id, task_id, created_by_id, content,
+    mentions_json, execution_mode, depends_on_comment_ids,
+    created_at, updated_at
+)
+SELECT
+    CAST(c.id AS CHAR),
+    CAST(c.todo_id AS CHAR),
+    CAST(c.created_by_id AS CHAR),
+    COALESCE(c.content, ''),
+    '',                      -- mentions_json: Django 无此字段，设空
+    'wait_previous',         -- execution_mode: Django 无此字段，默认值
+    '[]',                    -- depends_on_comment_ids: Django 无此字段，默认值
+    COALESCE(c.created_at, NOW()),
+    COALESCE(c.updated_at, NOW())
+FROM saas.projects_comment c
+WHERE EXISTS (
+    -- 仅迁移对应任务已存在的评论（任务不存在则跳过）
+    SELECT 1 FROM tasks WHERE id = CAST(c.todo_id AS CHAR)
+);
+
+-- [MySQL compat] ATTACH/DETACH not supported. Run as separate connection.
+-- DETACH DATABASE saas;

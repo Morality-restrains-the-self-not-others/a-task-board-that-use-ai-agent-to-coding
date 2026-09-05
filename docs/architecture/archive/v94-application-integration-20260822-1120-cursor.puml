@@ -1,0 +1,64 @@
+' @title: PR 回复与一键合并
+' @view: application-integration
+' @status: current
+' @version: 94
+' @iteration: pr-reply-merge-status
+' @author: cursor
+' @based_on: v93 (v93-application-integration-20260821-1635-cursor.puml)
+' @updated: 2026-08-22 11:20
+' @description: 推送后嵌套 PR 回复评论；GitOauth 查询/合并远端 PR 并审计
+
+@startuml
+!include <archimate/Archimate>
+
+title v94 Target — PR 回复与一键合并 2026-08-22 11:20
+
+Application_Component(fe, "taskFE Vue SPA")
+note right of fe
+  推送后 POST git_pr 评论
+  会话嵌套回复 + 一键合并
+end note
+
+Application_Component(task, "taskTaskService")
+note right of task
+  parent_comment_id
+  git_pr_html_url 幂等
+  TASK_GIT_PULL_REQUEST_RECORDED
+end note
+
+Application_Component(gitoauth, "taskGitOauth")
+note right of gitoauth
+  merge-request-status
+  merge-request-merge
+  审计 + GIT_MERGE_REQUEST_MERGED
+end note
+
+Application_Component(git, "GitHub/GitLab API")
+Application_DataObject(cmt, "task_comments")
+note right of cmt
+  parent_comment_id
+  git_pr_html_url
+  git_pr_json
+end note
+
+Application_DataObject(aud, "git_oauth_taskcredentialaudit")
+Technology_Node(mysqlT, "MySQL task_task utf8mb4")
+Technology_Node(mysqlG, "MySQL git_oauth utf8mb4")
+
+Rel_Flow(fe, task, "POST comments git_pr")
+Rel_Flow(fe, gitoauth, "status / merge")
+Rel_Flow(gitoauth, git, "GET/PUT merge request")
+Rel_Flow(task, cmt, "insert idempotent")
+Rel_Flow(gitoauth, aud, "merge_request_merge")
+Rel_Serving(mysqlT, cmt, "InnoDB")
+Rel_Serving(mysqlG, aud, "InnoDB")
+
+Implementation_Plateau(plateauV93, "Plateau v93")
+Implementation_Plateau(plateauV94, "Plateau v94 PR reply merge")
+Implementation_Gap(gapPr, "Gap: PR 无回复/无远端合并审计")
+Implementation_WorkPackage(wpPr, "WP-pr-reply-merge-status")
+Rel_Triggering(plateauV93, gapPr, "identifies")
+Rel_Realization(wpPr, gapPr, "closes")
+Rel_Realization(wpPr, plateauV94, "delivers")
+
+@enduml

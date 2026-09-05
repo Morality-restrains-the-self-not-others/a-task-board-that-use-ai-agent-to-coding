@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v40-queued-auto-run-schedule-20260719-1746">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v40 Target (top-deliverable-queued-auto-run-schedule)</name>
+  <purpose>TTS owns schedule rhythm + queue; Cloud started_via isolates queued concurrency from manual/auto_run</purpose>
+
+  <folder name="Motivation" id="id-v40-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="Constraint 新增接口默认 Go" id="id-v40-constraint"/>
+    <element xsi:type="archimate:Principle" name="Principle 低价时段排队降本" id="id-v40-principle"/>
+  </folder>
+  <folder name="Application" id="id-v40-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue Task Detail [MODIFIED v40]" id="id-v40-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v40-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskTaskService [MODIFIED v40]" id="id-v40-tts"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskCloudService [MODIFIED v40]" id="id-v40-tcs"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskEvents" id="id-v40-te"/>
+    <element xsi:type="archimate:DataObject" name="🟡 task.db [MODIFIED v40]" id="id-v40-tdb"/>
+    <element xsi:type="archimate:DataObject" name="🟢 queued_auto_run_memberships [NEW v40]" id="id-v40-qarm"/>
+    <element xsi:type="archimate:DataObject" name="🟡 cloud.db started_via [MODIFIED v40]" id="id-v40-cdb"/>
+  </folder>
+  <folder name="Technology" id="id-v40-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="Kafka" id="id-v40-kafka"/>
+  </folder>
+  <folder name="Relations" id="id-v40-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v40-flow-vue-gw" source="id-v40-vue" target="id-v40-gw" name="todos schedule|queue"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v40-flow-gw-tts" source="id-v40-gw" target="id-v40-tts" name="JWT"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v40-acc-tts-tdb" source="id-v40-tts" target="id-v40-tdb" name="R/W"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v40-acc-tts-qarm" source="id-v40-tts" target="id-v40-qarm" name="R/W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v40-flow-tts-tcs" source="id-v40-tts" target="id-v40-tcs" name="start-vm-auto queued_schedule"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v40-acc-tcs-cdb" source="id-v40-tcs" target="id-v40-cdb" name="R/W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v40-flow-tts-kafka" source="id-v40-tts" target="id-v40-kafka" name="Queued* events"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v40-flow-kafka-te" source="id-v40-kafka" target="id-v40-te" name="consume"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v40-inf-c" source="id-v40-constraint" target="id-v40-tts" name="落点"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v40-inf-p" source="id-v40-principle" target="id-v40-tts" name="调度"/>
+  </folder>
+  <folder name="Implementation" id="id-v40-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v39 — people-member-group-go (current)" id="id-v40-plat-v39"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v40 — queued-auto-run-schedule (target)" id="id-v40-plat-v40"/>
+    <element xsi:type="archimate:Gap" name="Gap: 无顶层子树时段排队与隔离并发" id="id-v40-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v40-queued-auto-run-schedule" id="id-v40-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v40-rel-plat39-gap" source="id-v40-plat-v39" target="id-v40-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v40-rel-wp-gap" source="id-v40-wp" target="id-v40-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v40-rel-wp-plat40" source="id-v40-wp" target="id-v40-plat-v40"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v40-rel-plat40-tts" source="id-v40-plat-v40" target="id-v40-tts"/>
+  </folder>
+  <folder name="Views" id="id-v40-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v39→v40 — queued-auto-run-schedule" id="id-v40-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-plat39" archimateElement="id-v40-plat-v39">
+        <bounds x="48" y="100" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-plat39-gap"
+          source="id-v40-do-plat39" target="id-v40-do-gap"
+          archimateRelationship="id-v40-rel-plat39-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-gap" archimateElement="id-v40-gap"
+        targetConnections="id-v40-conn-plat39-gap id-v40-conn-wp-gap">
+        <bounds x="420" y="100" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-wp" archimateElement="id-v40-wp">
+        <bounds x="880" y="60" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-wp-gap"
+          source="id-v40-do-wp" target="id-v40-do-gap"
+          archimateRelationship="id-v40-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-wp-plat40"
+          source="id-v40-do-wp" target="id-v40-do-plat40"
+          archimateRelationship="id-v40-rel-wp-plat40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-plat40" archimateElement="id-v40-plat-v40"
+        targetConnections="id-v40-conn-wp-plat40">
+        <bounds x="880" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-plat40-tts"
+          source="id-v40-do-plat40" target="id-v40-do-tts-m"
+          archimateRelationship="id-v40-rel-plat40-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-tts-m" archimateElement="id-v40-tts"
+        targetConnections="id-v40-conn-plat40-tts">
+        <bounds x="880" y="250" width="320" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v40 Target — queued auto-run 数据流" id="id-v40-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-vue" archimateElement="id-v40-vue">
+        <bounds x="40" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-vue-gw"
+          source="id-v40-do-vue" target="id-v40-do-gw"
+          archimateRelationship="id-v40-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-gw" archimateElement="id-v40-gw"
+        targetConnections="id-v40-conn-vue-gw">
+        <bounds x="240" y="80" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-gw-tts"
+          source="id-v40-do-gw" target="id-v40-do-tts"
+          archimateRelationship="id-v40-flow-gw-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-tts" archimateElement="id-v40-tts"
+        targetConnections="id-v40-conn-gw-tts id-v40-conn-inf-c id-v40-conn-inf-p">
+        <bounds x="420" y="80" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-tts-tdb"
+          source="id-v40-do-tts" target="id-v40-do-tdb"
+          archimateRelationship="id-v40-acc-tts-tdb"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-tts-qarm"
+          source="id-v40-do-tts" target="id-v40-do-qarm"
+          archimateRelationship="id-v40-acc-tts-qarm"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-tts-tcs"
+          source="id-v40-do-tts" target="id-v40-do-tcs"
+          archimateRelationship="id-v40-flow-tts-tcs"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-tts-kafka"
+          source="id-v40-do-tts" target="id-v40-do-kafka"
+          archimateRelationship="id-v40-flow-tts-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-tdb" archimateElement="id-v40-tdb"
+        targetConnections="id-v40-conn-tts-tdb">
+        <bounds x="420" y="200" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-qarm" archimateElement="id-v40-qarm"
+        targetConnections="id-v40-conn-tts-qarm">
+        <bounds x="600" y="200" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-tcs" archimateElement="id-v40-tcs"
+        targetConnections="id-v40-conn-tts-tcs">
+        <bounds x="840" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-tcs-cdb"
+          source="id-v40-do-tcs" target="id-v40-do-cdb"
+          archimateRelationship="id-v40-acc-tcs-cdb"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-cdb" archimateElement="id-v40-cdb"
+        targetConnections="id-v40-conn-tcs-cdb">
+        <bounds x="840" y="200" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-kafka" archimateElement="id-v40-kafka"
+        targetConnections="id-v40-conn-tts-kafka">
+        <bounds x="240" y="200" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-kafka-te"
+          source="id-v40-do-kafka" target="id-v40-do-te"
+          archimateRelationship="id-v40-flow-kafka-te"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-te" archimateElement="id-v40-te"
+        targetConnections="id-v40-conn-kafka-te">
+        <bounds x="240" y="280" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-c" archimateElement="id-v40-constraint">
+        <bounds x="40" y="200" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-inf-c"
+          source="id-v40-do-c" target="id-v40-do-tts"
+          archimateRelationship="id-v40-inf-c"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v40-do-p" archimateElement="id-v40-principle">
+        <bounds x="40" y="280" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v40-conn-inf-p"
+          source="id-v40-do-p" target="id-v40-do-tts"
+          archimateRelationship="id-v40-inf-p"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

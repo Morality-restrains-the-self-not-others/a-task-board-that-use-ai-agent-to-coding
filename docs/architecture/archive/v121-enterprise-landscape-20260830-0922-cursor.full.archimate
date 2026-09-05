@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v121 全量 (post-change)" id="id-v121elfull01">
+  <folder name="Business" id="id-v121el-biz-f" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v121f-el-admin" name="平台超管"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v121f-el-member" name="租户成员"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v121f-el-cfg" name="配置意见链接组"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v121f-el-nav" name="打开意见与建议子菜单"/>
+  </folder>
+  <folder name="Application" id="id-v121el-app-f" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v121f-el-fe" name="taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v121f-el-bill" name="taskBill"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v121el-im-f" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v121f-el-pl119" name="Plateau v120"/>
+    <element xsi:type="archimate:Plateau" id="id-v121f-el-pl120" name="Plateau v120"/>
+    <element xsi:type="archimate:Gap" id="id-v121f-el-gap" name="Gap: 无消耗分层意见入口"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v121f-el-wp" name="WP-tenant-feedback-links"/>
+  </folder>
+  <folder name="Relations" id="id-v121el-rel-f" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v121f-el-rel-as-a" source="id-v121f-el-admin" target="id-v121f-el-cfg"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v121f-el-rel-as-m" source="id-v121f-el-member" target="id-v121f-el-nav"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v121f-el-rel-a-fe" source="id-v121f-el-admin" target="id-v121f-el-fe" name="CRUD"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v121f-el-rel-m-fe" source="id-v121f-el-member" target="id-v121f-el-fe" name="侧栏 GET"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v121f-el-rel-fe-bill" source="id-v121f-el-fe" target="id-v121f-el-bill" name="API"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v121f-el-rel-bill-nav" source="id-v121f-el-bill" target="id-v121f-el-nav" name="仅返回可见组"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v121f-el-rel-pl-gap" source="id-v121f-el-pl119" target="id-v121f-el-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v121f-el-rel-wp-gap" source="id-v121f-el-wp" target="id-v121f-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v121f-el-rel-wp-pl" source="id-v121f-el-wp" target="id-v121f-el-pl120"/>
+  </folder>
+  <folder name="Views" id="id-v121el-views-f" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v121f-el-view-topo" name="v121 全量拓扑 — 意见与建议链接">
+      <child xsi:type="archimate:DiagramObject" id="id-v121f-el-do-admin" archimateElement="id-v121f-el-admin">
+        <bounds x="48" y="48" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121f-el-c-as-a" source="id-v121f-el-do-admin" target="id-v121f-el-do-cfg" archimateRelationship="id-v121f-el-rel-as-a"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121f-el-c-a-fe" source="id-v121f-el-do-admin" target="id-v121f-el-do-fe" archimateRelationship="id-v121f-el-rel-a-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121f-el-do-member" archimateElement="id-v121f-el-member">
+        <bounds x="48" y="160" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121f-el-c-as-m" source="id-v121f-el-do-member" target="id-v121f-el-do-nav" archimateRelationship="id-v121f-el-rel-as-m"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121f-el-c-m-fe" source="id-v121f-el-do-member" target="id-v121f-el-do-fe" archimateRelationship="id-v121f-el-rel-m-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121f-el-do-cfg" targetConnections="id-v121f-el-c-as-a" archimateElement="id-v121f-el-cfg">
+        <bounds x="240" y="48" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121f-el-do-nav" targetConnections="id-v121f-el-c-as-m id-v121f-el-c-bill-nav" archimateElement="id-v121f-el-nav">
+        <bounds x="240" y="160" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121f-el-do-fe" targetConnections="id-v121f-el-c-a-fe id-v121f-el-c-m-fe" archimateElement="id-v121f-el-fe">
+        <bounds x="480" y="96" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121f-el-c-fe-bill" source="id-v121f-el-do-fe" target="id-v121f-el-do-bill" archimateRelationship="id-v121f-el-rel-fe-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121f-el-do-bill" targetConnections="id-v121f-el-c-fe-bill" archimateElement="id-v121f-el-bill">
+        <bounds x="660" y="96" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121f-el-c-bill-nav" source="id-v121f-el-do-bill" target="id-v121f-el-do-nav" archimateRelationship="id-v121f-el-rel-bill-nav"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v121f-el-view-mig" name="架构变迁 v120→v121 — tenant-feedback-links-by-consumption">
+      <child xsi:type="archimate:DiagramObject" id="id-v121f-el-do-pl119" archimateElement="id-v121f-el-pl119">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121f-el-c-pl-gap" source="id-v121f-el-do-pl119" target="id-v121f-el-do-gap" archimateRelationship="id-v121f-el-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121f-el-do-gap" targetConnections="id-v121f-el-c-pl-gap id-v121f-el-c-wp-gap" archimateElement="id-v121f-el-gap">
+        <bounds x="280" y="48" width="400" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121f-el-do-wp" archimateElement="id-v121f-el-wp">
+        <bounds x="280" y="140" width="400" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121f-el-c-wp-gap" source="id-v121f-el-do-wp" target="id-v121f-el-do-gap" archimateRelationship="id-v121f-el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121f-el-c-wp-pl" source="id-v121f-el-do-wp" target="id-v121f-el-do-pl120" archimateRelationship="id-v121f-el-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121f-el-do-pl120" targetConnections="id-v121f-el-c-wp-pl" archimateElement="id-v121f-el-pl120">
+        <bounds x="720" y="140" width="200" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

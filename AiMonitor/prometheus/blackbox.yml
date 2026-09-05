@@ -1,0 +1,44 @@
+modules:
+  http_2xx:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      valid_status_codes: []
+      preferred_ip_protocol: ip4
+  # Edge 探活：不跟随重定向，断言入口即 302（→ /users/sign_in）。
+  # 2026-08-07 gitlab.daydaymoney.com 502 持续数小时无告警，补此模块捕获同类断链。
+  http_redirect_ok:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      follow_redirects: false
+      valid_status_codes: [200, 301, 302, 307, 308]
+      preferred_ip_protocol: ip4
+  # www.daydaymoney.com SPA 首页探活：跟随重定向后必须最终 200 且 body 含 HTML doctype。
+  # 2026-08-11 故障：dist 被并发 build 抹掉后首页 302 → 空 /static/assets/ → 404，
+  # 而 /health 仍 200 掩盖故障。body 断言可区分「真 HTML」与空 assets 404（OPT-20260811-090）。
+  http_2xx_html:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      follow_redirects: true
+      valid_status_codes: [200]
+      preferred_ip_protocol: ip4
+      fail_if_body_not_matches_regexp:
+        - "<!DOCTYPE html>"
+  # www 首页断链捕获：不跟随重定向，若 Location 指向空 assets 目录则探活失败告警。
+  http_redirect_no_assets:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      follow_redirects: false
+      valid_status_codes: [200, 301, 302, 307, 308]
+      preferred_ip_protocol: ip4
+      fail_if_header_matches:
+        - header: Location
+          allow_missing: true
+          regexp: "/static/assets/"

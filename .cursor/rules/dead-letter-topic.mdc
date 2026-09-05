@@ -1,0 +1,92 @@
+---
+description: 死信Topic强制规范 — 所有Kafka消费者必须在永久失败或重试耗尽时将消息投递到死信Topic，禁止无限重试
+globs: "**/*.go,**/consumer/**/*.go,**/broker/**/*.go,**/run.sh,**/runAll.yaml"
+alwaysApply: true
+---
+
+# 死信Topic强制规范（元规则）
+
+适用于整个 monorepo 所有 Kafka 消费者（Go / 未来语言）。本规则是**元规则**，优先级高于各服务局部惯例。
+
+## 强制要求
+
+### 1. 死信Topic命名
+
+每个业务 Topic 必须有对应的死信Topic（DLT），命名规则：
+
+```
+{original-topic}-dlt
+```
+
+例：
+| 业务Topic | 死信Topic |
+|-----------|-----------|
+| `company-created` | `company-created-dlt` |
+| `user-created` | `user-created-dlt` |
+| `workspace-created` | `workspace-created-dlt` |
+| `task-created` | `task-created-dlt` |
+
+### 2. DLT 投递时机
+
+消费者必须在以下两种情况将消息投递到 DLT：
+
+2.1 **永久失败（DispatchPermanent）** — handler 判定此消息无法处理（数据缺失、字段非法等），立即投递 DLT 并 Ack 原消息
+
+2.2 **重试耗尽** — handler 返回 DispatchRetryable 但重试次数超过上限（默认 10 次），投递 DLT 并 Ack 原消息
+
+### 3. DLT 消息格式
+
+```json
+{
+ "original_event_type": "COMPANY_CREATED",
+ "original_topic": "company-created",
+ "original_data": { },
+ "original_key": "...",
+ "error": "no default progress system found for tenant 871586263134662656",
+ "dead_lettered_at": "2026-08-02T11:30:00Z",
+ "failure_reason": "permanent",
+ "retry_count": 1,
+ "trace_id": "7bb8e633-22d5-426a-98d0-3be19422cfb4",
+ "otel_trace_id": "7bb8e63322d5426a98d03be19422cfb4"
+}
+```
+
+字段说明：
+- `failure_reason`: `"permanent"` | `"retry_exhausted"`
+- `retry_count`: 1（永久失败）或实际重试次数（重试耗尽）
+- `original_data`: 原始事件的 `data` 字段，保留完整上下文用于排查
+- `trace_id` / `otel_trace_id`: 从消费 ctx（优先）或原始 envelope `data.trace_id` 透传，供 Loki/Grafana 关联；缺失时告警邮件写 `trace_id: (missing)`
+
+### 4. 禁止无限重试
+
+**绝对禁止**消费者对同一消息无限重试。必须同时满足：
+- 配置最大重试次数（默认 10，可通过 `DLT_MAX_RETRIES` 环境变量覆盖）
+- 达到上限后投递 DLT + Ack 原消息，消费者偏移量必须继续前进
+- DLT 投递失败时仅记录日志，**不能**阻断原消息 Ack（宁可丢 DLT 不可卡消费）
+
+### 5. DLT 消费者隔离
+
+- DLT 仅用于**人工排查**，不配置自动化消费者
+- DLT 消息由运维/开发通过 Kafka UI（如 Kafka UI :18080）手动检查
+- 不得为 DLT 注册 intent 消费者
+
+### 6. 实现参考
+
+Go 实现位于 `taskEvents/broker/dlt.go` 和 `taskEvents/consumer/runner.go`：
+
+- `broker.PublishDeadLetter()` — 将消息投递到 `{topic}-dlt`
+- `runner.go` — 在 DispatchPermanent 和重试耗尽时调用 DLT 投递
+- 配置：`config.DLTMaxRetries`（默认 10）、`config.DeadLetterTopic(topic)` 返回 DLT topic 名
+
+其他语言服务（Python/Node.js）在消费 Kafka 时参照相同规则实现。
+
+与 **事件消费者幂等消费**（元规则 49 / ADR-0015）互补：DLT 管失败路径；49 管成功路径重复投递。
+
+## 检查清单
+
+新增 Kafka 消费者时确认：
+- [ ] 永久失败 → DLT + Ack
+- [ ] 重试耗尽 → DLT + Ack
+- [ ] DLT 投递失败不阻断原消息 Ack
+- [ ] 最大重试次数已配置（默认 10）
+- [ ] 未为 DLT 注册自动消费者

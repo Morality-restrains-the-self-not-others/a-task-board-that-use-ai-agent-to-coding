@@ -1,0 +1,47 @@
+' @title: 厂商申请审核开关 + 镜像市场 SSO 入口内聚
+' @view: application-integration
+' @status: target
+' @version: 70
+' @iteration: vendor-review-toggle-sso-entry
+' @author: claude
+' @based_on: v69 (v69-application-integration-20260809-2225-claude.puml)
+' @updated: 2026-08-10 19:55
+' @description: taskAiProvider 新增 marketplace-settings（厂商申请审核开关）；SystemAdmin 容器镜像页内聚 admin SSO 入口；审核关闭时 vendor_bridge 自动建档激活
+
+@startuml
+!include <archimate/Archimate>
+
+title v70 — 厂商申请审核开关 + SSO 入口内聚 (Target, 2026-08-10 19:55)
+
+legend right
+  |<#LightGreen>  </>| 🟢 [NEW v70] |
+  |<#LightYellow> </>| 🟡 [MODIFIED v70] |
+  |<#White>       </>| 未变 |
+endlegend
+
+Application_Component(taskFE, "taskFE (Vue SPA)")
+note right of taskFE
+  🟡 [MODIFIED v70]
+  + SystemAdminContainerImages：SSO 入口 + 审核开关
+  + SystemAdminSidebar：移除「镜像市场管理（SSO）」
+  + ImageMarket：按 vendor_application_review_enabled 切换按钮
+end note
+
+Application_Component(gateway, "APISIX Gateway (:18081)")
+Application_Component(taskAiProvider, "taskAiProvider (Go)")
+note right of taskAiProvider
+  🟡 [MODIFIED v70]
+  + ai_provider_marketplace_settings 🟢
+  + GET /marketplace-settings/
+  + GET|PATCH /admin-marketplace-settings/
+  + vendor-status 嵌入开关字段
+  + UpsertVendorFromBridge：审核关闭时自动建档/激活
+end note
+
+Application_DataObject(mktSettings, "ai_provider_marketplace_settings\n[NEW v70]")
+
+Rel_Flow(taskFE, gateway, "admin settings / vendor-status / SSO")
+Rel_Flow(gateway, taskAiProvider, "forward-auth")
+Rel_Access_Write(taskAiProvider, mktSettings, "read/write settings")
+
+@enduml

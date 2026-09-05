@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v96 full (after v96)" id="id-v96aifull01">
+  <folder name="Application" id="id-v96aif-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v96-app-fe" name="taskFE Vue SPA [MODIFIED v96]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v96-app-bill" name="taskBill [MODIFIED v96]"/>
+    <element xsi:type="archimate:DataObject" id="id-v96-do-ord" name="billing_resource_order"/>
+    <element xsi:type="archimate:DataObject" id="id-v96-do-ps" name="billing_profit_sharing [NEW read v96]"/>
+  </folder>
+  <folder name="Technology" id="id-v96aif-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v96-tech-mysqlb" name="MySQL task_bill utf8mb4"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v96aif-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v96-pl-v95" name="Plateau v95"/>
+    <element xsi:type="archimate:Plateau" id="id-v96-pl-v96" name="Plateau v96"/>
+    <element xsi:type="archimate:Gap" id="id-v96-gap" name="Gap: 订单展开无分账对象与金额"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v96-wp" name="WP-admin-order-profit-sharing"/>
+  </folder>
+  <folder name="Relations" id="id-v96aif-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v96-rel-fe-admin" source="id-v96-app-fe" target="id-v96-app-bill" name="GET admin order detail"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v96-rel-fe-tenant" source="id-v96-app-fe" target="id-v96-app-bill" name="GET tenant order (no PS field)"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v96-rel-bill-ord" source="id-v96-app-bill" target="id-v96-do-ord" name="loadOrderByID"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v96-rel-bill-ps" source="id-v96-app-bill" target="id-v96-do-ps" name="list by order_id"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v96-rel-mysql-ord" source="id-v96-tech-mysqlb" target="id-v96-do-ord" name="InnoDB"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v96-rel-mysql-ps" source="id-v96-tech-mysqlb" target="id-v96-do-ps" name="InnoDB"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v96-rel-pl95-gap" source="id-v96-pl-v95" target="id-v96-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v96-rel-wp-gap" source="id-v96-wp" target="id-v96-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v96-rel-wp-pl96" source="id-v96-wp" target="id-v96-pl-v96"/>
+  </folder>
+  <folder name="Views" id="id-v96aif-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v96-fview-topo" name="v96 Full — 订单分账只读拓扑">
+      <child xsi:type="archimate:DiagramObject" id="id-v96-fd-fe" archimateElement="id-v96-app-fe">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-fc-fe-admin" source="id-v96-fd-fe" target="id-v96-fd-bill" archimateRelationship="id-v96-rel-fe-admin"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-fc-fe-tenant" source="id-v96-fd-fe" target="id-v96-fd-bill" archimateRelationship="id-v96-rel-fe-tenant"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-fd-bill" targetConnections="id-v96-fc-fe-admin id-v96-fc-fe-tenant" archimateElement="id-v96-app-bill">
+        <bounds x="260" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-fc-bill-ord" source="id-v96-fd-bill" target="id-v96-fd-ord" archimateRelationship="id-v96-rel-bill-ord"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-fc-bill-ps" source="id-v96-fd-bill" target="id-v96-fd-ps" archimateRelationship="id-v96-rel-bill-ps"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-fd-ord" targetConnections="id-v96-fc-bill-ord id-v96-fc-mysql-ord" archimateElement="id-v96-do-ord">
+        <bounds x="480" y="48" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-fd-ps" targetConnections="id-v96-fc-bill-ps id-v96-fc-mysql-ps" archimateElement="id-v96-do-ps">
+        <bounds x="480" y="140" width="260" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-fd-mysqlb" archimateElement="id-v96-tech-mysqlb">
+        <bounds x="48" y="140" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-fc-mysql-ord" source="id-v96-fd-mysqlb" target="id-v96-fd-ord" archimateRelationship="id-v96-rel-mysql-ord"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-fc-mysql-ps" source="id-v96-fd-mysqlb" target="id-v96-fd-ps" archimateRelationship="id-v96-rel-mysql-ps"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v96-fview-mig" name="架构变迁 v95→v96 — admin-order-profit-sharing">
+      <child xsi:type="archimate:DiagramObject" id="id-v96-fd-pl95" archimateElement="id-v96-pl-v95">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-fc-pl95-gap" source="id-v96-fd-pl95" target="id-v96-fd-gap" archimateRelationship="id-v96-rel-pl95-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-fd-gap" targetConnections="id-v96-fc-pl95-gap id-v96-fc-wp-gap" archimateElement="id-v96-gap">
+        <bounds x="240" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-fd-wp" archimateElement="id-v96-wp">
+        <bounds x="240" y="160" width="300" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-fc-wp-gap" source="id-v96-fd-wp" target="id-v96-fd-gap" archimateRelationship="id-v96-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v96-fc-wp-pl96" source="id-v96-fd-wp" target="id-v96-fd-pl96" archimateRelationship="id-v96-rel-wp-pl96"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v96-fd-pl96" targetConnections="id-v96-fc-wp-pl96" archimateElement="id-v96-pl-v96">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

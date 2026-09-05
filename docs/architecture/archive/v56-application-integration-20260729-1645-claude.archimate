@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.archimatetool.com/archimate"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    identifier="model-v56-django-go-migration">
+  <name xml:lang="en">v56 Django→Go Final Migration</name>
+  <purpose>盘点仅剩的 1 个活跃 Django 进程 (saas-backend)，制定 8 Phase Strangler Fig 迁移路线图至完全移除 Django</purpose>
+
+  <!-- IMPLEMENTATION LAYER -->
+  <folder name="Implementation" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v55 (current) — Django 仍在" id="p55"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v56 (target) — Django 退役" id="p56"/>
+    <element xsi:type="archimate:Gap" name="Gap 1: ai-provider Django 死代码" id="gap-deadcode"/>
+    <element xsi:type="archimate:Gap" name="Gap 2: Kafka→Django HTTP 回环" id="gap-intents"/>
+    <element xsi:type="archimate:Gap" name="Gap 3: Go 依赖 Django internal API" id="gap-internal"/>
+    <element xsi:type="archimate:Gap" name="Gap 4: 云平台配置仍 Django" id="gap-cloud"/>
+    <element xsi:type="archimate:Gap" name="Gap 5: 计费桥接经 Django" id="gap-billing"/>
+    <element xsi:type="archimate:Gap" name="Gap 6: 系统管理面 Django" id="gap-admin"/>
+    <element xsi:type="archimate:Gap" name="Gap 7: accounts+projects 核心域" id="gap-core"/>
+    <element xsi:type="archimate:WorkPackage" name="WP1: Phase 1 — 死代码清理 (1-2d)" id="wp1"/>
+    <element xsi:type="archimate:WorkPackage" name="WP2: Phase 2 — 事件意图 Kafka 化 (1-2w)" id="wp2"/>
+    <element xsi:type="archimate:WorkPackage" name="WP3: Phase 3 — Internal API 迁出 (2-4w)" id="wp3"/>
+    <element xsi:type="archimate:WorkPackage" name="WP4: Phase 4 — 云平台迁 taskCloud (2-4w)" id="wp4"/>
+    <element xsi:type="archimate:WorkPackage" name="WP5: Phase 5 — 计费桥接清理 (1w)" id="wp5"/>
+    <element xsi:type="archimate:WorkPackage" name="WP6: Phase 6 — 管理面迁移 (1w)" id="wp6"/>
+    <element xsi:type="archimate:WorkPackage" name="WP7: Phase 7 — 核心域迁移 (4-8w)" id="wp7"/>
+    <element xsi:type="archimate:WorkPackage" name="WP8: Phase 8 — Django 退役 (1w)" id="wp8"/>
+  </folder>
+
+  <!-- APPLICATION LAYER -->
+  <folder name="Application" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Django saas-backend (:8001)" id="django55"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskAuth — users, profiles, SSO" id="task-auth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskGitOauth — git identities, OAuth" id="task-gitoauth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTenantService — companies, members, groups" id="task-tenant"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskProjectService — projects, workspaces, ACL" id="task-project"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTaskService — todos CRUD" id="task-task"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskAIComment — comment import" id="task-aicomment"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskCloudService — platforms, VPC, images" id="task-cloud"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskBill — billing, subscriptions, refund" id="task-bill"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskEvents — Kafka consumers, SSE" id="task-events-go"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Kafka Consumers (Go)" id="kafka-consumers"/>
+    <element xsi:type="archimate:ApplicationComponent" name="APISIX Gateway (:18081)" id="gateway"/>
+    <element xsi:type="archimate:DataObject" name="Kafka — Domain Events Bus" id="kafka-broker"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Django saas-backend [DEPRECATED v56]" id="django-depr"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Saas_Ai_Provider Django [DEPRECATED v56]" id="aiprovider-depr"/>
+  </folder>
+
+  <!-- RELATIONSHIPS -->
+  <folder name="Relations" type="relations">
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-p55-gap1" source="p55" target="gap-deadcode"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-p55-gap2" source="p55" target="gap-intents"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-p55-gap3" source="p55" target="gap-internal"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-p55-gap4" source="p55" target="gap-cloud"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-p55-gap5" source="p55" target="gap-billing"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-p55-gap6" source="p55" target="gap-admin"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-p55-gap7" source="p55" target="gap-core"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp1-gap1" source="wp1" target="gap-deadcode"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp2-gap2" source="wp2" target="gap-intents"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp3-gap3" source="wp3" target="gap-internal"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp4-gap4" source="wp4" target="gap-cloud"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp5-gap5" source="wp5" target="gap-billing"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp6-gap6" source="wp6" target="gap-admin"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp7-gap7" source="wp7" target="gap-core"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp1-p56" source="wp1" target="p56"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp2-p56" source="wp2" target="p56"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp3-p56" source="wp3" target="p56"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp4-p56" source="wp4" target="p56"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp5-p56" source="wp5" target="p56"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp6-p56" source="wp6" target="p56"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp7-p56" source="wp7" target="p56"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp8-p56" source="wp8" target="p56"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-auth" source="gateway" target="task-auth"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-gitoauth" source="gateway" target="task-gitoauth"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-tenant" source="gateway" target="task-tenant"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-project" source="gateway" target="task-project"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-task" source="gateway" target="task-task"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-cloud" source="gateway" target="task-cloud"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-bill" source="gateway" target="task-bill"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-kafka-consumers" source="kafka-broker" target="kafka-consumers"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-kc-tenant" source="kafka-consumers" target="task-tenant"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-kc-auth" source="kafka-consumers" target="task-auth"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-kc-project" source="kafka-consumers" target="task-project"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-kc-cloud" source="kafka-consumers" target="task-cloud"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-kc-events" source="kafka-consumers" target="task-events-go"/>
+  </folder>
+
+  <!-- VIEWS -->
+  <folder name="Views" type="diagrams">
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- View 1: 架构变迁 v55→v56 -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v55→v56 — Django→Go" id="view-migration">
+      <!-- Plateau v55 -->
+      <node xsi:type="archimate:DiagramObject" id="do-p55" archimateElement="p55" targetConnections="conn-p55-gap1 conn-p55-gap2 conn-p55-gap3 conn-p55-gap4 conn-p55-gap5 conn-p55-gap6 conn-p55-gap7">
+        <bounds x="24" y="24" width="220" height="55"/>
+      </node>
+      <!-- Plateau v56 -->
+      <node xsi:type="archimate:DiagramObject" id="do-p56" archimateElement="p56" targetConnections="conn-wp1-p56 conn-wp2-p56 conn-wp3-p56 conn-wp4-p56 conn-wp5-p56 conn-wp6-p56 conn-wp7-p56 conn-wp8-p56">
+        <bounds x="576" y="24" width="220" height="55"/>
+      </node>
+
+      <!-- Gaps (left column) -->
+      <node xsi:type="archimate:DiagramObject" id="do-gap-deadcode" archimateElement="gap-deadcode" targetConnections="conn-wp1-gap1">
+        <bounds x="24" y="110" width="200" height="38"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-gap-intents" archimateElement="gap-intents" targetConnections="conn-wp2-gap2">
+        <bounds x="24" y="158" width="200" height="38"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-gap-internal" archimateElement="gap-internal" targetConnections="conn-wp3-gap3">
+        <bounds x="24" y="206" width="200" height="38"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-gap-cloud" archimateElement="gap-cloud" targetConnections="conn-wp4-gap4">
+        <bounds x="24" y="254" width="200" height="38"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-gap-billing" archimateElement="gap-billing" targetConnections="conn-wp5-gap5">
+        <bounds x="24" y="302" width="200" height="38"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-gap-admin" archimateElement="gap-admin" targetConnections="conn-wp6-gap6">
+        <bounds x="24" y="350" width="200" height="38"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-gap-core" archimateElement="gap-core" targetConnections="conn-wp7-gap7">
+        <bounds x="24" y="398" width="200" height="38"/>
+      </node>
+
+      <!-- Work Packages (right column) -->
+      <node xsi:type="archimate:DiagramObject" id="do-wp1" archimateElement="wp1">
+        <bounds x="290" y="110" width="230" height="38"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-wp2" archimateElement="wp2">
+        <bounds x="290" y="158" width="230" height="38"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-wp3" archimateElement="wp3">
+        <bounds x="290" y="206" width="230" height="38"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-wp4" archimateElement="wp4">
+        <bounds x="290" y="254" width="230" height="38"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-wp5" archimateElement="wp5">
+        <bounds x="290" y="302" width="230" height="38"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-wp6" archimateElement="wp6">
+        <bounds x="290" y="350" width="230" height="38"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-wp7" archimateElement="wp7">
+        <bounds x="290" y="398" width="230" height="38"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-wp8" archimateElement="wp8">
+        <bounds x="290" y="446" width="230" height="38"/>
+      </node>
+
+      <!-- Deprecated markers -->
+      <node xsi:type="archimate:DiagramObject" id="do-django-depr-mv" archimateElement="django-depr">
+        <bounds x="576" y="110" width="220" height="45"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-aiprovider-depr-mv" archimateElement="aiprovider-depr">
+        <bounds x="576" y="165" width="220" height="45"/>
+      </node>
+
+      <!-- Plateau v55 → Gaps (Triggering) -->
+      <sourceConnection xsi:type="archimate:Connection" id="conn-p55-gap1" source="do-p55" target="do-gap-deadcode" archimateRelationship="rel-p55-gap1"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-p55-gap2" source="do-p55" target="do-gap-intents" archimateRelationship="rel-p55-gap2"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-p55-gap3" source="do-p55" target="do-gap-internal" archimateRelationship="rel-p55-gap3"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-p55-gap4" source="do-p55" target="do-gap-cloud" archimateRelationship="rel-p55-gap4"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-p55-gap5" source="do-p55" target="do-gap-billing" archimateRelationship="rel-p55-gap5"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-p55-gap6" source="do-p55" target="do-gap-admin" archimateRelationship="rel-p55-gap6"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-p55-gap7" source="do-p55" target="do-gap-core" archimateRelationship="rel-p55-gap7"/>
+
+      <!-- WPs → Gaps (Realization: close) -->
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp1-gap1" source="do-wp1" target="do-gap-deadcode" archimateRelationship="rel-wp1-gap1"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp2-gap2" source="do-wp2" target="do-gap-intents" archimateRelationship="rel-wp2-gap2"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp3-gap3" source="do-wp3" target="do-gap-internal" archimateRelationship="rel-wp3-gap3"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp4-gap4" source="do-wp4" target="do-gap-cloud" archimateRelationship="rel-wp4-gap4"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp5-gap5" source="do-wp5" target="do-gap-billing" archimateRelationship="rel-wp5-gap5"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp6-gap6" source="do-wp6" target="do-gap-admin" archimateRelationship="rel-wp6-gap6"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp7-gap7" source="do-wp7" target="do-gap-core" archimateRelationship="rel-wp7-gap7"/>
+
+      <!-- WPs → Plateau v56 (Realization: deliver) -->
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp1-p56" source="do-wp1" target="do-p56" archimateRelationship="rel-wp1-p56"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp2-p56" source="do-wp2" target="do-p56" archimateRelationship="rel-wp2-p56"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp3-p56" source="do-wp3" target="do-p56" archimateRelationship="rel-wp3-p56"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp4-p56" source="do-wp4" target="do-p56" archimateRelationship="rel-wp4-p56"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp5-p56" source="do-wp5" target="do-p56" archimateRelationship="rel-wp5-p56"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp6-p56" source="do-wp6" target="do-p56" archimateRelationship="rel-wp6-p56"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp7-p56" source="do-wp7" target="do-p56" archimateRelationship="rel-wp7-p56"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-wp8-p56" source="do-wp8" target="do-p56" archimateRelationship="rel-wp8-p56"/>
+    </element>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- View 2: v56 Target — 数据流拓扑 -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v56 Target — 数据流拓扑" id="view-topology">
+      <!-- Gateway -->
+      <node xsi:type="archimate:DiagramObject" id="do-gateway" archimateElement="gateway">
+        <bounds x="300" y="24" width="170" height="55"/>
+      </node>
+
+      <!-- Row 1: Go services (gateway flows) -->
+      <node xsi:type="archimate:DiagramObject" id="do-task-auth" archimateElement="task-auth" targetConnections="conn-gw-auth conn-kc-auth">
+        <bounds x="20" y="120" width="155" height="55"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-gitoauth" archimateElement="task-gitoauth" targetConnections="conn-gw-gitoauth">
+        <bounds x="195" y="120" width="155" height="55"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-tenant" archimateElement="task-tenant" targetConnections="conn-gw-tenant conn-kc-tenant">
+        <bounds x="370" y="120" width="155" height="55"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-project" archimateElement="task-project" targetConnections="conn-gw-project conn-kc-project">
+        <bounds x="545" y="120" width="155" height="55"/>
+      </node>
+
+      <!-- Row 2: more Go services -->
+      <node xsi:type="archimate:DiagramObject" id="do-task-task" archimateElement="task-task" targetConnections="conn-gw-task">
+        <bounds x="20" y="210" width="155" height="55"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-aicomment" archimateElement="task-aicomment">
+        <bounds x="195" y="210" width="155" height="55"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-cloud" archimateElement="task-cloud" targetConnections="conn-gw-cloud conn-kc-cloud">
+        <bounds x="370" y="210" width="155" height="55"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-bill" archimateElement="task-bill" targetConnections="conn-gw-bill">
+        <bounds x="545" y="210" width="155" height="55"/>
+      </node>
+
+      <!-- Row 3: Kafka + Events -->
+      <node xsi:type="archimate:DiagramObject" id="do-kafka-broker" archimateElement="kafka-broker">
+        <bounds x="20" y="310" width="180" height="50"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-kafka-consumers" archimateElement="kafka-consumers" targetConnections="conn-kafka-flow">
+        <bounds x="230" y="310" width="180" height="50"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-events-go" archimateElement="task-events-go" targetConnections="conn-kc-events">
+        <bounds x="440" y="310" width="180" height="50"/>
+      </node>
+
+      <!-- Deprecated markers -->
+      <node xsi:type="archimate:DiagramObject" id="do-django-depr" archimateElement="django-depr">
+        <bounds x="545" y="400" width="170" height="50"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-aiprovider-depr" archimateElement="aiprovider-depr">
+        <bounds x="370" y="400" width="170" height="50"/>
+      </node>
+
+      <!-- Gateway → Go services (Flow) -->
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-auth" source="do-gateway" target="do-task-auth" archimateRelationship="rel-gw-auth"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-gitoauth" source="do-gateway" target="do-task-gitoauth" archimateRelationship="rel-gw-gitoauth"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-tenant" source="do-gateway" target="do-task-tenant" archimateRelationship="rel-gw-tenant"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-project" source="do-gateway" target="do-task-project" archimateRelationship="rel-gw-project"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-task" source="do-gateway" target="do-task-task" archimateRelationship="rel-gw-task"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-cloud" source="do-gateway" target="do-task-cloud" archimateRelationship="rel-gw-cloud"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-bill" source="do-gateway" target="do-task-bill" archimateRelationship="rel-gw-bill"/>
+
+      <!-- Kafka → Consumers → Go services (Flow) -->
+      <sourceConnection xsi:type="archimate:Connection" id="conn-kafka-flow" source="do-kafka-broker" target="do-kafka-consumers" archimateRelationship="rel-kafka-consumers"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-kc-tenant" source="do-kafka-consumers" target="do-task-tenant" archimateRelationship="rel-kc-tenant"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-kc-auth" source="do-kafka-consumers" target="do-task-auth" archimateRelationship="rel-kc-auth"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-kc-project" source="do-kafka-consumers" target="do-task-project" archimateRelationship="rel-kc-project"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-kc-cloud" source="do-kafka-consumers" target="do-task-cloud" archimateRelationship="rel-kc-cloud"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-kc-events" source="do-kafka-consumers" target="do-task-events-go" archimateRelationship="rel-kc-events"/>
+    </element>
+  </folder>
+
+</archimate:model>

@@ -1,0 +1,72 @@
+' @title: Application Integration — 顶层交付物排队自动执行调度节奏
+' @view: application-integration
+' @status: archived
+' @version: 40
+' @author: claude
+' @based_on: v39 current (v39-application-integration-20260719-0510-claude.puml)
+' @updated: 2026-07-19 18:00
+' @description: TTS 调度节奏+排队；Cloud started_via；与立即 auto_run/手动额度隔离
+' @iteration: top-deliverable-queued-auto-run-schedule
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v40 — Top Deliverable Queued Auto-Run Schedule (2026-07-19 17:46)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v40 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v40 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+rectangle "Motivation" {
+  Motivation_Constraint(goFirst, "Constraint\n新增接口默认 Go")
+  Motivation_Principle(costAware, "Principle\n低价时段排队降本")
+}
+
+rectangle "Application" {
+  Application_Component(vueTask, "🟡 Vue Task Detail\nschedule + queued_auto_run")
+  Application_Component(gw, "task-gateway")
+  Application_Component(tts, "🟡 taskTaskService\nScheduleRhythm + Queue + Dispatcher")
+  Application_Component(tcs, "🟡 taskCloudService\nstarted_via + start-vm-auto")
+  Application_Component(te, "taskEvents")
+  Application_DataObject(taskDB, "🟡 task.db\ntasks rhythm cols")
+  Application_DataObject(qarm, "🟢 queued_auto_run_memberships")
+  Application_DataObject(cloudDB, "🟡 cloud.db\nstarted_via")
+}
+
+rectangle "Technology" {
+  Technology_Node(kafka, "Kafka")
+}
+
+note right of tts
+  [MODIFIED v40] 顶层节奏、排队成员、
+  窗外 deferred、BFS 出队调度
+  @author: claude @2026-07-19 17:46
+end note
+
+note right of qarm
+  [NEW v40] 子树排队成员 SSOT
+end note
+
+note top of tcs
+  [MODIFIED v40] started_via=queued_schedule
+  与 auto_run/manual 额度隔离
+end note
+
+note top of vueTask
+  [MODIFIED v40] 节奏表单 / 排队开关 / 状态徽章
+end note
+
+Rel_Flow(vueTask, gw, "todos schedule|queue")
+Rel_Flow(gw, tts, "JWT")
+Rel_Access_W(tts, taskDB, "R/W rhythm")
+Rel_Access_W(tts, qarm, "R/W memberships")
+Rel_Flow(tts, tcs, "start-vm-auto\nstarted_via=queued_schedule")
+Rel_Access_W(tcs, cloudDB, "R/W")
+Rel_Flow(tts, kafka, "Queued* events")
+Rel_Flow(kafka, te, "consume")
+Rel_Influence(goFirst, tts, "落点")
+Rel_Influence(costAware, tts, "调度")
+
+@enduml

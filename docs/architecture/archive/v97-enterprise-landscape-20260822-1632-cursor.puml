@@ -1,0 +1,48 @@
+' @title: Git OAuth 按站点换票（企业景观）
+' @view: enterprise-landscape
+' @status: target
+' @version: 97
+' @iteration: gitsite-access-for-user-path
+' @author: cursor
+' @based_on: v96 (v96-enterprise-landscape-20260822-1405-cursor.puml)
+' @updated: 2026-08-22 16:32
+' @description: 用户级 Git OAuth 换票按 Git 站点 site 寻址；多评论仍共用该站点凭据
+
+@startuml
+!include <archimate/Archimate>
+
+title v97 landscape — Git OAuth 按 site 换票 2026-08-22 16:32
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v97 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v97 |
+endlegend
+
+Business_Actor(author, "评论作者")
+Business_Service(clone, "评论容器克隆仓库")
+Business_Service(exchange, "按 Git 站点换 AccessToken")
+note right of exchange
+  [NEW v97] 路由键 = site (host[:port])
+  非每评论一张 GitLab OAuth
+  同一用户同一 site 共用 refresh
+end note
+
+Application_Component(gitoauth, "taskGitOauth")
+note top of gitoauth
+  [MODIFIED v97]
+  /api/internal/gitsite/{site}/oauth/access-for-user/
+end note
+
+Rel_Assignment(author, clone)
+Rel_Flow(clone, exchange, "need git credential")
+Rel_Serving(gitoauth, exchange)
+
+Implementation_Plateau(p96, "v96")
+Implementation_Plateau(p97, "v97")
+Implementation_Gap(g, "换票 URL 只有 github|gitlab 两族")
+Implementation_WorkPackage(wp, "WP-gitsite-access-for-user")
+Rel_Triggering(p96, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p97, "delivers")
+
+@enduml

@@ -1,0 +1,7 @@
+intents:
+  1_recycle_idle_nodes:
+    host: 0.0.0.0
+    port: 18044
+    groupId: task-events-workspace-machine-idle-1-recycle-idle-nodes
+    events:
+    - WORKSPACE_MACHINE_IDLE

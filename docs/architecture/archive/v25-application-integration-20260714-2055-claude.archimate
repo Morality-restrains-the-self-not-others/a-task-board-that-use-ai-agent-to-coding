@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v25-ai-20260714-2055">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v25 Target</name>
+  <purpose>Auto SG ingress whitelist: client_public_ip in start-vm-auto; taskEvents Phase A/B whitelist; revoke 0.0.0.0/0</purpose>
+
+  <folder name="Motivation" id="id-v25-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="🟢 自动 SG 默认拒绝未授权入站 [NEW v25]" id="id-v25-constraint"/>
+  </folder>
+  <folder name="Application" id="id-v25-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Vue TaskDetail / ServerConfigHardwarePanel" id="id-v25-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v25-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskCloudService resolveClientIP [MODIFIED v25]" id="id-v25-cloud"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskEvents SG whitelist [MODIFIED v25]" id="id-v25-events"/>
+    <element xsi:type="archimate:DataObject" name="🟢 client_public_ip + auto_sg_whitelist [NEW v25]" id="id-v25-evt-ip"/>
+  </folder>
+  <folder name="Technology" id="id-v25-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="Kafka CLOUD_SERVER_*" id="id-v25-kafka"/>
+    <element xsi:type="archimate:Node" name="Aliyun ECS Security Group" id="id-v25-aliyun-sg"/>
+  </folder>
+  <folder name="Relations" id="id-v25-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v25-flow-vue-gw" source="id-v25-vue" target="id-v25-gw" name="start-vm-auto"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v25-flow-gw-cloud" source="id-v25-gw" target="id-v25-cloud" name="compute API"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v25-acc-cloud-evt" source="id-v25-cloud" target="id-v25-evt-ip" name="W client_public_ip"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v25-flow-cloud-kafka" source="id-v25-cloud" target="id-v25-kafka" name="CLOUD_SERVER_START_AUTO"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v25-flow-kafka-events" source="id-v25-kafka" target="id-v25-events" name="consume"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v25-flow-events-sg" source="id-v25-events" target="id-v25-aliyun-sg" name="Authorize/Revoke ingress whitelist"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v25-inf-constraint-events" source="id-v25-constraint" target="id-v25-events" name="约束入站策略"/>
+  </folder>
+  <folder name="Implementation" id="id-v25-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v21 — cloud events/IAM" id="id-v25-plat-v21"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v24 — multi-account switcher" id="id-v25-plat-v24"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v25 — auto SG ingress whitelist" id="id-v25-plat-v25"/>
+    <element xsi:type="archimate:Gap" name="Gap: 自动 SG 入站 0.0.0.0/0；start-vm-auto 无 client_public_ip" id="id-v25-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v25-auto-sg-ingress-whitelist" id="id-v25-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v25-rel-plat21-gap" source="id-v25-plat-v21" target="id-v25-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v25-rel-plat24-gap" source="id-v25-plat-v24" target="id-v25-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v25-rel-wp-gap" source="id-v25-wp" target="id-v25-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v25-rel-wp-plat25" source="id-v25-wp" target="id-v25-plat-v25"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v25-rel-plat25-events" source="id-v25-plat-v25" target="id-v25-events"/>
+  </folder>
+  <folder name="Views" id="id-v25-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v21/v24→v25 — auto SG whitelist" id="id-v25-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-plat21" archimateElement="id-v25-plat-v21">
+        <bounds x="48" y="80" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v25-conn-plat21-gap"
+          source="id-v25-do-plat21" target="id-v25-do-gap"
+          archimateRelationship="id-v25-rel-plat21-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-plat24" archimateElement="id-v25-plat-v24">
+        <bounds x="48" y="160" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v25-conn-plat24-gap"
+          source="id-v25-do-plat24" target="id-v25-do-gap"
+          archimateRelationship="id-v25-rel-plat24-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-gap" archimateElement="id-v25-gap"
+        targetConnections="id-v25-conn-plat21-gap id-v25-conn-plat24-gap id-v25-conn-wp-gap">
+        <bounds x="380" y="120" width="360" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-wp" archimateElement="id-v25-wp">
+        <bounds x="800" y="80" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v25-conn-wp-gap"
+          source="id-v25-do-wp" target="id-v25-do-gap"
+          archimateRelationship="id-v25-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v25-conn-wp-plat25"
+          source="id-v25-do-wp" target="id-v25-do-plat25"
+          archimateRelationship="id-v25-rel-wp-plat25"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-plat25" archimateElement="id-v25-plat-v25"
+        targetConnections="id-v25-conn-wp-plat25">
+        <bounds x="800" y="180" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v25-conn-plat25-events"
+          source="id-v25-do-plat25" target="id-v25-do-events-m"
+          archimateRelationship="id-v25-rel-plat25-events"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-events-m" archimateElement="id-v25-events"
+        targetConnections="id-v25-conn-plat25-events">
+        <bounds x="800" y="260" width="320" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v25 Target — auto SG 入网白名单数据流" id="id-v25-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-vue" archimateElement="id-v25-vue">
+        <bounds x="40" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v25-conn-vue-gw"
+          source="id-v25-do-vue" target="id-v25-do-gw"
+          archimateRelationship="id-v25-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-gw" archimateElement="id-v25-gw"
+        targetConnections="id-v25-conn-vue-gw">
+        <bounds x="240" y="80" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v25-conn-gw-cloud"
+          source="id-v25-do-gw" target="id-v25-do-cloud"
+          archimateRelationship="id-v25-flow-gw-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-cloud" archimateElement="id-v25-cloud"
+        targetConnections="id-v25-conn-gw-cloud">
+        <bounds x="400" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v25-conn-cloud-evt"
+          source="id-v25-do-cloud" target="id-v25-do-evt"
+          archimateRelationship="id-v25-acc-cloud-evt"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v25-conn-cloud-kafka"
+          source="id-v25-do-cloud" target="id-v25-do-kafka"
+          archimateRelationship="id-v25-flow-cloud-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-evt" archimateElement="id-v25-evt-ip"
+        targetConnections="id-v25-conn-cloud-evt">
+        <bounds x="400" y="200" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-kafka" archimateElement="id-v25-kafka"
+        targetConnections="id-v25-conn-cloud-kafka">
+        <bounds x="640" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v25-conn-kafka-events"
+          source="id-v25-do-kafka" target="id-v25-do-events"
+          archimateRelationship="id-v25-flow-kafka-events"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-events" archimateElement="id-v25-events"
+        targetConnections="id-v25-conn-kafka-events id-v25-conn-constraint-events">
+        <bounds x="840" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v25-conn-events-sg"
+          source="id-v25-do-events" target="id-v25-do-sg"
+          archimateRelationship="id-v25-flow-events-sg"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-sg" archimateElement="id-v25-aliyun-sg"
+        targetConnections="id-v25-conn-events-sg">
+        <bounds x="1080" y="80" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v25-do-constraint" archimateElement="id-v25-constraint">
+        <bounds x="840" y="200" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v25-conn-constraint-events"
+          source="id-v25-do-constraint" target="id-v25-do-events"
+          archimateRelationship="id-v25-inf-constraint-events"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

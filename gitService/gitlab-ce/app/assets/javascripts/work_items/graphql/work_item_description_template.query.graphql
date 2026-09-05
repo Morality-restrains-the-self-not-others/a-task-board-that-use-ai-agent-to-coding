@@ -1,0 +1,7 @@
+query workItemDescriptionTemplate($name: String!, $projectId: Int!, $fromNamespace: String!) {
+  workItemDescriptionTemplateContent(
+    templateContentInput: { name: $name, projectId: $projectId, fromNamespace: $fromNamespace }
+  ) {
+    content
+  }
+}

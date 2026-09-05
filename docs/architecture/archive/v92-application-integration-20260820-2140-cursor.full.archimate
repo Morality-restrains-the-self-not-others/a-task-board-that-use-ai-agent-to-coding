@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v92 全量 (post-change)" id="id-v92aifull01">
+  <folder name="Application" id="id-v92aif-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v92f-app-fe" name="taskFE Vue SPA [MODIFIED v92]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v92f-app-gw" name="API Gateway APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v92f-app-auth" name="taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v92f-app-ref" name="taskReferral [MODIFIED v92]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v92f-app-bill" name="taskBill [MODIFIED v92]"/>
+    <element xsi:type="archimate:DataObject" id="id-v92f-do-code" name="referral_share_code [MODIFIED v92]"/>
+    <element xsi:type="archimate:DataObject" id="id-v92f-do-edge" name="billing_referral_edge [MODIFIED v92]"/>
+    <element xsi:type="archimate:DataObject" id="id-v92f-do-acc" name="billing_referral_commission_accrual [MODIFIED v92]"/>
+  </folder>
+  <folder name="Technology" id="id-v92aif-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v92f-tech-mysqlr" name="MySQL task_referral utf8mb4"/>
+    <element xsi:type="archimate:Node" id="id-v92f-tech-mysqlb" name="MySQL task_bill utf8mb4"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v92aif-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v92f-pl-v91" name="Plateau v91"/>
+    <element xsi:type="archimate:Plateau" id="id-v92f-pl-v92" name="Plateau v92"/>
+    <element xsi:type="archimate:Gap" id="id-v92f-gap" name="Gap: 单码无法分渠道统计/分账"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v92f-wp" name="WP-referral-channel-codes"/>
+  </folder>
+  <folder name="Relations" id="id-v92aif-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v92f-rel-fe-gw" source="id-v92f-app-fe" target="id-v92f-app-gw" name="channels/stats"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v92f-rel-gw-ref" source="id-v92f-app-gw" target="id-v92f-app-ref" name="X-User-Id"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v92f-rel-auth-ref" source="id-v92f-app-auth" target="id-v92f-app-ref" name="bind-from-code"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v92f-rel-ref-bill" source="id-v92f-app-ref" target="id-v92f-app-bill" name="sync-edge"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v92f-rel-ref-code" source="id-v92f-app-ref" target="id-v92f-do-code" name="CRUD"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v92f-rel-bill-edge" source="id-v92f-app-bill" target="id-v92f-do-edge" name="upsert snapshot"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v92f-rel-bill-acc" source="id-v92f-app-bill" target="id-v92f-do-acc" name="accrue if eligible"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v92f-rel-mysql-code" source="id-v92f-tech-mysqlr" target="id-v92f-do-code" name="InnoDB"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v92f-rel-mysql-edge" source="id-v92f-tech-mysqlb" target="id-v92f-do-edge" name="InnoDB"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v92f-rel-mysql-acc" source="id-v92f-tech-mysqlb" target="id-v92f-do-acc" name="InnoDB"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v92f-rel-pl91-gap" source="id-v92f-pl-v91" target="id-v92f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v92f-rel-wp-gap" source="id-v92f-wp" target="id-v92f-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v92f-rel-wp-pl92" source="id-v92f-wp" target="id-v92f-pl-v92"/>
+  </folder>
+  <folder name="Views" id="id-v92aif-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v92f-view-mig" name="架构变迁 v91→v92 — referral-channel-codes">
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-do-pl91" archimateElement="id-v92f-pl-v91">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92f-c-pl91-gap" source="id-v92f-do-pl91" target="id-v92f-do-gap" archimateRelationship="id-v92f-rel-pl91-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-do-gap" targetConnections="id-v92f-c-pl91-gap id-v92f-c-wp-gap" archimateElement="id-v92f-gap">
+        <bounds x="240" y="48" width="460" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-do-wp" archimateElement="id-v92f-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92f-c-wp-gap" source="id-v92f-do-wp" target="id-v92f-do-gap" archimateRelationship="id-v92f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92f-c-wp-pl92" source="id-v92f-do-wp" target="id-v92f-do-pl92" archimateRelationship="id-v92f-rel-wp-pl92"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-do-pl92" targetConnections="id-v92f-c-wp-pl92" archimateElement="id-v92f-pl-v92">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v92f-view-flow" name="v92 Current — 多渠道推荐码">
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-d-fe" archimateElement="id-v92f-app-fe">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92f-c-fe-gw" source="id-v92f-d-fe" target="id-v92f-d-gw" archimateRelationship="id-v92f-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-d-gw" targetConnections="id-v92f-c-fe-gw" archimateElement="id-v92f-app-gw">
+        <bounds x="240" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92f-c-gw-ref" source="id-v92f-d-gw" target="id-v92f-d-ref" archimateRelationship="id-v92f-rel-gw-ref"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-d-ref" targetConnections="id-v92f-c-gw-ref id-v92f-c-auth-ref" archimateElement="id-v92f-app-ref">
+        <bounds x="440" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92f-c-ref-bill" source="id-v92f-d-ref" target="id-v92f-d-bill" archimateRelationship="id-v92f-rel-ref-bill"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92f-c-ref-code" source="id-v92f-d-ref" target="id-v92f-d-code" archimateRelationship="id-v92f-rel-ref-code"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-d-auth" archimateElement="id-v92f-app-auth">
+        <bounds x="440" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92f-c-auth-ref" source="id-v92f-d-auth" target="id-v92f-d-ref" archimateRelationship="id-v92f-rel-auth-ref"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-d-bill" targetConnections="id-v92f-c-ref-bill" archimateElement="id-v92f-app-bill">
+        <bounds x="640" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92f-c-bill-edge" source="id-v92f-d-bill" target="id-v92f-d-edge" archimateRelationship="id-v92f-rel-bill-edge"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92f-c-bill-acc" source="id-v92f-d-bill" target="id-v92f-d-acc" archimateRelationship="id-v92f-rel-bill-acc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-d-code" targetConnections="id-v92f-c-ref-code id-v92f-c-mysql-code" archimateElement="id-v92f-do-code">
+        <bounds x="440" y="230" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-d-edge" targetConnections="id-v92f-c-bill-edge id-v92f-c-mysql-edge" archimateElement="id-v92f-do-edge">
+        <bounds x="640" y="140" width="260" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-d-acc" targetConnections="id-v92f-c-bill-acc id-v92f-c-mysql-acc" archimateElement="id-v92f-do-acc">
+        <bounds x="640" y="230" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-d-mysqlr" archimateElement="id-v92f-tech-mysqlr">
+        <bounds x="48" y="230" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92f-c-mysql-code" source="id-v92f-d-mysqlr" target="id-v92f-d-code" archimateRelationship="id-v92f-rel-mysql-code"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v92f-d-mysqlb" archimateElement="id-v92f-tech-mysqlb">
+        <bounds x="48" y="320" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92f-c-mysql-edge" source="id-v92f-d-mysqlb" target="id-v92f-d-edge" archimateRelationship="id-v92f-rel-mysql-edge"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v92f-c-mysql-acc" source="id-v92f-d-mysqlb" target="id-v92f-d-acc" archimateRelationship="id-v92f-rel-mysql-acc"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

@@ -1,0 +1,7 @@
+intents:
+  1_start_vm_for_at_mention:
+    host: 0.0.0.0
+    port: 18045
+    groupId: task-events-task-comment-image-mentioned-1-start-vm-for-at-mention
+    events:
+    - TASK_COMMENT_IMAGE_MENTIONED

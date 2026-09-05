@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v53-gitservice-durable-gitlab-home-20260722-2235">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v53 (gitservice-durable-gitlab-home)</name>
+  <documentation>GitLab volumes move from tmpfs worktree-relative paths to durable GITLAB_HOME on host disk</documentation>
+
+  <folder name="Application" id="id-v53-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 gitService run.sh+compose [MODIFIED v53]" id="id-v53-gitservice"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskGitOauth" id="id-v53-gitoauth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskProjectService" id="id-v53-project"/>
+  </folder>
+  <folder name="Technology" id="id-v53-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="🟡 GitLab CE container [MODIFIED v53]" id="id-v53-gitlab"/>
+    <element xsi:type="archimate:Artifact" name="🟢 GitLabHomeDurableStore [NEW v53]" id="id-v53-store"/>
+  </folder>
+  <folder name="Motivation" id="id-v53-f-mot" type="motivation">
+    <element xsi:type="archimate:Gap" name="Gap: tmpfs/worktree wipes GitLab data" id="id-v53-gap-mot"/>
+  </folder>
+  <folder name="Relations" id="id-v53-f-rel" type="relations">
+    <element xsi:type="archimate:ServingRelationship" id="id-v53-serv-gs-gl" source="id-v53-gitservice" target="id-v53-gitlab" name="manages"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v53-acc-gl-store" source="id-v53-gitlab" target="id-v53-store" name="W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v53-flow-oauth-gl" source="id-v53-gitoauth" target="id-v53-gitlab" name="OAuth/API"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v53-flow-proj-gl" source="id-v53-project" target="id-v53-gitlab" name="repos"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v53-assoc-gap-store" source="id-v53-gap-mot" target="id-v53-store" name="closed by"/>
+  </folder>
+  <folder name="Implementation" id="id-v53-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v52" id="id-v53-plat-v52"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v53 — durable GITLAB_HOME" id="id-v53-plat-v53"/>
+    <element xsi:type="archimate:Gap" name="Gap: tmpfs/worktree wipes GitLab data" id="id-v53-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v53-gitservice-durable-gitlab-home" id="id-v53-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v53-rel-plat52-gap" source="id-v53-plat-v52" target="id-v53-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v53-rel-wp-gap" source="id-v53-wp" target="id-v53-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v53-rel-wp-plat53" source="id-v53-wp" target="id-v53-plat-v53"/>
+  </folder>
+  <folder name="Views" id="id-v53-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v52→v53 — gitservice-durable-gitlab-home" id="id-v53-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v53-do-plat52" archimateElement="id-v53-plat-v52">
+        <bounds x="48" y="100" width="240" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v53-conn-plat52-gap"
+          source="id-v53-do-plat52" target="id-v53-do-gap"
+          archimateRelationship="id-v53-rel-plat52-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v53-do-gap" archimateElement="id-v53-gap"
+        targetConnections="id-v53-conn-plat52-gap id-v53-conn-wp-gap">
+        <bounds x="340" y="100" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v53-do-wp" archimateElement="id-v53-wp">
+        <bounds x="760" y="60" width="340" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v53-conn-wp-gap"
+          source="id-v53-do-wp" target="id-v53-do-gap"
+          archimateRelationship="id-v53-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v53-conn-wp-plat53"
+          source="id-v53-do-wp" target="id-v53-do-plat53"
+          archimateRelationship="id-v53-rel-wp-plat53"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v53-do-plat53" archimateElement="id-v53-plat-v53"
+        targetConnections="id-v53-conn-wp-plat53">
+        <bounds x="760" y="160" width="340" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v53 Target — GitLab durable store 数据流" id="id-v53-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v53-do-gs" archimateElement="id-v53-gitservice">
+        <bounds x="40" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v53-conn-gs-gl"
+          source="id-v53-do-gs" target="id-v53-do-gl"
+          archimateRelationship="id-v53-serv-gs-gl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v53-do-gl" archimateElement="id-v53-gitlab"
+        targetConnections="id-v53-conn-gs-gl id-v53-conn-oauth-gl id-v53-conn-proj-gl">
+        <bounds x="300" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v53-conn-gl-store"
+          source="id-v53-do-gl" target="id-v53-do-store"
+          archimateRelationship="id-v53-acc-gl-store"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v53-do-store" archimateElement="id-v53-store"
+        targetConnections="id-v53-conn-gl-store id-v53-conn-gap-store">
+        <bounds x="560" y="80" width="260" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v53-do-oauth" archimateElement="id-v53-gitoauth">
+        <bounds x="40" y="200" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v53-conn-oauth-gl"
+          source="id-v53-do-oauth" target="id-v53-do-gl"
+          archimateRelationship="id-v53-flow-oauth-gl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v53-do-proj" archimateElement="id-v53-project">
+        <bounds x="40" y="280" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v53-conn-proj-gl"
+          source="id-v53-do-proj" target="id-v53-do-gl"
+          archimateRelationship="id-v53-flow-proj-gl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v53-do-gap-mot" archimateElement="id-v53-gap-mot">
+        <bounds x="560" y="200" width="260" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v53-conn-gap-store"
+          source="id-v53-do-gap-mot" target="id-v53-do-store"
+          archimateRelationship="id-v53-assoc-gap-store"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

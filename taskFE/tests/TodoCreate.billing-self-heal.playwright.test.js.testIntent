@@ -1,0 +1,21 @@
+# Test Intent: Todo 创建 — BillingAccount 404 自愈核验
+
+## 意图
+核验 `get_billing_account` 404 自愈安全网在端到端场景下生效：
+1. 计费账户不存在时，创建 Todo 不再返回 500
+2. 后端正确执行 404 → get_or_create → retry GET → 201 自愈路径
+
+## 覆盖的 NFR 质量场景
+- QS-02: 自愈成功路径（账户缺失 → 自动创建 → 重试 → 成功）
+- QS-04: 正常路径零额外开销（账户存在 → 直接返回）
+
+## 测试环境
+- 前端: http://183.250.1.132:4000
+- API: http://183.250.1.132:18081
+- 租户: 850256677331562496
+- 工作空间: 857903329669984256
+- 账号: contact@daydaymoney.com
+
+## 关联
+- 设计文档: docs/intents/fix-billing-account-self-healing.intent.md
+- 单元测试: billing_bridge/tests/test_task_post_billing.py

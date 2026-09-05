@@ -1,0 +1,25 @@
+files:
+  - DaydaymoneyGrafana/daydaymoney.yaml
+  - daydaymoney.yaml
+  - gitOauth/daydaymoney.yaml
+  - gitService/daydaymoney.yaml
+  - runAll/daydaymoney.yaml
+  - shareLib/daydaymoney.yaml
+  - task2app/daydaymoney.yaml
+  - taskAIComment/daydaymoney.yaml
+  - taskAIEndPoint/daydaymoney.yaml
+  - taskAgentSupport/daydaymoney.yaml
+  - taskAiProvider/daydaymoney.yaml
+  - taskAuth/daydaymoney.yaml
+  - taskBill/daydaymoney.yaml
+  - taskChromePlugin/daydaymoney.yaml
+  - taskCloudService/daydaymoney.yaml
+  - taskContainerGateway/daydaymoney.yaml
+  - taskCredentialService/daydaymoney.yaml
+  - taskEvents/daydaymoney.yaml
+  - taskGateway/daydaymoney.yaml
+  - taskGitOauth/daydaymoney.yaml
+  - taskProjectService/daydaymoney.yaml
+  - taskSSE/daydaymoney.yaml
+  - taskTaskService/daydaymoney.yaml
+  - valueStream/daydaymoney.yaml

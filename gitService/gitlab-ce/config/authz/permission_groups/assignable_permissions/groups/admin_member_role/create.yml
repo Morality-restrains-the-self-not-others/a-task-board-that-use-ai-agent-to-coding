@@ -1,0 +1,7 @@
+---
+name: create_admin_member_role
+description: Grants the ability to create admin member roles
+boundaries:
+  - instance
+permissions:
+  - create_admin_member_role

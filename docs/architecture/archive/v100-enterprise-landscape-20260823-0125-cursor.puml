@@ -1,0 +1,43 @@
+' @title: 订单电子发票（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 100
+' @iteration: order-wechat-fapiao
+' @author: cursor
+' @based_on: v99 (v99-enterprise-landscape-20260822-2155-cursor.puml)
+' @updated: 2026-08-23 01:45
+' @description: 租户申请开票；员工审批；退款红冲重开
+
+@startuml
+!include <archimate/Archimate>
+
+title v100 landscape — order wechat fapiao 2026-08-23 01:45
+
+Business_Actor(tenantAdmin, "租户管理员")
+Business_Actor(staff, "平台员工")
+Business_Service(opsOrders, "订单与退款运营")
+Business_Service(invoiceSvc, "电子发票")
+note right of invoiceSvc
+  申请/审批/卡包
+  退款红冲重开
+end note
+
+Application_Component(fe, "taskFE")
+Application_Component(bill, "taskBill")
+
+Rel_Assignment(tenantAdmin, invoiceSvc)
+Rel_Assignment(staff, opsOrders)
+Rel_Assignment(staff, invoiceSvc)
+Rel_Serving(fe, opsOrders)
+Rel_Serving(fe, invoiceSvc)
+Rel_Flow(invoiceSvc, bill, "invoice-applications + fapiao API")
+
+Implementation_Plateau(p99, "v99")
+Implementation_Plateau(p100, "v100")
+Implementation_Gap(g, "支付成功后无法合规开票")
+Implementation_WorkPackage(wp, "WP-order-wechat-fapiao")
+Rel_Triggering(p99, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p100, "delivers")
+
+@enduml

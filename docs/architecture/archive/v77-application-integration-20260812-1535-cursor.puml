@@ -1,0 +1,66 @@
+' @title: 公司成员多 Git 身份 + MEMBER_JOINED 自动建身份
+' @view: application-integration
+' @status: target
+' @version: v77
+' @iteration: member-joined-auto-git-identity-v77
+' @author: cursor
+' @based_on: v76
+' @updated: 2026-08-12 15:35
+' @description: taskTenant 发布 MEMBER_JOINED；taskEvents 消费建默认 Git 身份；taskTaskService 管理 API；taskFE PeopleManage
+
+@startuml
+!include <archimate/Archimate>
+
+title v77 — Member Joined Auto Git Identity Target 2026-08-12 15:35
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v77 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v77 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v77 |
+endlegend
+
+Application_Component(taskTenant, "taskTenantService")
+note right of taskTenant
+  🟡 [MODIFIED v77]
+  invite join / company create /
+  internal upsert → publish MEMBER_JOINED
+end note
+
+Technology_Event(evMJ, "MEMBER_JOINED")
+note right of evMJ
+  🟡 [MODIFIED v77]
+  topic member-joined
+  payload + source/workspace
+end note
+
+Application_Component(consGit, "1_create_default_git_identity")
+note right of consGit
+  🟢 [NEW v77]
+  taskEvents intent :18060
+end note
+
+Application_Component(taskTask, "taskTaskService")
+note right of taskTask
+  🟡 [MODIFIED v77]
+  ensure-default + tenant manage APIs
+end note
+
+Application_DataObject(tgi, "task_git_identities")
+note right of tgi
+  既有表（taskTask 所有权）
+  多身份 + is_default
+end note
+
+Application_Component(taskFE, "taskFE PeopleManage")
+note right of taskFE
+  🟡 [MODIFIED v77]
+  MemberList「Git 身份」弹窗
+end note
+
+Rel_Flow(taskTenant, evMJ, "publish")
+Rel_Flow(evMJ, consGit, "consume")
+Rel_Flow(consGit, taskTask, "POST ensure-default")
+Rel_Access(taskTask, tgi, "R/W")
+Rel_Flow(taskFE, taskTask, "GET/POST/PATCH/DELETE git-identities")
+
+@enduml

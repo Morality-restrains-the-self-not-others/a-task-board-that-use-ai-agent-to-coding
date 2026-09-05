@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v43-registration-invite-code-20260722-1148">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v43 Target (registration-invite-code-daily-quota)</name>
+  <purpose>taskAuth owns registration invite policy+codes; daily quota; redeem on register; Admin/Profile/Login/Register UI</purpose>
+
+  <folder name="Motivation" id="id-v43-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="Constraint 新增接口默认 Go" id="id-v43-constraint-go"/>
+    <element xsi:type="archimate:Principle" name="Principle 单表单服务所有权" id="id-v43-principle-owner"/>
+    <element xsi:type="archimate:Constraint" name="Constraint 每日放量闸门" id="id-v43-constraint-quota"/>
+  </folder>
+  <folder name="Application" id="id-v43-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue SystemAdmin [MODIFIED v43]" id="id-v43-vue-admin"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue UserProfile [MODIFIED v43]" id="id-v43-vue-profile"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue Login/Register [MODIFIED v43]" id="id-v43-vue-auth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 task-gateway [MODIFIED v43]" id="id-v43-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskAuth invite [MODIFIED v43]" id="id-v43-taskauth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="saas-backend 无新公网 API" id="id-v43-django"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskEvents" id="id-v43-te"/>
+    <element xsi:type="archimate:DataObject" name="🟡 task-auth.db invite_policy/codes [NEW v43]" id="id-v43-authdb"/>
+  </folder>
+  <folder name="Technology" id="id-v43-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="Kafka" id="id-v43-kafka"/>
+  </folder>
+  <folder name="Relations" id="id-v43-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v43-flow-admin-gw" source="id-v43-vue-admin" target="id-v43-gw" name="system-admin/registration-invite*"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v43-flow-profile-gw" source="id-v43-vue-profile" target="id-v43-gw" name="registration-invite-codes*"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v43-flow-auth-gw" source="id-v43-vue-auth" target="id-v43-gw" name="register + public policy"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v43-flow-gw-auth" source="id-v43-gw" target="id-v43-taskauth" name="token/none"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v43-acc-auth-db" source="id-v43-taskauth" target="id-v43-authdb" name="R/W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v43-flow-auth-kafka" source="id-v43-taskauth" target="id-v43-kafka" name="INVITE events"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v43-flow-kafka-te" source="id-v43-kafka" target="id-v43-te" name="consume"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v43-inf-go" source="id-v43-constraint-go" target="id-v43-taskauth" name="落点"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v43-inf-owner" source="id-v43-principle-owner" target="id-v43-authdb" name="owner"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v43-inf-quota" source="id-v43-constraint-quota" target="id-v43-taskauth" name="quota"/>
+  </folder>
+  <folder name="Implementation" id="id-v43-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v41 — task-subtree-terminal-gate (current)" id="id-v43-plat-v41"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v43 — registration-invite-code (target)" id="id-v43-plat-v43"/>
+    <element xsi:type="archimate:Gap" name="Gap: 无平台注册邀请码/日配额" id="id-v43-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v43-registration-invite-code" id="id-v43-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v43-rel-plat41-gap" source="id-v43-plat-v41" target="id-v43-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v43-rel-wp-gap" source="id-v43-wp" target="id-v43-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v43-rel-wp-plat43" source="id-v43-wp" target="id-v43-plat-v43"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v43-rel-plat43-auth" source="id-v43-plat-v43" target="id-v43-taskauth"/>
+  </folder>
+  <folder name="Views" id="id-v43-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v41→v43 — registration-invite-code" id="id-v43-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-plat41" archimateElement="id-v43-plat-v41">
+        <bounds x="48" y="100" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-plat41-gap"
+          source="id-v43-do-plat41" target="id-v43-do-gap"
+          archimateRelationship="id-v43-rel-plat41-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-gap" archimateElement="id-v43-gap"
+        targetConnections="id-v43-conn-plat41-gap id-v43-conn-wp-gap">
+        <bounds x="420" y="100" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-wp" archimateElement="id-v43-wp">
+        <bounds x="840" y="60" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-wp-gap"
+          source="id-v43-do-wp" target="id-v43-do-gap"
+          archimateRelationship="id-v43-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-wp-plat43"
+          source="id-v43-do-wp" target="id-v43-do-plat43"
+          archimateRelationship="id-v43-rel-wp-plat43"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-plat43" archimateElement="id-v43-plat-v43"
+        targetConnections="id-v43-conn-wp-plat43">
+        <bounds x="840" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-plat43-auth"
+          source="id-v43-do-plat43" target="id-v43-do-auth-m"
+          archimateRelationship="id-v43-rel-plat43-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-auth-m" archimateElement="id-v43-taskauth"
+        targetConnections="id-v43-conn-plat43-auth">
+        <bounds x="840" y="250" width="320" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v43 Target — registration invite 数据流" id="id-v43-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-admin" archimateElement="id-v43-vue-admin">
+        <bounds x="40" y="40" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-admin-gw"
+          source="id-v43-do-admin" target="id-v43-do-gw"
+          archimateRelationship="id-v43-flow-admin-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-profile" archimateElement="id-v43-vue-profile">
+        <bounds x="40" y="110" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-profile-gw"
+          source="id-v43-do-profile" target="id-v43-do-gw"
+          archimateRelationship="id-v43-flow-profile-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-authui" archimateElement="id-v43-vue-auth">
+        <bounds x="40" y="180" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-authui-gw"
+          source="id-v43-do-authui" target="id-v43-do-gw"
+          archimateRelationship="id-v43-flow-auth-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-gw" archimateElement="id-v43-gw"
+        targetConnections="id-v43-conn-admin-gw id-v43-conn-profile-gw id-v43-conn-authui-gw">
+        <bounds x="280" y="100" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-gw-auth"
+          source="id-v43-do-gw" target="id-v43-do-taskauth"
+          archimateRelationship="id-v43-flow-gw-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-taskauth" archimateElement="id-v43-taskauth"
+        targetConnections="id-v43-conn-gw-auth id-v43-conn-inf-go id-v43-conn-inf-quota">
+        <bounds x="480" y="100" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-auth-db"
+          source="id-v43-do-taskauth" target="id-v43-do-db"
+          archimateRelationship="id-v43-acc-auth-db"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-auth-kafka"
+          source="id-v43-do-taskauth" target="id-v43-do-kafka"
+          archimateRelationship="id-v43-flow-auth-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-db" archimateElement="id-v43-authdb"
+        targetConnections="id-v43-conn-auth-db id-v43-conn-inf-owner">
+        <bounds x="480" y="220" width="220" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-kafka" archimateElement="id-v43-kafka"
+        targetConnections="id-v43-conn-auth-kafka">
+        <bounds x="760" y="100" width="120" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-kafka-te"
+          source="id-v43-do-kafka" target="id-v43-do-te"
+          archimateRelationship="id-v43-flow-kafka-te"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-te" archimateElement="id-v43-te"
+        targetConnections="id-v43-conn-kafka-te">
+        <bounds x="760" y="180" width="120" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-go" archimateElement="id-v43-constraint-go">
+        <bounds x="480" y="20" width="160" height="40"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-inf-go"
+          source="id-v43-do-go" target="id-v43-do-taskauth"
+          archimateRelationship="id-v43-inf-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-owner" archimateElement="id-v43-principle-owner">
+        <bounds x="280" y="220" width="160" height="40"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-inf-owner"
+          source="id-v43-do-owner" target="id-v43-do-db"
+          archimateRelationship="id-v43-inf-owner"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v43-do-quota" archimateElement="id-v43-constraint-quota">
+        <bounds x="680" y="20" width="160" height="40"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v43-conn-inf-quota"
+          source="id-v43-do-quota" target="id-v43-do-taskauth"
+          archimateRelationship="id-v43-inf-quota"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

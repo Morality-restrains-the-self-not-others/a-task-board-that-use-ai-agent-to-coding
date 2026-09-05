@@ -1,0 +1,2393 @@
+openapi: 3.0.3
+info:
+  title: taskBill API
+  description: '计费服务公开 API（经 taskGateway / Django BillingProxy）。
+
+    内部路径 `/api/internal/taskbill/*` 见 `openapi-internal.yaml` （`/api/swagger-internal/`
+    或网关 `/gateway/ops/docs/taskBill/`）。'
+  version: 1.2.0
+servers:
+- url: http://127.0.0.1:8004
+  description: taskBill 直连（开发）
+tags:
+- name: meta
+  description: 健康检查与文档
+- name: billing
+  description: 租户计费只读 / 套餐切换
+- name: payment
+  description: 用户充值（PayPal / 微信）与渠道开关
+- name: webhook
+  description: 第三方支付回调（公网直挂，无用户会话）
+- name: legal
+  description: 法律文档（服务协议 + 隐私条款）
+- name: admin
+  description: 管理后台接口（系统管理员）
+- name: internal
+  description: 服务间内部接口（须 Internal Secret）
+paths:
+  /api/health/:
+    get:
+      summary: 健康检查
+      tags:
+      - meta
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: taskBill
+  /api/license-agreement/public/current/:
+    get:
+      summary: 获取当前生效的服务协议（公开，无需认证）
+      description: '?kind=service（默认）或 ?kind=recharge_points'
+      tags:
+      - legal
+      parameters:
+      - name: kind
+        in: query
+        schema:
+          type: string
+          enum: [service, recharge_points]
+      responses:
+        '200':
+          description: 当前生效协议
+        '404':
+          description: 无生效协议
+  /api/license-agreement/consent/:
+    post:
+      summary: 登录用户对当前服务协议补录同意
+      tags:
+      - legal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                license_agreement_id:
+                  type: string
+                accepted_license_agreement_id:
+                  type: string
+      responses:
+        '200':
+          description: 同意已记录
+        '400':
+          description: 参数错误
+        '401':
+          description: 未登录
+  /api/privacy-policy/public/current/:
+    get:
+      summary: 获取当前生效的隐私条款（公开，无需认证）
+      tags:
+      - legal
+      responses:
+        '200':
+          description: 当前生效隐私条款
+        '404':
+          description: 无生效隐私条款
+  /api/privacy-policy/consent/:
+    post:
+      summary: 登录用户对当前隐私条款补录同意
+      tags:
+      - legal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                privacy_policy_id:
+                  type: string
+                accepted_privacy_policy_id:
+                  type: string
+      responses:
+        '200':
+          description: 同意已记录
+        '400':
+          description: 参数错误
+        '401':
+          description: 未登录
+  /api/system_admin/license-agreement/:
+    get:
+      summary: 管理端 — 服务协议列表
+      tags:
+      - admin
+      parameters:
+      - name: kind
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 协议列表
+    post:
+      summary: 管理端 — 创建服务协议
+      tags:
+      - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, content, version]
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                version:
+                  type: string
+                document_kind:
+                  type: string
+                is_active:
+                  type: boolean
+                is_material_change:
+                  type: boolean
+      responses:
+        '201':
+          description: 已创建
+        '400':
+          description: 参数错误
+  /api/system_admin/privacy-policy/:
+    get:
+      summary: 管理端 — 隐私条款列表
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 隐私条款列表
+    post:
+      summary: 管理端 — 创建隐私条款
+      tags:
+      - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, content, version]
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                version:
+                  type: string
+                is_active:
+                  type: boolean
+                is_material_change:
+                  type: boolean
+      responses:
+        '201':
+          description: 已创建
+        '400':
+          description: 参数错误
+  /api/system-admin/resource-pricing/:
+    get:
+      summary: 管理端 — 读取资源定价
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 当前资源定价
+    put:
+      summary: 管理端 — 更新资源定价
+      tags:
+      - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                task_post_price_yuan:
+                  type: number
+                gitlab_disk_price_yuan:
+                  type: number
+                gitlab_traffic_price_yuan:
+                  type: number
+                gitlab_traffic_requires_unit_type:
+                  type: string
+      responses:
+        '200':
+          description: 更新成功
+        '400':
+          description: 参数错误
+  /api/system-admin/user-recharge-consumption/:
+    get:
+      summary: 管理端 — 用户充值消费汇总
+      tags:
+      - admin
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: 汇总列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+  /api/system-admin/refund-applications/:
+    get:
+      summary: 管理端 — 退款申请列表
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 申请列表
+    parameters: []
+  /api/system-admin/invoice-applications/:
+    get:
+      summary: 管理端 — 开票申请列表
+      tags:
+      - admin
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: id
+        in: query
+        description: 申请 ID 等值过滤（OPT-20260823-045）
+        schema:
+          type: string
+      - name: tenant_id
+        in: query
+        description: 租户 ID 等值过滤（OPT-20260823-045）
+        schema:
+          type: string
+      - name: order_id
+        in: query
+        description: 订单 ID 等值过滤（OPT-20260823-045）
+        schema:
+          type: string
+      - name: buyer_name
+        in: query
+        description: 抬头名称模糊过滤（OPT-20260823-045）
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 申请列表
+  /api/system-admin/invoice-applications/{application_id}/approve/:
+    post:
+      summary: 管理端 — 批准开票并调用微信开具
+      tags:
+      - admin
+      parameters:
+      - name: application_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 已受理开具
+        '400':
+          description: 申请非待审批、发票号过长、或订单金额为 0
+  /api/system-admin/invoice-applications/{application_id}/reject/:
+    post:
+      summary: 管理端 — 拒绝开票申请
+      tags:
+      - admin
+      parameters:
+      - name: application_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 已拒绝
+  /api/billing/wechat/fapiao/notify/:
+    post:
+      summary: 微信电子发票回调
+      tags:
+      - webhook
+      responses:
+        '200':
+          description: SUCCESS
+  /api/system-admin/refund-policy/:
+    get:
+      summary: 管理端 — 获取退款申请开关
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 退款策略状态
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+    put:
+      summary: 管理端 — 更新退款申请开关
+      tags:
+      - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        '200':
+          description: 更新结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+  /api/system_admin/orders/:
+    get:
+      summary: 管理端 — 跨租户订单列表
+      tags:
+      - admin
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          maximum: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          default: 0
+      - name: status
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 订单列表
+  /api/system_admin/profit-sharing/:
+    get:
+      summary: 管理端 — 待分账订单队列（仅平台员工）
+      tags:
+      - admin
+      parameters:
+      - name: status
+        in: query
+        description: pending|processing|failed|finished|open（默认，未完成）|all
+        schema:
+          type: string
+          default: open
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          maximum: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          default: 0
+      responses:
+        '200':
+          description: 分账记录队列；不含 openid；含 out_trade_no（商户单号）/ out_profit_sharing_no（同一记录上的微信支付 out_order_no 幂等键，非独立实体）/ wechat_transaction_id / wechat_profit_sharing_id（可空）
+        '400':
+          description: 非法 status
+        '401':
+          description: 未认证
+        '403':
+          description: 非平台员工
+  /api/system_admin/orders/{order_id}/comments/:
+    get:
+      summary: 管理端 — 订单评论列表
+      tags:
+      - admin
+      parameters:
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant_id
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 评论列表
+    post:
+      summary: 管理端 — 发表订单评论
+      tags:
+      - admin
+      parameters:
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant_id, content]
+              properties:
+                tenant_id:
+                  type: string
+                content:
+                  type: string
+      responses:
+        '201':
+          description: 评论已创建
+  /api/system_admin/users/{uid}/recharges/:
+    get:
+      summary: 管理端 — 用户充值记录与协议同意
+      tags:
+      - admin
+      parameters:
+      - name: uid
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 用户 ID
+      responses:
+        '200':
+          description: 充值记录与协议同意
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recharges:
+                    type: array
+                  consents:
+                    type: array
+  /api/public/resource-pricing/:
+    get:
+      summary: 公开资源定价（无需认证）
+      tags:
+      - meta
+      responses:
+        '200':
+          description: 当前资源单价
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  task_post_price:
+                    type: integer
+                  gitlab_disk_price:
+                    type: integer
+                  gitlab_traffic_price:
+                    type: integer
+                  pricing:
+                    type: object
+  /api/public/product-pricing/:
+    get:
+      summary: 公开产品定价（无需认证）
+      description: 返回任务积分和 GitLab 资源单价（分为单位），前端除以 100 显示元。
+      tags:
+      - meta
+      responses:
+        '200':
+          description: 当前产品定价
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  task_points:
+                    type: integer
+                  task_renewal_points_per_month:
+                    type: integer
+                    nullable: true
+                  gitlab_disk_points_per_gb_per_month:
+                    type: integer
+                    nullable: true
+                  gitlab_traffic_points_per_gb:
+                    type: integer
+                    nullable: true
+  /api/tenant/{tenant_id}/billing/refund-applications/:
+    get:
+      summary: 租户退款申请列表
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 申请列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RefundApplication'
+    post:
+      summary: 提交退款申请（租户管理员）
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: Idempotency-Key
+        in: header
+        schema:
+          type: string
+      responses:
+        '201':
+          description: 已创建
+  /api/tenant/{tenant_id}/billing/orders/{order_id}/invoice-applications/:
+    post:
+      summary: 提交开票申请（租户 billing:manage）
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [INDIVIDUAL, ORGANIZATION]
+                name:
+                  type: string
+                taxpayer_id:
+                  type: string
+      responses:
+        '201':
+          description: 待审批申请
+        '400':
+          description: 抬头不完整、未支付、或订单金额为 0 无法开票
+  /api/tenant/{tenant_id}/billing/orders/{order_id}/invoices/:
+    get:
+      summary: 订单下电子发票列表
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 发票列表
+  /api/tenant/{tenant_id}/billing/orders/{order_id}/invoices/{invoice_id}/file/:
+    get:
+      summary: 下载订单发票挂载的手动开具发票文件（PDF/JPEG/PNG）
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: invoice_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 发票文件内容（application/pdf / image/jpeg / image/png）
+        '403':
+          description: 无权限
+        '404':
+          description: 文件不存在
+  /api/tenant/{tenant_id}/billing/accounts/balance/:
+    get:
+      summary: 租户积分余额
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 账户信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingAccount'
+        '400':
+          description: 租户无效
+        '405':
+          description: method not allowed
+  /api/tenant/{tenant_id}/billing/gitlab-resources/:
+    get:
+      summary: 查询系统内建 GitLab 磁盘/流量配额与锁价
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 当前配额与单价
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitlabResourcesView'
+        '400':
+          description: 租户无效
+  /api/tenant/{tenant_id}/billing/gitlab-resources/purchase/:
+    post:
+      summary: 按当前锁价整单新购 GitLab 磁盘（含购买月数）与流量预购配额
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - disk_gb
+              - traffic_prepaid_gb
+              properties:
+                disk_gb:
+                  type: integer
+                  format: int64
+                  minimum: 0
+                disk_months:
+                  type: integer
+                  format: int64
+                  minimum: 1
+                  maximum: 36
+                  description: 磁盘购买时长（月）。disk_gb>0 时缺省为 1；费用=GB×单价×月数
+                traffic_prepaid_gb:
+                  type: integer
+                  format: int64
+                  minimum: 0
+                idempotency_key:
+                  type: string
+      responses:
+        '200':
+          description: 购买成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitlabResourcesPurchaseResult'
+        '400':
+          description: 参数错误
+        '402':
+          description: 余额不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsufficientBalance'
+  /api/tenant/{tenant_id}/billing/units/:
+    get:
+      summary: 列出计费单元
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 计费单元列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BillingUnit'
+  /api/tenant/{tenant_id}/billing/statistics/:
+    get:
+      summary: 租户积分消费/充值聚合统计
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 聚合统计
+        '400':
+          description: 租户信息无效
+        '405':
+          description: method not allowed
+  /api/tenant/{tenant_id}/billing/transactions/:
+    get:
+      summary: 交易流水（未筛选）
+      description: '带 `page` 时返回分页体 `{results,total,page,page_size}`；
+
+        不带 `page` 时返回数组（最多 5000，Dashboard 兼容）。
+
+        每行附带可选 `change_display` / `resource_changes` / `ledger_snapshot`。
+
+        '
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 流水数组或分页体
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/BillingTransaction'
+                - $ref: '#/components/schemas/PagedTransactions'
+  /api/tenant/{tenant_id}/billing/transactions/list_filtered/:
+    get:
+      summary: 筛选交易流水（含展示名 enrichment）
+      description: '带 `page` 时返回分页体；不带 `page` 时返回数组（最多 5000）。
+
+        `billing_unit` 为嵌套对象（含 name/unit/unit_type）。
+
+        每行附带可选 `change_display` / `resource_changes` / `ledger_snapshot`（变动明细与瞬时账目）。
+
+        '
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - $ref: '#/components/parameters/StartDate'
+      - $ref: '#/components/parameters/EndDate'
+      - $ref: '#/components/parameters/ProjectId'
+      - name: user_id
+        in: query
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        schema:
+          type: string
+      - name: transaction_type
+        in: query
+        schema:
+          type: string
+          enum:
+          - recharge
+          - consumption
+          - refund
+      - name: billing_unit_type
+        in: query
+        description: 消耗积分分类（计费单元类型）
+        schema:
+          type: string
+      - name: points_source_type
+        in: query
+        description: 单个值或逗号分隔多值
+        schema:
+          type: string
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 流水数组或分页体
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/BillingTransaction'
+                - $ref: '#/components/schemas/PagedTransactions'
+  /api/tenant/{tenant_id}/billing/usages/:
+    get:
+      summary: 使用记录列表
+      description: '带 `page` 时返回分页体；不带 `page` 时返回数组（最多 5000）。
+
+        响应前经 Django enrich 补齐 user_name / project_name 等。
+
+        '
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - $ref: '#/components/parameters/StartDate'
+      - $ref: '#/components/parameters/EndDate'
+      - $ref: '#/components/parameters/ProjectId'
+      - name: workspace_id
+        in: query
+        schema:
+          type: string
+      - name: billing_unit_type
+        in: query
+        schema:
+          type: string
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 使用记录或分页体
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/BillingUsage'
+                - $ref: '#/components/schemas/PagedUsages'
+  /api/billing/profitsharing/notify/:
+    post:
+      summary: 微信分账结果/动账通知（存量 URL）
+      description: 与 change-notify 同一处理函数。商户后台请配置 change-notify。
+      tags:
+      - webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: '{ "code": "SUCCESS" } 表示已接收'
+  /api/billing/profitsharing/change-notify/:
+    post:
+      summary: 微信分账动账通知（商户后台填写）
+      description: |
+        HTTPS、无 query。填写微信支付商户平台「分账动账通知」URL：
+        `https://www.daydaymoney.com/api/billing/profitsharing/change-notify/`
+        验签+AEAD 解密走 wechatpay-go core/notify；以通知 id 幂等。
+      tags:
+      - webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: '{ "code": "SUCCESS" }'
+        '400':
+          description: '{ "code": "FAIL" } 验签/解密失败，微信将重试'
+  /api/billing/wechat/notify/:
+    post:
+      summary: 微信支付结果通知
+      description: 微信服务器回调；验签后入账。Mock 模式可走简化分支。
+      tags:
+      - webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 微信支付通知密文/业务报文
+      responses:
+        '200':
+          description: 已处理
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+  /api/tenant/{tenant_id}/billing/order-pricing/:
+    post:
+      summary: 资源订单计价
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: 计价结果
+  /api/tenant/{tenant_id}/billing/phone-verification-status/:
+    get:
+      summary: 手机验证状态查询
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 验证状态
+  /api/tenant/{tenant_id}/billing/verify-phone-code/:
+    post:
+      summary: 验证手机验证码
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+      responses:
+        '200':
+          description: 验证成功
+        '400':
+          description: 验证码错误
+  /api/tenant/{tenant_id}/billing/orders/:
+    get:
+      summary: 资源订单列表
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          maximum: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: order_id
+        in: query
+        description: 深链定位——将分页 offset 对齐到包含该订单的页，响应含 focus_order_id
+        schema:
+          type: string
+      - name: order_number
+        in: query
+        description: 精确查询（仅本租户）。等值匹配展示订单号、主键、payment_ref、商户订单号 out_trade_no、微信支付交易单号 wechat_transaction_id
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        '200':
+          description: 订单列表（含可选 focus_order_id）。单笔 GET /billing/orders/{order_id}/ 另含 items 与 resource_consumption（按资源类型：任务帖 / GitLab 磁盘 / GitLab 流量的已发放、已消耗、剩余；任务帖另含逐笔事件）
+    post:
+      summary: 创建资源订单
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                buyer_note:
+                  type: string
+                  maxLength: 2000
+                  description: 施工留言；仅当 items 含需人工履约资源（gitlab_disk）时可非空
+      responses:
+        '201':
+          description: 订单已创建
+  /api/tenant/{tenant_id}/billing/orders/{order_id}/comments/:
+    get:
+      summary: 订单评论列表
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 评论列表
+    post:
+      summary: 发表订单评论
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+      responses:
+        '201':
+          description: 评论已创建
+  /api/tenant/{tenant_id}/billing/membership/:
+    get:
+      summary: 查询租户会员等级
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 会员等级信息
+
+  /api/system-admin/tenant-quotas/:
+    get:
+      summary: 管理端 — 按租户查询剩余资源配额（平台员工）
+      description: 实际 URI 为 /api/system-admin/tenant-quotas/tenant_id/{tenant_id}/
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 与租户 /billing/quotas/ 同构
+        '401':
+          description: 未鉴权
+        '403':
+          description: 非平台员工
+  /api/system-admin/feedback-resource-kinds/:
+    get:
+      summary: 管理端 — 意见与建议资源种类目录
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 启用的 resource_kind 列表
+        '401':
+          description: 未鉴权
+        '403':
+          description: 非平台员工
+  /api/system-admin/feedback-link-groups/:
+    get:
+      summary: 管理端 — 列出意见与建议链接组
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 含阈值与链接
+        '403':
+          description: 非平台员工
+    post:
+      summary: 管理端 — 新建链接组
+      tags:
+      - admin
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+      responses:
+        '201':
+          description: 已创建
+        '400':
+          description: 非法 URL 或未知 kind
+  /api/system-admin/feedback-link-groups/{id}/:
+    put:
+      summary: 管理端 — 整组保存链接组
+      tags:
+      - admin
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 已保存
+    delete:
+      summary: 管理端 — 删除链接组
+      tags:
+      - admin
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: 已删除
+  /api/tenant/{tenant_id}/billing/feedback-links/:
+    get:
+      summary: 租户 — 当前租户可见的意见与建议链接（不含阈值）
+      tags:
+      - billing
+      parameters:
+      - name: tenant_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: groups 数组，无 thresholds
+        '403':
+          description: 缺少 nav.feedback.main
+  /api/system_admin/tenant-quotas/:
+    get:
+      summary: 管理端 — 按租户查询剩余资源配额（下划线别名）
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 与连字符路径同构
+        '401':
+          description: 未鉴权
+        '403':
+          description: 非平台员工
+
+  /api/tenant/{tenant_id}/billing/quotas/:
+    get:
+      summary: 资源配额查询
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 配额信息（task_post_quota 合计；task_post_quota_gifted / task_post_quota_purchased 为赠送/购买剩余）
+  /api/system_admin/gitlab-regions/:
+    get:
+      summary: 管理端 — GitLab 区域列表（含容量、带宽共享与部署路径）
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 区域列表（含 service_process/config_file/data_dir、infra_status、cloud_provider）
+    post:
+      summary: 管理端 — 新增 GitLab 区域
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 创建成功
+    put:
+      summary: 管理端 — 更新 GitLab 区域元数据
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 更新成功（PUT 可写 infra_status=ready|pending_node）
+    delete:
+      summary: 管理端 — 删除 GitLab 区域
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 删除成功
+  /api/tenant/{tenant_id}/billing/gitlab-regions/:
+    get:
+      summary: 获取可用 GitLab 部署区域列表（仅活跃区域）
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 区域列表（含 infra_status、cloud_provider；不含 admin_private_token）
+  /api/tenant/{tenant_id}/billing/gitlab-resources/provision/:
+    post:
+      summary: 管理端 — 开通 GitLab 资源（创建 Group + 配额）
+      tags:
+      - billing
+      parameters:
+      - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 开通成功
+        '409':
+          description: 区域 infra_status=pending_node，节点尚未部署，禁止调用 GitLab Admin API
+  /api/system-admin/license-agreement/:
+    get:
+      summary: 管理端 — 服务协议列表
+      tags:
+      - admin
+      parameters:
+      - name: kind
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 协议列表
+    post:
+      summary: 管理端 — 创建服务协议
+      tags:
+      - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, content, version]
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                version:
+                  type: string
+                document_kind:
+                  type: string
+                is_active:
+                  type: boolean
+                is_material_change:
+                  type: boolean
+      responses:
+        '201':
+          description: 已创建
+        '400':
+          description: 参数错误
+
+  /api/system-admin/privacy-policy/:
+    get:
+      summary: 管理端 — 隐私条款列表
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 隐私条款列表
+    post:
+      summary: 管理端 — 创建隐私条款
+      tags:
+      - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, content, version]
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                version:
+                  type: string
+                is_active:
+                  type: boolean
+                is_material_change:
+                  type: boolean
+      responses:
+        '201':
+          description: 已创建
+        '400':
+          description: 参数错误
+
+  /api/system-admin/profit-sharing/:
+    get:
+      summary: 管理端 — 待分账订单队列（仅平台员工）
+      tags:
+      - admin
+      parameters:
+      - name: referrer_user_id
+        in: query
+        description: 推荐人用户 ID；传入后按推荐人→被推荐人→打标订单 JOIN 过滤，且 status 缺省为 all
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: pending|processing|failed|finished|open（默认，未完成）|all
+        schema:
+          type: string
+          default: open
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          maximum: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          default: 0
+      responses:
+        '200':
+          description: 分账记录队列；不含 openid；含 out_trade_no（商户单号）/ out_profit_sharing_no（同一记录上的微信支付 out_order_no 幂等键，非独立实体）/ wechat_transaction_id / wechat_profit_sharing_id（可空）；带 referrer_user_id 时含 referred_user_id 与 receiver_registration_status
+        '400':
+          description: 非法 status
+        '401':
+          description: 未认证
+        '403':
+          description: 非平台员工
+
+  /api/system-admin/profit-sharing/refresh-wechat/:
+    post:
+      summary: 管理端 — 按推荐人图内核对本页微信分账状态（只读 QueryOrder）
+      tags:
+      - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - referrer_user_id
+              - ids
+              properties:
+                referrer_user_id:
+                  type: string
+                ids:
+                  type: array
+                  maxItems: 50
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: 每行 wechat_state / wechat_error；不回写本地 status；不含 openid
+        '400':
+          description: 参数错误或 ids 不属于该推荐人图
+        '401':
+          description: 未认证
+        '403':
+          description: 非平台员工
+
+  /api/system-admin/profit-sharing/{id}/share/:
+    post:
+      summary: 管理端 — 带审计缘由向微信发起分账
+      tags:
+      - admin
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - reason
+              properties:
+                reason:
+                  type: string
+                  minLength: 8
+                  maxLength: 500
+      responses:
+        '200':
+          description: '{ status, state, idempotent? }'
+        '400':
+          description: reason / Idempotency-Key / id 非法
+        '401':
+          description: 未认证
+        '403':
+          description: 非平台员工
+        '409':
+          description: 已作废或已回退
+        '502':
+          description: 微信出站失败
+
+  /api/system_admin/profit-sharing/refresh-wechat/:
+    post:
+      summary: 管理端 — 按推荐人图内核对本页微信分账状态（system_admin 别名）
+      tags:
+      - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - referrer_user_id
+              - ids
+              properties:
+                referrer_user_id:
+                  type: string
+                ids:
+                  type: array
+                  maxItems: 50
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: 每行 wechat_state / wechat_error；不回写本地 status；不含 openid
+        '400':
+          description: 参数错误或 ids 不属于该推荐人图
+        '401':
+          description: 未认证
+        '403':
+          description: 非平台员工
+
+  /api/billing/profit-sharing/referrer-orders/:
+    get:
+      summary: 推荐人本人 — 按渠道聚合分账（订单时段、订单/冻结/可分账金额）
+      tags:
+      - billing
+      responses:
+        '200':
+          description: channels[] 含 channel_code、period_from/to、order/frozen/shareable 金额；不含 order_id、order_number、openid、微信分账单号
+        '401':
+          description: 缺少 X-User-Id
+
+  /api/billing/profit-sharing/referrer-orders/share-channel/:
+    post:
+      summary: 推荐人本人 — 对该渠道下所有可分账记录发起分账
+      tags:
+      - billing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                channel_code:
+                  type: string
+      responses:
+        '200':
+          description: 渠道内 shareable 行已出站或幂等跳过；shared_count 为新成功笔数
+        '401':
+          description: 缺少 X-User-Id
+        '404':
+          description: 本人该渠道无记录
+        '409':
+          description: 该渠道当前无可分账金额
+        '502':
+          description: 微信分账出站失败
+
+  /api/billing/profit-sharing/referrer-orders/{id}/share/:
+    post:
+      summary: 推荐人本人 — 手动发起分账（15–30 天窗口内；processing/finished 幂等重放）
+      tags:
+      - billing
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: 分账成功；processing/finished 重放返回 idempotent=true
+        '400':
+          description: 非法 id
+        '401':
+          description: 缺少 X-User-Id
+        '404':
+          description: 记录不存在或不属于本人
+        '409':
+          description: 冻结窗口内或已过期，不可分账
+        '502':
+          description: 微信分账出站失败
+
+  /api/billing/profit-sharing/referrer-pending/:
+    get:
+      summary: 推荐人本人 — 待微信确认分账笔数与最晚截止日（OPT-20260823-043）
+      description: 统计本人 processing/finished 分账单中微信 receivers.result=PENDING 的笔数；deadline 为支付成功 + 30 天。微信查询单笔失败跳过该笔。
+      tags:
+      - billing
+      responses:
+        '200':
+          description: pending_count 为待确认笔数；有 PENDING 时带 deadline（YYYY-MM-DD），无 PENDING 无 deadline；不含 openid / 微信分账单号
+        '401':
+          description: 缺少 X-User-Id
+
+  /api/system-admin/orders/:
+    get:
+      summary: 管理端 — 跨租户订单列表
+      tags:
+      - admin
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          maximum: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          default: 0
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: order_id
+        in: query
+        description: 将 offset 对齐到包含该订单的页，并在响应回传 focus_order_id
+        schema:
+          type: string
+      - name: order_number
+        in: query
+        description: 交易单号精确查询（展示号、主键、payment_ref、微信支付单号 transaction_id、商户订单号 out_trade_no）；导出前导反引号会剥离；与 order_id 深链互斥时本参数优先
+        schema:
+          type: string
+          maxLength: 128
+      - name: wechat_account
+        in: query
+        description: 微信关联账号精确查询（昵称/openid/unionid/已绑定手机号邮箱用户名）；与 order_number 互斥；taskAuth 失败返回 502
+        schema:
+          type: string
+      - name: tenant_id
+        in: query
+        description: 仅返回该租户订单（Snowflake 字符串）
+        schema:
+          type: string
+
+          maxLength: 128
+      responses:
+        '200':
+          description: 订单列表
+        '400':
+          description: 参数互斥或过长
+        '502':
+          description: 微信关联账号解析上游失败
+
+  /api/system-admin/orders/{order_id}/:
+    get:
+      summary: 管理端 — 订单详情（含分账快照，仅平台员工）
+      tags:
+      - admin
+      parameters:
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 订单详情；profit_sharing 为数组（可空）。不含 openid。租户订单 GET 无此字段。
+        '401':
+          description: 未认证
+        '403':
+          description: 非平台员工
+        '404':
+          description: 订单不存在
+
+  /api/system-admin/orders/{order_id}/comments/:
+    get:
+      summary: 管理端 — 订单评论列表（system-admin 别名）
+      tags:
+      - admin
+      parameters:
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant_id
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 评论列表
+    post:
+      summary: 管理端 — 发表订单评论（system-admin 别名）
+      tags:
+      - admin
+      parameters:
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant_id, content]
+              properties:
+                tenant_id:
+                  type: string
+                content:
+                  type: string
+      responses:
+        '201':
+          description: 评论已创建
+
+  /api/system_admin/idempotency-records/:
+    get:
+      summary: 管理端 — 幂等键审计记录（含 admin_grant 操作者与目标租户，system_admin 别名）
+      tags:
+      - admin
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          maximum: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          default: 0
+      - name: op_type
+        in: query
+        description: 操作类型（如 admin_grant）
+        schema:
+          type: string
+      - name: tenant_id
+        in: query
+        schema:
+          type: string
+      - name: operator_user_id
+        in: query
+        schema:
+          type: string
+      - name: key
+        in: query
+        description: 幂等键前缀
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 幂等键记录列表（含 total/limit/offset/records）
+        '403':
+          description: 非平台员工
+
+  /api/system-admin/idempotency-records/:
+    get:
+      summary: 管理端 — 幂等键审计记录（含 admin_grant 操作者与目标租户）
+      tags:
+      - admin
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          maximum: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          default: 0
+      - name: op_type
+        in: query
+        description: 操作类型（如 admin_grant）
+        schema:
+          type: string
+      - name: tenant_id
+        in: query
+        schema:
+          type: string
+      - name: operator_user_id
+        in: query
+        schema:
+          type: string
+      - name: key
+        in: query
+        description: 幂等键前缀
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 幂等键记录列表（含 total/limit/offset/records）
+        '403':
+          description: 非平台员工
+
+  /api/system-admin/order-number/parse/:
+    post:
+      summary: 管理端 — 解析展示订单号（粘贴跳转）
+      tags:
+      - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [order_number]
+              properties:
+                order_number:
+                  type: string
+                  description: ADR-0017/0018 展示订单号（四段含租户基因，三段无）
+      responses:
+        '200':
+          description: 解析结果（四段号 has_tenant=true；三段号仅 order_id）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order_number:
+                    type: string
+                  has_tenant:
+                    type: boolean
+                  tenant_id:
+                    type: string
+                  order_id:
+                    type: string
+                  date_utc:
+                    type: string
+        '400':
+          description: 订单号非法
+        '401':
+          description: 未认证
+        '403':
+          description: 非平台员工
+
+  /api/system-admin/users/{uid}/recharges/:
+    get:
+      summary: 管理端 — 用户充值记录与协议同意
+      tags:
+      - admin
+      parameters:
+      - name: uid
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 用户 ID
+      responses:
+        '200':
+          description: 充值记录与协议同意
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recharges:
+                    type: array
+                  consents:
+                    type: array
+
+  /api/system-admin/gitlab-regions/:
+    get:
+      summary: 管理端 — GitLab 区域列表（含容量、带宽共享与部署路径）
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 区域列表（含 service_process/config_file/data_dir、infra_status、cloud_provider）
+    post:
+      summary: 管理端 — 新增 GitLab 区域
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 创建成功
+    put:
+      summary: 管理端 — 更新 GitLab 区域元数据
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 更新成功（PUT 可写 infra_status=ready|pending_node）
+    delete:
+      summary: 管理端 — 删除 GitLab 区域
+      tags:
+      - admin
+      responses:
+        '200':
+          description: 删除成功
+
+components:
+  securitySchemes:
+    internalSecret:
+      type: apiKey
+      in: header
+      name: X-TaskBill-Internal-Secret
+      description: 服务间共享密钥；未配置时开发环境放行
+  parameters:
+    TenantId:
+      name: tenant_id
+      in: path
+      required: true
+      schema:
+        type: string
+    OrderId:
+      name: order_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 资源订单 ID（snowflake）
+    UserIdHeader:
+      name: X-User-Id
+      in: header
+      required: true
+      schema:
+        type: string
+      description: 网关鉴权注入的用户 ID
+    StartDate:
+      name: start_date
+      in: query
+      schema:
+        type: string
+        format: date
+    EndDate:
+      name: end_date
+      in: query
+      schema:
+        type: string
+        format: date
+    ProjectId:
+      name: project_id
+      in: query
+      schema:
+        type: string
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 20
+  schemas:
+    BillingStatistics:
+      type: object
+      required:
+      - month_start
+      - total_consumption_points
+      - monthly_consumption_points
+      - user_recharge_points
+      properties:
+        month_start:
+          type: string
+          format: date
+        total_consumption_points:
+          type: integer
+          format: int64
+          description: 累计消耗（分）：用量扣费 + 仍有效（paid）的资源订单，不含已退款/已取消订单
+        monthly_consumption_points:
+          type: integer
+          format: int64
+          description: 本月消耗（分），口径同累计消耗，不含已退款/已取消订单
+        user_recharge_points:
+          type: integer
+          format: int64
+          description: 累计支付（分，净值）：钱包实付充值 + 资源订单实付 − 已完成退款，不含 admin_grant
+        total_consumption_cents:
+          type: integer
+          format: int64
+          description: 与 total_consumption_points 同值（分），兼容别名
+        monthly_consumption_cents:
+          type: integer
+          format: int64
+          description: 与 monthly_consumption_points 同值（分），兼容别名
+        user_recharge_cents:
+          type: integer
+          format: int64
+          description: 与 user_recharge_points 同值（分），兼容别名
+    PagedTransactions:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillingTransaction'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+    PagedUsages:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillingUsage'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+    BillingAccount:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant:
+          type: string
+        points:
+          type: integer
+          format: int64
+        available_balance:
+          type: integer
+          format: int64
+        frozen_balance:
+          type: integer
+          format: int64
+        lots:
+          type: array
+          description: 未过期且 remaining_points>0 的信用批次
+          items:
+            $ref: '#/components/schemas/CreditLot'
+        created_at:
+          type: string
+        updated_at:
+          type: string
+    CreditLot:
+      type: object
+      properties:
+        id:
+          type: string
+        points:
+          type: integer
+          format: int64
+        remaining_points:
+          type: integer
+          description: 金额，单位：分（1 元 = 100）
+          format: int64
+        expires_at:
+          type: string
+        channel:
+          type: string
+    RefundApplication:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        account_id:
+          type: string
+        applicant_user_id:
+          type: string
+        frozen_points:
+          type: integer
+          format: int64
+          description: 退款申请冻结金额，单位：分（1 元 = 100），勿直接把分当元展示
+        frozen_yuan:
+          type: string
+          readOnly: true
+          description: 冻结金额的元字符串（后端换算，减少前端分→元误用）
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        reason:
+          type: string
+        reviewer_user_id:
+          type: string
+        review_note:
+          type: string
+        payment_refund_refs:
+          type: array
+          items:
+            type: object
+        reviewed_at:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+    BillingUnit:
+      type: object
+      properties:
+        id:
+          type: string
+        unit_type:
+          type: string
+        name:
+          type: string
+        price_points:
+          type: integer
+          description: 金额，单位：分（1 元 = 100）
+          format: int64
+        unit:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+        updated_at:
+          type: string
+    BillingTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+        account:
+          type: string
+        transaction_type:
+          type: string
+        amount_points:
+          type: integer
+          format: int64
+          description: 交易金额，单位：分（1 元 = 100）
+        balance_before_points:
+          type: integer
+          format: int64
+          description: 交易前余额，单位：分（1 元 = 100）
+        balance_after_points:
+          type: integer
+          format: int64
+          description: 交易后余额，单位：分（1 元 = 100）
+        points_source_type:
+          type: string
+        billing_unit:
+          description: 嵌套计费单元对象；缺失时可能省略
+          $ref: '#/components/schemas/BillingUnit'
+        project_id:
+          type: string
+        user_id:
+          type: string
+        user_name:
+          type: string
+        workspace_id:
+          type: string
+        task_id:
+          type: string
+        description:
+          type: string
+        transaction_id:
+          type: string
+        usage_amount:
+          type: number
+        created_at:
+          type: string
+        expires_at:
+          type: string
+          description: 充值批次有效期（来自 payment ledger；非充值流水可省略）
+        points_source_type_display:
+          type: string
+          description: 支付/来源中文展示名（可选）
+        change_display:
+          type: string
+          description: 变动明细文案，如「任务帖 +10 帖」或「-0.30 元」
+        resource_changes:
+          type: array
+          description: 资源变动明细（赠送/配额等）
+          items:
+            type: object
+            properties:
+              resource_type:
+                type: string
+              quantity:
+                type: integer
+                format: int64
+              remaining_after:
+                type: integer
+                format: int64
+              label:
+                type: string
+              display:
+                type: string
+              region:
+                type: string
+        ledger_snapshot:
+          type: object
+          description: 该行瞬时账目（现金 before→after 元 + 可选资源剩余）
+          properties:
+            balance_before_points:
+              type: integer
+              description: 金额，单位：分（1 元 = 100）
+              format: int64
+            balance_after_points:
+              type: integer
+              description: 金额，单位：分（1 元 = 100）
+              format: int64
+            balance_before_yuan:
+              type: string
+            balance_after_yuan:
+              type: string
+            display:
+              type: string
+            display_lines:
+              type: array
+              items:
+                type: string
+    BillingUsage:
+      type: object
+      properties:
+        id:
+          type: string
+        account:
+          type: string
+        billing_unit:
+          $ref: '#/components/schemas/BillingUnit'
+        amount:
+          type: number
+        project_id:
+          type: string
+        project_name:
+          type: string
+        user_id:
+          type: string
+        user_name:
+          type: string
+        workspace_id:
+          type: string
+        task_id:
+          type: string
+        description:
+          type: string
+        usage_time:
+          type: string
+    PaymentChannels:
+      type: object
+      properties:
+        paypal_enabled:
+          type: boolean
+        paypal_currency:
+          type: string
+        wechat_enabled:
+          type: boolean
+        wechat_mode:
+          type: string
+    KycRechargeGateDenied:
+      type: object
+      required:
+      - error
+      - reason_code
+      properties:
+        error:
+          type: string
+          description: 用户可见说明（不含证件等敏感信息）
+        reason_code:
+          type: string
+          description: KYC_TIER_BLOCKED | KYC_AMOUNT_EXCEEDS_SINGLE | KYC_AMOUNT_EXCEEDS_DAILY | KYC_AML_REVIEW | KYC_SERVICE_UNAVAILABLE
+        tier:
+          type: string
+          description: 当前 KYC tier（如 T0_unverified）
+    WechatPrepayResult:
+      type: object
+      properties:
+        out_trade_no:
+          type: string
+        code_url:
+          type: string
+        mode:
+          type: string
+        amount_yuan:
+          type: integer
+          format: int64
+        amount_points:
+          type: integer
+          description: 金额，单位：分（1 元 = 100）
+          format: int64
+    PaymentOrderStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - pending
+          - completed
+        order_id:
+          type: string
+        out_trade_no:
+          type: string
+        recharge_points:
+          type: integer
+          description: 金额，单位：分（1 元 = 100）
+          format: int64
+        detail:
+          type: string
+    InsufficientBalance:
+      type: object
+      properties:
+        error:
+          type: string
+        balance_points:
+          type: integer
+          description: 金额，单位：分（1 元 = 100）
+          format: int64
+        required_points:
+          type: integer
+          description: 金额，单位：分（1 元 = 100）
+          format: int64
+    GitlabResourcesView:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+        disk_gb:
+          type: integer
+          format: int64
+          description: 当前磁盘配额（GB）
+        traffic_prepaid_gb:
+          type: integer
+          format: int64
+          description: 当前流量预购（GB）
+        disk_used_bytes:
+          type: integer
+          format: int64
+          description: 已用磁盘（字节）
+        disk_used_gb:
+          type: number
+          format: double
+          description: 已用磁盘（GiB，由 disk_used_bytes 换算，三位小数）
+        traffic_used_gb:
+          type: number
+          format: double
+          description: 已用流量（GB，计量水位与扣费流水较大值；不含磁盘占用）
+        traffic_download_allowed:
+          type: boolean
+          description: 公网 git-upload-pack 是否允许（未预购或超额为 false）
+        traffic_quota_code:
+          type: string
+        disk_months:
+          type: integer
+          format: int64
+        disk_expires_at:
+          type: string
+        gitlab_disk_unit_price_cents:
+          type: integer
+          format: int64
+        gitlab_traffic_unit_price_cents:
+          type: integer
+          format: int64
+        updated_at:
+          type: string
+    GitlabResourcesPurchaseResult:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+        disk_gb:
+          type: integer
+          format: int64
+        disk_months:
+          type: integer
+          format: int64
+        disk_expires_at:
+          type: string
+        traffic_prepaid_gb:
+          type: integer
+          format: int64
+        disk_cost_points:
+          type: integer
+          description: 金额，单位：分（1 元 = 100）
+          format: int64
+        traffic_cost_points:
+          type: integer
+          description: 金额，单位：分（1 元 = 100）
+          format: int64
+        total_cost_points:
+          type: integer
+          description: 金额，单位：分（1 元 = 100）
+          format: int64
+        balance_after:
+          type: integer
+          format: int64
+        gitlab_disk_unit_price_cents:
+          type: integer
+          format: int64
+        gitlab_traffic_unit_price_cents:
+          type: integer
+          format: int64
+        idempotency_key:
+          type: string
+    InternalAccountResponse:
+      type: object
+      properties:
+        account:
+          $ref: '#/components/schemas/BillingAccount'
+        created:
+          type: boolean
+        task_post_price:
+          type: integer
+          format: int64
+        balance:
+          type: integer
+          format: int64

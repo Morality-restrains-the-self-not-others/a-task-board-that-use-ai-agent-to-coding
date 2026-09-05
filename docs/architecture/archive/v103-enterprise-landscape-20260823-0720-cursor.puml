@@ -1,0 +1,42 @@
+' @title: 模拟登录审计与收信箱（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 103
+' @iteration: impersonation-audit-inbox
+' @author: cursor
+' @based_on: v102 (v102-enterprise-landscape-20260823-0620-cursor.puml)
+' @updated: 2026-08-23 07:20
+' @description: 管理员代登须填理由；用户可在收信箱看到通知；日志可追责
+
+@startuml
+!include <archimate/Archimate>
+
+title v103 landscape — impersonation audit + inbox 2026-08-23 07:20
+
+Business_Actor(admin, "平台管理员 / 员工")
+Business_Actor(endUser, "目标用户")
+Business_Service(impSvc, "以用户角色查看")
+Business_Service(inboxSvc, "用户收信箱")
+Business_Service(auditSvc, "模拟登录审计标识")
+
+Application_Component(taskFE, "taskFE")
+Application_Component(taskAuth, "taskAuth")
+Application_Component(tracelog, "tracelog")
+
+Rel_Assignment(admin, impSvc)
+Rel_Serving(taskFE, impSvc)
+Rel_Serving(taskAuth, impSvc)
+Rel_Serving(taskAuth, inboxSvc)
+Rel_Serving(inboxSvc, endUser)
+Rel_Serving(tracelog, auditSvc)
+Rel_Flow(impSvc, inboxSvc, "代登理由通知")
+
+Implementation_Plateau(p102, "v102")
+Implementation_Plateau(p103, "v103")
+Implementation_Gap(g, "无法审计代登且用户不知情")
+Implementation_WorkPackage(wp, "WP-impersonation-audit-inbox")
+Rel_Triggering(p102, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p103, "delivers")
+
+@enduml

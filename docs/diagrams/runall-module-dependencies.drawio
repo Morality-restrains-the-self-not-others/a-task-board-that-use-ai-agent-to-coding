@@ -1,0 +1,253 @@
+<mxfile host="65bd71144e">
+    <diagram id="runall-module-deps" name="runAll 模块依赖">
+        <mxGraphModel dx="906" dy="557" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1400" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="ram-mount 服务模块依赖图&#xa;来源: conf/runAll.yaml | 编排: runAll (:9999)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontStyle=1;fontSize=16;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="10" width="600" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="runall" value="runAll 编排器&#xa;:9999 Web UI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="760" y="60" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="remote-zone" value="远程 CPU — zcpu (10.2.150.119)&#xa;Docker 基础设施 + 可观测性 + GitLab" style="swimlane;fontStyle=1;startSize=50;fillColor=#f5f5f5;strokeColor=#666666;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="130" width="1720" height="320" as="geometry"/>
+                </mxCell>
+                <mxCell id="docker-redis" value="docker-redis&#xa;:6379" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="remote-zone" vertex="1">
+                    <mxGeometry x="40" y="80" width="130" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="docker-kafka" value="docker-kafka&#xa;:9093 / UI :18080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="remote-zone" vertex="1">
+                    <mxGeometry x="200" y="80" width="150" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="docker-portainer" value="docker-portainer&#xa;:9000" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="remote-zone" vertex="1">
+                    <mxGeometry x="380" y="80" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="ai-monitor" value="ai-monitor&#xa;Grafana :3000&#xa;Loki :3100&#xa;OTEL :4317/4318" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="remote-zone" vertex="1">
+                    <mxGeometry x="40" y="170" width="150" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="git-service" value="git-service&#xa;GitLab :8012" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="remote-zone" vertex="1">
+                    <mxGeometry x="220" y="170" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="aimonitor-note" value="Prometheus :9090 | Tempo :3200" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=11;fontColor=#666666;" parent="remote-zone" vertex="1">
+                    <mxGeometry x="40" y="250" width="220" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="mac-zone" value="Mac 开发机 (10.2.150.89)&#xa;平台应用 + 领域事件 + 容器栈" style="swimlane;fontStyle=1;startSize=50;fillColor=#f5f5f5;strokeColor=#666666;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="480" width="1720" height="880" as="geometry"/>
+                </mxCell>
+                <mxCell id="promtail" value="Promtail（本地）&#xa;/tmp/runall-logs → Loki" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;dashed=1;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="1480" y="70" width="180" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="lvl0-label" value="Level 0（无 depends_on）" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=2;fontSize=11;fontColor=#666666;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="20" y="60" width="180" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="task-auth" value="task-auth&#xa;:8003" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="40" y="90" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="task-bill" value="task-bill&#xa;:8004" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="180" y="90" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="go-run-container" value="go-run-container&#xa;:8796" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="320" y="90" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="go-relay" value="go-relay&#xa;:8797" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="480" y="90" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="value-stream" value="value-stream&#xa;:9998" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="620" y="90" width="130" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="lvl1-label" value="Level 1" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=2;fontSize=11;fontColor=#666666;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="20" y="170" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="task-sse" value="task-sse&#xa;:8798" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="40" y="200" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="git-oauth" value="git-oauth&#xa;:8002" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="180" y="200" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="lvl2-label" value="Level 2" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=2;fontSize=11;fontColor=#666666;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="20" y="280" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="saas-backend" value="saas-backend&#xa;(Django) :8001" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="300" y="300" width="160" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="lvl3-label" value="Level 3" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=2;fontSize=11;fontColor=#666666;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="20" y="390" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="task-gateway" value="task-gateway&#xa;:8080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="40" y="420" width="130" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="ai-provider" value="ai-provider&#xa;:8010" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="190" y="420" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="task-agent-support" value="task-agent-support&#xa;:8011" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="330" y="420" width="150" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="task-ai-endpoint" value="task-ai-endpoint&#xa;:8013" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="500" y="420" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="task-container-gateway" value="task-container-gateway&#xa;:8014" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="660" y="420" width="170" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="task-events" value="task-events-* (×16)&#xa;:18020–18037&#xa;领域事件消费者" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="860" y="410" width="180" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="lvl4-label" value="Level 4" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=2;fontSize=11;fontColor=#666666;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="20" y="510" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="taskFE" value="taskFE&#xa;:4000" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="300" y="530" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-box" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#cccccc;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="1100" y="70" width="340" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-title" value="图例" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontStyle=1;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="1110" y="75" width="60" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg-infra" value="" style="rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="1110" y="100" width="20" height="15" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg-infra-t" value="基础设施（远程 Docker）" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="1140" y="97" width="180" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg-platform" value="" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="1110" y="125" width="20" height="15" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg-platform-t" value="平台服务（Mac 本机）" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="1140" y="122" width="160" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg-events" value="" style="rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="1110" y="150" width="20" height="15" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg-events-t" value="领域事件消费者" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="1140" y="147" width="140" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg-container" value="" style="rounded=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="1110" y="175" width="20" height="15" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg-container-t" value="容器栈" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="1140" y="172" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg-edge" value="箭头 = depends_on 依赖方向（被依赖 → 依赖方）" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#666666;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="1110" y="200" width="300" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg-otel" value="虚线 = OTEL 遥测 / 日志推送" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#666666;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="1110" y="225" width="220" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="events-detail" value="task-events 明细（均 depends_on: docker-redis）&#xa;• + saas-backend: billing, sse, user_created/0, company_created×3, workspace, project, task, ai_reply, cloud_server×4, cloud_auth&#xa;• 仅 redis: email, invitation, user_activated, user_created/1" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=10;whiteSpace=wrap;" parent="mac-zone" vertex="1">
+                    <mxGeometry x="860" y="500" width="520" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-gw-oauth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="mac-zone" source="git-oauth" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="215" y="260" as="sourcePoint"/>
+                        <mxPoint x="80" y="430" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="215" y="310"/>
+                            <mxPoint x="80" y="310"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e-ai-redis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="docker-redis" target="ai-monitor" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-git-redis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="docker-redis" target="git-service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-sse-redis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="docker-redis" target="task-sse" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-oauth-git" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="git-service" target="git-oauth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-saas-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="task-auth" target="saas-backend" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="110" y="650"/>
+                            <mxPoint x="420" y="650"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e-saas-oauth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="git-oauth" target="saas-backend" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-saas-sse" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="task-sse" target="saas-backend" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="100" y="790"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e-saas-redis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="docker-redis" target="saas-backend" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-gw-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="task-auth" target="task-gateway" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="160" y="820"/>
+                            <mxPoint x="160" y="820"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e-gw-saas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="saas-backend" target="task-gateway" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="110" y="808"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e-ap-saas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="saas-backend" target="ai-provider" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-tas-saas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="saas-backend" target="task-agent-support" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-tae-saas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="saas-backend" target="task-ai-endpoint" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-tcg-saas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="saas-backend" target="task-container-gateway" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-te-redis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="docker-redis" target="task-events" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-te-saas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="saas-backend" target="task-events" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-vue-gw" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="task-gateway" target="taskFE" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-vue-saas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;" parent="1" source="saas-backend" target="taskFE" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-otel-saas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;dashed=1;strokeColor=#999999;" parent="1" source="ai-monitor" target="saas-backend" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="450" y="335"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e-otel-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;dashed=1;strokeColor=#999999;" parent="1" source="ai-monitor" target="task-auth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-otel-relay" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;dashed=1;strokeColor=#999999;" parent="1" source="ai-monitor" target="go-relay" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-otel-events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;dashed=1;strokeColor=#999999;" parent="1" source="ai-monitor" target="task-events" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-promtail-loki" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;dashed=1;strokeColor=#999999;" parent="1" source="promtail" target="ai-monitor" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1570" y="350"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e-ra-remote" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#d79b00;" parent="1" source="runall" target="remote-zone" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-ra-mac" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#d79b00;" parent="1" source="runall" target="mac-zone" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

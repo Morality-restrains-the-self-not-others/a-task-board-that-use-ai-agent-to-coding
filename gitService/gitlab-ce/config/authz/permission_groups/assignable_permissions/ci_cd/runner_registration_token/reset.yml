@@ -1,0 +1,8 @@
+---
+name: reset_runner_registration_token
+description: Grants the ability to reset runner registration tokens
+boundaries:
+  - group
+  - project
+permissions:
+  - reset_runner_registration_token

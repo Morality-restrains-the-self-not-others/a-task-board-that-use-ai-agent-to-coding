@@ -1,0 +1,346 @@
+version: "1"
+
+# 表 → 拥有服务（owner）对照表（机器可读 SSOT）
+# 规范：.ai/01_project_constraints/19_single_service_data_ownership.md
+# 人读摘要：docs/architecture/table-to-owner.md
+#
+# 约定：
+# - database_key 与 db/registry.yaml 的 databases.* 键一致（未入 registry 的库见下方 databases 扩展说明）
+# - owner 为 runAll / 部署单元服务名（与 conf/runAll.yaml 的 name 对齐）
+# - tables 列出业务表；Django 框架表（auth_*、django_*）默认随库 owner，可不逐条列出
+# - known_cross_service_access：存量违规直连的可审计白名单；CI 对「未登记的新直连」失败，对白名单项告警
+
+databases:
+  saas:
+    path: db/saas/saas.sqlite3
+    owner: saas-backend
+    status: retired  # OPT-052: Django 退役 (2026-07-30)，所有数据已迁 Go 服务 MySQL
+    tables:
+      - auth_referral_relationship
+      - auth_user_github_app_access_token_cache
+      - auth_user_profile
+      - cloud_aimodelauthorization
+      - cloud_cloudinstancetype
+      - cloud_cloudserverconfigdefault
+      - cloud_cloudserverimagesystemtestinstance
+      - cloud_container_token_audit_event
+      - cloud_oauthtoken
+      - cloud_userdatatemplate
+      - column_systems_progresscolumn
+      - column_systems_progresscolumn_default_tenant
+      - column_systems_progresscolumn_tenant
+      - column_systems_progresssystem
+      - column_systems_progresssystem_tenant
+      - column_systems_progresssystem_workspace
+      - license_agreement_licenseagreement
+      - license_agreement_userlicenseagreementconsent
+      - privacy_policy_privacypolicy
+      - privacy_policy_userprivacypolicyconsent
+      - projects_companygithubrepooauth
+      - projects_deliverableobj
+      - projects_deliverablesystem
+      - projects_deliverablesystem_company
+      - projects_deliverablesystem_default_tenant
+      - projects_deliverablesystem_workspace
+      - projects_recommended_llm_provider
+      - projects_sub_token_provider
+      - projects_system_feature_policy
+      - cloud_task_model_budget
+      - cloud_task_model_budget_usage
+      - cloud_task_model_budget_usage_idempotency
+      - projects_taskgithubcredentialapproval
+      - projects_taskgithubrepooauthbinding
+      - subscriptions_plan
+      - subscriptions_subscription
+
+  task-auth:
+    path: db/task-auth/auth.sqlite3
+    owner: task-auth
+    tables:
+      - auth_customtoken
+      - auth_login_method
+      - auth_sms_verification_code
+      - auth_recharge_sms_gate
+      - auth_super_admin
+      - auth_user
+      - auth_user_access_token
+      - auth_user_access_token_audit
+      - auth_oidc_authorization
+      - auth_oidc_client
+      - auth_kyc_profile
+      - auth_kyc_audit_log
+      - auth_aml_screening_record
+      - auth_kyc_limit_policy
+
+  task-bill:
+    path: db/task-bill/billing.sqlite3
+    owner: task-bill
+    tables:
+      - billing_account
+      - billing_idempotency_key
+      - billing_outbox_message
+      - billing_pricing_package
+      - billing_transaction
+      - billing_unit
+      - billing_usage
+
+  git-oauth:
+    path: db/git-oauth/git-oauth.sqlite3
+    owner: git-oauth
+    tables:
+      - git_oauth_appaccesstokenuseaudit
+      - git_oauth_appusercredential
+      - git_oauth_taskcredentialaudit
+      - git_oauth_tenant_gitlab_oauth_connections
+
+  ai-provider:
+    path: db/ai-provider/ai-provider.sqlite3
+    owner: ai-provider
+    tables:
+      - ai_provider_containercloudserverassociation
+      - ai_provider_containerimagegroup
+      - ai_provider_containerimagereviewhistory
+      - ai_provider_platformstaff
+      - ai_provider_userdatatemplate
+      - ai_provider_vendor
+      - ai_provider_vendorcloudserverimage
+      - ai_provider_vendorcloudserverimageuserdata
+      - ai_provider_vendorcontainerimage
+
+  container:
+    path: db/container/tokens.sqlite3
+    owner: task-credential-service
+    tables:
+      - credential_container_tokens
+      - credential_token_audit_events
+
+  task-tenant:
+    path: data/task_tenant.db
+    owner: task-tenant-service
+    tables:
+      - tenant_company
+      - tenant_company_member
+      - tenant_invitation
+      - tenant_company_group
+      - tenant_company_group_member
+
+  task-project:
+    path: data/task_project.db
+    owner: task-project-service
+    tables:
+      - project_deliverable_systems
+      - project_repos
+      - project_workspaces
+      - project_entries
+      - project_user_workspace_work_panel_filters
+      - project_workspace_accesses
+      - project_workspace_entries
+
+  task-task:
+    path: data/task_task.db
+    owner: task-task-service
+    tables:
+      - task_comments
+      - task_assignees
+      - task_branch_strategies
+      - task_feature_params
+      - task_feature_params_snapshots
+      - task_projects
+      - task_git_identities
+      - task_repo_identities
+      - task_tasks
+      - task_top_deliverable_schedule_rhythms
+      - task_queued_auto_run_memberships
+      - task_queued_machine_slots
+
+  task-cloud:
+    path: data/task_cloud.db
+    owner: task-cloud-service
+    tables:
+      - cloud_platform_authorization_active_methods
+      - cloud_platform_authorizations
+      - cloud_server_config_histories
+      - cloud_server_configs
+      - cloud_server_events
+      - cloud_access_key_iam_associations
+      - cloud_oauth_tokens
+      - cloud_tenant_installed_images
+      - cloud_vendor_platform_credentials
+      - cloud_workspace_machine_policies
+      - cloud_tenant_feature_params
+      - cloud_workspace_feature_params
+      - cloud_personal_feature_params_config
+      - cloud_feature_params_access_audit
+      - cloud_task_feature_params_snapshot
+      - cloud_task_api_key_usage
+
+  task-ai-comment:
+    path: db/task-ai-comment/task_ai_comment.db
+    owner: task-ai-comment
+    tables:
+      - ai_task_comments
+      - ai_comment_container_agent_comments
+
+  task-budget:
+    path: db/task_budget/task_budget.db
+    owner: task-cloud-service
+    tables:
+      - cloud_workspace_model_budget_default
+      - cloud_task_model_budget
+      - cloud_task_model_budget_usage
+      - cloud_task_model_budget_usage_idempotency
+      - cloud_tenant_budget_permission
+
+# 服务目录 → owner（CI 扫描源码树时用）
+service_roots:
+  - path: task2app/Saas_project
+    owner: saas-backend
+  - path: taskAiProvider
+    owner: ai-provider
+  - path: taskAuth
+    owner: task-auth
+  - path: taskBill
+    owner: task-bill
+  - path: gitOauth
+    owner: git-oauth
+  - path: taskGitOauth
+    owner: git-oauth
+  - path: taskCredentialService
+    owner: task-credential-service
+  - path: taskProjectService
+    owner: task-project-service
+  - path: taskTaskService
+    owner: task-task-service
+  - path: taskCloudService
+    owner: task-cloud-service
+  - path: taskAIComment
+    owner: task-ai-comment
+  - path: taskEvents
+    owner: task-events
+
+# 路径 / registry key / 环境变量 → database_key（用于从源码引用推断目标库）
+path_markers:
+  - marker: db/saas/saas.sqlite3
+    database_key: saas
+  - marker: '"db", "saas", "saas.sqlite3"'
+    database_key: saas
+  - marker: SAAS_DATABASE_PATH
+    database_key: saas
+  - marker: SAAS_SQLITE_PATH
+    database_key: saas
+  - marker: ResolveDatabasePath("saas"
+    database_key: saas
+  - marker: resolve_database_path("saas"
+    database_key: saas
+  - marker: db/task-auth/auth.sqlite3
+    database_key: task-auth
+  - marker: '"db", "task-auth", "auth.sqlite3"'
+    database_key: task-auth
+  - marker: TASKAUTH_DATABASE_PATH
+    database_key: task-auth
+  - marker: ResolveDatabasePath("task-auth"
+    database_key: task-auth
+  - marker: resolve_database_path("task-auth"
+    database_key: task-auth
+  - marker: db/task-bill/billing.sqlite3
+    database_key: task-bill
+  - marker: '"db", "task-bill", "billing.sqlite3"'
+    database_key: task-bill
+  - marker: TASKBILL_DATABASE_PATH
+    database_key: task-bill
+  - marker: ResolveDatabasePath("task-bill"
+    database_key: task-bill
+  - marker: resolve_database_path("task-bill"
+    database_key: task-bill
+  - marker: db/git-oauth/git-oauth.sqlite3
+    database_key: git-oauth
+  - marker: GITOAUTH_DATABASE_PATH
+    database_key: git-oauth
+  - marker: ResolveDatabasePath("git-oauth"
+    database_key: git-oauth
+  - marker: resolve_database_path("git-oauth"
+    database_key: git-oauth
+  - marker: db/ai-provider/ai-provider.sqlite3
+    database_key: ai-provider
+  - marker: AI_PROVIDER_DATABASE_PATH
+    database_key: ai-provider
+  - marker: ResolveDatabasePath("ai-provider"
+    database_key: ai-provider
+  - marker: resolve_database_path("ai-provider"
+    database_key: ai-provider
+  - marker: db/container/tokens.sqlite3
+    database_key: container
+  - marker: ResolveDatabasePath("container"
+    database_key: container
+  - marker: resolve_database_path("container"
+    database_key: container
+  - marker: data/task_project.db
+    database_key: task-project
+  - marker: '"data", "task_project.db"'
+    database_key: task-project
+  - marker: task_project.db
+    database_key: task-project
+  - marker: data/task_task.db
+    database_key: task-task
+  - marker: '"data", "task_task.db"'
+    database_key: task-task
+  - marker: task_task.db
+    database_key: task-task
+  - marker: data/task_cloud.db
+    database_key: task-cloud
+  - marker: '"data", "task_cloud.db"'
+    database_key: task-cloud
+  - marker: task_cloud.db
+    database_key: task-cloud
+  - marker: db/task-ai-comment/task_ai_comment.db
+    database_key: task-ai-comment
+  - marker: task_ai_comment.db
+    database_key: task-ai-comment
+  - marker: db/task_budget/task_budget.db
+    database_key: task-budget
+  - marker: TASK_BUDGET_DATABASE_PATH
+    database_key: task-budget
+  - marker: ResolveDatabasePath("task-budget"
+    database_key: task-budget
+  - marker: resolve_database_path("task-budget"
+    database_key: task-budget
+  - marker: task_budget.db
+    database_key: task-budget
+
+# 存量跨服务直连（须整改：转发或迁表）。CI 对白名单仅 WARN，未登记则 FAIL。
+known_cross_service_access:
+  # taskCredentialService/infrastructure/sqlite_business.go 直连多库读任务/仓库/git 身份；应改 HTTP 转发
+  - service: task-credential-service
+    database_key: task-project
+    note: project name lookup via task_project.db; migrate to task-project-service API
+  - service: task-credential-service
+    database_key: task-task
+    note: "tasks/task_projects/git_identities lookup via task_task.db; migrate to task-task-service API (OPT-052: git_identities migrated from saas)"
+  - service: task-cloud-service
+    database_key: task-task
+    note: "git_repo_identities_prepare.go cross-DB queries task_task.git_identities (OPT-052: migrated from saas.auth_user_company_git_identity)"
+  - service: task-events
+    database_key: task-cloud
+    note: authorize_sg_ingress / cloudconfig tooling open task_cloud.db; migrate to task-cloud-service API
+
+# 扫描时忽略的路径片段（测试/运维脚本/一次性迁表命令/文档）
+scan_exclude_globs:
+  - "**/tests/**"
+  - "**/test_*.py"
+  - "**/*_test.go"
+  - "**/conftest.py"
+  - "**/migrations/**"
+  - "**/management/commands/**"
+  - "**/scripts/**"
+  - "**/*deprecated*"
+  - "**/docs/**"
+  - "**/node_modules/**"
+  - "**/.git/**"
+  - "**/db/table_ownership.yaml"
+  - "**/db/scripts/ci/**"
+  - "**/scripts/migrate_django_to_go.py"
+  - "**/scripts/seed_*.py"
+  - "**/check_no_auth_db_in_saas.sh"
+  - "**/billing_bridge/taskbill_stub.py"
+  - "**/billing_bridge/taskbill_db.py"
+  - "**/saas_project/settings_test.py"

@@ -1,0 +1,58 @@
+' @title: 订单电子发票开具与退款红冲
+' @view: application-integration
+' @status: archived
+' @version: 100
+' @iteration: order-wechat-fapiao
+' @author: cursor
+' @based_on: v99 (v99-application-integration-20260822-2155-cursor.puml)
+' @updated: 2026-08-23 01:45
+' @description: 订单挂发票；审批后微信开具；退款后红冲重开
+
+@startuml
+!include <archimate/Archimate>
+
+title v100 — 订单电子发票 2026-08-23 01:45
+
+Application_Component(fe, "taskFE Vue SPA")
+note right of fe
+  OrderInvoiceSection
+  发票审批 Tab
+end note
+
+Application_Component(gw, "APISIX taskGateway")
+note right of gw
+  /invoice-applications/
+  /wechat/fapiao/notify/
+end note
+
+Application_Component(bill, "taskBill")
+note right of bill
+  申请/审批/红冲重开
+  core.Client fapiao
+end note
+
+Application_DataObject(inv, "billing_invoice*")
+note right of inv
+  application + invoice
+  挂 order_id
+end note
+
+Technology_Node(mysqlB, "MySQL task_bill utf8mb4")
+Technology_Node(wx, "微信支付电子发票 API")
+
+Rel_Flow(fe, gw, "tenant apply / staff approve")
+Rel_Flow(gw, bill, "forward-auth")
+Rel_Flow(bill, inv, "CRUD invoices")
+Rel_Flow(bill, wx, "issue/reverse")
+Rel_Flow(wx, bill, "FAPIAO notify")
+Rel_Serving(mysqlB, inv, "InnoDB")
+
+Implementation_Plateau(plateauV99, "Plateau v99")
+Implementation_Plateau(plateauV100, "Plateau v100 order fapiao")
+Implementation_Gap(gapQ, "Gap: 订单无发票/退款不红冲")
+Implementation_WorkPackage(wpQ, "WP-order-wechat-fapiao")
+Rel_Triggering(plateauV99, gapQ, "identifies")
+Rel_Realization(wpQ, gapQ, "closes")
+Rel_Realization(wpQ, plateauV100, "delivers")
+
+@enduml

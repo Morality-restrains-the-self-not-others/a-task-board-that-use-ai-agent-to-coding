@@ -1,0 +1,50 @@
+' @title: daydaymoney Enterprise Landscape
+' @view: enterprise-landscape
+' @status: target
+' @version: 83
+' @iteration: comment-level-repo-identity-v83
+' @author: cursor
+' @based_on: v81 (v81-enterprise-landscape-20260814-2057-cursor.puml)
+' @updated: 2026-08-16 01:35
+' @description: 运行仓库身份归属评论；任务关联项目仍为结构展示
+
+@startuml
+!include <archimate/Archimate>
+
+title daydaymoney Platform — Enterprise Landscape v83 Target (2026-08-16 01:35)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v83 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v83 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v83 |
+endlegend
+
+rectangle "Business" {
+  Business_Actor(developer, "Developer")
+  Business_Object(taskLink, "Task Linked Projects")
+  note right of taskLink
+    无标记 — 任务绑定的仓库/分支
+    展示用，非运行身份
+  end note
+  Business_Object(runIdent, "Comment Run Repo Identity")
+  note right of runIdent
+    🟢 [NEW v83]
+    提交并运行时选定的
+    git name/email + 授权账号
+  end note
+  Business_Service(taskMgmt, "Task Management Service")
+}
+
+rectangle "Application" {
+  Application_Component(taskFE, "taskFE")
+  Application_Component(taskTask, "taskTaskService")
+}
+
+Rel_Assignment(developer, taskMgmt)
+Rel_Flow(developer, taskFE, "🟡 评论时选身份")
+Rel_Serving(taskFE, taskMgmt)
+Rel_Serving(taskTask, taskMgmt)
+Rel_Access_R(taskFE, taskLink, "展示关联")
+Rel_Access_W(taskTask, runIdent, "🟢 随评论写入")
+
+@enduml

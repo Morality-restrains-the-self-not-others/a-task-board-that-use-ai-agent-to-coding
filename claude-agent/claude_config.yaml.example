@@ -1,0 +1,49 @@
+# ==============================================================
+# Claude Agent Configuration
+# ==============================================================
+# This config file wraps the Claude Code CLI (https://github.com/anthropics/claude-code).
+# Claude Code is used under the Apache 2.0 license — we call it externally
+# via subprocess without modifying its source.
+
+# --- Agent Settings ---
+agents:
+  claude_agent:
+    # Model to use (must match a key under `models:`)
+    model: default_claude_model
+    # Maximum steps / turns for the agent
+    max_steps: 100
+    # Working directory (overridable via CLI --working-dir)
+    working_dir: null
+    # Enable session trajectory recording
+    enable_trajectory: true
+    # Enable Docker isolation mode
+    enable_docker: false
+
+# --- Model Providers ---
+# API keys can be set here OR via environment variables:
+#   ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.
+model_providers:
+  anthropic:
+    api_key: "${ANTHROPIC_API_KEY}"
+    provider: anthropic
+
+# --- Models ---
+models:
+  default_claude_model:
+    model_provider: anthropic
+    model: claude-sonnet-4-20250514
+    max_tokens: 4096
+    temperature: 0.5
+
+# --- Docker Settings (optional) ---
+docker:
+  # Default Docker image for isolated execution
+  image: null
+  # Keep container after task completes
+  keep: true
+  # Workspace mount point inside container
+  container_workspace: /workspace
+
+# --- MCP Servers (optional, passed through to Claude Code) ---
+mcp_servers: {}
+allow_mcp_servers: []

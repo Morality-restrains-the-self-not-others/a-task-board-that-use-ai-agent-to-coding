@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v103 变迁 (v102→v103)" id="id-v103eldiff01">
+  <folder name="Business" id="id-v103eld-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v103e-admin" name="平台管理员"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v103e-user" name="目标用户"/>
+    <element xsi:type="archimate:BusinessService" id="id-v103e-inbox" name="用户收信箱"/>
+    <element xsi:type="archimate:BusinessService" id="id-v103e-audit" name="模拟登录审计标识"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v103eld-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v103e-pl102" name="Plateau v102"/>
+    <element xsi:type="archimate:Plateau" id="id-v103e-pl103" name="Plateau v103"/>
+    <element xsi:type="archimate:Gap" id="id-v103e-gap" name="Gap: 无法审计代登且用户不知情"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v103e-wp" name="WP-impersonation-audit-inbox"/>
+  </folder>
+  <folder name="Relations" id="id-v103eld-rel" type="relations">
+    <element xsi:type="archimate:ServingRelationship" id="id-v103e-rel-inbox-user" source="id-v103e-inbox" target="id-v103e-user"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v103e-rel-pl-gap" source="id-v103e-pl102" target="id-v103e-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v103e-rel-wp-gap" source="id-v103e-wp" target="id-v103e-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v103e-rel-wp-pl" source="id-v103e-wp" target="id-v103e-pl103"/>
+  </folder>
+  <folder name="Views" id="id-v103eld-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v103e-view" name="架构变迁 v102→v103 landscape">
+      <child xsi:type="archimate:DiagramObject" id="id-v103e-d-pl102" archimateElement="id-v103e-pl102">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v103e-c-pl-gap" source="id-v103e-d-pl102" target="id-v103e-d-gap" archimateRelationship="id-v103e-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v103e-d-gap" targetConnections="id-v103e-c-pl-gap id-v103e-c-wp-gap" archimateElement="id-v103e-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v103e-d-wp" archimateElement="id-v103e-wp">
+        <bounds x="240" y="160" width="400" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v103e-c-wp-gap" source="id-v103e-d-wp" target="id-v103e-d-gap" archimateRelationship="id-v103e-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v103e-c-wp-pl" source="id-v103e-d-wp" target="id-v103e-d-pl103" archimateRelationship="id-v103e-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v103e-d-pl103" targetConnections="id-v103e-c-wp-pl" archimateElement="id-v103e-pl103">
+        <bounds x="680" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

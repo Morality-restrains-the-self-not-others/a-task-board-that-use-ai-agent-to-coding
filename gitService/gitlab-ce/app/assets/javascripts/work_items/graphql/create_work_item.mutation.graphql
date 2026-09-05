@@ -1,0 +1,10 @@
+#import "ee_else_ce/work_items/graphql/work_item.fragment.graphql"
+
+mutation createWorkItem($input: WorkItemCreateInput!, $useWorkItemFeatures: Boolean = false) {
+  workItemCreate(input: $input) {
+    workItem {
+      ...WorkItem
+    }
+    errors
+  }
+}

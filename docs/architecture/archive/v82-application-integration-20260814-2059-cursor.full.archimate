@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v82 全量 (post-change)" id="id-v82full01">
+  <folder name="Application" id="id-v82full-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v82f-app-fe" name="taskFE WorkPanel / TaskDetail"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v82f-app-task" name="taskTaskService"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v82f-app-events" name="taskEvents release-servers [MOD v82]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v82f-app-cloud" name="taskCloudService [MOD v82]"/>
+    <element xsi:type="archimate:ApplicationInterface" id="id-v82f-if-list" name="GET list-by-task [NEW v82]"/>
+    <element xsi:type="archimate:DataObject" id="id-v82f-do-cmt" name="cloud_server_configs comment CSC [MOD v82]"/>
+    <element xsi:type="archimate:DataObject" id="id-v82f-do-tpl" name="cloud_server_configs task template"/>
+    <element xsi:type="archimate:DataObject" id="id-v82f-do-m" name="running_machine_count"/>
+    <element xsi:type="archimate:DataObject" id="id-v82f-do-c" name="running_container_count"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v82f-ev-status" name="TASK_STATUS_CHANGED"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v82f-ev-stopped" name="CLOUD_SERVER_STOPPED [MOD v82]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v82full-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v82f-pl-v80" name="Plateau v80"/>
+    <element xsi:type="archimate:Plateau" id="id-v82f-pl-v82" name="Plateau v82"/>
+    <element xsi:type="archimate:Gap" id="id-v82f-gap" name="Gap: release-servers treats empty task-level CSC as retry"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v82f-wp" name="WP: terminal-release-comment-csc"/>
+  </folder>
+  <folder name="Relations" id="id-v82full-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v82f-rel-ind" source="id-v82f-app-fe" target="id-v82f-app-cloud" name="indicators + comment runtime-status"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v82f-rel-cnt" source="id-v82f-app-cloud" target="id-v82f-app-fe" name="machines=N containers=M"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v82f-rel-cmtw" source="id-v82f-app-cloud" target="id-v82f-do-cmt" name="write runtime"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v82f-rel-tpl" source="id-v82f-app-cloud" target="id-v82f-do-tpl" name="template only"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v82f-rel-m" source="id-v82f-app-cloud" target="id-v82f-do-m" name="recompute"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v82f-rel-c" source="id-v82f-app-cloud" target="id-v82f-do-c" name="recompute"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v82f-rel-pub" source="id-v82f-app-task" target="id-v82f-ev-status" name="publish terminal"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v82f-rel-cons" source="id-v82f-ev-status" target="id-v82f-app-events" name="consume"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v82f-rel-own" source="id-v82f-if-list" target="id-v82f-app-cloud" name="owned"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v82f-rel-list" source="id-v82f-app-events" target="id-v82f-if-list" name="list comment CSC"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v82f-rel-read" source="id-v82f-app-events" target="id-v82f-do-cmt" name="releaseable rows"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v82f-rel-stop" source="id-v82f-app-events" target="id-v82f-ev-stopped" name="per comment if started"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v82f-rel-pl80-gap" source="id-v82f-pl-v80" target="id-v82f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v82f-rel-wp-gap" source="id-v82f-wp" target="id-v82f-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v82f-rel-wp-pl81" source="id-v82f-wp" target="id-v82f-pl-v82"/>
+  </folder>
+  <folder name="Views" id="id-v82full-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v82f-view-topo" name="v82 全量拓扑 — terminal release comment CSC">
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-d-fe" archimateElement="id-v82f-app-fe">
+        <bounds x="48" y="280" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-c-ind" source="id-v82f-d-fe" target="id-v82f-d-cloud" archimateRelationship="id-v82f-rel-ind"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-d-cloud" targetConnections="id-v82f-c-ind id-v82f-c-own" archimateElement="id-v82f-app-cloud">
+        <bounds x="320" y="280" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-c-cnt" source="id-v82f-d-cloud" target="id-v82f-d-fe" archimateRelationship="id-v82f-rel-cnt"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-c-cmtw" source="id-v82f-d-cloud" target="id-v82f-d-cmt" archimateRelationship="id-v82f-rel-cmtw"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-c-tpl" source="id-v82f-d-cloud" target="id-v82f-d-tpl" archimateRelationship="id-v82f-rel-tpl"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-c-m" source="id-v82f-d-cloud" target="id-v82f-d-m" archimateRelationship="id-v82f-rel-m"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-c-c" source="id-v82f-d-cloud" target="id-v82f-d-c" archimateRelationship="id-v82f-rel-c"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-d-task" archimateElement="id-v82f-app-task">
+        <bounds x="48" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-c-pub" source="id-v82f-d-task" target="id-v82f-d-status" archimateRelationship="id-v82f-rel-pub"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-d-status" targetConnections="id-v82f-c-pub" archimateElement="id-v82f-ev-status">
+        <bounds x="280" y="48" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-c-cons" source="id-v82f-d-status" target="id-v82f-d-events" archimateRelationship="id-v82f-rel-cons"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-d-events" targetConnections="id-v82f-c-cons" archimateElement="id-v82f-app-events">
+        <bounds x="540" y="48" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-c-list" source="id-v82f-d-events" target="id-v82f-d-list" archimateRelationship="id-v82f-rel-list"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-c-read" source="id-v82f-d-events" target="id-v82f-d-cmt" archimateRelationship="id-v82f-rel-read"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-c-stop" source="id-v82f-d-events" target="id-v82f-d-stopped" archimateRelationship="id-v82f-rel-stop"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-d-list" targetConnections="id-v82f-c-list" archimateElement="id-v82f-if-list">
+        <bounds x="540" y="160" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-c-own" source="id-v82f-d-list" target="id-v82f-d-cloud" archimateRelationship="id-v82f-rel-own"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-d-cmt" targetConnections="id-v82f-c-cmtw id-v82f-c-read" archimateElement="id-v82f-do-cmt">
+        <bounds x="48" y="160" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-d-stopped" targetConnections="id-v82f-c-stop" archimateElement="id-v82f-ev-stopped">
+        <bounds x="860" y="48" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-d-tpl" targetConnections="id-v82f-c-tpl" archimateElement="id-v82f-do-tpl">
+        <bounds x="560" y="280" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-d-m" targetConnections="id-v82f-c-m" archimateElement="id-v82f-do-m">
+        <bounds x="780" y="280" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-d-c" targetConnections="id-v82f-c-c" archimateElement="id-v82f-do-c">
+        <bounds x="980" y="280" width="200" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v82f-view-mig" name="架构变迁 v80→v82 — terminal-release-comment-csc">
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-do-pl80" archimateElement="id-v82f-pl-v80">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-conn-pl80-gap" source="id-v82f-do-pl80" target="id-v82f-do-gap" archimateRelationship="id-v82f-rel-pl80-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-do-gap" targetConnections="id-v82f-conn-pl80-gap id-v82f-conn-wp-gap" archimateElement="id-v82f-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-do-wp" archimateElement="id-v82f-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-conn-wp-gap" source="id-v82f-do-wp" target="id-v82f-do-gap" archimateRelationship="id-v82f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v82f-conn-wp-pl81" source="id-v82f-do-wp" target="id-v82f-do-pl81" archimateRelationship="id-v82f-rel-wp-pl81"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v82f-do-pl81" targetConnections="id-v82f-conn-wp-pl81" archimateElement="id-v82f-pl-v82">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

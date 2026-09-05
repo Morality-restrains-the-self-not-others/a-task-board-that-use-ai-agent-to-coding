@@ -1,0 +1,99 @@
+' @title: 评论运行态推送同步
+' @view: application-integration
+' @status: archived
+' @version: 84
+' @iteration: comment-runtime-push-sync
+' @author: cursor
+' @based_on: v81 (v81-application-integration-20260814-2057-cursor.puml)
+' @updated: 2026-08-16 13:40
+' @description: 直播 = 容器/Cloud → taskSSE → taskFE apply；Describe 仅刷新按钮；禁止前后端 UI 轮询
+
+@startuml
+!include <archimate/Archimate>
+
+title v84 — Comment runtime push + button reconcile Target 2026-08-16 13:28
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v84 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v84 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v84 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(taskFE, "taskFE TaskDetail runtime panel")
+note right of taskFE
+  🟡 [MODIFIED v84]
+  只 apply 下发字段；同步按钮才 GET Describe
+  删除 runtime/startup/binding setInterval
+  @author: cursor @2026-08-16 13:28
+end note
+
+Application_Component(taskCloud, "taskCloudService (Go :8018)")
+note right of taskCloud
+  🟡 [MODIFIED v84]
+  启动成功 SSE 带 comment_id + runtime_status
+  停止 SSE 走 publishTaskSSE
+  @author: cursor @2026-08-16 13:28
+end note
+
+Application_Component(taskSSE, "taskSSE (Go :8007)")
+note right of taskSSE
+  无标记 — 既有实时通道
+end note
+
+Application_Component(commentContainer, "Comment-scoped container")
+note right of commentContainer
+  🟢 [NEW v84]
+  heartbeat 主动推送 comment_id
+end note
+
+Application_Component(fePoll, "FE/BE UI poll (runtime/startup/advance)")
+note right of fePoll
+  🔴 [DEPRECATED v84]
+  前端卡死 + Describe 泄漏
+  禁止 ticker 再转推
+end note
+
+Application_DataObject(snapshot, "per-comment runtime snapshot")
+note right of snapshot
+  🟡 [MODIFIED v84]
+  仅推送/按钮写入，禁止 forPoll() 直播
+end note
+
+Application_Event(hbEvt, "container_heartbeat")
+note right of hbEvt
+  无标记 — 既有事件
+end note
+
+Application_Event(statusEvt, "server_status_update")
+note right of statusEvt
+  🟡 [MODIFIED v84]
+  成功时带 runtime_status
+end note
+
+Technology_Service(aliyun, "Aliyun DescribeInstances")
+note right of aliyun
+  🟡 [MODIFIED v84]
+  仅刷新按钮 / 启动命令有界路径
+end note
+
+Rel_Flow(commentContainer, hbEvt, "🟢 push")
+Rel_Flow(hbEvt, taskSSE, "🟢")
+Rel_Flow(taskCloud, statusEvt, "🟢 + runtime_status")
+Rel_Flow(statusEvt, taskSSE, "🟢")
+Rel_Flow(taskSSE, taskFE, "🟢 apply snapshot")
+Rel_Flow(taskFE, snapshot, "🟢 write comment_id")
+Rel_Flow(taskFE, taskCloud, "🟡 刷新按钮 GET runtime-status")
+Rel_Flow(taskCloud, aliyun, "🟡 Describe 一次")
+Rel_Flow(taskCloud, snapshot, "🟡 按钮回包覆盖")
+Rel_Flow(fePoll, aliyun, "🔴 UI ticker Describe")
+
+Implementation_Plateau(plateauV81, "Plateau v81 current")
+Implementation_Plateau(plateauV84, "Plateau v84 push-sync")
+Implementation_Gap(gapPoll, "Gap: UI poll Describe")
+Implementation_WorkPackage(wpPush, "WP-comment-runtime-push-sync")
+Rel_Triggering(plateauV81, gapPoll, "identifies")
+Rel_Realization(wpPush, gapPoll, "closes")
+Rel_Realization(wpPush, plateauV84, "delivers")
+
+@enduml

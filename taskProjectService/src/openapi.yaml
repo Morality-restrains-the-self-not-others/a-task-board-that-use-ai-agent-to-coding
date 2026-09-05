@@ -1,0 +1,710 @@
+openapi: 3.0.3
+info:
+  title: taskProjectService API
+  description: '工作空间 / 项目服务 (:8016)。
+
+    v20 起提供用户×工作空间 work-panel 过滤偏好 GET/PUT。
+
+    项目 `git_repos` 支持字符串或 `{url, clone_alias}`；响含 `git_repo_entries`。
+
+    v1.5 起提供项目仓库 commit hash 解析 `resolve-ref`（创建任务基准分支校验）。
+
+    '
+  version: 1.5.0
+servers:
+- url: http://127.0.0.1:8016
+  description: taskProjectService 直连（开发）
+paths:
+  /api/workspace/info/:
+    get:
+      summary: 读取工作空间信息
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/workspace/settings/:
+    post:
+      summary: 更新工作空间设置
+      tags: [api]
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/system/progress-systems/:
+    get:
+      summary: endpoint (/api/system/progress-systems/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/system-admin/tenant-workspaces/:
+    get:
+      summary: 管理端 — 按租户列出全部工作空间（平台员工，无 mine 裁剪）
+      description: 实际 URI 为 /api/system-admin/tenant-workspaces/tenant_id/{tenant_id}/
+      tags: [admin]
+      parameters:
+      - name: limit
+        in: query
+        schema: { type: integer, default: 50, maximum: 100 }
+      - name: offset
+        in: query
+        schema: { type: integer, default: 0 }
+      responses:
+        "200": { description: "{ items, total, limit, offset }" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/system_admin/tenant-workspaces/:
+    get:
+      summary: 管理端 — 按租户列出全部工作空间（下划线别名）
+      tags: [admin]
+      responses:
+        "200": { description: 与连字符路径同构 }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+  /api/system-admin/progress-systems/:
+    get:
+      summary: endpoint (/api/system-admin/progress-systems/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/system-admin/deliverable-systems/:
+    get:
+      summary: endpoint (/api/system-admin/deliverable-systems/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/projects/:
+    get:
+      summary: endpoint (/api/projects/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+    patch:
+      summary: Update project (name, tags, container_image_id, server_run_template)
+      tags: [api]
+      description: Changing container_image_id to a non-empty value requires a complete server_run_template whose instance architecture is in the image target_architectures; mismatch returns 400 and writes nothing.
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Invalid JSON, incomplete run template, or CPU architecture error. 400 messages name both the image-required ISA and the instance-supported ISA (including instance_type).
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Project not found
+  /api/internal/workspaces/batch-get/:
+    get:
+      summary: endpoint (/api/internal/workspaces/batch-get/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/workspaces/:
+    get:
+      summary: endpoint (/api/internal/workspaces/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/tenants/:
+    get:
+      summary: endpoint (/api/internal/tenants/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/reload-config/:
+    get:
+      summary: endpoint (/api/internal/reload-config/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/projects/batch-get/:
+    get:
+      summary: endpoint (/api/internal/projects/batch-get/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/projects/git-oauth-grant/:
+    get:
+      summary: 内部 — 查询项目 Git OAuth L2 授权（project_id + user_id + gitsite）
+      tags: [api]
+      parameters:
+        - in: query
+          name: project_id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: user_id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: gitsite
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "{ has_grant, remote_user_id }"
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+    post:
+      summary: 内部 — 标记项目已完成 Git OAuth L2 授权
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/progress-columns/validate/:
+    get:
+      summary: endpoint (/api/internal/progress-columns/validate/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/progress-columns/first/:
+    post:
+      summary: 内部 — 解析工作区第一进度列
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/deliverable-systems/lookup/:
+    get:
+      summary: endpoint (/api/internal/deliverable-systems/lookup/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/health:
+    get:
+      summary: 健康检查
+      tags:
+      - meta
+      responses:
+        '200':
+          description: OK
+  /api/internal/taskproject/tenant-gitlab-cache/invalidate/:
+    post:
+      summary: 内部 — 失效租户 GitLab provider 缓存
+      tags:
+      - internal
+      parameters:
+      - name: company_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Missing company_id
+        '401':
+          description: Unauthorized
+  /api/internal/nested-git-repos/:
+    get:
+      summary: 服务间发现父仓子 Git 仓库（容器 task-detail enrich）
+      description: '供 taskCredentialService 等内部调用。Query：`repo_url`（必填）、`user_id`（OAuth
+        换票）。
+
+        响应 schema 与租户侧 nested-git-repos 相同。
+
+        '
+      tags:
+      - internal
+      parameters:
+      - name: repo_url
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 发现结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NestedGitReposResponse'
+        '400':
+          description: 缺少 repo_url
+  /api/switch-workspace/:
+    post:
+      summary: 切换工作空间会话上下文
+      tags:
+      - workspace
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: 参数错误
+        '401':
+          description: 未认证
+components:
+  securitySchemes:
+    gatewayToken:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: 经 taskGateway token 鉴权；服务端使用 X-Auth-User-Id
+  parameters:
+    TenantId:
+      name: tenant_id
+      in: path
+      required: true
+      schema:
+        type: string
+    WorkspaceId:
+      name: workspace_id
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    NestedGitRepoItem:
+      type: object
+      required:
+      - path
+      - url
+      - source
+      properties:
+        path:
+          type: string
+        url:
+          type: string
+        source:
+          type: string
+          enum:
+          - gitmodules
+        resolve_error:
+          type: string
+    NestedGitReposResponse:
+      type: object
+      required:
+      - parent_repo_url
+      - nested_repos
+      - error
+      properties:
+        parent_repo_url:
+          type: string
+        nested_repos:
+          type: array
+          items:
+            $ref: '#/components/schemas/NestedGitRepoItem'
+        error:
+          type: string
+    ValidateGitRepoBatchItem:
+      type: object
+      required:
+      - url
+      - repo_url
+      - token_status
+      - is_accessible
+      properties:
+        url:
+          type: string
+        repo_url:
+          type: string
+        token_status:
+          type: string
+        is_accessible:
+          type: boolean
+        message:
+          type: string
+        oauth_provider:
+          type: string
+        oauth_service_provider:
+          type: string
+    ValidateGitReposBatchResponse:
+      type: object
+      required:
+      - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidateGitRepoBatchItem'
+    RepoAccessCheckResponse:
+      type: object
+      required:
+      - is_accessible
+      - access_status
+      - message
+      - token_status
+      properties:
+        is_accessible:
+          type: boolean
+        access_status:
+          type: string
+          enum:
+          - accessible
+          - needs_auth
+          - not_accessible
+          - not_configured
+          - uncheckable
+        message:
+          type: string
+        token_status:
+          type: string
+        oauth_provider:
+          type: string
+        oauth_service_provider:
+          type: string
+    PathSegment:
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          enum:
+          - root
+          - category
+          - task
+        id:
+          type: string
+        label:
+          type: string
+    DeliverableFilterBar:
+      type: object
+      required:
+      - id
+      - path
+      properties:
+        id:
+          type: string
+        path:
+          type: array
+          items:
+            $ref: '#/components/schemas/PathSegment'
+          minItems: 1
+    WorkPanelAccessFilterPref:
+      type: object
+      nullable: true
+      description: 持久化的人/小组过滤偏好（不含 memberIds；客户端加载时重算）
+      properties:
+        kind:
+          type: string
+          enum:
+          - person
+          - group
+        id:
+          type: string
+          description: company_member_id 或 group_id
+        label:
+          type: string
+    WorkPanelFilterPayload:
+      type: object
+      properties:
+        version:
+          type: integer
+          default: 2
+        deliverable_filter_bars:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/DeliverableFilterBar'
+        access_filter:
+          $ref: '#/components/schemas/WorkPanelAccessFilterPref'
+    WorkPanelFilterResponse:
+      allOf:
+      - $ref: '#/components/schemas/WorkPanelFilterPayload'
+      - type: object
+        properties:
+          status:
+            type: string
+            example: success
+          updated_at:
+            type: string
+            format: date-time
+    TaskKindOptionsPayload:
+      type: object
+      required:
+      - options
+      properties:
+        options:
+          type: array
+          items:
+            type: string
+          description: 任务类型可选值（如 bug-fix、feature）；空数组回退为默认
+          example:
+          - bug-fix
+          - feature
+    TaskKindOptionsResponse:
+      type: object
+      required:
+      - status
+      - options
+      properties:
+        status:
+          type: string
+          example: success
+        options:
+          type: array
+          items:
+            type: string
+        updated_at:
+          type: string
+          format: date-time
+    CodeLangOptionsPayload:
+      type: object
+      required:
+      - options
+      properties:
+        options:
+          type: array
+          items:
+            type: string
+          description: 主要编程语言可选值（如 go、rust、js）；空数组回退为默认
+          example:
+          - go
+          - rust
+          - js
+    CodeLangOptionsResponse:
+      type: object
+      required:
+      - status
+      - options
+      properties:
+        status:
+          type: string
+          example: success
+        options:
+          type: array
+          items:
+            type: string
+        updated_at:
+          type: string
+          format: date-time
+    CreateTaskFieldSettingsFields:
+      type: object
+      description: 创建任务可选字段显隐；缺省键按服务端默认（code_lang、structured_fields 为 false，其余为 true）
+      additionalProperties:
+        type: boolean
+      properties:
+        description:
+          type: boolean
+        task_kind:
+          type: boolean
+        code_lang:
+          type: boolean
+          description: 主要编程语言；无配置时默认 false
+        structured_fields:
+          type: boolean
+          description: 结构化任务说明；无配置时默认 false
+        project_branch:
+          type: boolean
+        container_image:
+          type: boolean
+        feature_params:
+          type: boolean
+        priority:
+          type: boolean
+        due_date:
+          type: boolean
+        auto_run:
+          type: boolean
+        owner:
+          type: boolean
+        assignees:
+          type: boolean
+    CreateTaskFieldSettingsPayload:
+      type: object
+      required:
+      - fields
+      properties:
+        fields:
+          $ref: '#/components/schemas/CreateTaskFieldSettingsFields'
+    CreateTaskFieldSettingsResponse:
+      type: object
+      required:
+      - status
+      - fields
+      properties:
+        status:
+          type: string
+          example: success
+        fields:
+          $ref: '#/components/schemas/CreateTaskFieldSettingsFields'
+        updated_at:
+          type: string
+          format: date-time
+    ResolveRefResponse:
+      type: object
+      required:
+      - exists
+      properties:
+        exists:
+          type: boolean
+          description: 远端是否存在该 commit
+        sha:
+          type: string
+          description: 解析得到的完整 SHA（存在时）
+        error:
+          type: string
+          description: 鉴权或远端错误说明（不存在时通常为空）
+        gitlab:
+          type: object
+          additionalProperties:
+            type: string
+        github:
+          type: object
+          additionalProperties:
+            type: string
+    GitRepoEntry:
+      type: object
+      required:
+      - url
+      description: '项目关联仓库条目；clone_alias 为空时容器按 URL 推导目录名。
+
+        详情响应可含 is_internal / disk_size_bytes（仅平台内部仓 gitlab-local 在查询成功时返回大小）。
+
+        '
+      properties:
+        url:
+          type: string
+          maxLength: 2048
+        clone_alias:
+          type: string
+          maxLength: 255
+          description: 可选克隆目录别名
+        is_internal:
+          type: boolean
+          description: 是否平台内部仓（gitlab:gitlab-local）；仅详情 enrich 时出现
+        disk_size_bytes:
+          type: integer
+          format: int64
+          minimum: 0
+          description: 仓库磁盘占用（字节）；仅内部仓且 GitLab statistics 成功时返回
+    ProjectGitReposField:
+      type: array
+      description: '创建/更新项目时可传字符串 URL，或 GitRepoEntry 对象。
+
+        响应另含 git_repo_entries（结构化）与兼容用的 git_repos（纯 URL 列表）。
+
+        '
+      items:
+        oneOf:
+        - type: string
+        - $ref: '#/components/schemas/GitRepoEntry'
+    Workspace:
+      type: object
+      description: 工作空间；布尔字段在库内为 INTEGER 0/1，JSON 为 true/false
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        company_id:
+          type: string
+        deliverable_system_id:
+          type: string
+        deliverable_system_from:
+          type: string
+        is_default:
+          type: boolean
+        task_archive_tier:
+          type: string
+        allow_personal_feature_params:
+          type: boolean
+        container_image_at_mode_enabled:
+          type: boolean
+          description: 是否启用容器镜像 @ 模式
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    WorkspacePatch:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        deliverable_system_id:
+          type: string
+        deliverable_system_from:
+          type: string
+        is_default:
+          type: boolean
+        task_archive_tier:
+          type: string
+        allow_personal_feature_params:
+          type: boolean
+        container_image_at_mode_enabled:
+          type: boolean
+          description: 是否启用容器镜像 @ 模式

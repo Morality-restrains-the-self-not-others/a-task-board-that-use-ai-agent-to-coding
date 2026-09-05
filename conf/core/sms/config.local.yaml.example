@@ -1,0 +1,5 @@
+# Copy to config.local.yaml (gitignored) and fill Aliyun SMS keys.
+sms:
+  aliyun:
+    access_key_id: ""
+    access_key_secret: ""

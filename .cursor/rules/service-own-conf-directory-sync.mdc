@@ -1,0 +1,31 @@
+---
+description: 各服务仅读自己 conf 目录；跨服务配置须 sync 到本目录片段，禁止运行时直读他服务 YAML
+alwaysApply: true
+---
+
+# 服务配置目录隔离 + sync（元规则）
+
+适用于整个 monorepo **所有**业务/基础设施进程加载 `conf/**` 服务配置时。细则见 `.ai/01_project_constraints/29_service_own_conf_directory_only_via_sync.md`；约束索引第 30 条。
+
+## 强制要求
+
+- 运行时**只读**本服务 `conf/<area>/<app>/` 下的配置（`config.yaml`、本目录 GENERATED 片段如 `sms.yaml`），再由加载器深合并 `conf-local/<同相对路径>`。**不读** `config.local.yaml`。
+- **禁止** `ReadAppConfig` / 直接打开其它服务目录（如非 Django 进程读 `conf/core/django/config.yaml`）。
+- 需要他服务配置键时：在本目录 `sync.manifest.yaml` 声明 `from`→`to`→`pick`，经 conf-sync 生成后用 `confload.ReadAppFragment(root, app, "xxx.yaml", …)` 读取。
+- **禁止**用 `../` 或绝对路径逃出本 app 目录。
+- `conf/base.yaml` 仅用于 `${scheme}` / `${subdomains.*}` 寻址模板，不算业务配置直读例外滥用。
+
+## 触发（改这些时必须遵守）
+
+- `**/config.go`、`shareLib/confload/**`、`conf/**/sync.manifest.yaml`、`conf/**/sync.sh`
+- Django/`settings.py` 以外的服务新增「读 monorepo YAML」逻辑
+- 评审发现跨 `conf_app` 的配置路径
+
+## 验收
+
+```bash
+# 业务服务源码不应再出现对非本 app 的 ReadAppConfig（base.yaml / 本目录除外）
+rg -n 'ReadAppConfig\([^)]*"(core/django|billing/|gateway/)' taskAuth taskBill taskGitOauth --glob '*.go' || true
+# 跨服务键应有本目录片段
+test -f conf/auth/task-auth/sms.yaml   # 示例：SMS 同步产物
+```

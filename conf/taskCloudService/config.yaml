@@ -1,0 +1,44 @@
+host: 0.0.0.0
+port: 8018
+enabled: true
+logging:
+  log_file: logs/task-cloud-service/task-cloud-service.log
+
+# Redis：与 Django relay startup session 同源（env REDIS_HOST/PORT/DB 优先；
+# 否则 conf/events/domain-events docker-infra fragment，默认通过 base.yaml ${subdomains.redisInternal}）。
+redis:
+  host: ${subdomains.redisInternal}
+  port: 6379
+  db: 0
+
+services:
+  taskCloudService:
+    host: "0.0.0.0"
+    port: 8018
+  taskAuth:
+    host: "127.0.0.1"
+    port: 8003
+  taskProjectService:
+    host: "127.0.0.1"
+    port: 8016
+  taskTaskService:
+    host: "127.0.0.1"
+    port: 8017
+  taskTenantService:
+    host: "127.0.0.1"
+    port: 8020
+  taskBill:
+    host: "127.0.0.1"
+    port: 8004
+shared:
+  # MUST be Django loopback — NEVER public gateway (${subdomains.api}). Public /api/internal/* → APISIX deny-internal 403.
+  internalSecret: ""
+
+# Phase C: layer-git-push prepare exchanges tokens via gitOauth (not GitHub API).
+# bridgeSecret 须与 taskGitOauth BridgeJWTSecret（conf/auth/git-oauth/django.yaml ssoJwtSecret）一致；
+# 空字符串时由进程回退 TASK2APP_SSO_JWT_SECRET → 本地开发默认密钥（与 taskProjectService 对齐）。
+gitOauth:
+  url: ${scheme}://${subdomains.gitoauth}
+  # 与 taskGitOauth ssoJwtSecret 同源（OPT-20260806-062 轮换后的强随机值）；勿改回本地占位符，
+  # 否则 taskGitOauth requireBridgeSecret 返回 401 → taskCloudService 报 gitOauth error: unauthorized。
+  bridgeSecret: ""

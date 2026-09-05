@@ -1,0 +1,14 @@
+_doc: PayPal 充值配置（taskBill SSOT）；勿提交真实密钥到公开仓库以外的渠道。
+currency: HKD
+frontend_base_url: ${scheme}://${subdomains.www}
+mode: sandbox
+
+client_id: ''
+client_secret: ""
+mode: sandbox
+webhook_id_live: ''
+
+__client_id: ''
+client_secret: ""
+__webhook_id_live: ''
+__webhook_id_sandbox: ''

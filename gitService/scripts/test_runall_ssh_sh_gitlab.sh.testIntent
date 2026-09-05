@@ -1,0 +1,15 @@
+# test_runall_ssh_sh_gitlab.sh 测试意图
+
+## 测试范围
+INFRA 机 9999 启停上海 GitLab 必须 SSH 到 Host sh 的 compose 目录，不得在本机跑 deploy/run.sh。
+
+## 关键业务断言
+- start dry-run 含 `sh`、`/opt/daydaymoney/gitservice-tencent-sh-1`、`docker compose up -d`
+- stop dry-run 含 `docker compose stop`，不含 `compose down`（保留 GITLAB_HOME）
+- 缺参数 / 未知 action 退出码 2
+
+## 破坏信号
+start 仍指向本机 `deploy_tencent_sh_1.sh` 或 `gitService/run.sh`。
+
+## 回归验证
+`bash gitService/scripts/test_runall_ssh_sh_gitlab.sh`

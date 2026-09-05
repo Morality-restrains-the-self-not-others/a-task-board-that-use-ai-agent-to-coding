@@ -1,0 +1,62 @@
+' @title: 管理端待分账订单列表
+' @view: application-integration
+' @status: archived
+' @version: 99
+' @iteration: admin-pending-profit-sharing-list
+' @author: cursor
+' @based_on: v98 (v98-application-integration-20260822-1555-cursor.puml)
+' @updated: 2026-08-22 21:55
+' @description: 订单记录页第三 Tab；staff-only GET 待分账队列；租户不可见
+
+@startuml
+!include <archimate/Archimate>
+
+title v99 — 待分账订单列表 2026-08-22 21:55
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v99 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v99 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(fe, "taskFE Vue SPA")
+note right of fe
+  [MODIFIED v99] 订单页第三 Tab「待分账」
+  SystemAdminProfitSharingPanel
+  @author: cursor @2026-08-22 21:55
+end note
+
+Application_Component(gw, "APISIX taskGateway")
+note right of gw
+  [MODIFIED v99] /api/system-admin/profit-sharing/
+end note
+
+Application_Component(bill, "taskBill")
+note right of bill
+  [MODIFIED v99]
+  GET /api/system-admin/profit-sharing/
+  IsPlatformStaff；无 openid
+end note
+
+Application_DataObject(ps, "billing_profit_sharing")
+note right of ps
+  [NEW v99 读模型] 待分账队列投影
+  status=open 默认
+end note
+
+Technology_Node(mysqlB, "MySQL task_bill utf8mb4")
+
+Rel_Flow(fe, gw, "GET profit-sharing list")
+Rel_Flow(gw, bill, "forward-auth staff")
+Rel_Flow(bill, ps, "list queue by status")
+Rel_Serving(mysqlB, ps, "InnoDB")
+
+Implementation_Plateau(plateauV98, "Plateau v98")
+Implementation_Plateau(plateauV99, "Plateau v99 pending profit-sharing list")
+Implementation_Gap(gapQ, "Gap: Tab 栏无待分账队列")
+Implementation_WorkPackage(wpQ, "WP-admin-pending-profit-sharing-list")
+Rel_Triggering(plateauV98, gapQ, "identifies")
+Rel_Realization(wpQ, gapQ, "closes")
+Rel_Realization(wpQ, plateauV99, "delivers")
+
+@enduml

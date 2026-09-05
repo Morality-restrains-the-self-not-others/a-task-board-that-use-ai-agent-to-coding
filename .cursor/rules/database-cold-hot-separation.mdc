@@ -1,0 +1,337 @@
+---
+description: 数据库冷热分离与分库分表强制规范 — 时间相关、可伸缩业务表设计必须从一开始考虑冷热分离和伸缩分片
+globs: "**/*.go,**/*.py,**/*.sql,**/dataMigrate/**/*.sql,**/db.go,**/infrastructure/*.go,**/models.py,**/settings*.py"
+alwaysApply: true
+---
+
+# 数据库冷热分离与分库分表强制规范（元规则）
+
+适用于整个 monorepo 的所有服务（Go / Python / 未来语言）。本规则是**元规则**，优先级高于各语言局部惯例。
+
+## 核心原则
+
+**对于满足以下任一条件的业务表，必须在 Schema 设计阶段（首日）就规划冷热分离和伸缩分片策略，禁止「先堆到一起，后面再拆」的拖延模式：**
+
+1. **时间累积型**：数据随运行时间持续增长，无法自然收敛（事件、日志、交易流水、审计记录、消息队列记录）
+2. **租户膨胀型**：多租户场景下单表数据量随租户数线性/超线性增长
+3. **实体爆炸型**：单业务实体可能产生大量关联子记录（如一个 Task 产生数百条 Comment/Event）
+
+## 第一部分：冷热分离
+
+### 1.1 三级数据温度定义
+
+| 温度 | 定义 | 典型时间窗口 | 访问延迟要求 | 存储策略 |
+|------|------|-------------|-------------|---------|
+| 🔥 **热数据** | 高频读写，业务主流程依赖 | ≤ 30 天 | < 10ms | 主表（InnoDB，当前库） |
+| 🌤️ **温数据** | 偶尔查询，分析/报表使用 | 30 ~ 90 天 | < 100ms | 同库分区表 / 归档表 |
+| ❄️ **冷数据** | 极少访问，合规/审计保留 | > 90 天 | 秒级可接受 | 独立归档库 / 对象存储 / 数据仓库 |
+
+### 1.2 冷热分离策略选择
+
+按数据量级和访问模式选择策略：
+
+#### 策略 A：MySQL 原生分区（推荐，首选）
+
+适用：单表年增量百万级以上，查询主要命中热区。
+
+```sql
+-- 正确示例：按月 RANGE 分区
+CREATE TABLE billing_transaction (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    account_id BIGINT NOT NULL,
+    transaction_type VARCHAR(20) NOT NULL,
+    amount BIGINT NOT NULL,
+    -- ... other columns
+    created_at DATETIME NOT NULL,
+    PRIMARY KEY (id, created_at),   -- ⚠️ 分区键必须包含在主键中
+    INDEX idx_account (account_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+PARTITION BY RANGE (TO_DAYS(created_at)) (
+    PARTITION p202607 VALUES LESS THAN (TO_DAYS('2026-08-01')),
+    PARTITION p202608 VALUES LESS THAN (TO_DAYS('2026-09-01')),
+    PARTITION p202609 VALUES LESS THAN (TO_DAYS('2026-10-01')),
+    PARTITION p_future VALUES LESS THAN MAXVALUE
+);
+```
+
+强制约束：
+- **分区键必须是所有唯一键（含 PRIMARY KEY）的组成部分** — MySQL 分区限制，违反则 `ERROR 1503`
+- **推荐按月分区**，提前创建未来 3~6 个月的分区（运维脚本自动化）
+- **禁止使用 `MAXVALUE` 分区存放大量数据** — 仅作为兜底，需定期拆分
+- **分区裁剪验证** — `EXPLAIN PARTITIONS SELECT ...` 确认查询只命中必要的分区
+- **冷分区迁移** — 超过温数据窗口的分区执行 `ALTER TABLE ... EXCHANGE PARTITION` 或直接 `TRUNCATE PARTITION`（冷数据已归档后）
+
+#### 策略 B：双表轮转（中小数据量，简单场景）
+
+适用：单表年增量十万级以下，冷数据访问极低。
+
+```sql
+-- 热表：当前活跃数据
+CREATE TABLE cloud_server_events (
+    id VARCHAR(64) PRIMARY KEY,
+    -- ...
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 归档表：历史数据（同结构）
+CREATE TABLE cloud_server_events_archive (
+    id VARCHAR(64) PRIMARY KEY,
+    -- ... 相同列定义
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 应用层定期迁移（定时任务 / cron）：
+-- INSERT INTO cloud_server_events_archive
+-- SELECT * FROM cloud_server_events WHERE created_at < DATE_SUB(NOW(), INTERVAL 90 DAY);
+-- DELETE FROM cloud_server_events WHERE created_at < DATE_SUB(NOW(), INTERVAL 90 DAY);
+```
+
+#### 策略 C：TTL 自动过期（临时/缓存数据）
+
+适用：有明确生命周期的数据（Token、验证码、临时会话）。
+
+```sql
+-- 示例：oauth_tokens 已有 expires_at 列，可直接利用
+-- 定时任务清理过期数据
+-- DELETE FROM oauth_tokens WHERE expires_at < NOW();
+
+-- 或用 MySQL 8.0.24+ 的自动 TTL（实验性）
+-- 不推荐 — 建议应用层定时清理，可控性更好
+```
+
+强制约束：
+- **必须有定时清理机制**（cron / Go timer / Django management command）
+- **清理前必须确认冷数据已归档**（如合规需要保留）
+- **清理操作必须在低峰期执行**，禁止大事务一次性删除百万行（分批删除，每批 ≤ 1000 行）
+
+### 1.3 冷数据归档目标
+
+| 归档目标 | 适用场景 | 访问方式 |
+|---------|---------|---------|
+| 同实例归档库（`xxx_archive`） | 温数据查询需求 | 正常 SQL 查询 |
+| 对象存储（S3/MinIO）+ Parquet | 仅合规保留，极少查询 | ETL 工具 / Athena 查询 |
+| 数据仓库（ClickHouse） | 需要 OLAP 分析的历史数据 | 分析查询接口 |
+| 日志系统（Elasticsearch） | 需要全文搜索的事件日志 | ES Query DSL |
+
+### 1.4 冷热分离必须回答的问题（Schema Review 门禁）
+
+新增表时，如果表属于「时间累积型」，必须回答：
+
+1. **预估年增量**：12 个月后该表预估行数？（`> 100万` → 必须分区 / 分表）
+2. **热数据窗口**：业务 90% 的查询命中多长时间范围？（定分区键/归档阈值）
+3. **冷数据去向**：超出热窗口的数据归档到哪里？（归档表 / 对象存储 / 仓库）
+4. **归档任务**：谁来执行归档？频率？如何保证不丢数据？
+5. **分区运维**：如果是分区表，未来分区的创建是手动还是自动？
+
+## 第二部分：分库分表（水平分片）
+
+### 2.1 伸缩要素（Shard Key）选择
+
+分片键必须从业务模型中识别「伸缩要素」—— 即数据量随什么维度增长。常见伸缩要素及对应分片策略：
+
+| 伸缩要素 | 典型业务 | 分片策略 | 分片数量估算 |
+|---------|---------|---------|------------|
+| **租户 (tenant_id)** | 多租户 SaaS，租户间数据天然隔离 | `HASH(tenant_id) % N` 或按 tenant_id 范围分片 | 按租户总数 × 每租户平均数据量 |
+| **时间 (created_at)** | 事件、日志、交易流水 | 按时间范围分片（自然支持冷热分离） | 按数据保留周期 |
+| **业务实体 (task_id / order_id)** | 一个实体关联海量子记录 | `HASH(entity_id) % N` | 按实体总数 × 每实体平均子记录数 |
+| **复合 (tenant_id + time)** | 多租户 + 时序数据（最常用） | 先按 tenant 分，再按 time 分区 | 见下文 |
+
+### 2.2 分片策略决策树
+
+```
+单表预计年增量 > 1000 万行？
+├── 否 → 单表 + MySQL 分区（策略 A）足够
+└── 是 → 是否多租户？
+    ├── 是 → tenant_id 天然分片 + 时间分区（策略 D）
+    └── 否 → 实体 ID 哈希分片 + 时间分区（策略 E）
+```
+
+### 2.3 策略 D：租户级分库（多租户场景首选）
+
+每个租户（或租户组）独立数据库，库内再按时间分区：
+
+```
+billing_tenant_01/                   billing_tenant_02/
+├── billing_transaction (按月分区)     ├── billing_transaction (按月分区)
+├── billing_usage (按月分区)           ├── billing_usage (按月分区)
+└── billing_resource_order            └── billing_resource_order
+```
+
+Go 服务路由示例：
+
+```go
+// 正确模式：根据 tenant_id 解析目标数据库
+func resolveDB(tenantID int64) *sql.DB {
+    shardIndex := tenantID % int64(len(shardDBs))
+    return shardDBs[shardIndex]
+}
+
+// 所有 SQL 执行前必须先解析分片
+db := resolveDB(tenantID)
+rows, err := db.Query("SELECT * FROM billing_transaction WHERE tenant_id = ? AND created_at > ?", tenantID, since)
+```
+
+强制约束：
+- **分片键必须在所有查询条件中出现** — 禁止跨分片扫描
+- **禁止跨分片 JOIN** — 所有关联查询必须在同一分片内完成
+- **分片路由逻辑集中管理** — 不允许各 handler 各自实现分片解析（必须用共享的 `shard` 包）
+- **分片数变更需数据迁移方案** — 扩容时一致性哈希或预分片（推荐预分 16/64/256 片，初期合并部署，后期独立）
+
+### 2.4 策略 E：实体级哈希分片（非租户场景）
+
+按业务实体 ID 哈希分片，每片内按时间分区：
+
+```go
+// 按 task_id 哈希分片
+func resolveShardIndex(taskID string, totalShards int) int {
+    h := fnv.New32a()
+    h.Write([]byte(taskID))
+    return int(h.Sum32()) % totalShards
+}
+```
+
+### 2.5 分库分表必须回答的问题（Schema Review 门禁）
+
+新增表时，如果表属于「租户膨胀型」或「实体爆炸型」，必须回答：
+
+1. **伸缩要素是什么**？（tenant_id / task_id / created_at / 组合）
+2. **预估 12 个月单表行数**？（`> 1000万` → 必须分片）
+3. **分片策略**？（租户分库 / 实体哈希分片 / 时间分片）
+4. **分片数量**？初期多少片？扩容方案？
+5. **跨分片查询如何处理**？（禁止 / 应用层聚合 / 汇总表）
+6. **全局唯一 ID 方案**？（Snowflake / UUIDv7 / 独立发号服务）
+
+## 第三部分：实施清单
+
+### 3.1 新建表检查清单
+
+| 检查项 | 适用条件 | 通过标准 |
+|--------|---------|---------|
+| 🔍 识别伸缩要素 | 所有新表 | 明确写出：时间累积 / 租户膨胀 / 实体爆炸 / 无（小数据静态表） |
+| 📏 预估年增量 | 所有新表 | 量化：`< 10万` / `10万~100万` / `100万~1000万` / `> 1000万` |
+| 🔥 冷热分离方案 | 时间累积型 | 明确策略：MySQL 分区 / 双表轮转 / TTL 过期 + 归档目标 |
+| 📦 分片方案 | 年增量 > 1000万 或 多租户 | 明确分片键 + 分片数 + 路由方式 |
+| 🔑 主键设计兼容分区 | 使用 MySQL 分区 | 分区键包含在所有唯一键中 |
+| 🗄️ 归档/清理机制 | 时间累积型 | 定时任务已定义，频率合理 |
+
+### 3.2 存量表评估
+
+以下现网表已识别为「时间累积型」，已全部实施 MySQL 原生 RANGE 分区：
+
+| 优先级 | 表名 | 服务 | 分区键 | 状态 | 迁移文件 |
+|--------|------|------|--------|------|---------|
+| P0 | `billing_transaction` | taskBill | `created_at` | ✅ 已分区 | `028_native_partitioning.sql` |
+| P0 | `billing_usage` | taskBill | `usage_time` | ✅ 已分区 | `028_native_partitioning.sql` |
+| P0 | `billing_outbox_message` | taskBill | `created_at` | ✅ 已分区 | `028_native_partitioning.sql` |
+| P0 | `cloud_server_events` | taskCloudService | `created_at` | ✅ 已分区 | `005_native_partitioning.sql` |
+| P1 | `cloud_server_config_histories` | taskCloudService | `created_at` | ✅ 已分区 | `005_native_partitioning.sql` |
+| P1 | `projects_feature_params_access_audit` | taskCloudService | `created_at` | ✅ 已分区 | `005_native_partitioning.sql` |
+| P2 | `billing_resource_order` | taskBill | — | 🟢 监控中 | — |
+| P2 | `oauth_tokens` | taskCloudService | — | 🟢 监控中 | — |
+
+**分区策略**：所有表使用 `PRIMARY KEY (id, <时间列>)` 复合主键 + `PARTITION BY RANGE (TO_DAYS(<时间列>))` 按月分区。
+**冷数据清理**：`ALTER TABLE ... TRUNCATE PARTITION <过期分区>`（秒级，零风险）。
+**唯一键约束**：`billing_transaction.transaction_id` 的唯一索引也加入了 `created_at`（`UNIQUE(transaction_id, created_at)`）。
+
+### 3.3 分区运维自动化要求
+
+已实现的运维脚本：
+
+| 脚本 | 位置 | 功能 |
+|------|------|------|
+| `ensure_partitions.sh` | `db/scripts/` | 自动管理分区：拆分 MAXVALUE 创建未来分区 + 可选 TRUNCATE 过期分区 |
+| `check_cold_hot_separation.sh` | `dataMigrate/` | CI 静态检查（AUTO_INCREMENT + PARTITION BY 缺失检测） |
+| `partition_metrics_exporter.py` | `AiMonitor/scripts/` | Prometheus 指标导出（分区行数、MAXVALUE 膨胀、热数据行数） |
+
+**Cron 配置建议**（需运维部署时添加）：
+
+```bash
+# 每月 1 日凌晨 3:00 — 拆分 MAXVALUE 创建未来分区 + 清理过期分区
+0 3 1 * * /bin/bash /path/to/db/scripts/ensure_partitions.sh >> /var/log/ensure_partitions.log 2>&1
+
+# 每分钟 — 更新分区 Prometheus 指标
+* * * * * python3 /path/to/AiMonitor/scripts/partition_metrics_exporter.py --output /var/lib/prometheus-textfiles/partition_metrics.prom
+```
+
+**Prometheus 告警规则**：`AiMonitor/prometheus/rules/database-archive-alerts.yml`
+- `HotTableRowsHigh` — 热表 > 1000 万行（依赖 mysqld_exporter）
+- `HotTableRowsCritical` — 热表 > 5000 万行严重告警（依赖 mysqld_exporter）
+- `MaxValuePartitionBloated` — MAXVALUE 分区 > 500 万行，需拆分
+- `PartitionCountLow` — 有效分区数 < 3，需检查 cron
+- `MysqldExporterDown` — MySQL Exporter 不可达
+
+**MySQL Exporter**：`AiMonitor/docker-compose.yaml` 已添加 `mysqld-exporter` 服务
+- 镜像：`prom/mysqld-exporter:v0.16.0`
+- 采集目标数据库：task_bill, task_cloud 等 11 个库
+
+**Grafana 仪表盘**：`AiMonitor/grafana/provisioning/dashboards/files/data-archive-monitoring.json`
+- 标题：「数据库分区状态监控」— 分区总览 / 热表趋势 / 分区详情 / 表大小
+
+手动验证命令：
+
+```bash
+# 测试分区运维脚本
+DRY_RUN=true bash db/scripts/ensure_partitions.sh
+
+# 查看表的分区状态
+mysql -e "SELECT TABLE_NAME, PARTITION_NAME, TABLE_ROWS FROM information_schema.partitions WHERE TABLE_SCHEMA='task_bill' AND PARTITION_NAME IS NOT NULL ORDER BY TABLE_NAME, PARTITION_ORDINAL_POSITION"
+
+# 运行 CI 检查
+bash dataMigrate/check_cold_hot_separation.sh
+```
+
+手动验证命令：
+
+```bash
+# 测试归档脚本（DRY_RUN 模式，仅预览不实际操作）
+DRY_RUN=true bash db/task-bill/archive_old_transactions.sh
+
+# 测试分区运维脚本
+DRY_RUN=true bash db/scripts/ensure_partitions.sh
+
+# 运行 CI 检查
+bash dataMigrate/check_cold_hot_separation.sh
+```
+```
+
+### 3.4 全局唯一 ID 要求
+
+分库分表场景下 **禁止使用 `AUTO_INCREMENT` 作为主键**（各分片自增 ID 必然冲突）。必须使用：
+
+| ID 方案 | 适用场景 | 示例 |
+|---------|---------|------|
+| **Snowflake**（推荐） | Go 服务，已有 `snowflake` 包 | `snowflake.Generate().String()` — 本仓库已有实现 |
+| **UUIDv7** | 需要时间排序的 UUID | `uuid.NewV7()` — Go 1.24+ |
+| **应用层发号** | 需要连续递增编号 | 独立发号服务（不推荐，引入 SPOF） |
+
+强制约束：
+- **分片表主键必须使用全局唯一 ID** — 禁止 `AUTO_INCREMENT`
+- **推荐使用项目已有的 Snowflake 包** — 位于 `snowflake/` 子模块，时间有序 + 全局唯一 + 高性能
+- **已有 `BIGINT` 改造** — 部分表已使用 BIGINT 主键（见 `taskBill/027_order_id_bigint.sql`），这些表已具备分片基础
+
+## 第四部分：禁止事项
+
+| 禁止 | 原因 | 替代方案 |
+|------|------|---------|
+| 时间累积表不做分区/归档规划就上线 | 数据量上去后再分区需要锁表迁移，风险极高 | 首日规划，上线时分区就位 |
+| 分片表使用 `AUTO_INCREMENT` 主键 | 各分片 ID 必然冲突 | Snowflake / UUIDv7 |
+| 跨分片 JOIN | 性能灾难，网络开销巨大 | 应用层聚合 / 反范式化 / 汇总表 |
+| 跨分片不带 shard key 的查询 | 全分片扫描，不可扩展 | 所有查询必须包含分片键 |
+| 单次 DELETE 删除百万行 | 锁表时间过长，影响线上 | 分批删除（≤ 1000 行/批）+ sleep |
+| 依赖 `MAXVALUE` 分区长期存放大批量数据 | 分区裁剪失效，查询回退到全表扫描 | 定期拆分 MAXVALUE 分区 |
+| 先上线再补分区/分片（「后面再拆」） | 迁移成本 10x+，需要锁表/停服 | Schema 设计阶段必须完成分区/分片方案 |
+| 归档任务无监控/无告警 | 归档失败无人知晓，热表无限膨胀 | 归档成功率监控 + 失败告警 |
+
+## 第五部分：合规检查
+
+- **Schema Review 门禁**：新增表 PR 必须附带「冷热分离 & 分片评估清单」（见 3.1 节），不完整则阻断
+- **CI 静态检查**：
+  - 新增 SQL 文件中包含 `AUTO_INCREMENT` + 表属于分片候选 → 警告
+  - 新增 SQL 文件中「时间累积型」表无 `PARTITION BY` → 如果年增量 > 100 万，警告
+- **运维监控**：
+  - 所有分区表的行数监控 + 分区大小告警
+  - 归档任务执行状态监控（成功/失败/延迟）
+  - 冷热分离表的热数据量告警（超过阈值说明归档失败）
+- **Code Review**：检查清单须包含「冷热分离方案完整」和「分片策略合理」项

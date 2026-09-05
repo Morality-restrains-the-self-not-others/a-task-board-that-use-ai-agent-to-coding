@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v95 diff (v94→v95)" id="id-v95aidiff01">
+  <folder name="Application" id="id-v95aid-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v95-app-fe" name="taskFE Vue SPA [MODIFIED v95]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v95-app-ref" name="taskReferral [MODIFIED v95]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v95-app-bill" name="taskBill [MODIFIED v95]"/>
+    <element xsi:type="archimate:DataObject" id="id-v95-do-code" name="referral_code [MODIFIED v95]"/>
+    <element xsi:type="archimate:DataObject" id="id-v95-do-aud" name="referral_qualification_audit [NEW v95]"/>
+    <element xsi:type="archimate:DataObject" id="id-v95-do-edge" name="billing_referral_edge [MODIFIED v95]"/>
+    <element xsi:type="archimate:DataObject" id="id-v95-do-acc" name="billing_referral_commission_accrual [MODIFIED v95]"/>
+  </folder>
+  <folder name="Technology" id="id-v95aid-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v95-tech-mysqlr" name="MySQL task_referral utf8mb4"/>
+    <element xsi:type="archimate:Node" id="id-v95-tech-mysqlb" name="MySQL task_bill utf8mb4"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v95aid-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v95-pl-v94" name="Plateau v94"/>
+    <element xsi:type="archimate:Plateau" id="id-v95-pl-v95" name="Plateau v95"/>
+    <element xsi:type="archimate:Gap" id="id-v95-gap" name="Gap: 已通过资格无法取消且无理由审计"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v95-wp" name="WP-referral-qualification-revoke"/>
+  </folder>
+  <folder name="Relations" id="id-v95aid-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v95-rel-fe-ref" source="id-v95-app-fe" target="id-v95-app-ref" name="approve/reject/revoke + reason"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v95-rel-fe-aud" source="id-v95-app-fe" target="id-v95-app-ref" name="GET audit"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v95-rel-ref-code" source="id-v95-app-ref" target="id-v95-do-code" name="status revoked"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v95-rel-ref-aud" source="id-v95-app-ref" target="id-v95-do-aud" name="insert audit"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v95-rel-ref-bill" source="id-v95-app-ref" target="id-v95-app-bill" name="disable-eligibility"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v95-rel-bill-edge" source="id-v95-app-bill" target="id-v95-do-edge" name="commission_eligible=0"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v95-rel-bill-acc" source="id-v95-app-bill" target="id-v95-do-acc" name="void pending"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v95-rel-mysql-code" source="id-v95-tech-mysqlr" target="id-v95-do-code" name="InnoDB"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v95-rel-mysql-aud" source="id-v95-tech-mysqlr" target="id-v95-do-aud" name="InnoDB"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v95-rel-mysql-edge" source="id-v95-tech-mysqlb" target="id-v95-do-edge" name="InnoDB"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v95-rel-mysql-acc" source="id-v95-tech-mysqlb" target="id-v95-do-acc" name="InnoDB"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v95-rel-pl94-gap" source="id-v95-pl-v94" target="id-v95-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v95-rel-wp-gap" source="id-v95-wp" target="id-v95-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v95-rel-wp-pl95" source="id-v95-wp" target="id-v95-pl-v95"/>
+  </folder>
+  <folder name="Views" id="id-v95aid-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v95-view-mig" name="架构变迁 v94→v95 — referral-qualification-revoke">
+      <child xsi:type="archimate:DiagramObject" id="id-v95-do-pl94" archimateElement="id-v95-pl-v94">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-pl94-gap" source="id-v95-do-pl94" target="id-v95-do-gap" archimateRelationship="id-v95-rel-pl94-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-do-gap" targetConnections="id-v95-c-pl94-gap id-v95-c-wp-gap" archimateElement="id-v95-gap">
+        <bounds x="240" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-do-wp" archimateElement="id-v95-wp">
+        <bounds x="240" y="160" width="300" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-wp-gap" source="id-v95-do-wp" target="id-v95-do-gap" archimateRelationship="id-v95-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-wp-pl95" source="id-v95-do-wp" target="id-v95-do-pl95" archimateRelationship="id-v95-rel-wp-pl95"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-do-pl95" targetConnections="id-v95-c-wp-pl95" archimateElement="id-v95-pl-v95">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v95-view-flow" name="v95 Target — 推荐分账资格取消与审计">
+      <child xsi:type="archimate:DiagramObject" id="id-v95-d-fe" archimateElement="id-v95-app-fe">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-fe-ref" source="id-v95-d-fe" target="id-v95-d-ref" archimateRelationship="id-v95-rel-fe-ref"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-fe-aud" source="id-v95-d-fe" target="id-v95-d-ref" archimateRelationship="id-v95-rel-fe-aud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-d-ref" targetConnections="id-v95-c-fe-ref id-v95-c-fe-aud" archimateElement="id-v95-app-ref">
+        <bounds x="260" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-ref-code" source="id-v95-d-ref" target="id-v95-d-code" archimateRelationship="id-v95-rel-ref-code"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-ref-aud" source="id-v95-d-ref" target="id-v95-d-aud" archimateRelationship="id-v95-rel-ref-aud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-ref-bill" source="id-v95-d-ref" target="id-v95-d-bill" archimateRelationship="id-v95-rel-ref-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-d-bill" targetConnections="id-v95-c-ref-bill" archimateElement="id-v95-app-bill">
+        <bounds x="260" y="160" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-bill-edge" source="id-v95-d-bill" target="id-v95-d-edge" archimateRelationship="id-v95-rel-bill-edge"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-bill-acc" source="id-v95-d-bill" target="id-v95-d-acc" archimateRelationship="id-v95-rel-bill-acc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-d-code" targetConnections="id-v95-c-ref-code id-v95-c-mysql-code" archimateElement="id-v95-do-code">
+        <bounds x="480" y="48" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-d-aud" targetConnections="id-v95-c-ref-aud id-v95-c-mysql-aud" archimateElement="id-v95-do-aud">
+        <bounds x="480" y="120" width="260" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-d-edge" targetConnections="id-v95-c-bill-edge id-v95-c-mysql-edge" archimateElement="id-v95-do-edge">
+        <bounds x="480" y="200" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-d-acc" targetConnections="id-v95-c-bill-acc id-v95-c-mysql-acc" archimateElement="id-v95-do-acc">
+        <bounds x="480" y="280" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-d-mysqlr" archimateElement="id-v95-tech-mysqlr">
+        <bounds x="48" y="200" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-mysql-code" source="id-v95-d-mysqlr" target="id-v95-d-code" archimateRelationship="id-v95-rel-mysql-code"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-mysql-aud" source="id-v95-d-mysqlr" target="id-v95-d-aud" archimateRelationship="id-v95-rel-mysql-aud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v95-d-mysqlb" archimateElement="id-v95-tech-mysqlb">
+        <bounds x="48" y="280" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-mysql-edge" source="id-v95-d-mysqlb" target="id-v95-d-edge" archimateRelationship="id-v95-rel-mysql-edge"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v95-c-mysql-acc" source="id-v95-d-mysqlb" target="id-v95-d-acc" archimateRelationship="id-v95-rel-mysql-acc"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

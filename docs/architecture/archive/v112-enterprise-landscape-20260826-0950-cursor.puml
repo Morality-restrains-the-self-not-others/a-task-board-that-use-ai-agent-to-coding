@@ -1,0 +1,42 @@
+' @title: 推荐资格服务号关注闸门（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 112
+' @iteration: referral-mp-follow-gate
+' @author: cursor
+' @based_on: v111 (v111-enterprise-landscape-20260825-2249-cursor.puml)
+' @updated: 2026-08-26 09:50
+' @description: 用户先关注服务号，系统用 unionId 锁定身份后再申请推荐资格
+
+@startuml
+!include <archimate/Archimate>
+
+title v112 — 企业景观 服务号关注闸门 2026-08-26 09:50
+
+Business_Actor(user, "已登录用户")
+Business_Actor(wx, "微信服务号")
+Business_Process(follow, "关注服务号")
+Business_Process(apply, "填写名称简介申请资格")
+Application_Component(fe, "taskFE 推荐页")
+Application_Component(auth, "taskAuth")
+Application_Component(ref, "taskReferral")
+Application_DataObject(ident, "wechat_identity mp")
+
+Rel_Assignment(user, follow)
+Rel_Assignment(user, apply)
+Rel_Flow(user, wx, "扫码关注")
+Rel_Flow(wx, auth, "subscribe")
+Rel_Flow(user, fe, "我已关注 / 申请")
+Rel_Flow(fe, auth, "follow-status")
+Rel_Flow(fe, ref, "apply")
+Rel_Access(auth, ident, "bind openid")
+
+Implementation_Plateau(p111, "Plateau v111")
+Implementation_Plateau(p112, "Plateau v112")
+Implementation_Gap(g, "Gap: 申请不要求关注服务号")
+Implementation_WorkPackage(wp, "WP-referral-mp-follow-gate")
+Rel_Triggering(p111, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p112, "delivers")
+
+@enduml

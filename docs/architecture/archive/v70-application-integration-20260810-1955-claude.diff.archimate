@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    name="v70 厂商申请审核开关 + SSO 入口内聚 (diff)"
+    id="model-v70-ai-20260810-1955-diff">
+  <folder name="Application" id="f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="taskFE [MODIFIED v70]" id="app-taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" name="APISIX Gateway" id="app-gateway"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskAiProvider [MODIFIED v70]" id="app-aiProvider"/>
+    <element xsi:type="archimate:DataObject" name="ai_provider_marketplace_settings [NEW v70]" id="data-mktSettings"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v69" id="plateauV69"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v70" id="plateauV70"/>
+    <element xsi:type="archimate:Gap" name="Gap: SSO 侧栏难发现；审核强制无法直达" id="gapReview"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-vendor-review-toggle" id="wpReview"/>
+  </folder>
+  <folder name="Relations" id="f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="rel-fe-gw" source="app-taskFE" target="app-gateway"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-aip" source="app-gateway" target="app-aiProvider"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-aip-set" source="app-aiProvider" target="data-mktSettings"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-p69-gap" source="plateauV69" target="gapReview"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wpReview" target="gapReview"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp-p70" source="wpReview" target="plateauV70"/>
+  </folder>
+  <folder name="Views" id="f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v69→v70 — 厂商审核开关" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-p69" archimateElement="plateauV69">
+        <bounds x="48" y="120" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-p69-gap" source="do-p69" target="do-gap" archimateRelationship="rel-p69-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap" archimateElement="gapReview" targetConnections="conn-p69-gap conn-wp-gap">
+        <bounds x="300" y="120" width="280" height="60"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp" archimateElement="wpReview">
+        <bounds x="640" y="80" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wp" target="do-gap" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-p70" source="do-wp" target="do-p70" archimateRelationship="rel-wp-p70"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-p70" archimateElement="plateauV70" targetConnections="conn-wp-p70">
+        <bounds x="640" y="180" width="220" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="目标拓扑 v70 — marketplace settings" id="view-topology">
+      <child xsi:type="archimate:DiagramObject" id="do-fe" archimateElement="app-taskFE">
+        <bounds x="48" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-fe-gw" source="do-fe" target="do-gw" archimateRelationship="rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gw" archimateElement="app-gateway" targetConnections="conn-fe-gw">
+        <bounds x="260" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-aip" source="do-gw" target="do-aip" archimateRelationship="rel-gw-aip"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-aip" archimateElement="app-aiProvider" targetConnections="conn-gw-aip">
+        <bounds x="480" y="80" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-aip-set" source="do-aip" target="do-set" archimateRelationship="rel-aip-set"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-set" archimateElement="data-mktSettings" targetConnections="conn-aip-set">
+        <bounds x="480" y="200" width="220" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

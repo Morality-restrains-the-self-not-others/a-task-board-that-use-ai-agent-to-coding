@@ -1,0 +1,46 @@
+' @title: 指令闲置回收（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 98
+' @iteration: instruction-idle-recycle
+' @author: cursor
+' @based_on: v96 (v96-enterprise-landscape-20260822-1405-cursor.puml)
+' @updated: 2026-08-22 16:47
+' @description: 任务详情带闲置策略；指令交付后倒计时；平台优先释放，STS 不进评论
+
+@startuml
+!include <archimate/Archimate>
+
+title v98 landscape — instruction idle recycle 2026-08-22 15:55
+
+Business_Actor(member, "租户成员")
+Business_Service(instruct, "向镜像下指令")
+Business_Service(idleRecycle, "指令闲置自动回收")
+note right of idleRecycle
+  交付成功后按
+  idle_recycle_minutes 倒计时
+end note
+
+Application_Component(osjs, "onlineServiceJS")
+Application_Component(cred, "taskCredentialService")
+Application_Component(cloud, "taskCloudService")
+Application_Component(ev, "taskEvents idle timer")
+
+Rel_Assignment(member, instruct)
+Rel_Assignment(member, idleRecycle)
+Rel_Serving(osjs, instruct)
+Rel_Serving(osjs, idleRecycle)
+Rel_Flow(instruct, osjs, "new job preempts")
+Rel_Flow(idleRecycle, cred, "task-detail minutes")
+Rel_Flow(idleRecycle, cloud, "request-machine-release / L2")
+Rel_Flow(ev, cloud, "recycle-idle-machines")
+
+Implementation_Plateau(p96, "v96")
+Implementation_Plateau(p98, "v98")
+Implementation_Gap(g, "指令跑完容器仍挂着不回收")
+Implementation_WorkPackage(wp, "WP-instruction-idle-recycle")
+Rel_Triggering(p96, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p98, "delivers")
+
+@enduml

@@ -1,0 +1,31 @@
+---
+description: 人工可改配置项 SSOT 必须在 conf/<area>/<app>/；compose/run.sh 只消费不充当第二默认源
+alwaysApply: true
+---
+
+# 配置项统一落在 conf/<area>/<app>/（元规则）
+
+适用于整个 monorepo：**人类或 Agent 调参只改 conf**。细则见 `.ai/01_project_constraints/47_conf_app_human_editable_config_ssot.md`；约束索引第 42 条。
+
+## 强制要求
+
+- 端口、内存上限、并发、公网 URL、数据目录、功能开关等**人工可改**配置，编辑落点为 `conf/<area>/<app>/config.yaml`（本机覆盖 `conf-local/`）。
+- **运行时 SSOT（ADR-0052）**：`github.com/task2money/daydaymoney-deploy`。源码仓 `conf.example/` 仅为 schema。本机 `conf/` 子仓双写至 P4。
+- `docker-compose.yml` / `run.sh` **只消费** conf（读 conf → 导出 env / 渲染）；禁止把长期默认可调值只写在 compose/脚本里。
+- 若 compose 保留 `${VAR:-default}`，default **必须与 conf 一致**，并注释 `SSOT: conf/...`。
+- 与「仅读本目录 conf」（第 30 条）互补：本条管**编辑落点**，第 30 条管**运行时读边界**。
+
+## 触发
+
+- 新增/修改 `**/docker-compose*.yml` 中的可调默认（mem_limit、ports、环境默认值）
+- 新增服务可调参数、搬迁配置、改 `conf/**/config.yaml`
+- 用户询问「这个配置改哪里」
+
+## 验收（样例）
+
+```bash
+rg -n '^memLimit:' conf/infra/git-service/config.yaml
+rg -n 'mem_limit:' gitService/docker-compose.yml
+python3 db/scripts/ci/test_check_conf_tracked_allowlist.py
+python3 db/scripts/ci/check_conf_tracked_allowlist.py
+```

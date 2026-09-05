@@ -1,0 +1,318 @@
+' @title: daydaymoney Enterprise Landscape
+' @view: enterprise-landscape
+' @status: target
+' @version: 14
+' @iteration: agent-session-coordination
+' @author: claude
+' @based_on: v13 (v13-enterprise-landscape-20260806-0008-claude.puml)
+' @updated: 2026-08-06 00:40
+' @description: 多智能体会话互知与冲突防护 — Session Hub 注册表/仓库级锁(租约+心跳)/死锁检测 + 暂停恢复 + Shadow Edit(临时目录编辑原子拷回) + Claude Code 会话钩子分发(v13 分发器扩展) + pre-commit 提交锁校验；覆盖交互式/无头 claude-agent/夜间巡检/CI 四类会话
+
+@startuml
+!include <archimate/Archimate>
+
+title daydaymoney Platform — Enterprise Landscape v14 Target (2026-08-06 00:40)
+
+' ═══════════════════════════════════════
+' Change Legend — v14 变更图例
+' ═══════════════════════════════════════
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW v14] 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED v14] 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED v14] 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+' ═══════════════════════════════════════════════════════════
+' Business Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Business" {
+  Business_Actor(developer, "Developer")
+  Business_Actor(admin, "Platform Admin")
+  Business_Actor(enterprise, "Enterprise Customer")
+  Business_Actor(vendor, "Marketplace Vendor")
+
+  Business_Service(ideSvc, "IDE Workspace Service")
+  Business_Service(taskMgmt, "Task Management Service")
+  Business_Service(cloudRes, "Cloud Resource Service")
+  Business_Service(billingSvc, "Billing & License Service")
+  Business_Service(llmSvc, "LLM AI Service")
+  Business_Service(projMgmt, "Project Management Service")
+  Business_Service(imageMarket, "Image Marketplace Service")
+  Business_Service(identitySvc, "Identity & Access Service (RBAC)" )
+  Business_Service(referralSvc, "Referral & Growth Service")
+
+  Business_Process(devFlow, "Development Workflow")
+  Business_Process(vendorOnboard, "Vendor Image Onboarding")
+
+  Business_Object(project, "Project")
+  Business_Object(workspace, "Workspace")
+  Business_Object(vendorCred, "Vendor Cloud Test Credential")
+  Business_Object(tenantPerm, "Tenant Role / Permission")
+  Business_Object(wxIdentity, "WeChat Identity (openid/unionid)")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Application Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Application" {
+  Application_Component(gateway, "API Gateway (APISIX :18081)")
+  Application_Component(authSvc, "taskAuth (Go :8003)\n[PDP 集中授权 + 微信身份]")
+  Application_Component(gitOauthSvc, "taskGitOauth (Go :8002)")
+  Application_Component(billSvc, "taskBill (Go :8004)")
+  Application_Component(referralSvc, "taskReferral (Go :8025)")
+  Application_Component(aiProvider, "taskAiProvider (Go :8010)")
+  Application_Component(agentSupport, "taskAgentSupport (Go :8011)")
+  Application_Component(aiEndpoint, "taskAIEndPoint (Go :8013)\n[LLM 网关]")
+  Application_Component(containerGW, "taskContainerGateway (Go :8014)")
+  Application_Component(credSvc, "taskCredentialService (Go :8015)")
+  Application_Component(taskProjectSvc, "taskProjectService (Go :8016)")
+  Application_Component(taskTaskSvc, "taskTaskService (Go :8017)")
+  Application_Component(taskCloudSvc, "taskCloudService (Go :8018)")
+  Application_Component(taskAICommentSvc, "taskAIComment (Go :8019)")
+  Application_Component(tenantSvc, "taskTenantService (Go :8020)")
+  Application_Component(sseSvc, "taskSSE (Go :8007)")
+  Application_Component(eventsSvc, "taskEvents (Kafka intents)")
+  Application_Component(feSvc, "taskFE (Vue SPA)")
+  Application_Component(shareLibAuthz, "shareLib/authz\n(薄客户端)")
+
+  Application_Service(authAPI, "Authentication & RBAC API")
+  Application_Service(projectAPI, "Project Management API")
+  Application_Service(taskAPI, "Task Management API")
+  Application_Service(cloudAPI, "Cloud Resource API")
+  Application_Service(vendorCredAPI, "Vendor Cloud Credential API")
+  Application_Service(imageMarketAPI, "Image Marketplace API")
+  Application_Service(tenantAPI, "Tenant/Member/Group API")
+  Application_Service(billingAPI, "Billing & Payment API")
+  Application_Service(gitOauthAPI, "Git OAuth API")
+  Application_Service(sseAPI, "SSE Realtime API")
+
+  Application_DataObject(authDB, "taskAuth DB\n(+wechat_identity)")
+  Application_DataObject(gitOauthDB, "taskGitOauth DB")
+  Application_DataObject(billDB, "taskBill DB\n(+billing_payment_pending)")
+  Application_DataObject(referralDB, "taskReferral DB")
+  Application_DataObject(projectDB, "taskProject DB")
+  Application_DataObject(taskDB, "taskTask DB")
+  Application_DataObject(cloudDB, "taskCloud DB")
+  Application_DataObject(aiProviderDB, "taskAiProvider DB")
+  Application_DataObject(tenantDB, "taskTenant DB\n(+RBAC 组/资源表)")
+  Application_DataObject(credDB, "taskCredentialService DB")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Technology Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Technology" {
+  Technology_Node(appNode, "Application Host")
+  Technology_SystemSoftware(goRuntime, "Go Runtime")
+
+  Technology_Service(postgres, "PostgreSQL")
+  Technology_Service(sqlite, "SQLite (per-service)")
+  Technology_Service(redis, "Redis")
+  Technology_Service(kafka, "Kafka")
+  Technology_Service(gitlab, "GitLab CE (:8012)")
+  Technology_Service(upstreamCloud, "Aliyun ECS/STS API")
+  Technology_Service(upstreamLLM, "Upstream LLM (DeepSeek/OpenAI)")
+  Technology_Service(observability, "Grafana/Loki (DaydaymoneyGrafana)")
+
+  Technology_Artifact(djangoArt, "Django saas-backend [RETIRED]")
+
+  ' ── v13: Git Hooks 开发工具链 ──────────────────────────
+  Technology_Artifact(hooksSSOT, "Git Hooks 模板 SSOT\nscripts/hooks/templates/\n(6 语言 pre-commit + random_test_runner.sh)")
+  Technology_Artifact(hooksDeploy, "Hooks 分发/校验器\ninstall-hooks-all.sh +\ncommit_with_submodules.py --check/deploy\n(HOOK_VERSION 版本戳)")
+  Technology_Artifact(repoGitHooks, ".githooks/ 入库真源 ×38 仓\ncore.hooksPath 激活\n(commit-msg/pre-commit/pre-push)")
+  Technology_Artifact(oldHookCopy, ".git/hooks/ 复制模式\ninstall_root_hooks.sh /\ninstall-arch-hooks.sh / db 副本")
+
+  ' ── v14: Session Hub 多会话互知工具链 ──────────────────
+  Technology_Artifact(sessionHub, "Session Hub\nlogs/sessions/\n(注册表 registry/ + 仓库级锁 locks/\n租约 TTL10min + 心跳 30s + audit/)")
+  Technology_Artifact(sessionCLI, "claude-agent session CLI\n(Go: register/list/acquire/release\nheartbeat/pause/resume/shadow-*)")
+  Technology_Artifact(ccHooks, "Claude Code 会话钩子\n(SessionStart/End/UserPromptSubmit\nPreToolUse/PreCompact + settings.json)")
+  Technology_Artifact(shadowWS, "Shadow Edit 工作区\nlogs/sessions/shadow/\n(快照拷贝 + SHA-256 校验和\n原子拷回 + 冲突报告)")
+  Technology_Artifact(submodulePool, "开发子仓池\n(40+ 子模块仓库\n16 Go 服务 + taskFE + 基建仓)")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Implementation & Migration
+' ═══════════════════════════════════════════════════════════
+rectangle "Implementation & Migration" {
+  Implementation_Plateau(plateauV12, "Plateau v12 — 基线回填 (2026-08-05)")
+  Implementation_Plateau(plateauV13, "Plateau v13 — Git Hooks 入库 (2026-08-06)")
+  Implementation_Plateau(plateauV14, "Plateau v14 — 多会话互知 (2026-08-06)")
+  Implementation_Gap(gapHooks, "Gap: 钩子不入库 → 内容/部署/版本不可跟踪；4 套部署机制漂移")
+  Implementation_Gap(gapSession, "Gap: 多会话并发编辑无互知、无锁/租约；冲突只能事后 git 处理")
+  Implementation_WorkPackage(wpHooks, "WP-git-hooks-vc\n(P0 主仓 → P1 docs → P2 FE/Referral → P3 全量子仓 → P4 文档/CI)")
+  Implementation_WorkPackage(wpSession, "WP-session-coordination\n(P0 CLI/注册表/锁 → P1 hooks 分发 → P2 sweep/CI → P3 pause/shadow → P4 交付)")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Cross-Layer Relationships
+' ═══════════════════════════════════════════════════════════
+' Gateway → Services
+Rel_Flow(gateway, authSvc, "forward-auth → PDP")
+Rel_Flow(gateway, tenantSvc, "/api/tenant/*")
+Rel_Flow(gateway, taskProjectSvc, "projects/*")
+Rel_Flow(gateway, taskTaskSvc, "todos/*")
+Rel_Flow(gateway, taskCloudSvc, "cloud/*")
+Rel_Flow(gateway, billSvc, "billing/*")
+Rel_Flow(gateway, feSvc, "SPA 静态资源")
+
+' Services → Business Services
+Rel_Serving(authAPI, identitySvc, "enables")
+Rel_Serving(projectAPI, projMgmt, "enables")
+Rel_Serving(taskAPI, taskMgmt, "enables")
+Rel_Serving(cloudAPI, cloudRes, "enables")
+Rel_Serving(billingAPI, billingSvc, "enables")
+Rel_Serving(imageMarketAPI, imageMarket, "enables")
+Rel_Serving(gitOauthAPI, ideSvc, "enables")
+Rel_Serving(sseAPI, taskMgmt, "realtime status")
+
+' Services realize APIs
+Rel_Realization(authSvc, authAPI, "serves")
+Rel_Realization(taskProjectSvc, projectAPI, "serves")
+Rel_Realization(taskTaskSvc, taskAPI, "serves")
+Rel_Realization(taskCloudSvc, cloudAPI, "serves")
+Rel_Realization(taskCloudSvc, vendorCredAPI, "serves")
+Rel_Realization(aiProvider, imageMarketAPI, "serves")
+Rel_Realization(tenantSvc, tenantAPI, "serves")
+Rel_Realization(billSvc, billingAPI, "serves")
+Rel_Realization(gitOauthSvc, gitOauthAPI, "serves")
+Rel_Realization(sseSvc, sseAPI, "serves")
+
+' Data ownership
+Rel_Access(authSvc, authDB, "reads/writes")
+Rel_Access(gitOauthSvc, gitOauthDB, "reads/writes")
+Rel_Access(billSvc, billDB, "reads/writes")
+Rel_Access(referralSvc, referralDB, "reads/writes")
+Rel_Access(taskProjectSvc, projectDB, "reads/writes")
+Rel_Access(taskTaskSvc, taskDB, "reads/writes")
+Rel_Access(taskCloudSvc, cloudDB, "reads/writes")
+Rel_Access(aiProvider, aiProviderDB, "reads/writes")
+Rel_Access(tenantSvc, tenantDB, "reads/writes")
+Rel_Access(credSvc, credDB, "reads/writes")
+
+' Cross-service
+Rel_Serving(shareLibAuthz, authSvc, "CheckPerm() HTTP fallback")
+Rel_Serving(shareLibAuthz, tenantSvc, "RequireGroupAdmin")
+Rel_Serving(shareLibAuthz, taskProjectSvc, "RequirePerm")
+Rel_Serving(shareLibAuthz, taskTaskSvc, "RequirePerm")
+Rel_Serving(shareLibAuthz, taskCloudSvc, "RequirePerm")
+Rel_Serving(shareLibAuthz, billSvc, "RequirePerm")
+
+Rel_Serving(aiProvider, taskCloudSvc, "credential lookup")
+Rel_Serving(aiEndpoint, upstreamLLM, "LLM proxy")
+Rel_Serving(aiProvider, upstreamCloud, "CloudSDKProxy")
+Rel_Serving(eventsSvc, kafka, "consume/publish")
+Rel_Serving(sseSvc, redis, "pub/sub")
+
+' ── v13: Git Hooks 部署流 ─────────────────────────────────
+Rel_Flow(hooksSSOT, hooksDeploy, "模板渲染 + 版本戳")
+Rel_Flow(hooksDeploy, repoGitHooks, "分发/校验\n(38 仓 .githooks/ + hooksPath)")
+Rel_Flow(developer, hooksDeploy, "一键激活\ninstall-hooks-all.sh")
+Rel_Flow(repoGitHooks, gitlab, "钩子入库提交")
+Rel_Association(oldHookCopy, repoGitHooks, "旧复制模式迁移至入库模式")
+
+' ── v14: Session Hub 多会话互知流 ─────────────────────────
+Rel_Serving(sessionCLI, sessionHub, "读写注册表/锁\n(flock 原子化 + TTL + 心跳)")
+Rel_Serving(ccHooks, sessionCLI, "register/release/check\n(交互会话自动接线)")
+Rel_Flow(ccHooks, sessionHub, "SessionStart 注册\nUserPromptSubmit 心跳")
+Rel_Flow(sessionCLI, shadowWS, "shadow-begin/apply/abort\n(快照 + 原子拷回)")
+Rel_Flow(sessionHub, submodulePool, "仓库级锁\n(字典序防死锁 + 窃取回收)")
+Rel_Association(developer, ccHooks, "交互会话触发")
+Rel_Flow(hooksDeploy, ccHooks, "🟡 分发扩展\n(settings.json 会话钩子\npre-commit v1.1.0 锁校验)")
+
+' 架构变迁
+Rel_Triggering(plateauV12, gapHooks, "identifies")
+Rel_Realization(wpHooks, gapHooks, "closes")
+Rel_Realization(wpHooks, plateauV13, "delivers")
+Rel_Triggering(plateauV13, gapSession, "identifies")
+Rel_Realization(wpSession, gapSession, "closes")
+Rel_Realization(wpSession, plateauV14, "delivers")
+
+' ═══════════════════════════════════════════════════════════
+' v14 Change Notes
+' ═══════════════════════════════════════════════════════════
+note right of sessionHub
+  🟢 [NEW v14] Session Hub
+  logs/sessions/ — 注册表 registry/ + 仓库级锁 locks/
+  租约 TTL 10min + 心跳 30s 守护 + pid 存活校验
+  心跳过期且 pid 死亡 → 窃取回收 (audit 留痕)
+  @author: claude @2026-08-06 00:40
+end note
+
+note right of sessionCLI
+  🟢 [NEW v14] claude-agent session CLI (Go)
+  register/list/acquire/release/heartbeat
+  pause/resume (SIGSTOP/SIGCONT 进程树)
+  shadow-begin/apply/abort
+  逻辑 SSOT；scripts/lib/sessionctl.sh 薄封装
+  @author: claude @2026-08-06 00:40
+end note
+
+note right of ccHooks
+  🟢 [NEW v14] Claude Code 会话钩子
+  SessionStart 注册 + 活跃会话摘要
+  SessionEnd/Stop 释放；PreToolUse 写前 check
+  UserPromptSubmit/PreCompact 心跳兜底
+  @author: claude @2026-08-06 00:40
+end note
+
+note right of shadowWS
+  🟢 [NEW v14] Shadow Edit 工作区
+  冲突必要场景: 拷贝到临时目录编辑完原子拷回
+  快照 SHA-256 → 编辑 → apply 校验未变 → mv 原子拷回
+  原文件已变 → 冲突报告 → 用户决策
+  @author: claude @2026-08-06 00:40
+end note
+
+note bottom of submodulePool
+  🟢 [NEW v14] 开发子仓池
+  锁粒度 = 子仓为单位；40+ 仓共享 Session Hub
+  @author: claude @2026-08-06 00:40
+end note
+
+note right of hooksDeploy
+  🟡 [MODIFIED v14] 分发范围扩展
+  + .claude/settings.json 会话钩子 (38 仓)
+  + pre-commit v1.1.0 提交锁校验
+  (HOOK_VERSION 新增 session-hooks 条目)
+  @author: claude @2026-08-06 00:40
+end note
+
+note bottom of oldHookCopy
+  🔴 [DEPRECATED v13] .git/hooks/ 复制模式
+  install_root_hooks.sh / install-arch-hooks.sh / db 副本退役
+  @author: claude @2026-08-06 00:08
+end note
+
+note bottom of authSvc
+  🟢 [NEW v12] taskAuth (:8003)
+  PDP 集中授权 (v63) + wechat_identity (v64)
+  @author: claude @2026-08-05 18:00
+end note
+
+note bottom of tenantSvc
+  🟢 [NEW v12] taskTenantService (:8020)
+  members/groups/RBAC 组资源 (v39/v63)
+  @author: claude @2026-08-05 18:00
+end note
+
+note bottom of aiProvider
+  🟢 [NEW v12] taskAiProvider (:8010)
+  Go 化 ai-provider (v32) — 目录/云SDK/厂商密钥
+  @author: claude @2026-08-05 18:00
+end note
+
+note bottom of djangoArt
+  🔴 [DEPRECATED v12] Django saas-backend
+  v57 完全退役 (2026-07-30) — task2app/ 已删除
+  @author: claude @2026-08-05 18:00
+end note
+
+note bottom of plateauV14
+  🎯 v14 Target — 多会话互知
+  v13 钩子/巡检 + Session Hub 跨会话协调
+  四类会话 (交互/无头/巡检/CI) 全覆盖
+  @author: claude @2026-08-06 00:40
+end note
+
+@enduml

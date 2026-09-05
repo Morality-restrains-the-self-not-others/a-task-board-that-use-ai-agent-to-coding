@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v26-ai-20260715-0010">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v26 Target</name>
+  <purpose>Container image @ mention: workspace flag, unified comments, idle-reuse VM start, ContainerAgentComment SSE reply</purpose>
+
+  <folder name="Motivation" id="id-v26-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="🟢 @模式默认关闭；关则拒绝开机器 [NEW v26]" id="id-v26-constraint"/>
+  </folder>
+  <folder name="Application" id="id-v26-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue TaskDetail + TaskPanel Settings [MODIFIED v26]" id="id-v26-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v26-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskProjectService workspaces [MODIFIED v26]" id="id-v26-proj"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskTaskService comments+mentions [MODIFIED v26]" id="id-v26-task"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskAIComment container_agent [MODIFIED v26]" id="id-v26-aic"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskCloudService start-vm + idle reuse" id="id-v26-cloud"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 onlineServiceJS ContextPack [MODIFIED v26]" id="id-v26-osjs"/>
+    <element xsi:type="archimate:DataObject" name="🟢 workspaces.container_image_at_mode_enabled [NEW v26]" id="id-v26-flag"/>
+    <element xsi:type="archimate:DataObject" name="🟢 container_agent_comments [NEW v26]" id="id-v26-cac"/>
+  </folder>
+  <folder name="Technology" id="id-v26-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="Kafka" id="id-v26-kafka"/>
+    <element xsi:type="archimate:Node" name="Task SSE" id="id-v26-sse"/>
+    <element xsi:type="archimate:Node" name="Aliyun ECS / idle pool" id="id-v26-ecs"/>
+  </folder>
+  <folder name="Relations" id="id-v26-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v26-flow-vue-gw" source="id-v26-vue" target="id-v26-gw" name="PATCH workspace / POST comment"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v26-flow-gw-proj" source="id-v26-gw" target="id-v26-proj" name="at_mode flag"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v26-acc-proj-flag" source="id-v26-proj" target="id-v26-flag" name="W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v26-flow-gw-task" source="id-v26-gw" target="id-v26-task" name="comments+mentions"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v26-flow-task-kafka" source="id-v26-task" target="id-v26-kafka" name="IMAGE_MENTIONED"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v26-flow-kafka-aic" source="id-v26-kafka" target="id-v26-aic" name="orchestrate"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v26-flow-aic-cloud" source="id-v26-aic" target="id-v26-cloud" name="start-vm(-auto)"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v26-flow-cloud-ecs" source="id-v26-cloud" target="id-v26-ecs" name="reuse or new"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v26-flow-aic-osjs" source="id-v26-aic" target="id-v26-osjs" name="ContextPack + exec"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v26-flow-osjs-aic" source="id-v26-osjs" target="id-v26-aic" name="stream reply"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v26-flow-aic-sse" source="id-v26-aic" target="id-v26-sse" name="container_agent_stream"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v26-flow-sse-vue" source="id-v26-sse" target="id-v26-vue" name="SSE"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v26-acc-aic-cac" source="id-v26-aic" target="id-v26-cac" name="W"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v26-inf-c-task" source="id-v26-constraint" target="id-v26-task" name="拒绝未开开关的 mention"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v26-inf-c-vue" source="id-v26-constraint" target="id-v26-vue" name="无 @ picker"/>
+  </folder>
+  <folder name="Implementation" id="id-v26-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v25 — auto SG whitelist (current)" id="id-v26-plat-v25"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v26 — container-image-at-mention" id="id-v26-plat-v26"/>
+    <element xsi:type="archimate:Gap" name="Gap: 无@镜像开关/触发/Agent评论SSE/统一评论区" id="id-v26-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v26-container-image-at-mention" id="id-v26-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v26-rel-plat25-gap" source="id-v26-plat-v25" target="id-v26-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v26-rel-wp-gap" source="id-v26-wp" target="id-v26-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v26-rel-wp-plat26" source="id-v26-wp" target="id-v26-plat-v26"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v26-rel-plat26-aic" source="id-v26-plat-v26" target="id-v26-aic"/>
+  </folder>
+  <folder name="Views" id="id-v26-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v25→v26 — container-image-at-mention" id="id-v26-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-plat25" archimateElement="id-v26-plat-v25">
+        <bounds x="48" y="100" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-plat25-gap"
+          source="id-v26-do-plat25" target="id-v26-do-gap"
+          archimateRelationship="id-v26-rel-plat25-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-gap" archimateElement="id-v26-gap"
+        targetConnections="id-v26-conn-plat25-gap id-v26-conn-wp-gap">
+        <bounds x="380" y="100" width="360" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-wp" archimateElement="id-v26-wp">
+        <bounds x="800" y="60" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-wp-gap"
+          source="id-v26-do-wp" target="id-v26-do-gap"
+          archimateRelationship="id-v26-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-wp-plat26"
+          source="id-v26-do-wp" target="id-v26-do-plat26"
+          archimateRelationship="id-v26-rel-wp-plat26"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-plat26" archimateElement="id-v26-plat-v26"
+        targetConnections="id-v26-conn-wp-plat26">
+        <bounds x="800" y="160" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-plat26-aic"
+          source="id-v26-do-plat26" target="id-v26-do-aic-m"
+          archimateRelationship="id-v26-rel-plat26-aic"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-aic-m" archimateElement="id-v26-aic"
+        targetConnections="id-v26-conn-plat26-aic">
+        <bounds x="800" y="240" width="320" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v26 Target — @镜像评论开跑与 Agent SSE 回写" id="id-v26-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-vue" archimateElement="id-v26-vue"
+        targetConnections="id-v26-conn-sse-vue id-v26-conn-c-vue">
+        <bounds x="40" y="40" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-vue-gw"
+          source="id-v26-do-vue" target="id-v26-do-gw"
+          archimateRelationship="id-v26-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-gw" archimateElement="id-v26-gw"
+        targetConnections="id-v26-conn-vue-gw">
+        <bounds x="240" y="40" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-gw-proj"
+          source="id-v26-do-gw" target="id-v26-do-proj"
+          archimateRelationship="id-v26-flow-gw-proj"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-gw-task"
+          source="id-v26-do-gw" target="id-v26-do-task"
+          archimateRelationship="id-v26-flow-gw-task"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-proj" archimateElement="id-v26-proj"
+        targetConnections="id-v26-conn-gw-proj">
+        <bounds x="400" y="20" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-proj-flag"
+          source="id-v26-do-proj" target="id-v26-do-flag"
+          archimateRelationship="id-v26-acc-proj-flag"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-flag" archimateElement="id-v26-flag"
+        targetConnections="id-v26-conn-proj-flag">
+        <bounds x="620" y="20" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-task" archimateElement="id-v26-task"
+        targetConnections="id-v26-conn-gw-task id-v26-conn-c-task">
+        <bounds x="400" y="100" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-task-kafka"
+          source="id-v26-do-task" target="id-v26-do-kafka"
+          archimateRelationship="id-v26-flow-task-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-kafka" archimateElement="id-v26-kafka"
+        targetConnections="id-v26-conn-task-kafka">
+        <bounds x="620" y="100" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-kafka-aic"
+          source="id-v26-do-kafka" target="id-v26-do-aic"
+          archimateRelationship="id-v26-flow-kafka-aic"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-aic" archimateElement="id-v26-aic"
+        targetConnections="id-v26-conn-kafka-aic id-v26-conn-osjs-aic">
+        <bounds x="780" y="100" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-aic-cloud"
+          source="id-v26-do-aic" target="id-v26-do-cloud"
+          archimateRelationship="id-v26-flow-aic-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-aic-osjs"
+          source="id-v26-do-aic" target="id-v26-do-osjs"
+          archimateRelationship="id-v26-flow-aic-osjs"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-aic-sse"
+          source="id-v26-do-aic" target="id-v26-do-sse"
+          archimateRelationship="id-v26-flow-aic-sse"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-aic-cac"
+          source="id-v26-do-aic" target="id-v26-do-cac"
+          archimateRelationship="id-v26-acc-aic-cac"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-cloud" archimateElement="id-v26-cloud"
+        targetConnections="id-v26-conn-aic-cloud">
+        <bounds x="1000" y="40" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-cloud-ecs"
+          source="id-v26-do-cloud" target="id-v26-do-ecs"
+          archimateRelationship="id-v26-flow-cloud-ecs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-ecs" archimateElement="id-v26-ecs"
+        targetConnections="id-v26-conn-cloud-ecs">
+        <bounds x="1220" y="40" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-osjs" archimateElement="id-v26-osjs"
+        targetConnections="id-v26-conn-aic-osjs">
+        <bounds x="1000" y="120" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-osjs-aic"
+          source="id-v26-do-osjs" target="id-v26-do-aic"
+          archimateRelationship="id-v26-flow-osjs-aic"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-sse" archimateElement="id-v26-sse"
+        targetConnections="id-v26-conn-aic-sse">
+        <bounds x="1000" y="200" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-sse-vue"
+          source="id-v26-do-sse" target="id-v26-do-vue"
+          archimateRelationship="id-v26-flow-sse-vue"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-cac" archimateElement="id-v26-cac"
+        targetConnections="id-v26-conn-aic-cac">
+        <bounds x="780" y="200" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v26-do-constraint" archimateElement="id-v26-constraint">
+        <bounds x="40" y="200" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-c-task"
+          source="id-v26-do-constraint" target="id-v26-do-task"
+          archimateRelationship="id-v26-inf-c-task"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v26-conn-c-vue"
+          source="id-v26-do-constraint" target="id-v26-do-vue"
+          archimateRelationship="id-v26-inf-c-vue"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

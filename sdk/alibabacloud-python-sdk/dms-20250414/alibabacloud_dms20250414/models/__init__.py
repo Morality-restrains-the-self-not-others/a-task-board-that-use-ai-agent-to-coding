@@ -1,0 +1,603 @@
+# -*- coding: utf-8 -*-
+# This file is auto-generated, don't edit it. Thanks.
+from __future__ import annotations
+
+from ._dlcatalog import DLCatalog
+from ._dlcolumn import DLColumn
+from ._dldatabase import DLDatabase
+from ._dlfunction import DLFunction
+from ._dlfunction_input import DLFunctionInput
+from ._dlorder import DLOrder
+from ._dlpartition import DLPartition
+from ._dlpartition_input import DLPartitionInput
+from ._dlresource_uri import DLResourceUri
+from ._dlserde_info import DLSerdeInfo
+from ._dlskewed_info import DLSkewedInfo
+from ._dlstorage_descriptor import DLStorageDescriptor
+from ._dltable import DLTable
+from ._dltable_input import DLTableInput
+from ._dltablebase_info import DLTablebaseInfo
+from ._foreign_instance import ForeignInstance
+from ._foreign_instance_cred_info import ForeignInstanceCredInfo
+from ._one_meta_database_object import OneMetaDatabaseObject
+from ._one_meta_table_base_info import OneMetaTableBaseInfo
+from ._one_meta_table_column import OneMetaTableColumn
+from ._one_meta_table_column_engine_meta import OneMetaTableColumnEngineMeta
+from ._one_meta_table_engine_meta import OneMetaTableEngineMeta
+from ._one_meta_table_index import OneMetaTableIndex
+from ._partition_error import PartitionError
+from ._add_user_to_data_agent_workspace_request import AddUserToDataAgentWorkspaceRequest
+from ._add_user_to_data_agent_workspace_response_body import AddUserToDataAgentWorkspaceResponseBody
+from ._add_user_to_data_agent_workspace_response import AddUserToDataAgentWorkspaceResponse
+from ._batch_create_data_lake_partitions_request import BatchCreateDataLakePartitionsRequest
+from ._batch_create_data_lake_partitions_shrink_request import BatchCreateDataLakePartitionsShrinkRequest
+from ._batch_create_data_lake_partitions_response_body import BatchCreateDataLakePartitionsResponseBody
+from ._batch_create_data_lake_partitions_response import BatchCreateDataLakePartitionsResponse
+from ._batch_delete_data_lake_partitions_request import BatchDeleteDataLakePartitionsRequest
+from ._batch_delete_data_lake_partitions_response_body import BatchDeleteDataLakePartitionsResponseBody
+from ._batch_delete_data_lake_partitions_response import BatchDeleteDataLakePartitionsResponse
+from ._batch_update_data_lake_partitions_request import BatchUpdateDataLakePartitionsRequest
+from ._batch_update_data_lake_partitions_shrink_request import BatchUpdateDataLakePartitionsShrinkRequest
+from ._batch_update_data_lake_partitions_response_body import BatchUpdateDataLakePartitionsResponseBody
+from ._batch_update_data_lake_partitions_response import BatchUpdateDataLakePartitionsResponse
+from ._create_airflow_request import CreateAirflowRequest
+from ._create_airflow_response_body import CreateAirflowResponseBody
+from ._create_airflow_response import CreateAirflowResponse
+from ._create_airflow_login_token_request import CreateAirflowLoginTokenRequest
+from ._create_airflow_login_token_response_body import CreateAirflowLoginTokenResponseBody
+from ._create_airflow_login_token_response import CreateAirflowLoginTokenResponse
+from ._create_custom_agent_request import CreateCustomAgentRequest
+from ._create_custom_agent_shrink_request import CreateCustomAgentShrinkRequest
+from ._create_custom_agent_response_body import CreateCustomAgentResponseBody
+from ._create_custom_agent_response import CreateCustomAgentResponse
+from ._create_data_agent_session_request import CreateDataAgentSessionRequest
+from ._create_data_agent_session_shrink_request import CreateDataAgentSessionShrinkRequest
+from ._create_data_agent_session_response_body import CreateDataAgentSessionResponseBody
+from ._create_data_agent_session_response import CreateDataAgentSessionResponse
+from ._create_data_agent_workspace_request import CreateDataAgentWorkspaceRequest
+from ._create_data_agent_workspace_response_body import CreateDataAgentWorkspaceResponseBody
+from ._create_data_agent_workspace_response import CreateDataAgentWorkspaceResponse
+from ._create_data_lake_database_request import CreateDataLakeDatabaseRequest
+from ._create_data_lake_database_shrink_request import CreateDataLakeDatabaseShrinkRequest
+from ._create_data_lake_database_response_body import CreateDataLakeDatabaseResponseBody
+from ._create_data_lake_database_response import CreateDataLakeDatabaseResponse
+from ._create_data_lake_function_request import CreateDataLakeFunctionRequest
+from ._create_data_lake_function_shrink_request import CreateDataLakeFunctionShrinkRequest
+from ._create_data_lake_function_response_body import CreateDataLakeFunctionResponseBody
+from ._create_data_lake_function_response import CreateDataLakeFunctionResponse
+from ._create_data_lake_partition_request import CreateDataLakePartitionRequest
+from ._create_data_lake_partition_shrink_request import CreateDataLakePartitionShrinkRequest
+from ._create_data_lake_partition_response_body import CreateDataLakePartitionResponseBody
+from ._create_data_lake_partition_response import CreateDataLakePartitionResponse
+from ._create_data_lake_table_request import CreateDataLakeTableRequest
+from ._create_data_lake_table_shrink_request import CreateDataLakeTableShrinkRequest
+from ._create_data_lake_table_response_body import CreateDataLakeTableResponseBody
+from ._create_data_lake_table_response import CreateDataLakeTableResponse
+from ._delete_airflow_request import DeleteAirflowRequest
+from ._delete_airflow_response_body import DeleteAirflowResponseBody
+from ._delete_airflow_response import DeleteAirflowResponse
+from ._delete_custom_agent_request import DeleteCustomAgentRequest
+from ._delete_custom_agent_response_body import DeleteCustomAgentResponseBody
+from ._delete_custom_agent_response import DeleteCustomAgentResponse
+from ._delete_data_agent_workspace_request import DeleteDataAgentWorkspaceRequest
+from ._delete_data_agent_workspace_response_body import DeleteDataAgentWorkspaceResponseBody
+from ._delete_data_agent_workspace_response import DeleteDataAgentWorkspaceResponse
+from ._delete_data_lake_database_request import DeleteDataLakeDatabaseRequest
+from ._delete_data_lake_database_response_body import DeleteDataLakeDatabaseResponseBody
+from ._delete_data_lake_database_response import DeleteDataLakeDatabaseResponse
+from ._delete_data_lake_function_request import DeleteDataLakeFunctionRequest
+from ._delete_data_lake_function_response_body import DeleteDataLakeFunctionResponseBody
+from ._delete_data_lake_function_response import DeleteDataLakeFunctionResponse
+from ._delete_data_lake_partition_request import DeleteDataLakePartitionRequest
+from ._delete_data_lake_partition_shrink_request import DeleteDataLakePartitionShrinkRequest
+from ._delete_data_lake_partition_response_body import DeleteDataLakePartitionResponseBody
+from ._delete_data_lake_partition_response import DeleteDataLakePartitionResponse
+from ._delete_data_lake_table_request import DeleteDataLakeTableRequest
+from ._delete_data_lake_table_response_body import DeleteDataLakeTableResponseBody
+from ._delete_data_lake_table_response import DeleteDataLakeTableResponse
+from ._delete_file_upload_request import DeleteFileUploadRequest
+from ._delete_file_upload_response_body import DeleteFileUploadResponseBody
+from ._delete_file_upload_response import DeleteFileUploadResponse
+from ._describe_custom_agent_request import DescribeCustomAgentRequest
+from ._describe_custom_agent_response_body import DescribeCustomAgentResponseBody
+from ._describe_custom_agent_response import DescribeCustomAgentResponse
+from ._describe_data_agent_session_request import DescribeDataAgentSessionRequest
+from ._describe_data_agent_session_response_body import DescribeDataAgentSessionResponseBody
+from ._describe_data_agent_session_response import DescribeDataAgentSessionResponse
+from ._describe_file_upload_signature_request import DescribeFileUploadSignatureRequest
+from ._describe_file_upload_signature_response_body import DescribeFileUploadSignatureResponseBody
+from ._describe_file_upload_signature_response import DescribeFileUploadSignatureResponse
+from ._file_upload_callback_request import FileUploadCallbackRequest
+from ._file_upload_callback_response_body import FileUploadCallbackResponseBody
+from ._file_upload_callback_response import FileUploadCallbackResponse
+from ._get_airflow_request import GetAirflowRequest
+from ._get_airflow_response_body import GetAirflowResponseBody
+from ._get_airflow_response import GetAirflowResponse
+from ._get_chat_content_request import GetChatContentRequest
+from ._get_chat_content_response_body import GetChatContentResponseBody
+from ._get_chat_content_response import GetChatContentResponse
+from ._get_data_agent_sub_account_info_request import GetDataAgentSubAccountInfoRequest
+from ._get_data_agent_sub_account_info_response_body import GetDataAgentSubAccountInfoResponseBody
+from ._get_data_agent_sub_account_info_response import GetDataAgentSubAccountInfoResponse
+from ._get_data_agent_workspace_info_request import GetDataAgentWorkspaceInfoRequest
+from ._get_data_agent_workspace_info_response_body import GetDataAgentWorkspaceInfoResponseBody
+from ._get_data_agent_workspace_info_response import GetDataAgentWorkspaceInfoResponse
+from ._get_data_lake_catalog_request import GetDataLakeCatalogRequest
+from ._get_data_lake_catalog_response_body import GetDataLakeCatalogResponseBody
+from ._get_data_lake_catalog_response import GetDataLakeCatalogResponse
+from ._get_data_lake_database_request import GetDataLakeDatabaseRequest
+from ._get_data_lake_database_response_body import GetDataLakeDatabaseResponseBody
+from ._get_data_lake_database_response import GetDataLakeDatabaseResponse
+from ._get_data_lake_function_request import GetDataLakeFunctionRequest
+from ._get_data_lake_function_response_body import GetDataLakeFunctionResponseBody
+from ._get_data_lake_function_response import GetDataLakeFunctionResponse
+from ._get_data_lake_partition_request import GetDataLakePartitionRequest
+from ._get_data_lake_partition_shrink_request import GetDataLakePartitionShrinkRequest
+from ._get_data_lake_partition_response_body import GetDataLakePartitionResponseBody
+from ._get_data_lake_partition_response import GetDataLakePartitionResponse
+from ._get_data_lake_table_request import GetDataLakeTableRequest
+from ._get_data_lake_table_response_body import GetDataLakeTableResponseBody
+from ._get_data_lake_table_response import GetDataLakeTableResponse
+from ._get_notebook_and_submit_task_request import GetNotebookAndSubmitTaskRequest
+from ._get_notebook_and_submit_task_response_body import GetNotebookAndSubmitTaskResponseBody
+from ._get_notebook_and_submit_task_response import GetNotebookAndSubmitTaskResponse
+from ._get_notebook_task_status_request import GetNotebookTaskStatusRequest
+from ._get_notebook_task_status_response_body import GetNotebookTaskStatusResponseBody
+from ._get_notebook_task_status_response import GetNotebookTaskStatusResponse
+from ._list_airflows_request import ListAirflowsRequest
+from ._list_airflows_response_body import ListAirflowsResponseBody
+from ._list_airflows_response import ListAirflowsResponse
+from ._list_custom_agent_request import ListCustomAgentRequest
+from ._list_custom_agent_response_body import ListCustomAgentResponseBody
+from ._list_custom_agent_response import ListCustomAgentResponse
+from ._list_data_agent_session_request import ListDataAgentSessionRequest
+from ._list_data_agent_session_response_body import ListDataAgentSessionResponseBody
+from ._list_data_agent_session_response import ListDataAgentSessionResponse
+from ._list_data_agent_workspace_request import ListDataAgentWorkspaceRequest
+from ._list_data_agent_workspace_response_body import ListDataAgentWorkspaceResponseBody
+from ._list_data_agent_workspace_response import ListDataAgentWorkspaceResponse
+from ._list_data_agent_workspace_member_request import ListDataAgentWorkspaceMemberRequest
+from ._list_data_agent_workspace_member_response_body import ListDataAgentWorkspaceMemberResponseBody
+from ._list_data_agent_workspace_member_response import ListDataAgentWorkspaceMemberResponse
+from ._list_data_center_database_request import ListDataCenterDatabaseRequest
+from ._list_data_center_database_response_body import ListDataCenterDatabaseResponseBody
+from ._list_data_center_database_response import ListDataCenterDatabaseResponse
+from ._list_data_center_table_request import ListDataCenterTableRequest
+from ._list_data_center_table_response_body import ListDataCenterTableResponseBody
+from ._list_data_center_table_response import ListDataCenterTableResponse
+from ._list_data_lake_catalog_request import ListDataLakeCatalogRequest
+from ._list_data_lake_catalog_response_body import ListDataLakeCatalogResponseBody
+from ._list_data_lake_catalog_response import ListDataLakeCatalogResponse
+from ._list_data_lake_database_request import ListDataLakeDatabaseRequest
+from ._list_data_lake_database_response_body import ListDataLakeDatabaseResponseBody
+from ._list_data_lake_database_response import ListDataLakeDatabaseResponse
+from ._list_data_lake_function_request import ListDataLakeFunctionRequest
+from ._list_data_lake_function_response_body import ListDataLakeFunctionResponseBody
+from ._list_data_lake_function_response import ListDataLakeFunctionResponse
+from ._list_data_lake_function_name_request import ListDataLakeFunctionNameRequest
+from ._list_data_lake_function_name_response_body import ListDataLakeFunctionNameResponseBody
+from ._list_data_lake_function_name_response import ListDataLakeFunctionNameResponse
+from ._list_data_lake_partition_request import ListDataLakePartitionRequest
+from ._list_data_lake_partition_shrink_request import ListDataLakePartitionShrinkRequest
+from ._list_data_lake_partition_response_body import ListDataLakePartitionResponseBody
+from ._list_data_lake_partition_response import ListDataLakePartitionResponse
+from ._list_data_lake_partition_by_filter_request import ListDataLakePartitionByFilterRequest
+from ._list_data_lake_partition_by_filter_response_body import ListDataLakePartitionByFilterResponseBody
+from ._list_data_lake_partition_by_filter_response import ListDataLakePartitionByFilterResponse
+from ._list_data_lake_partition_name_request import ListDataLakePartitionNameRequest
+from ._list_data_lake_partition_name_response_body import ListDataLakePartitionNameResponseBody
+from ._list_data_lake_partition_name_response import ListDataLakePartitionNameResponse
+from ._list_data_lake_table_request import ListDataLakeTableRequest
+from ._list_data_lake_table_response_body import ListDataLakeTableResponseBody
+from ._list_data_lake_table_response import ListDataLakeTableResponse
+from ._list_data_lake_table_name_request import ListDataLakeTableNameRequest
+from ._list_data_lake_table_name_response_body import ListDataLakeTableNameResponseBody
+from ._list_data_lake_table_name_response import ListDataLakeTableNameResponse
+from ._list_data_lake_tablebase_info_request import ListDataLakeTablebaseInfoRequest
+from ._list_data_lake_tablebase_info_response_body import ListDataLakeTablebaseInfoResponseBody
+from ._list_data_lake_tablebase_info_response import ListDataLakeTablebaseInfoResponse
+from ._list_file_upload_request import ListFileUploadRequest
+from ._list_file_upload_response_body import ListFileUploadResponseBody
+from ._list_file_upload_response import ListFileUploadResponse
+from ._modify_custom_agent_request import ModifyCustomAgentRequest
+from ._modify_custom_agent_shrink_request import ModifyCustomAgentShrinkRequest
+from ._modify_custom_agent_response_body import ModifyCustomAgentResponseBody
+from ._modify_custom_agent_response import ModifyCustomAgentResponse
+from ._operate_custom_agent_request import OperateCustomAgentRequest
+from ._operate_custom_agent_response_body import OperateCustomAgentResponseBody
+from ._operate_custom_agent_response import OperateCustomAgentResponse
+from ._remove_user_to_data_agent_workspace_request import RemoveUserToDataAgentWorkspaceRequest
+from ._remove_user_to_data_agent_workspace_response_body import RemoveUserToDataAgentWorkspaceResponseBody
+from ._remove_user_to_data_agent_workspace_response import RemoveUserToDataAgentWorkspaceResponse
+from ._send_chat_message_request import SendChatMessageRequest
+from ._send_chat_message_shrink_request import SendChatMessageShrinkRequest
+from ._send_chat_message_response_body import SendChatMessageResponseBody
+from ._send_chat_message_response import SendChatMessageResponse
+from ._update_airflow_request import UpdateAirflowRequest
+from ._update_airflow_response_body import UpdateAirflowResponseBody
+from ._update_airflow_response import UpdateAirflowResponse
+from ._update_data_agent_space_info_request import UpdateDataAgentSpaceInfoRequest
+from ._update_data_agent_space_info_response_body import UpdateDataAgentSpaceInfoResponseBody
+from ._update_data_agent_space_info_response import UpdateDataAgentSpaceInfoResponse
+from ._update_data_agent_workspace_member_role_request import UpdateDataAgentWorkspaceMemberRoleRequest
+from ._update_data_agent_workspace_member_role_response_body import UpdateDataAgentWorkspaceMemberRoleResponseBody
+from ._update_data_agent_workspace_member_role_response import UpdateDataAgentWorkspaceMemberRoleResponse
+from ._update_data_lake_database_request import UpdateDataLakeDatabaseRequest
+from ._update_data_lake_database_shrink_request import UpdateDataLakeDatabaseShrinkRequest
+from ._update_data_lake_database_response_body import UpdateDataLakeDatabaseResponseBody
+from ._update_data_lake_database_response import UpdateDataLakeDatabaseResponse
+from ._update_data_lake_function_request import UpdateDataLakeFunctionRequest
+from ._update_data_lake_function_shrink_request import UpdateDataLakeFunctionShrinkRequest
+from ._update_data_lake_function_response_body import UpdateDataLakeFunctionResponseBody
+from ._update_data_lake_function_response import UpdateDataLakeFunctionResponse
+from ._update_data_lake_partition_request import UpdateDataLakePartitionRequest
+from ._update_data_lake_partition_shrink_request import UpdateDataLakePartitionShrinkRequest
+from ._update_data_lake_partition_response_body import UpdateDataLakePartitionResponseBody
+from ._update_data_lake_partition_response import UpdateDataLakePartitionResponse
+from ._update_data_lake_table_request import UpdateDataLakeTableRequest
+from ._update_data_lake_table_shrink_request import UpdateDataLakeTableShrinkRequest
+from ._update_data_lake_table_response_body import UpdateDataLakeTableResponseBody
+from ._update_data_lake_table_response import UpdateDataLakeTableResponse
+from ._add_user_to_data_agent_workspace_response_body import AddUserToDataAgentWorkspaceResponseBodyData
+from ._create_airflow_response_body import CreateAirflowResponseBodyRoot
+from ._create_airflow_login_token_response_body import CreateAirflowLoginTokenResponseBodyData
+from ._create_custom_agent_request import CreateCustomAgentRequestExecutionConfig
+from ._create_custom_agent_request import CreateCustomAgentRequestKnowledgeConfigList
+from ._create_custom_agent_request import CreateCustomAgentRequestScheduleTaskConfig
+from ._create_custom_agent_response_body import CreateCustomAgentResponseBodyDataExecutionConfig
+from ._create_custom_agent_response_body import CreateCustomAgentResponseBodyDataKnowledgeConfigList
+from ._create_custom_agent_response_body import CreateCustomAgentResponseBodyDataScheduleTaskConfig
+from ._create_custom_agent_response_body import CreateCustomAgentResponseBodyData
+from ._create_data_agent_session_request import CreateDataAgentSessionRequestSessionConfig
+from ._create_data_agent_session_response_body import CreateDataAgentSessionResponseBodyDataSessionConfig
+from ._create_data_agent_session_response_body import CreateDataAgentSessionResponseBodyData
+from ._create_data_agent_workspace_response_body import CreateDataAgentWorkspaceResponseBodyData
+from ._delete_airflow_response_body import DeleteAirflowResponseBodyRootResponses
+from ._delete_airflow_response_body import DeleteAirflowResponseBodyRoot
+from ._delete_custom_agent_response_body import DeleteCustomAgentResponseBodyData
+from ._delete_file_upload_response_body import DeleteFileUploadResponseBodyData
+from ._describe_custom_agent_response_body import DescribeCustomAgentResponseBodyDataExecutionConfig
+from ._describe_custom_agent_response_body import DescribeCustomAgentResponseBodyDataKnowledgeConfigList
+from ._describe_custom_agent_response_body import DescribeCustomAgentResponseBodyDataScheduleTaskConfig
+from ._describe_custom_agent_response_body import DescribeCustomAgentResponseBodyData
+from ._describe_data_agent_session_response_body import DescribeDataAgentSessionResponseBodyDataChatHistoryLocations
+from ._describe_data_agent_session_response_body import DescribeDataAgentSessionResponseBodyDataSessionConfig
+from ._describe_data_agent_session_response_body import DescribeDataAgentSessionResponseBodyData
+from ._describe_file_upload_signature_response_body import DescribeFileUploadSignatureResponseBodyData
+from ._file_upload_callback_response_body import FileUploadCallbackResponseBodyData
+from ._get_airflow_response_body import GetAirflowResponseBodyRoot
+from ._get_data_agent_sub_account_info_response_body import GetDataAgentSubAccountInfoResponseBodyData
+from ._get_data_agent_workspace_info_response_body import GetDataAgentWorkspaceInfoResponseBodyData
+from ._get_notebook_task_status_response_body import GetNotebookTaskStatusResponseBodyData
+from ._list_airflows_response_body import ListAirflowsResponseBodyRootList
+from ._list_airflows_response_body import ListAirflowsResponseBodyRoot
+from ._list_custom_agent_response_body import ListCustomAgentResponseBodyDataContentExecutionConfig
+from ._list_custom_agent_response_body import ListCustomAgentResponseBodyDataContentKnowledgeConfigList
+from ._list_custom_agent_response_body import ListCustomAgentResponseBodyDataContentScheduleTaskConfig
+from ._list_custom_agent_response_body import ListCustomAgentResponseBodyDataContent
+from ._list_custom_agent_response_body import ListCustomAgentResponseBodyData
+from ._list_data_agent_session_response_body import ListDataAgentSessionResponseBodyDataSessionConfig
+from ._list_data_agent_session_response_body import ListDataAgentSessionResponseBodyData
+from ._list_data_agent_workspace_response_body import ListDataAgentWorkspaceResponseBodyDataContent
+from ._list_data_agent_workspace_response_body import ListDataAgentWorkspaceResponseBodyData
+from ._list_data_agent_workspace_member_response_body import ListDataAgentWorkspaceMemberResponseBodyDataContent
+from ._list_data_agent_workspace_member_response_body import ListDataAgentWorkspaceMemberResponseBodyData
+from ._list_data_center_database_response_body import ListDataCenterDatabaseResponseBodyData
+from ._list_data_center_table_response_body import ListDataCenterTableResponseBodyDataContent
+from ._list_data_center_table_response_body import ListDataCenterTableResponseBodyData
+from ._list_file_upload_response_body import ListFileUploadResponseBodyData
+from ._modify_custom_agent_request import ModifyCustomAgentRequestExecutionConfig
+from ._modify_custom_agent_request import ModifyCustomAgentRequestKnowledgeConfigList
+from ._modify_custom_agent_request import ModifyCustomAgentRequestScheduleTaskConfig
+from ._modify_custom_agent_response_body import ModifyCustomAgentResponseBodyDataExecutionConfig
+from ._modify_custom_agent_response_body import ModifyCustomAgentResponseBodyDataKnowledgeConfigList
+from ._modify_custom_agent_response_body import ModifyCustomAgentResponseBodyDataScheduleTaskConfig
+from ._modify_custom_agent_response_body import ModifyCustomAgentResponseBodyData
+from ._operate_custom_agent_response_body import OperateCustomAgentResponseBodyData
+from ._send_chat_message_request import SendChatMessageRequestDataSource
+from ._send_chat_message_request import SendChatMessageRequestSessionConfig
+from ._send_chat_message_response_body import SendChatMessageResponseBodyData
+from ._update_airflow_response_body import UpdateAirflowResponseBodyRoot
+from ._update_data_agent_space_info_response_body import UpdateDataAgentSpaceInfoResponseBodyData
+from ._update_data_agent_workspace_member_role_response_body import UpdateDataAgentWorkspaceMemberRoleResponseBodyData
+
+__all__ = [
+    DLCatalog,
+    DLColumn,
+    DLDatabase,
+    DLFunction,
+    DLFunctionInput,
+    DLOrder,
+    DLPartition,
+    DLPartitionInput,
+    DLResourceUri,
+    DLSerdeInfo,
+    DLSkewedInfo,
+    DLStorageDescriptor,
+    DLTable,
+    DLTableInput,
+    DLTablebaseInfo,
+    ForeignInstance,
+    ForeignInstanceCredInfo,
+    OneMetaDatabaseObject,
+    OneMetaTableBaseInfo,
+    OneMetaTableColumn,
+    OneMetaTableColumnEngineMeta,
+    OneMetaTableEngineMeta,
+    OneMetaTableIndex,
+    PartitionError,
+    AddUserToDataAgentWorkspaceRequest,
+    AddUserToDataAgentWorkspaceResponseBody,
+    AddUserToDataAgentWorkspaceResponse,
+    BatchCreateDataLakePartitionsRequest,
+    BatchCreateDataLakePartitionsShrinkRequest,
+    BatchCreateDataLakePartitionsResponseBody,
+    BatchCreateDataLakePartitionsResponse,
+    BatchDeleteDataLakePartitionsRequest,
+    BatchDeleteDataLakePartitionsResponseBody,
+    BatchDeleteDataLakePartitionsResponse,
+    BatchUpdateDataLakePartitionsRequest,
+    BatchUpdateDataLakePartitionsShrinkRequest,
+    BatchUpdateDataLakePartitionsResponseBody,
+    BatchUpdateDataLakePartitionsResponse,
+    CreateAirflowRequest,
+    CreateAirflowResponseBody,
+    CreateAirflowResponse,
+    CreateAirflowLoginTokenRequest,
+    CreateAirflowLoginTokenResponseBody,
+    CreateAirflowLoginTokenResponse,
+    CreateCustomAgentRequest,
+    CreateCustomAgentShrinkRequest,
+    CreateCustomAgentResponseBody,
+    CreateCustomAgentResponse,
+    CreateDataAgentSessionRequest,
+    CreateDataAgentSessionShrinkRequest,
+    CreateDataAgentSessionResponseBody,
+    CreateDataAgentSessionResponse,
+    CreateDataAgentWorkspaceRequest,
+    CreateDataAgentWorkspaceResponseBody,
+    CreateDataAgentWorkspaceResponse,
+    CreateDataLakeDatabaseRequest,
+    CreateDataLakeDatabaseShrinkRequest,
+    CreateDataLakeDatabaseResponseBody,
+    CreateDataLakeDatabaseResponse,
+    CreateDataLakeFunctionRequest,
+    CreateDataLakeFunctionShrinkRequest,
+    CreateDataLakeFunctionResponseBody,
+    CreateDataLakeFunctionResponse,
+    CreateDataLakePartitionRequest,
+    CreateDataLakePartitionShrinkRequest,
+    CreateDataLakePartitionResponseBody,
+    CreateDataLakePartitionResponse,
+    CreateDataLakeTableRequest,
+    CreateDataLakeTableShrinkRequest,
+    CreateDataLakeTableResponseBody,
+    CreateDataLakeTableResponse,
+    DeleteAirflowRequest,
+    DeleteAirflowResponseBody,
+    DeleteAirflowResponse,
+    DeleteCustomAgentRequest,
+    DeleteCustomAgentResponseBody,
+    DeleteCustomAgentResponse,
+    DeleteDataAgentWorkspaceRequest,
+    DeleteDataAgentWorkspaceResponseBody,
+    DeleteDataAgentWorkspaceResponse,
+    DeleteDataLakeDatabaseRequest,
+    DeleteDataLakeDatabaseResponseBody,
+    DeleteDataLakeDatabaseResponse,
+    DeleteDataLakeFunctionRequest,
+    DeleteDataLakeFunctionResponseBody,
+    DeleteDataLakeFunctionResponse,
+    DeleteDataLakePartitionRequest,
+    DeleteDataLakePartitionShrinkRequest,
+    DeleteDataLakePartitionResponseBody,
+    DeleteDataLakePartitionResponse,
+    DeleteDataLakeTableRequest,
+    DeleteDataLakeTableResponseBody,
+    DeleteDataLakeTableResponse,
+    DeleteFileUploadRequest,
+    DeleteFileUploadResponseBody,
+    DeleteFileUploadResponse,
+    DescribeCustomAgentRequest,
+    DescribeCustomAgentResponseBody,
+    DescribeCustomAgentResponse,
+    DescribeDataAgentSessionRequest,
+    DescribeDataAgentSessionResponseBody,
+    DescribeDataAgentSessionResponse,
+    DescribeFileUploadSignatureRequest,
+    DescribeFileUploadSignatureResponseBody,
+    DescribeFileUploadSignatureResponse,
+    FileUploadCallbackRequest,
+    FileUploadCallbackResponseBody,
+    FileUploadCallbackResponse,
+    GetAirflowRequest,
+    GetAirflowResponseBody,
+    GetAirflowResponse,
+    GetChatContentRequest,
+    GetChatContentResponseBody,
+    GetChatContentResponse,
+    GetDataAgentSubAccountInfoRequest,
+    GetDataAgentSubAccountInfoResponseBody,
+    GetDataAgentSubAccountInfoResponse,
+    GetDataAgentWorkspaceInfoRequest,
+    GetDataAgentWorkspaceInfoResponseBody,
+    GetDataAgentWorkspaceInfoResponse,
+    GetDataLakeCatalogRequest,
+    GetDataLakeCatalogResponseBody,
+    GetDataLakeCatalogResponse,
+    GetDataLakeDatabaseRequest,
+    GetDataLakeDatabaseResponseBody,
+    GetDataLakeDatabaseResponse,
+    GetDataLakeFunctionRequest,
+    GetDataLakeFunctionResponseBody,
+    GetDataLakeFunctionResponse,
+    GetDataLakePartitionRequest,
+    GetDataLakePartitionShrinkRequest,
+    GetDataLakePartitionResponseBody,
+    GetDataLakePartitionResponse,
+    GetDataLakeTableRequest,
+    GetDataLakeTableResponseBody,
+    GetDataLakeTableResponse,
+    GetNotebookAndSubmitTaskRequest,
+    GetNotebookAndSubmitTaskResponseBody,
+    GetNotebookAndSubmitTaskResponse,
+    GetNotebookTaskStatusRequest,
+    GetNotebookTaskStatusResponseBody,
+    GetNotebookTaskStatusResponse,
+    ListAirflowsRequest,
+    ListAirflowsResponseBody,
+    ListAirflowsResponse,
+    ListCustomAgentRequest,
+    ListCustomAgentResponseBody,
+    ListCustomAgentResponse,
+    ListDataAgentSessionRequest,
+    ListDataAgentSessionResponseBody,
+    ListDataAgentSessionResponse,
+    ListDataAgentWorkspaceRequest,
+    ListDataAgentWorkspaceResponseBody,
+    ListDataAgentWorkspaceResponse,
+    ListDataAgentWorkspaceMemberRequest,
+    ListDataAgentWorkspaceMemberResponseBody,
+    ListDataAgentWorkspaceMemberResponse,
+    ListDataCenterDatabaseRequest,
+    ListDataCenterDatabaseResponseBody,
+    ListDataCenterDatabaseResponse,
+    ListDataCenterTableRequest,
+    ListDataCenterTableResponseBody,
+    ListDataCenterTableResponse,
+    ListDataLakeCatalogRequest,
+    ListDataLakeCatalogResponseBody,
+    ListDataLakeCatalogResponse,
+    ListDataLakeDatabaseRequest,
+    ListDataLakeDatabaseResponseBody,
+    ListDataLakeDatabaseResponse,
+    ListDataLakeFunctionRequest,
+    ListDataLakeFunctionResponseBody,
+    ListDataLakeFunctionResponse,
+    ListDataLakeFunctionNameRequest,
+    ListDataLakeFunctionNameResponseBody,
+    ListDataLakeFunctionNameResponse,
+    ListDataLakePartitionRequest,
+    ListDataLakePartitionShrinkRequest,
+    ListDataLakePartitionResponseBody,
+    ListDataLakePartitionResponse,
+    ListDataLakePartitionByFilterRequest,
+    ListDataLakePartitionByFilterResponseBody,
+    ListDataLakePartitionByFilterResponse,
+    ListDataLakePartitionNameRequest,
+    ListDataLakePartitionNameResponseBody,
+    ListDataLakePartitionNameResponse,
+    ListDataLakeTableRequest,
+    ListDataLakeTableResponseBody,
+    ListDataLakeTableResponse,
+    ListDataLakeTableNameRequest,
+    ListDataLakeTableNameResponseBody,
+    ListDataLakeTableNameResponse,
+    ListDataLakeTablebaseInfoRequest,
+    ListDataLakeTablebaseInfoResponseBody,
+    ListDataLakeTablebaseInfoResponse,
+    ListFileUploadRequest,
+    ListFileUploadResponseBody,
+    ListFileUploadResponse,
+    ModifyCustomAgentRequest,
+    ModifyCustomAgentShrinkRequest,
+    ModifyCustomAgentResponseBody,
+    ModifyCustomAgentResponse,
+    OperateCustomAgentRequest,
+    OperateCustomAgentResponseBody,
+    OperateCustomAgentResponse,
+    RemoveUserToDataAgentWorkspaceRequest,
+    RemoveUserToDataAgentWorkspaceResponseBody,
+    RemoveUserToDataAgentWorkspaceResponse,
+    SendChatMessageRequest,
+    SendChatMessageShrinkRequest,
+    SendChatMessageResponseBody,
+    SendChatMessageResponse,
+    UpdateAirflowRequest,
+    UpdateAirflowResponseBody,
+    UpdateAirflowResponse,
+    UpdateDataAgentSpaceInfoRequest,
+    UpdateDataAgentSpaceInfoResponseBody,
+    UpdateDataAgentSpaceInfoResponse,
+    UpdateDataAgentWorkspaceMemberRoleRequest,
+    UpdateDataAgentWorkspaceMemberRoleResponseBody,
+    UpdateDataAgentWorkspaceMemberRoleResponse,
+    UpdateDataLakeDatabaseRequest,
+    UpdateDataLakeDatabaseShrinkRequest,
+    UpdateDataLakeDatabaseResponseBody,
+    UpdateDataLakeDatabaseResponse,
+    UpdateDataLakeFunctionRequest,
+    UpdateDataLakeFunctionShrinkRequest,
+    UpdateDataLakeFunctionResponseBody,
+    UpdateDataLakeFunctionResponse,
+    UpdateDataLakePartitionRequest,
+    UpdateDataLakePartitionShrinkRequest,
+    UpdateDataLakePartitionResponseBody,
+    UpdateDataLakePartitionResponse,
+    UpdateDataLakeTableRequest,
+    UpdateDataLakeTableShrinkRequest,
+    UpdateDataLakeTableResponseBody,
+    UpdateDataLakeTableResponse,
+    AddUserToDataAgentWorkspaceResponseBodyData,
+    CreateAirflowResponseBodyRoot,
+    CreateAirflowLoginTokenResponseBodyData,
+    CreateCustomAgentRequestExecutionConfig,
+    CreateCustomAgentRequestKnowledgeConfigList,
+    CreateCustomAgentRequestScheduleTaskConfig,
+    CreateCustomAgentResponseBodyDataExecutionConfig,
+    CreateCustomAgentResponseBodyDataKnowledgeConfigList,
+    CreateCustomAgentResponseBodyDataScheduleTaskConfig,
+    CreateCustomAgentResponseBodyData,
+    CreateDataAgentSessionRequestSessionConfig,
+    CreateDataAgentSessionResponseBodyDataSessionConfig,
+    CreateDataAgentSessionResponseBodyData,
+    CreateDataAgentWorkspaceResponseBodyData,
+    DeleteAirflowResponseBodyRootResponses,
+    DeleteAirflowResponseBodyRoot,
+    DeleteCustomAgentResponseBodyData,
+    DeleteFileUploadResponseBodyData,
+    DescribeCustomAgentResponseBodyDataExecutionConfig,
+    DescribeCustomAgentResponseBodyDataKnowledgeConfigList,
+    DescribeCustomAgentResponseBodyDataScheduleTaskConfig,
+    DescribeCustomAgentResponseBodyData,
+    DescribeDataAgentSessionResponseBodyDataChatHistoryLocations,
+    DescribeDataAgentSessionResponseBodyDataSessionConfig,
+    DescribeDataAgentSessionResponseBodyData,
+    DescribeFileUploadSignatureResponseBodyData,
+    FileUploadCallbackResponseBodyData,
+    GetAirflowResponseBodyRoot,
+    GetDataAgentSubAccountInfoResponseBodyData,
+    GetDataAgentWorkspaceInfoResponseBodyData,
+    GetNotebookTaskStatusResponseBodyData,
+    ListAirflowsResponseBodyRootList,
+    ListAirflowsResponseBodyRoot,
+    ListCustomAgentResponseBodyDataContentExecutionConfig,
+    ListCustomAgentResponseBodyDataContentKnowledgeConfigList,
+    ListCustomAgentResponseBodyDataContentScheduleTaskConfig,
+    ListCustomAgentResponseBodyDataContent,
+    ListCustomAgentResponseBodyData,
+    ListDataAgentSessionResponseBodyDataSessionConfig,
+    ListDataAgentSessionResponseBodyData,
+    ListDataAgentWorkspaceResponseBodyDataContent,
+    ListDataAgentWorkspaceResponseBodyData,
+    ListDataAgentWorkspaceMemberResponseBodyDataContent,
+    ListDataAgentWorkspaceMemberResponseBodyData,
+    ListDataCenterDatabaseResponseBodyData,
+    ListDataCenterTableResponseBodyDataContent,
+    ListDataCenterTableResponseBodyData,
+    ListFileUploadResponseBodyData,
+    ModifyCustomAgentRequestExecutionConfig,
+    ModifyCustomAgentRequestKnowledgeConfigList,
+    ModifyCustomAgentRequestScheduleTaskConfig,
+    ModifyCustomAgentResponseBodyDataExecutionConfig,
+    ModifyCustomAgentResponseBodyDataKnowledgeConfigList,
+    ModifyCustomAgentResponseBodyDataScheduleTaskConfig,
+    ModifyCustomAgentResponseBodyData,
+    OperateCustomAgentResponseBodyData,
+    SendChatMessageRequestDataSource,
+    SendChatMessageRequestSessionConfig,
+    SendChatMessageResponseBodyData,
+    UpdateAirflowResponseBodyRoot,
+    UpdateDataAgentSpaceInfoResponseBodyData,
+    UpdateDataAgentWorkspaceMemberRoleResponseBodyData
+]

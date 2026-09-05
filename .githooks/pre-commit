@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+# HOOK_VERSION 1.4.1
+# Meta-repo 子仓库优先提交 — pre-commit 门禁
+# v1.4.1: + 提交时增量归集 gitignored deploy-binaries/（无 ELF 源或 CI 则跳过，不阻断）
+# v1.4.0: + git 历史重写禁止检测（硬约束 61）：
+#         检测 .git/filter-repo/、refs/original/*、refs/replace/* 遗留标记，
+#         命中即阻断提交（禁止 filter-repo 清历史；凭据须废弃+重新生成）。
+#         细则：.ai/01_project_constraints/61_no_git_history_rewrite.md
+# v1.3.0: 弃用 git submodule foreach（index 中未登记 gitlink 会 fatal 中途退出，
+#         导致 conf 之后的仓库全部漏检），改为按 .gitmodules 登记 path 逐仓检查
+# v1.1.0: + Session Hub 提交锁校验（他会话持锁 → 阻断，自我识别放行）
+# 检测未提交变更，有则阻断 root commit。
+# 细则：.ai/01_project_constraints/32_submodule_commit_order.md
+# 设计：docs/superpowers/specs/2026-08-06-agent-session-coordination-design.md
+set -euo pipefail
+
+echo "▸ [hook:pre-commit v1.4.1]"
+
+# git ≥2.53 在 commit 时导出 GIT_INDEX_FILE=<gitdir>/next-index-*.lock。
+# 子仓状态检查必须用子仓自己的索引，故先保存并临时清空 GIT_INDEX_FILE；
+# `pre-commit run` 前恢复（框架的 git write-tree 依赖 commit 时索引，
+# 避免与 git commit 持有的 .git/index.lock 冲突）。
+_SAVED_GIT_INDEX_FILE="${GIT_INDEX_FILE:-}"
+
+ROOT="$(cd "$(git rev-parse --git-common-dir 2>/dev/null || echo "${GIT_DIR:-.git}")/.." && pwd)"
+
+# ── v1.1.0: Session Hub 提交锁校验 ───────────────────────────────
+# 仓库锁被其他活跃会话持有时阻断提交（本会话自身提交放行）
+SESSION_LOCK_LIB="$ROOT/scripts/lib/session_lock_check.sh"
+if [ -f "$SESSION_LOCK_LIB" ]; then
+  # shellcheck disable=SC1090
+  source "$SESSION_LOCK_LIB"
+  session_hub_lock_check "$(basename "$ROOT")"
+fi
+
+# gitignored deploy-binaries refresh (fail-open; skip CI / machines without ELFs)
+if [ -x "$ROOT/scripts/lib/collect-deploy-binaries-on-commit.sh" ]; then
+  bash "$ROOT/scripts/lib/collect-deploy-binaries-on-commit.sh" || true
+fi
+
+unset GIT_INDEX_FILE
+
+# .gitmodules 是子仓登记 SSOT：只检查登记路径，未登记 gitlink（如 *-wt）不参与
+SUBMODULES=()
+while IFS= read -r sub; do
+  [ -z "$sub" ] && continue
+  SUBMODULES+=("$sub")
+done < <(git config --file "$ROOT/.gitmodules" --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}')
+
+DIRTY_REPOS=()
+for sub in "${SUBMODULES[@]}"; do
+  # 登记路径不存在（子仓未克隆）时跳过；存在但 dirty 则记录
+  if [ -d "$ROOT/$sub/.git" ] || [ -f "$ROOT/$sub/.git" ]; then
+    if [ -n "$(git -C "$ROOT/$sub" status --porcelain 2>/dev/null)" ]; then
+      DIRTY_REPOS+=("$sub")
+    fi
+  fi
+done
+
+# v1.2.0: 指针-only 提交豁免 + 无关 dirty 子仓仅告警（OPT-20260807-040/028）。
+# 门禁仅在本提交暂存区含 submodule gitlink 变更时强制对应子仓库已提交；
+# 纯文件提交（无指针变更）时，其他会话的 dirty 子仓只提示不阻断，
+# 避免并行会话 WIP 阻断合法的主仓库文档/脚本提交。
+STAGED_GITLINKS=()
+while IFS= read -r line; do
+  [ -z "$line" ] && continue
+  STAGED_GITLINKS+=("$line")
+done < <(git diff --cached --raw | awk '$1 ~ /^:160000/ || $2 == "160000" {print $NF}' | sort -u)
+
+if [ ${#DIRTY_REPOS[@]} -gt 0 ]; then
+  if [ ${#STAGED_GITLINKS[@]} -eq 0 ]; then
+    # 本次提交不含子仓库指针变更 → 仅告警，不阻断
+    echo ""
+    echo "⚠ 检测到未提交的子仓库变更（与本次提交无关，仅提示，不阻断）："
+    for repo in "${DIRTY_REPOS[@]}"; do
+      printf "    • %s\n" "$repo"
+    done
+    echo ""
+  else
+    # 本次提交含子仓库指针变更 → 强制对应子仓库已提交（规则 32）
+    # OPT-20260823-041：仅「已跟踪未提交变更」才算 dirty；纯未跟踪（??）不阻断，
+    # 避免并行会话的未跟踪意图文档卡住无关 gitlink 同步。
+    _GITLINK_DIRTY_LIB="$ROOT/scripts/lib/gitlink_dirty_check.sh"
+    if [ -f "$_GITLINK_DIRTY_LIB" ]; then
+      # shellcheck disable=SC1090
+      source "$_GITLINK_DIRTY_LIB"
+    fi
+    MISSING=()
+    for repo in "${STAGED_GITLINKS[@]}"; do
+      if [ -f "$_GITLINK_DIRTY_LIB" ]; then
+        if is_subrepo_tracked_dirty "$ROOT/$repo"; then
+          MISSING+=("$repo")
+        fi
+      else
+        # 兼容：无 lib 时退回旧判定（整仓 porcelain 非空即脏）
+        if git -C "$ROOT/$repo" rev-parse --git-dir >/dev/null 2>&1; then
+          if [ -n "$(git -C "$ROOT/$repo" status --porcelain)" ]; then
+            MISSING+=("$repo")
+          fi
+        fi
+      fi
+    done
+    if [ ${#MISSING[@]} -gt 0 ]; then
+      echo ""
+      echo "╔══════════════════════════════════════════════════════════════╗"
+      echo "║  ⛔ 子仓库优先提交门禁：指针变更对应子仓库未提交              ║"
+      echo "╠══════════════════════════════════════════════════════════════╣"
+      echo "║  请先提交并推送以下子仓库，再提交主仓库：                     ║"
+      for repo in "${MISSING[@]}"; do
+        printf "║    • %-54s ║\n" "$repo"
+      done
+      echo "╠══════════════════════════════════════════════════════════════╣"
+      echo "║  快捷修复：                                                   ║"
+      echo "║    python3 runAll/scripts/commit_with_submodules.py --apply  ║"
+      echo "╚══════════════════════════════════════════════════════════════╝"
+      echo ""
+      exit 1
+    fi
+  fi
+fi
+
+# ── v1.4.0: git 历史重写禁止检测（硬约束 61）──────────────────────
+# 检测 filter-repo / filter-branch / git replace 遗留标记：
+#   - <git-common-dir>/filter-repo/  （git filter-repo 运行后必然留下）
+#   - refs/original/*                （git filter-branch 备份 ref）
+#   - refs/replace/*                 （git replace 重写覆盖 ref）
+# 任何标记存在即阻断提交：项目禁止重写历史清理私密信息，
+# 泄露凭据须废弃 + 重新生成；清历史无法删除已分发副本。
+_GIT_COMMON_DIR="$(git -C "$ROOT" rev-parse --git-common-dir 2>/dev/null || echo "$ROOT/.git")"
+case "$_GIT_COMMON_DIR" in
+  /*) : ;;   # 绝对路径（子仓 / 链接 worktree 公共目录）
+  *)  _GIT_COMMON_DIR="$ROOT/$_GIT_COMMON_DIR" ;;
+esac
+_FR_MARKERS=()
+if [ -d "$_GIT_COMMON_DIR/filter-repo" ]; then
+  _FR_MARKERS+=("$_GIT_COMMON_DIR/filter-repo/ 目录（git filter-repo 遗留标记）")
+fi
+if [ -n "$(git -C "$ROOT" for-each-ref --format='%(refname)' refs/original 2>/dev/null)" ]; then
+  _FR_MARKERS+=("refs/original/* 备份 ref（git filter-branch 遗留标记）")
+fi
+if [ -n "$(git -C "$ROOT" for-each-ref --format='%(refname)' refs/replace 2>/dev/null)" ]; then
+  _FR_MARKERS+=("refs/replace/* ref（git replace 重写标记）")
+fi
+if [ ${#_FR_MARKERS[@]} -gt 0 ]; then
+  echo ""
+  echo "⛔ 硬约束 61：检测到 git 历史重写遗留标记，提交已阻断："
+  for _m in "${_FR_MARKERS[@]}"; do
+    echo "    • $_m"
+  done
+  echo ""
+  echo "   项目禁止用 git filter-repo / filter-branch / replace 重写共享历史清理私密信息："
+  echo "   已分发副本（协作者 clone、CI 缓存、gitService 服务端、备份）无法被重写删除，"
+  echo "   泄露凭据在重写后依然有效。正确处置：废弃泄露凭据并重新生成、部署替换。"
+  echo ""
+  echo "   若历史重写确已发生（本规则生效前遗留或既有历史），且全员已接受当前基线，"
+  echo "   人工确认后可清理标记后重试提交："
+  echo "     rm -rf $_GIT_COMMON_DIR/filter-repo"
+  echo "     git -C $ROOT for-each-ref --format='%(refname)' refs/original refs/replace | xargs -r git -C $ROOT update-ref -d"
+  echo "   细则：.ai/01_project_constraints/61_no_git_history_rewrite.md"
+  echo ""
+  exit 1
+fi
+
+# ── pre-commit 框架门禁（随机单元测试等）──────────────────────────
+# 恢复 GIT_INDEX_FILE，供框架 git write-tree 使用 commit 时索引
+if [ -n "$_SAVED_GIT_INDEX_FILE" ]; then
+  export GIT_INDEX_FILE="$_SAVED_GIT_INDEX_FILE"
+fi
+
+if command -v pre-commit &>/dev/null; then
+  echo ""
+  echo "▸ Running pre-commit framework hooks..."
+  pre-commit run --hook-stage pre-commit 2>&1 || {
+    echo ""
+    echo "⛔ pre-commit framework hooks failed — see above for details."
+    exit 1
+  }
+else
+  echo "⚠ pre-commit not found; skipping framework hooks (install: pip install pre-commit)"
+fi
+
+exit 0

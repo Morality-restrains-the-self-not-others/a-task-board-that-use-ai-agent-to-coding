@@ -1,0 +1,16 @@
+---
+description: Delete NPM project packages tag
+category: API::NpmProjectPackages
+action: delete_tag
+extra_properties:
+identifiers:
+- project
+- user
+- namespace
+product_group: package_registry
+milestone: "15.11"
+introduced_by_url: https://gitlab.com/gitlab-org/gitlab/-/merge_requests/115545
+tiers:
+- free
+- premium
+- ultimate

@@ -1,0 +1,1499 @@
+# runAll 编排配置 — 与 conf/<app>/ 端口一致
+# 用法: cd runAll && ./build.sh && ./bin/runAll --config ../conf/runAll.yaml
+# 前置: 远程 Docker（zcpu-remote context + SSH）、各前端 npm install、go 工具链
+# Django saas-backend 已退役（2026-07-30），task2app/ 子模块已删除，所有 API 迁至 Go 微服务
+# host / port 自动从 conf/<app>/config.yaml 读取（conf_app 映射），基础设施服务使用 ${INFRA_HOST} 占位符
+
+version: "1"
+
+# 是否启用代理。默认 false（不启用），所有服务启动时自动清除 HTTP_PROXY/HTTPS_PROXY/ALL_PROXY 环境变量。
+# 设为 true 后，服务将继承宿主机的代理环境变量。单个服务可通过 service.use_proxy: true 单独开启。
+use_proxy: false
+
+logging:
+  # 服务日志统一输出至项目根目录 logs/（绝对路径，避免 cwd 变化导致路径不一致）
+  # 每服务日志路径见 conf/<app>/config.yaml → logging.log_file
+  file_root: /tmp/ram-work/logs
+
+observability:
+  grafana_url: "http://${INFRA_HOST}:3000"
+  loki_url: "http://${INFRA_HOST}:3100"
+  trace_dashboard_uid: distributed-trace-view
+  # Mac Promtail tails ../logs/ → remote Loki (bash runAll/scripts/runall-local-promtail.sh up)
+  # 每服务日志路径见 conf/<app>/config.yaml → logging.log_file
+  local_promtail: true
+
+groups:
+  - name: infrastructure
+    services:
+      - name: docker-mysql
+        conf_app: infra/mysql
+        start_command: "bash dockerInfra/mysql/run.sh start"
+        stop_command: "bash dockerInfra/mysql/run.sh stop"
+        launch_mode: detach
+        working_dir: .
+        health_check:
+          exec: "bash dockerInfra/mysql/health.sh"
+          timeout: 180
+          retries: 40
+          backoff:
+            initial: 2.0
+            max: 16.0
+            multiplier: 2.0
+        on_failure: exit
+
+      - name: docker-redis
+        conf_app: infra/redis
+        start_command: "bash dockerInfra/redis/run.sh start"
+        stop_command: "bash dockerInfra/redis/run.sh stop"
+        launch_mode: detach
+        working_dir: .
+        health_check:
+          exec: "bash dockerInfra/redis/health.sh"
+          timeout: 120
+          retries: 30
+          backoff:
+            initial: 1.0
+            max: 8.0
+            multiplier: 2.0
+        on_failure: exit
+
+      - name: docker-kafka
+        conf_app: infra/kafka
+        start_command: "bash dockerInfra/kafka/run.sh start"
+        stop_command: "bash dockerInfra/kafka/run.sh stop"
+        launch_mode: detach
+        working_dir: .
+        # Broker-first probe (compose kafka running + kafka-topics). Do NOT use Kafka UI :18080 alone —
+        # UI can stay Up while broker Exited (FE-20260721-KAFKA-UI-FALSE-HEALTHY / OPT-20260721-007).
+        health_check:
+          exec: "bash dockerInfra/kafka/health.sh"
+          timeout: 180
+          retries: 40
+          backoff:
+            initial: 2.0
+            max: 16.0
+            multiplier: 2.0
+        on_failure: exit
+
+      - name: docker-portainer
+        conf_app: infra/portainer
+        start_command: "bash dockerInfra/portainer/run.sh start"
+        stop_command: "bash dockerInfra/portainer/run.sh stop"
+        launch_mode: detach
+        working_dir: .
+        health_check:
+          url: "http://${INFRA_HOST}:9000/api/status"
+          timeout: 60
+          retries: 20
+          backoff:
+            initial: 1.0
+            max: 8.0
+            multiplier: 2.0
+        on_failure: skip
+
+      - name: ai-monitor
+        conf_app: infra/ai-monitor
+        # 镜像下载收敛到编译阶段：UI「编译」→ bash AiMonitor/run.sh pull（compose pull）。
+        # 启动不再拉取镜像（--pull never），避免启动时卡在下载导致健康检查超时。
+        build_command: "bash AiMonitor/run.sh pull"
+        start_command: "bash AiMonitor/run.sh start"
+        stop_command: "bash AiMonitor/run.sh stop"
+        launch_mode: detach
+        working_dir: .
+        depends_on: [docker-redis]
+        health_check:
+          url: "http://${INFRA_HOST}:3000/api/health"
+          timeout: 180
+          retries: 36
+          backoff:
+            initial: 2.0
+            max: 16.0
+            multiplier: 2.0
+        on_failure: skip
+
+      # 常驻日志投递：依赖 ai-monitor（Loki）。清空可观测栈后须随 infrastructure 一并拉起，避免 Loki 空、Promtail 停。
+      # 禁止用 Loki /ready 代替 Promtail 探活：Loki 就绪而容器缺失时热替换会把 promtail-local 标为 healthy，
+      # Grafana Trace Log Journey 随后整盘 No data。Linux=aimonitor-promtail，Mac overlay=aimonitor-promtail-local。
+      - name: promtail-local
+        conf_app: infra/ai-monitor
+        start_command: "bash runAll/scripts/runall-local-promtail.sh up"
+        stop_command: "bash runAll/scripts/runall-local-promtail.sh down"
+        launch_mode: detach
+        working_dir: .
+        depends_on: [ai-monitor]
+        health_check:
+          exec: "docker inspect -f '{{.State.Running}}' aimonitor-promtail 2>/dev/null | grep -qx true || docker inspect -f '{{.State.Running}}' aimonitor-promtail-local | grep -qx true"
+          timeout: 90
+          # 覆盖 Loki 全量冷启动窗口（约 4-5min）；on_failure: skip 保证不阻塞整体启动
+          retries: 24
+          backoff:
+            initial: 2.0
+            max: 12.0
+            multiplier: 2.0
+        on_failure: skip
+
+  # 各区域独立 GitLab CE：现网 :8012 与上海 SH-1 :8014 分开启停，勿与 MySQL/Kafka 混组。
+  # GitLab 可插拔（ADR-0014 / ADR-0048）：其它服务不得 depends_on git-service*；
+  # OAuth/OIDC/计费在运行时 HTTP 对齐，启停由人工在 9999 面板处理。
+  # skip_start_all：一键 start-all 不碰本机闸门/上海 SSH；面板仍可单启或按组启动。
+  - name: gitlab-regions
+    skip_start_all: true
+    services:
+      - name: git-service
+        conf_app: infra/git-service
+        # 本机 GitLab 默认不启动（ADR-0047）：须 conf-local/infra/git-service/config.yaml
+        # 设 runAllStartEnabled: true 后，面板 / start_command 才会真正拉起容器。
+        start_command: "bash gitService/run.sh start"
+        stop_command: "bash gitService/run.sh stop"
+        launch_mode: detach
+        working_dir: .
+        depends_on: [docker-redis]
+        health_check:
+          url: "http://${INFRA_HOST}:8012/users/sign_in"
+          timeout: 900
+          retries: 60
+          backoff:
+            initial: 3.0
+            max: 30.0
+            multiplier: 2.0
+        on_failure: skip
+
+      - name: git-service-tencent-sh-1
+        conf_app: infra/git-service-tencent-sh-1
+        # 启停在 Host sh（ssh Host=sh）；本机跑 deploy 会抢 task-container-gateway :8014
+        start_command: "bash gitService/scripts/runall_ssh_sh_gitlab.sh start"
+        stop_command: "bash gitService/scripts/runall_ssh_sh_gitlab.sh stop"
+        launch_mode: detach
+        working_dir: .
+        env:
+          GITSERVICE_CONF_APP: git-service-tencent-sh-1
+          GITLAB_OIDC_CLIENT_ID: gitlab-git-service-tencent-sh-1
+          COMPOSE_PROJECT_NAME: gitservice-tencent-sh-1
+        health_check:
+          # Host sh 上的独立 GitLab；禁止 http://${INFRA_HOST}:8014（本机 8014 是 task-container-gateway）
+          url: "http://1.117.67.121:8014/users/sign_in"
+          timeout: 900
+          retries: 60
+          backoff:
+            initial: 3.0
+            max: 30.0
+            multiplier: 2.0
+        on_failure: skip
+
+  # 远端 Host sh（ssh Host=sh，1.117.67.121）上的独立组件；启停经 ssh + systemd，勿在本机跑。
+  # skip_start_all：一键 start-all 不碰远端；面板仍可单启或按组启动。
+  - name: host-sh
+    skip_start_all: true
+    services:
+      - name: wechat-mp-egress
+        conf_app: infra/wechat-mp-egress
+        # 启停在 Host sh systemd 单元（ADR-0059）；部署走 taskAuth/scripts/deploy_wechat_mp_egress_sh.sh
+        start_command: "bash taskAuth/scripts/runall_ssh_sh_wechat_mp_egress.sh start"
+        stop_command: "bash taskAuth/scripts/runall_ssh_sh_wechat_mp_egress.sh stop"
+        launch_mode: detach
+        working_dir: .
+        health_check:
+          # Host sh 上的 WeChat cgi-bin egress；端口以 conf/infra/wechat-mp-egress/config.yaml port:8030 为准
+          url: "http://1.117.67.121:8030/healthz"
+          timeout: 30
+          retries: 30
+          backoff:
+            initial: 3.0
+            max: 30.0
+            multiplier: 2.0
+        on_failure: skip
+
+  - name: platform
+    services:
+      - name: task-auth
+        conf_app: auth/task-auth
+        build_command: "./build.sh"
+        start_command: "./bin/taskAuth"
+        stop_command: "bash -c 'lsof -ti:8003 | xargs kill -9 2>/dev/null || true'"
+        working_dir: taskAuth
+        depends_on: [docker-mysql]
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-auth
+        health_check:
+          health_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-bill
+        conf_app: billing/task-bill
+        build_command: "./build.sh"
+        start_command: "./bin/taskBill"
+        stop_command: "bash -c 'lsof -ti:8004 | xargs kill -9 2>/dev/null || true'"
+        working_dir: taskBill
+        depends_on: [docker-mysql]
+        health_check:
+          health_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-referral
+        conf_app: task-referral
+        build_command: "./build.sh"
+        start_command: "./bin/taskReferral"
+        stop_command: "bash -c 'lsof -ti:8025 | xargs kill -9 2>/dev/null || true'"
+        working_dir: taskReferral
+        depends_on: [task-auth]
+        health_check:
+          health_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-git-oauth
+        # Go taskGitOauth (formerly Django gitOauth / service name git-oauth)
+        # GitLab 可插拔：运行时 HTTP 调 GitLab，不得 depends_on git-service（ADR-0048）。
+        build_command: "./build.sh"
+        start_command: "./bin/taskGitOauth"
+        stop_command: "bash scripts/runall-stop.sh"
+        working_dir: taskGitOauth
+        depends_on: [docker-mysql]
+        health_check:
+          url: "http://${INFRA_HOST}:8002/api/health/"
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: ai-provider
+        conf_app: ai/ai-provider
+        build_command: "./build.sh"
+        start_command: "./bin/taskAiProvider"
+        stop_command: "bash scripts/runall-stop.sh"
+        working_dir: taskAiProvider
+        depends_on: [task-auth]
+        health_check:
+          health_path: /api/health/
+          timeout: 180
+          retries: 25
+          backoff:
+            initial: 2.0
+            max: 16.0
+            multiplier: 2.0
+        on_failure: skip
+      # saas-backend (Django) 已于 2026-07-30 正式退役 — 全部 API 迁至 Go 微服务
+      # task2app/ 子模块已删除，清理记录如下：
+      #   Phase 1: deprecation notices → Go services
+      #   Phase 2: SSE realtime/dispatch → taskEvents (Kafka → Redis pub/sub → taskSSE)
+      #   Phase 3: Internal APIs → taskAuth/taskCloudService/taskProjectService
+      #   Phase 4: Cloud platform → taskCloudService
+      #   Phase 5: Billing bridge → taskBill (APISIX direct)
+      #   Phase 6: System admin → taskAuth/taskCloudService/taskBill
+      #   Phase 7: Core domain (accounts/projects/todo) → respective Go services
+      #   Phase 8: Retirement formalized — runAll saas-backend Block Removed
+      #     liveness_path: /api/live/
+      #     timeout: 180
+      #     retries: 35
+      #     backoff:
+      #       initial: 2.0
+      #       max: 16.0
+      #       multiplier: 2.0
+      #   on_failure: skip
+
+      - name: task-gateway
+        conf_app: gateway/task-gateway
+        start_command: "bash run.sh start"
+        stop_command: "bash run.sh stop"
+        working_dir: taskGateway
+        depends_on: [task-auth, task-git-oauth]
+        health_check:
+          health_path: /api/health/
+          # compose recreate 后 APISIX init_worker 可超过 90s（实测 ~140s）
+          timeout: 180
+          retries: 30
+        on_failure: skip
+
+      - name: task-agent-support
+        conf_app: ai/task-agent-support
+        build_command: "./build.sh"
+        start_command: "./bin/taskAgentSupport"
+        stop_command: "bash -c 'lsof -ti:8011 | xargs kill -9 2>/dev/null || true'"
+        working_dir: taskAgentSupport
+        depends_on: []
+        health_check:
+          health_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-ai-endpoint
+        conf_app: ai/task-ai-endpoint
+        build_command: "./build.sh"
+        start_command: "./bin/taskAIEndPoint"
+        stop_command: "bash -c 'lsof -ti:8013 | xargs kill -9 2>/dev/null || true'"
+        working_dir: taskAIEndPoint
+        depends_on: []
+        health_check:
+          health_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-container-gateway
+        conf_app: gateway/task-container-gateway
+        build_command: "./build.sh"
+        start_command: "./bin/taskContainerGateway"
+        stop_command: "bash -c 'lsof -ti:8014 | xargs kill -9 2>/dev/null || true'"
+        working_dir: taskContainerGateway
+        depends_on: []
+        health_check:
+          health_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-project-service
+        conf_app: taskProjectService
+        build_command: "./build.sh"
+        start_command: "./bin/taskProjectService"
+        stop_command: "bash -c 'lsof -ti:8016 | xargs kill -9 2>/dev/null || true'"
+        working_dir: taskProjectService
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-project-service
+          # Git OAuth 换票桥接密钥：与 conf/core/sso/config.yaml ssoJwtSecret /
+          # conf/auth/git-oauth/django.yaml 同源（OPT-20260807-071）。不注入时兜底 dev
+          # 密钥与 taskGitOauth 兜底不一致 → access-for-user 401 → token_error。
+          TASK2APP_SSO_JWT_SECRET: ""
+        depends_on: [task-auth]
+        health_check:
+          health_path: /api/health
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-tenant-service
+        conf_app: taskTenantService
+        build_command: "./build.sh"
+        start_command: "./bin/taskTenantService"
+        stop_command: "bash -c 'lsof -ti:8020 | xargs kill -9 2>/dev/null || true'"
+        working_dir: taskTenantService
+        depends_on: [task-auth, task-project-service]
+        health_check:
+          health_path: /api/health
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-task-service
+        conf_app: taskTaskService
+        build_command: "./build.sh"
+        start_command: "./bin/taskTaskService"
+        stop_command: "bash -c 'lsof -ti:8017 | xargs kill -9 2>/dev/null || true'"
+        working_dir: taskTaskService
+        depends_on: [task-project-service, task-auth, task-bill]
+        health_check:
+          health_path: /api/health
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-cloud-service
+        conf_app: taskCloudService
+        build_command: "./build.sh"
+        start_command: "./bin/taskCloudService"
+        stop_command: "bash -c 'lsof -ti:8018 | xargs kill -9 2>/dev/null || true'"
+        working_dir: taskCloudService
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-cloud-service
+          # 本地 prepare 换票须直连 loopback gitOauth；勿用公网 gitoauth（nginx 502 / 缺 bridge）
+          GITOAUTH_BASE_URL: "http://${INFRA_HOST}:8002"
+          # SaaS 出口 IP：白名单安全组须放行，否则 container-layer-graph / heartbeat 探针会 timeout
+          TASK2APP_SG_EXTRA_INGRESS_CIDRS: "183.250.1.132/32"
+        depends_on: [task-project-service, task-task-service, task-auth, task-git-oauth]
+        health_check:
+          health_path: /api/health
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-sse
+        conf_app: gateway/task-sse
+        start_command: "bash run.sh start"
+        stop_command: "bash run.sh stop"
+        working_dir: taskSSE
+        depends_on: [docker-redis]
+        health_check:
+          health_path: /health
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-credential-service
+        conf_app: container/task-credential-service
+        build_command: "./build.sh"
+        start_command: "./bin/taskCredentialService"
+        stop_command: "bash -c 'lsof -ti:8015 | xargs kill -9 2>/dev/null || true'"
+        working_dir: taskCredentialService
+        depends_on: [task-git-oauth, task-task-service]
+        health_check:
+          health_path: /health
+          timeout: 30
+          retries: 10
+        on_failure: skip
+
+      - name: task-ai-comment
+        conf_app: taskAIComment
+        build_command: "./build.sh"
+        start_command: "./bin/taskAIComment"
+        stop_command: "bash -c 'lsof -ti:8019 | xargs kill -9 2>/dev/null || true'"
+        working_dir: taskAIComment
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-ai-comment
+        depends_on:
+          - task-auth
+          - task-task-service
+          - task-sse
+          - task-cloud-service
+          - task-credential-service
+          - docker-kafka
+        health_check:
+          health_path: /api/health
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: taskFE
+        conf_app: frontend/vue
+        build_command: "bash scripts/runall-lifecycle.sh build"
+        start_command: "bash scripts/runall-lifecycle.sh start"
+        stop_command: "bash scripts/runall-lifecycle.sh stop"
+        # OPT-20260820-004：静态 nginx 常驻，精准重启时跳过 compose stop（保持在线，
+        # build 只切 public/html symlink），复用容器健康检查；nginx.conf 变更经 reload 生效。
+        skip_stop_on_restart: true
+        restart_reload_command: "docker exec taskfe-nginx nginx -s reload"
+        working_dir: taskFE/app
+        launch_mode: detach
+        depends_on: [task-gateway]
+        health_check:
+          health_path: /health
+          timeout: 90
+          retries: 20
+        on_failure: skip
+
+  - name: domain-events-intents
+    services:
+      - name: task-events-billing-transaction-created-1-process-billing-transaction
+        build_command: "bash run.sh build billing_transaction_created/1_process_billing_transaction"
+        start_command: "bash run.sh start billing_transaction_created/1_process_billing_transaction"
+        stop_command: "bash run.sh stop billing_transaction_created/1_process_billing_transaction"
+        working_dir: taskEvents
+        intent_path: events/domain-events/billing_transaction_created/1_process_billing_transaction
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-billing-transaction-created-1-process-billing-transaction
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-billing-transaction-created-2-mark-user-tenant
+        build_command: "bash run.sh build billing_transaction_created/2_mark_user_tenant"
+        start_command: "bash run.sh start billing_transaction_created/2_mark_user_tenant"
+        stop_command: "bash run.sh stop billing_transaction_created/2_mark_user_tenant"
+        working_dir: taskEvents
+        intent_path: events/domain-events/billing_transaction_created/2_mark_user_tenant
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-billing-transaction-created-2-mark-user-tenant
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-sse-message-1-send-sse-message
+        build_command: "bash run.sh build sse_message/1_send_sse_message"
+        start_command: "bash run.sh start sse_message/1_send_sse_message"
+        stop_command: "bash run.sh stop sse_message/1_send_sse_message"
+        working_dir: taskEvents
+        intent_path: events/domain-events/sse_message/1_send_sse_message
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-sse-message-1-send-sse-message
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-sse-message-2-persist-job-execution-event
+        build_command: "bash run.sh build sse_message/2_persist_job_execution_event"
+        start_command: "bash run.sh start sse_message/2_persist_job_execution_event"
+        stop_command: "bash run.sh stop sse_message/2_persist_job_execution_event"
+        working_dir: taskEvents
+        intent_path: events/domain-events/sse_message/2_persist_job_execution_event
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-sse-message-2-persist-job-execution-event
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-email-sent-1-send-email
+        build_command: "bash run.sh build email_sent/1_send_email"
+        start_command: "bash run.sh start email_sent/1_send_email"
+        stop_command: "bash run.sh stop email_sent/1_send_email"
+        working_dir: taskEvents
+        intent_path: events/domain-events/email_sent/1_send_email
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-email-sent-1-send-email
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-invitation-created-1-send-invitation-email
+        build_command: "bash run.sh build invitation_created/1_send_invitation_email"
+        start_command: "bash run.sh start invitation_created/1_send_invitation_email"
+        stop_command: "bash run.sh stop invitation_created/1_send_invitation_email"
+        working_dir: taskEvents
+        intent_path: events/domain-events/invitation_created/1_send_invitation_email
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-invitation-created-1-send-invitation-email
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-user-activated-1-send-welcome-notification
+        build_command: "bash run.sh build user_activated/1_send_welcome_notification"
+        start_command: "bash run.sh start user_activated/1_send_welcome_notification"
+        stop_command: "bash run.sh stop user_activated/1_send_welcome_notification"
+        working_dir: taskEvents
+        intent_path: events/domain-events/user_activated/1_send_welcome_notification
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-user-activated-1-send-welcome-notification
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-user-created-0-create-company
+        build_command: "bash run.sh build user_created/0_create_company"
+        start_command: "bash run.sh start user_created/0_create_company"
+        stop_command: "bash run.sh stop user_created/0_create_company"
+        working_dir: taskEvents
+        intent_path: events/domain-events/user_created/0_create_company
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-user-created-0-create-company
+        depends_on: [docker-redis, docker-kafka, task-tenant-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-user-created-1-send-welcome-email
+        build_command: "bash run.sh build user_created/1_send_welcome_email"
+        start_command: "bash run.sh start user_created/1_send_welcome_email"
+        stop_command: "bash run.sh stop user_created/1_send_welcome_email"
+        working_dir: taskEvents
+        intent_path: events/domain-events/user_created/1_send_welcome_email
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-user-created-1-send-welcome-email
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-user-created-2-sync-user-profile
+        build_command: "bash run.sh build user_created/2_sync_user_profile"
+        start_command: "bash run.sh start user_created/2_sync_user_profile"
+        stop_command: "bash run.sh stop user_created/2_sync_user_profile"
+        working_dir: taskEvents
+        intent_path: events/domain-events/user_created/2_sync_user_profile
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-user-created-2-sync-user-profile
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-company-created-1-set-default-deliverable-system
+        build_command: "bash run.sh build company_created/1_set_default_deliverable_system"
+        start_command: "bash run.sh start company_created/1_set_default_deliverable_system"
+        stop_command: "bash run.sh stop company_created/1_set_default_deliverable_system"
+        working_dir: taskEvents
+        intent_path: events/domain-events/company_created/1_set_default_deliverable_system
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-company-created-1-set-default-deliverable-system
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-company-created-2-set-default-progress-system
+        build_command: "bash run.sh build company_created/2_set_default_progress_system"
+        start_command: "bash run.sh start company_created/2_set_default_progress_system"
+        stop_command: "bash run.sh stop company_created/2_set_default_progress_system"
+        working_dir: taskEvents
+        intent_path: events/domain-events/company_created/2_set_default_progress_system
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-company-created-2-set-default-progress-system
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-company-created-3-create-default-workspace
+        build_command: "bash run.sh build company_created/3_create_default_workspace"
+        start_command: "bash run.sh start company_created/3_create_default_workspace"
+        stop_command: "bash run.sh stop company_created/3_create_default_workspace"
+        working_dir: taskEvents
+        intent_path: events/domain-events/company_created/3_create_default_workspace
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-company-created-3-create-default-workspace
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-company-created-5-init-tenant-feature-params
+        build_command: "bash run.sh build company_created/5_init_tenant_feature_params"
+        start_command: "bash run.sh start company_created/5_init_tenant_feature_params"
+        stop_command: "bash run.sh stop company_created/5_init_tenant_feature_params"
+        working_dir: taskEvents
+        intent_path: events/domain-events/company_created/5_init_tenant_feature_params
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-company-created-5-init-tenant-feature-params
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-company-created-6-grant-initial-resources
+        build_command: "bash run.sh build company_created/6_grant_initial_resources"
+        start_command: "bash run.sh start company_created/6_grant_initial_resources"
+        stop_command: "bash run.sh stop company_created/6_grant_initial_resources"
+        working_dir: taskEvents
+        intent_path: events/domain-events/company_created/6_grant_initial_resources
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-company-created-6-grant-initial-resources
+          TASK_BILL_INTERNAL_SECRET: ""
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-workspace-created-1-process-workspace-creation
+        build_command: "bash run.sh build workspace_created/1_process_workspace_creation"
+        start_command: "bash run.sh start workspace_created/1_process_workspace_creation"
+        stop_command: "bash run.sh stop workspace_created/1_process_workspace_creation"
+        working_dir: taskEvents
+        intent_path: events/domain-events/workspace_created/1_process_workspace_creation
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-workspace-created-1-process-workspace-creation
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-project-updated-1-process-project-update
+        build_command: "bash run.sh build project_updated/1_process_project_update"
+        start_command: "bash run.sh start project_updated/1_process_project_update"
+        stop_command: "bash run.sh stop project_updated/1_process_project_update"
+        working_dir: taskEvents
+        intent_path: events/domain-events/project_updated/1_process_project_update
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-project-updated-1-process-project-update
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-task-completed-1-process-task-completion
+        build_command: "bash run.sh build task_completed/1_process_task_completion"
+        start_command: "bash run.sh start task_completed/1_process_task_completion"
+        stop_command: "bash run.sh stop task_completed/1_process_task_completion"
+        working_dir: taskEvents
+        intent_path: events/domain-events/task_completed/1_process_task_completion
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-task-completed-1-process-task-completion
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-task-status-changed-1-release-servers-on-terminal
+        build_command: "bash run.sh build task_status_changed/1_release_servers_on_terminal"
+        start_command: "bash run.sh start task_status_changed/1_release_servers_on_terminal"
+        stop_command: "bash run.sh stop task_status_changed/1_release_servers_on_terminal"
+        working_dir: taskEvents
+        intent_path: events/domain-events/task_status_changed/1_release_servers_on_terminal
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-task-status-changed-1-release-servers-on-terminal
+        depends_on: [docker-redis, docker-kafka, task-cloud-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-task-status-changed-2-fanout-work-panel-sse
+        build_command: "bash run.sh build task_status_changed/2_fanout_work_panel_sse"
+        start_command: "bash run.sh start task_status_changed/2_fanout_work_panel_sse"
+        stop_command: "bash run.sh stop task_status_changed/2_fanout_work_panel_sse"
+        working_dir: taskEvents
+        intent_path: events/domain-events/task_status_changed/2_fanout_work_panel_sse
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-task-status-changed-2-fanout-work-panel-sse
+        depends_on: [docker-redis, docker-kafka, task-sse]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-workspace-machine-idle-1-recycle-idle-nodes
+        build_command: "bash run.sh build workspace_machine_idle/1_recycle_idle_nodes"
+        start_command: "bash run.sh start workspace_machine_idle/1_recycle_idle_nodes"
+        stop_command: "bash run.sh stop workspace_machine_idle/1_recycle_idle_nodes"
+        working_dir: taskEvents
+        intent_path: events/domain-events/workspace_machine_idle/1_recycle_idle_nodes
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-workspace-machine-idle-1-recycle-idle-nodes
+        depends_on: [task-cloud-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-cloud-csc-reconcile-1-sweep
+        build_command: "bash run.sh build cloud_csc_reconcile/1_sweep"
+        start_command: "bash run.sh start cloud_csc_reconcile/1_sweep"
+        stop_command: "bash run.sh stop cloud_csc_reconcile/1_sweep"
+        working_dir: taskEvents
+        intent_path: events/domain-events/cloud_csc_reconcile/1_sweep
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-cloud-csc-reconcile-1-sweep
+        depends_on: [task-cloud-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-queued-auto-run-scan-1-dispatch
+        build_command: "bash run.sh build queued_auto_run_scan/1_dispatch"
+        start_command: "bash run.sh start queued_auto_run_scan/1_dispatch"
+        stop_command: "bash run.sh stop queued_auto_run_scan/1_dispatch"
+        working_dir: taskEvents
+        intent_path: events/domain-events/queued_auto_run_scan/1_dispatch
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-queued-auto-run-scan-1-dispatch
+        depends_on: [task-task-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-task-comment-image-mentioned-1-start-vm-for-at-mention
+        build_command: "bash run.sh build task_comment_image_mentioned/1_start_vm_for_at_mention"
+        start_command: "bash run.sh start task_comment_image_mentioned/1_start_vm_for_at_mention"
+        stop_command: "bash run.sh stop task_comment_image_mentioned/1_start_vm_for_at_mention"
+        working_dir: taskEvents
+        intent_path: events/domain-events/task_comment_image_mentioned/1_start_vm_for_at_mention
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-task-comment-image-mentioned-1-start-vm-for-at-mention
+        depends_on: [task-cloud-service, task-task-service, task-project-service, task-ai-comment]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-container-migrate-await-ready-1-await-running-heartbeat
+        build_command: "bash run.sh build container_migrate_await_ready/1_await_running_heartbeat"
+        start_command: "bash run.sh start container_migrate_await_ready/1_await_running_heartbeat"
+        stop_command: "bash run.sh stop container_migrate_await_ready/1_await_running_heartbeat"
+        working_dir: taskEvents
+        intent_path: events/domain-events/container_migrate_await_ready/1_await_running_heartbeat
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-container-migrate-await-ready-1-await-running-heartbeat
+          # Optional poll tuning (defaults: 36 attempts × 5s ≈ 3min)
+          CONTAINER_MIGRATE_AWAIT_MAX_ATTEMPTS: "36"
+          CONTAINER_MIGRATE_AWAIT_RETRY_DELAY: "5s"
+        depends_on: [task-cloud-service, task-container-gateway, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-task-graceful-shutdown-await-1-hard-release-on-timeout
+        build_command: "bash run.sh build task_graceful_shutdown_await/1_hard_release_on_timeout"
+        start_command: "bash run.sh start task_graceful_shutdown_await/1_hard_release_on_timeout"
+        stop_command: "bash run.sh stop task_graceful_shutdown_await/1_hard_release_on_timeout"
+        working_dir: taskEvents
+        intent_path: events/domain-events/task_graceful_shutdown_await/1_hard_release_on_timeout
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-task-graceful-shutdown-await-1-hard-release-on-timeout
+        depends_on: [task-cloud-service, task-container-gateway, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-wechat-identity-conflict-1-audit-alert
+        build_command: "bash run.sh build wechat_identity_conflict/1_audit_alert"
+        start_command: "bash run.sh start wechat_identity_conflict/1_audit_alert"
+        stop_command: "bash run.sh stop wechat_identity_conflict/1_audit_alert"
+        working_dir: taskEvents
+        intent_path: events/domain-events/wechat_identity_conflict/1_audit_alert
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-wechat-identity-conflict-1-audit-alert
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-registration-invite-1-observability
+        build_command: "bash run.sh build registration_invite/1_observability"
+        start_command: "bash run.sh start registration_invite/1_observability"
+        stop_command: "bash run.sh stop registration_invite/1_observability"
+        working_dir: taskEvents
+        intent_path: events/domain-events/registration_invite/1_observability
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-registration-invite-1-observability
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-ai-assistant-reply-completed-1-persist-assistant-reply
+        build_command: "bash run.sh build ai_assistant_reply_completed/1_persist_assistant_reply"
+        start_command: "bash run.sh start ai_assistant_reply_completed/1_persist_assistant_reply"
+        stop_command: "bash run.sh stop ai_assistant_reply_completed/1_persist_assistant_reply"
+        working_dir: taskEvents
+        intent_path: events/domain-events/ai_assistant_reply_completed/1_persist_assistant_reply
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-ai-assistant-reply-completed-1-persist-assistant-reply
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-cloud-server-started-1-process-server-start
+        build_command: "bash run.sh build cloud_server_started/1_process_server_start"
+        start_command: "bash run.sh start cloud_server_started/1_process_server_start"
+        stop_command: "bash run.sh stop cloud_server_started/1_process_server_start"
+        working_dir: taskEvents
+        intent_path: events/domain-events/cloud_server_started/1_process_server_start
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-cloud-server-started-1-process-server-start
+          TASK2APP_SG_EXTRA_INGRESS_CIDRS: "183.250.1.132/32"
+        depends_on: [docker-redis, docker-kafka, task-cloud-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-cloud-server-stopped-1-process-server-stop
+        build_command: "bash run.sh build cloud_server_stopped/1_process_server_stop"
+        start_command: "bash run.sh start cloud_server_stopped/1_process_server_stop"
+        stop_command: "bash run.sh stop cloud_server_stopped/1_process_server_stop"
+        working_dir: taskEvents
+        intent_path: events/domain-events/cloud_server_stopped/1_process_server_stop
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-cloud-server-stopped-1-process-server-stop
+        depends_on: [docker-redis, docker-kafka, task-cloud-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-cloud-server-start-auto-1-process-server-start-auto
+        build_command: "bash run.sh build cloud_server_start_auto/1_process_server_start_auto"
+        start_command: "bash run.sh start cloud_server_start_auto/1_process_server_start_auto"
+        stop_command: "bash run.sh stop cloud_server_start_auto/1_process_server_start_auto"
+        working_dir: taskEvents
+        intent_path: events/domain-events/cloud_server_start_auto/1_process_server_start_auto
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-cloud-server-start-auto-1-process-server-start-auto
+          TASK2APP_SG_EXTRA_INGRESS_CIDRS: "183.250.1.132/32"
+        depends_on: [docker-redis, docker-kafka, task-cloud-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-cloud-platform-authorization-created-1-process-cloud-platform-authorization
+        build_command: "bash run.sh build cloud_platform_authorization_created/1_process_cloud_platform_authorization"
+        start_command: "bash run.sh start cloud_platform_authorization_created/1_process_cloud_platform_authorization"
+        stop_command: "bash run.sh stop cloud_platform_authorization_created/1_process_cloud_platform_authorization"
+        working_dir: taskEvents
+        intent_path: events/domain-events/cloud_platform_authorization_created/1_process_cloud_platform_authorization
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-cloud-platform-authorization-created-1-process-cloud-platform-authorization
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      # v15 任务帖存续期：续存/到期通知 + 每日到期扫描（timer runner）
+      - name: task-events-task-post-renewed-1-notify
+        build_command: "bash run.sh build task_post_renewed/1_notify"
+        start_command: "bash run.sh start task_post_renewed/1_notify"
+        stop_command: "bash run.sh stop task_post_renewed/1_notify"
+        working_dir: taskEvents
+        intent_path: events/domain-events/task_post_renewed/1_notify
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-task-post-renewed-1-notify
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-task-post-expired-1-notify
+        build_command: "bash run.sh build task_post_expired/1_notify"
+        start_command: "bash run.sh start task_post_expired/1_notify"
+        stop_command: "bash run.sh stop task_post_expired/1_notify"
+        working_dir: taskEvents
+        intent_path: events/domain-events/task_post_expired/1_notify
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-task-post-expired-1-notify
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-task-post-expiry-scan-1-expire-posts
+        build_command: "bash run.sh build task_post_expiry_scan/1_expire_posts"
+        start_command: "bash run.sh start task_post_expiry_scan/1_expire_posts"
+        stop_command: "bash run.sh stop task_post_expiry_scan/1_expire_posts"
+        working_dir: taskEvents
+        intent_path: events/domain-events/task_post_expiry_scan/1_expire_posts
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-task-post-expiry-scan-1-expire-posts
+          TASK_TASK_SERVICE_BASE_URL: "http://${INFRA_HOST}:8017"
+          TASK_POST_EXPIRY_SCAN_TICK_SEC: "86400"
+        depends_on: [docker-redis, docker-kafka, task-task-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-billing-referral-settle-scan-1-settle-due
+        build_command: "bash run.sh build billing_referral_settle_scan/1_settle_due"
+        start_command: "bash run.sh start billing_referral_settle_scan/1_settle_due"
+        stop_command: "bash run.sh stop billing_referral_settle_scan/1_settle_due"
+        working_dir: taskEvents
+        intent_path: events/domain-events/billing_referral_settle_scan/1_settle_due
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-billing-referral-settle-scan-1-settle-due
+          TASK_BILL_INTERNAL_URL: "http://${INFRA_HOST}:8004"
+          TASK_BILL_INTERNAL_SECRET: ""
+          BILLING_REFERRAL_SETTLE_SCAN_TICK_SEC: "3600"
+        depends_on: [docker-redis, docker-kafka, task-bill]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-referral-code-expiry-scan-1-expire
+        build_command: "bash run.sh build referral_code_expiry_scan/1_expire"
+        start_command: "bash run.sh start referral_code_expiry_scan/1_expire"
+        stop_command: "bash run.sh stop referral_code_expiry_scan/1_expire"
+        working_dir: taskEvents
+        intent_path: events/domain-events/referral_code_expiry_scan/1_expire
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-referral-code-expiry-scan-1-expire
+          TASK_REFERRAL_INTERNAL_URL: "http://${INFRA_HOST}:8025"
+          REFERRAL_CODE_EXPIRY_SCAN_TICK_SEC: "3600"
+        depends_on: [docker-redis, docker-kafka, task-referral]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-user-account-deletion-execute-scan-1-execute-due
+        build_command: "bash run.sh build user_account_deletion_execute_scan/1_execute_due"
+        start_command: "bash run.sh start user_account_deletion_execute_scan/1_execute_due"
+        stop_command: "bash run.sh stop user_account_deletion_execute_scan/1_execute_due"
+        working_dir: taskEvents
+        intent_path: events/domain-events/user_account_deletion_execute_scan/1_execute_due
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-user-account-deletion-execute-scan-1-execute-due
+          TASK_AUTH_INTERNAL_URL: "http://${INFRA_HOST}:8003"
+          SHARED_INTERNAL_SECRET: ""
+          USER_ACCOUNT_DELETION_EXECUTE_SCAN_TICK_SEC: "900"
+        depends_on: [docker-redis, docker-kafka, task-auth]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-oidc-sso-idempotency-cleanup-1-cleanup
+        build_command: "bash run.sh build oidc_sso_idempotency_cleanup/1_cleanup"
+        start_command: "bash run.sh start oidc_sso_idempotency_cleanup/1_cleanup"
+        stop_command: "bash run.sh stop oidc_sso_idempotency_cleanup/1_cleanup"
+        working_dir: taskEvents
+        intent_path: events/domain-events/oidc_sso_idempotency_cleanup/1_cleanup
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-oidc-sso-idempotency-cleanup-1-cleanup
+          TASK_AUTH_INTERNAL_URL: "http://${INFRA_HOST}:8003"
+          SHARED_INTERNAL_SECRET: ""
+          OIDC_SSO_IDEMPOTENCY_CLEANUP_TICK_SEC: "86400"
+        depends_on: [docker-redis, docker-kafka, task-auth]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-wechat-mp-cleanup-1-cleanup
+        build_command: "bash run.sh build wechat_mp_cleanup/1_cleanup"
+        start_command: "bash run.sh start wechat_mp_cleanup/1_cleanup"
+        stop_command: "bash run.sh stop wechat_mp_cleanup/1_cleanup"
+        working_dir: taskEvents
+        intent_path: events/domain-events/wechat_mp_cleanup/1_cleanup
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-wechat-mp-cleanup-1-cleanup
+          TASK_AUTH_INTERNAL_URL: "http://${INFRA_HOST}:8003"
+          SHARED_INTERNAL_SECRET: ""
+          WECHAT_MP_CLEANUP_TICK_SEC: "86400"
+        depends_on: [docker-redis, docker-kafka, task-auth]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-email-invite-expiry-scan-1-expire
+        build_command: "bash run.sh build email_invite_expiry_scan/1_expire"
+        start_command: "bash run.sh start email_invite_expiry_scan/1_expire"
+        stop_command: "bash run.sh stop email_invite_expiry_scan/1_expire"
+        working_dir: taskEvents
+        intent_path: events/domain-events/email_invite_expiry_scan/1_expire
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-email-invite-expiry-scan-1-expire
+          TASK_AUTH_INTERNAL_URL: "http://${INFRA_HOST}:8003"
+          SHARED_INTERNAL_SECRET: ""
+          EMAIL_INVITE_EXPIRY_SCAN_TICK_SEC: "3600"
+        depends_on: [docker-redis, docker-kafka, task-auth]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-task-revision-recorded-1-observe
+        build_command: "bash run.sh build task_revision_recorded/1_observe"
+        start_command: "bash run.sh start task_revision_recorded/1_observe"
+        stop_command: "bash run.sh stop task_revision_recorded/1_observe"
+        working_dir: taskEvents
+        intent_path: events/domain-events/task_revision_recorded/1_observe
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-task-revision-recorded-1-observe
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-project-revision-recorded-1-observe
+        build_command: "bash run.sh build project_revision_recorded/1_observe"
+        start_command: "bash run.sh start project_revision_recorded/1_observe"
+        stop_command: "bash run.sh stop project_revision_recorded/1_observe"
+        working_dir: taskEvents
+        intent_path: events/domain-events/project_revision_recorded/1_observe
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-project-revision-recorded-1-observe
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-project-deleted-1-detach-task-projects
+        build_command: "bash run.sh build project_deleted/1_detach_task_projects"
+        start_command: "bash run.sh start project_deleted/1_detach_task_projects"
+        stop_command: "bash run.sh stop project_deleted/1_detach_task_projects"
+        working_dir: taskEvents
+        intent_path: events/domain-events/project_deleted/1_detach_task_projects
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-project-deleted-1-detach-task-projects
+          TASK_TASK_SERVICE_BASE_URL: "http://${INFRA_HOST}:8017"
+        depends_on: [docker-redis, docker-kafka, task-task-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-gitlab-manual-node-fulfillment-queued-1-ops-alert
+        build_command: "bash run.sh build gitlab_manual_node_fulfillment_queued/1_ops_alert"
+        start_command: "bash run.sh start gitlab_manual_node_fulfillment_queued/1_ops_alert"
+        stop_command: "bash run.sh stop gitlab_manual_node_fulfillment_queued/1_ops_alert"
+        working_dir: taskEvents
+        intent_path: events/domain-events/gitlab_manual_node_fulfillment_queued/1_ops_alert
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-gitlab-manual-node-fulfillment-queued-1-ops-alert
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-billing-profit-sharing-scan-1-process-pending
+        build_command: "bash run.sh build billing_profit_sharing_scan/1_process_pending"
+        start_command: "bash run.sh start billing_profit_sharing_scan/1_process_pending"
+        stop_command: "bash run.sh stop billing_profit_sharing_scan/1_process_pending"
+        working_dir: taskEvents
+        intent_path: events/domain-events/billing_profit_sharing_scan/1_process_pending
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-billing-profit-sharing-scan-1-process-pending
+          TASK_BILL_INTERNAL_URL: "http://${INFRA_HOST}:8004"
+          TASK_BILL_INTERNAL_SECRET: ""
+          BILLING_PROFIT_SHARING_SCAN_TICK_SEC: "3600"
+        depends_on: [docker-redis, docker-kafka, task-bill]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-member-joined-1-create-default-git-identity
+        build_command: "bash run.sh build member_joined/1_create_default_git_identity"
+        start_command: "bash run.sh start member_joined/1_create_default_git_identity"
+        stop_command: "bash run.sh stop member_joined/1_create_default_git_identity"
+        working_dir: taskEvents
+        intent_path: events/domain-events/member_joined/1_create_default_git_identity
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-member-joined-1-create-default-git-identity
+          TASK_TASK_SERVICE_BASE_URL: "http://${INFRA_HOST}:8017"
+        depends_on: [docker-redis, docker-kafka, task-task-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-billing-order-comment-created-1-notify-other-side
+        build_command: "bash run.sh build billing_order_comment_created/1_notify_other_side"
+        start_command: "bash run.sh start billing_order_comment_created/1_notify_other_side"
+        stop_command: "bash run.sh stop billing_order_comment_created/1_notify_other_side"
+        working_dir: taskEvents
+        intent_path: events/domain-events/billing_order_comment_created/1_notify_other_side
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-billing-order-comment-created-1-notify-other-side
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-relay-lifecycle-1-append-token-audit
+        build_command: "bash run.sh build relay_lifecycle/1_append_token_audit"
+        start_command: "bash run.sh start relay_lifecycle/1_append_token_audit"
+        stop_command: "bash run.sh stop relay_lifecycle/1_append_token_audit"
+        working_dir: taskEvents
+        intent_path: events/domain-events/relay_lifecycle/1_append_token_audit
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-relay-lifecycle-1-append-token-audit
+        depends_on: [docker-redis, docker-kafka, task-cloud-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-relay-lifecycle-2-open-runtime-session
+        build_command: "bash run.sh build relay_lifecycle/2_open_runtime_session"
+        start_command: "bash run.sh start relay_lifecycle/2_open_runtime_session"
+        stop_command: "bash run.sh stop relay_lifecycle/2_open_runtime_session"
+        working_dir: taskEvents
+        intent_path: events/domain-events/relay_lifecycle/2_open_runtime_session
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-relay-lifecycle-2-open-runtime-session
+        depends_on: [docker-redis, docker-kafka, task-cloud-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-relay-lifecycle-3-clear-reachability
+        build_command: "bash run.sh build relay_lifecycle/3_clear_reachability"
+        start_command: "bash run.sh start relay_lifecycle/3_clear_reachability"
+        stop_command: "bash run.sh stop relay_lifecycle/3_clear_reachability"
+        working_dir: taskEvents
+        intent_path: events/domain-events/relay_lifecycle/3_clear_reachability
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-relay-lifecycle-3-clear-reachability
+        depends_on: [docker-redis, docker-kafka, task-cloud-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-relay-lifecycle-4-relay-workflow-update
+        build_command: "bash run.sh build relay_lifecycle/4_relay_workflow_update"
+        start_command: "bash run.sh start relay_lifecycle/4_relay_workflow_update"
+        stop_command: "bash run.sh stop relay_lifecycle/4_relay_workflow_update"
+        working_dir: taskEvents
+        intent_path: events/domain-events/relay_lifecycle/4_relay_workflow_update
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-relay-lifecycle-4-relay-workflow-update
+        depends_on: [docker-redis, docker-kafka, task-cloud-service]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-task-created-1-fanout-work-panel-sse
+        build_command: "bash run.sh build task_created/1_fanout_work_panel_sse"
+        start_command: "bash run.sh start task_created/1_fanout_work_panel_sse"
+        stop_command: "bash run.sh stop task_created/1_fanout_work_panel_sse"
+        working_dir: taskEvents
+        intent_path: events/domain-events/task_created/1_fanout_work_panel_sse
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-task-created-1-fanout-work-panel-sse
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-task-created-2-create-task-post
+        build_command: "bash run.sh build task_created/2_create_task_post"
+        start_command: "bash run.sh start task_created/2_create_task_post"
+        stop_command: "bash run.sh stop task_created/2_create_task_post"
+        working_dir: taskEvents
+        intent_path: events/domain-events/task_created/2_create_task_post
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-task-created-2-create-task-post
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+      - name: task-events-task-deleted-1-fanout-work-panel-sse
+        build_command: "bash run.sh build task_deleted/1_fanout_work_panel_sse"
+        start_command: "bash run.sh start task_deleted/1_fanout_work_panel_sse"
+        stop_command: "bash run.sh stop task_deleted/1_fanout_work_panel_sse"
+        working_dir: taskEvents
+        intent_path: events/domain-events/task_deleted/1_fanout_work_panel_sse
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: task-events-task-deleted-1-fanout-work-panel-sse
+        depends_on: [docker-redis, docker-kafka]
+        health_check:
+          health_path: /api/health/ready
+          liveness_path: /api/health/
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+  - name: container-stack
+    services:
+      - name: go-relay
+        conf_app: infra/relay-to-trae
+        build_command: "./build.sh"
+        start_command: "./bin/go_relayToTrae"
+        stop_command: "bash -c 'lsof -ti:8797 | xargs kill -9 2>/dev/null || true'"
+        working_dir: go_relayToTrae
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: "http://${INFRA_HOST}:4317"
+          OTEL_SERVICE_NAME: go-relay
+        health_check:
+          health_path: /health
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+  - name: value-stream
+    services:
+      - name: value-stream
+        build_command: "./build.sh"
+        start_command: "./bin/valueStream --config ../conf/value-stream.yaml --ui-port :9998"
+        stop_command: "bash -c 'lsof -ti:9998 | xargs kill -9 2>/dev/null || true'"
+        working_dir: valueStream
+        health_check:
+          url: "http://${INFRA_HOST}:9998"
+          timeout: 60
+          retries: 15
+        on_failure: skip
+
+# 注意：不要将 runAll 自身作为被编排服务启动（会递归拉起 runAll -> runAll -> ...）。
+# runAll 应只作为最外层 orchestrator 进程手工启动。

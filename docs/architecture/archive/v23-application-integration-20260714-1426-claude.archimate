@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v23-ai-20260714-1426">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v23 Target</name>
+  <purpose>autoRunStep.md image-sourced docs with OCI extract cache and UI surfaces</purpose>
+
+  <folder name="Application" id="id-v23-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue ImageMarket/CreateTask/TaskDetail" id="id-v23-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v23-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskCloudService extract+installed" id="id-v23-cloud"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Saas_Ai_Provider catalog fields" id="id-v23-aip"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟢 onlineServiceJS auto-run-steps" id="id-v23-osjs"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskContainerGateway" id="id-v23-cgw"/>
+    <element xsi:type="archimate:DataObject" name="🟡 VendorContainerImage auto_run_steps_md" id="id-v23-vci"/>
+    <element xsi:type="archimate:DataObject" name="🟡 tenant_installed_images auto_run_steps_md" id="id-v23-tii"/>
+    <element xsi:type="archimate:DataObject" name="🟢 /app/autoRunStep.md" id="id-v23-md"/>
+  </folder>
+  <folder name="Relations" id="id-v23-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v23-flow-vue-gw" source="id-v23-vue" target="id-v23-gw" name="installed-images"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v23-flow-gw-cloud" source="id-v23-gw" target="id-v23-cloud" name="catalog/extract"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v23-flow-cloud-aip" source="id-v23-cloud" target="id-v23-aip" name="public catalog"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v23-flow-aip-cloud" source="id-v23-aip" target="id-v23-cloud" name="extract request"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v23-acc-aip-vci" source="id-v23-aip" target="id-v23-vci" name="RW steps_md"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v23-acc-cloud-tii" source="id-v23-cloud" target="id-v23-tii" name="RW snapshot"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v23-flow-vue-cgw" source="id-v23-vue" target="id-v23-cgw" name="container proxy"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v23-flow-cgw-osjs" source="id-v23-cgw" target="id-v23-osjs" name="GET auto-run-steps"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v23-acc-osjs-md" source="id-v23-osjs" target="id-v23-md" name="R markdown"/>
+  </folder>
+  <folder name="Implementation" id="id-v23-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v21 — cloud events/IAM" id="id-v23-plat-v21"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v23 — autoRunStep.md" id="id-v23-plat-v23"/>
+    <element xsi:type="archimate:Gap" name="Gap: 无 autoRun 说明；容器未起不可展示" id="id-v23-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v23-auto-run-steps-md" id="id-v23-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v23-rel-plat21-gap" source="id-v23-plat-v21" target="id-v23-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v23-rel-wp-gap" source="id-v23-wp" target="id-v23-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v23-rel-wp-plat23" source="id-v23-wp" target="id-v23-plat-v23"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v23-rel-plat23-cloud" source="id-v23-plat-v23" target="id-v23-cloud"/>
+  </folder>
+  <folder name="Views" id="id-v23-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v21→v23 — autoRunStep.md" id="id-v23-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-plat21" archimateElement="id-v23-plat-v21">
+        <bounds x="48" y="120" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v23-conn-plat21-gap"
+          source="id-v23-do-plat21" target="id-v23-do-gap"
+          archimateRelationship="id-v23-rel-plat21-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-gap" archimateElement="id-v23-gap"
+        targetConnections="id-v23-conn-plat21-gap id-v23-conn-wp-gap">
+        <bounds x="380" y="120" width="320" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-wp" archimateElement="id-v23-wp">
+        <bounds x="760" y="80" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v23-conn-wp-gap"
+          source="id-v23-do-wp" target="id-v23-do-gap"
+          archimateRelationship="id-v23-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v23-conn-wp-plat23"
+          source="id-v23-do-wp" target="id-v23-do-plat23"
+          archimateRelationship="id-v23-rel-wp-plat23"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-plat23" archimateElement="id-v23-plat-v23"
+        targetConnections="id-v23-conn-wp-plat23">
+        <bounds x="760" y="180" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v23-conn-plat23-cloud"
+          source="id-v23-do-plat23" target="id-v23-do-cloud-m"
+          archimateRelationship="id-v23-rel-plat23-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-cloud-m" archimateElement="id-v23-cloud"
+        targetConnections="id-v23-conn-plat23-cloud">
+        <bounds x="760" y="260" width="280" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v23 Target — autoRunStep 数据流" id="id-v23-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-vue" archimateElement="id-v23-vue">
+        <bounds x="40" y="40" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v23-conn-vue-gw"
+          source="id-v23-do-vue" target="id-v23-do-gw"
+          archimateRelationship="id-v23-flow-vue-gw"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v23-conn-vue-cgw"
+          source="id-v23-do-vue" target="id-v23-do-cgw"
+          archimateRelationship="id-v23-flow-vue-cgw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-gw" archimateElement="id-v23-gw"
+        targetConnections="id-v23-conn-vue-gw">
+        <bounds x="280" y="40" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v23-conn-gw-cloud"
+          source="id-v23-do-gw" target="id-v23-do-cloud"
+          archimateRelationship="id-v23-flow-gw-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-cloud" archimateElement="id-v23-cloud"
+        targetConnections="id-v23-conn-gw-cloud id-v23-conn-aip-cloud">
+        <bounds x="480" y="40" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v23-conn-cloud-aip"
+          source="id-v23-do-cloud" target="id-v23-do-aip"
+          archimateRelationship="id-v23-flow-cloud-aip"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v23-conn-cloud-tii"
+          source="id-v23-do-cloud" target="id-v23-do-tii"
+          archimateRelationship="id-v23-acc-cloud-tii"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-aip" archimateElement="id-v23-aip"
+        targetConnections="id-v23-conn-cloud-aip">
+        <bounds x="740" y="40" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v23-conn-aip-cloud"
+          source="id-v23-do-aip" target="id-v23-do-cloud"
+          archimateRelationship="id-v23-flow-aip-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v23-conn-aip-vci"
+          source="id-v23-do-aip" target="id-v23-do-vci"
+          archimateRelationship="id-v23-acc-aip-vci"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-vci" archimateElement="id-v23-vci"
+        targetConnections="id-v23-conn-aip-vci">
+        <bounds x="740" y="140" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-tii" archimateElement="id-v23-tii"
+        targetConnections="id-v23-conn-cloud-tii">
+        <bounds x="480" y="140" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-cgw" archimateElement="id-v23-cgw"
+        targetConnections="id-v23-conn-vue-cgw">
+        <bounds x="280" y="220" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v23-conn-cgw-osjs"
+          source="id-v23-do-cgw" target="id-v23-do-osjs"
+          archimateRelationship="id-v23-flow-cgw-osjs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-osjs" archimateElement="id-v23-osjs"
+        targetConnections="id-v23-conn-cgw-osjs">
+        <bounds x="480" y="220" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v23-conn-osjs-md"
+          source="id-v23-do-osjs" target="id-v23-do-md"
+          archimateRelationship="id-v23-acc-osjs-md"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v23-do-md" archimateElement="id-v23-md"
+        targetConnections="id-v23-conn-osjs-md">
+        <bounds x="740" y="220" width="180" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

@@ -1,0 +1,30 @@
+---
+description: 已合入或等价落地的 feat/* 必须删分支并拆除 *-wt worktree（ship / 推送 main 后执行）
+alwaysApply: true
+---
+
+# 已合入 feat 分支与 worktree 自动清理（元规则）
+
+适用于整个 monorepo。细则见 `.ai/01_project_constraints/21_merged_feat_branch_cleanup.md`；ADR-0019。
+
+## 强制要求
+
+- Agent / `/10-ship` **默认**将变更**直接合入 `main` 并 `git push origin main`**（子仓优先）；**禁止**默认 `gh pr create` 后不 merge。
+- 将 `feat/*` **合入并推送** `main` 后，必须删除对应**本地**与**各远端**同名分支，并拆除 `{repo}-wt/`、额外元仓 worktree。
+- **等价落地**（内容已在 main、SHA 不同）同样视为已交付：不得因 `main..feat` 非空而留下 worktree。
+- Agent **不得**只写「可择机删除」；须在推送 `main` 成功后执行：
+
+```bash
+python3 runAll/scripts/cleanup_stale_worktrees.py --apply --shipped-branch feat/<name>
+python3 runAll/scripts/delete_merged_feat_branches.py --apply
+```
+
+- 脏 worktree 禁止 `worktree remove`；先提交/拣选或明确丢弃。
+- 禁止删除 `main`/`master`、仍有**未落地**独有提交的分支。
+
+## 验收
+
+```bash
+python3 runAll/scripts/cleanup_stale_worktrees.py --scan
+# .runall/stale_worktrees.txt 应为空；仓库根不得长期残留 *-wt/
+```

@@ -1,0 +1,441 @@
+@import 'mixins_and_variables_and_functions';
+@import 'components/content_editor';
+
+.wiki-page-header {
+  @apply gl-flex;
+  @apply gl-items-center;
+
+  > * {
+      @apply gl-flex-grow;
+  }
+
+  .wiki-sidebar-header-toggle {
+    flex-grow: 0;
+  }
+
+  @include gl-container-width-up(md) {
+    &.has-sidebar-toggle {
+      padding-right: 0;
+    }
+
+    button.sidebar-toggle {
+      display: none;
+    }
+  }
+}
+
+.wiki-overview {
+  @apply gl-flex;
+  @apply gl-justify-center;
+  @apply gl-relative;
+  @apply gl-gap-6;
+}
+
+.has-wiki-sidebar {
+  .content-wrapper {
+    padding-right: 0 !important;
+    @apply gl-transition-padding;
+    @apply motion-reduce:gl-transition-none;
+  }
+}
+
+@mixin wiki-screen-lg {
+  .wiki-sidebar {
+    left: unset;
+    right: unset;
+    position: relative;
+  }
+
+  .wiki-sidebar .sidebar-container {
+    position: sticky;
+  }
+}
+
+.wiki-sidebar {
+  @apply gl-border-r;
+  @apply gl-bg-default;
+  top: 0;
+  bottom: 0;
+  position: fixed;
+  right: auto;
+  left: 0;
+  z-index: 2;
+
+  &.transition-enabled {
+    @apply gl-transition-all;
+    @apply gl-duration-fast;
+    @apply motion-reduce:gl-transition-none;
+
+    &.sidebar-collapsed {
+      /* This transition delay ensures both the width transition
+      and the faster border color transition end at the same time */
+      transition-delay: calc($gl-transition-duration-medium - $gl-transition-duration-fast);
+    }
+
+    .sidebar-container {
+      @apply gl-transition-all;
+      @apply gl-duration-medium;
+      @apply motion-reduce:gl-transition-none;
+    }
+
+    &.sidebar-expanded {
+      .wiki-sidebar-toggle.toggle-action-open {
+        @apply gl-transition-all;
+        @apply gl-duration-medium;
+        /* wait until the sidebar has finished opening to hide the toggle */
+        transition-delay: $gl-transition-duration-medium;
+      }
+    }
+
+    + * .toggle-with-hide-transition {
+      @apply gl-transition-all;
+      @apply gl-overflow-hidden;
+      @apply gl-duration-medium;
+    }
+  }
+
+  &.sidebar-expanded {
+    /* Hide the open toggle. It can be both a descendant... */
+    .wiki-sidebar-toggle.toggle-action-open {
+      @apply gl-opacity-0;
+    }
+
+    /* ...as well as a descendant of a sibling to the wiki sidebar */
+    + * .toggle-with-hide-transition {
+      @apply gl-w-0;
+      @apply gl-px-0;
+    }
+  }
+
+  &.sidebar-collapsed {
+    @apply gl-border-transparent;
+
+    .sidebar-container {
+      width: 0 !important;
+      overflow: hidden;
+      visibility: hidden;
+    }
+
+    .resizer {
+      display: none;
+    }
+
+    + * .toggle-with-hide-transition {
+      @apply gl-w-9;
+    }
+  }
+
+  .sidebar-container {
+    top: $calc-application-header-height;
+    bottom: $calc-application-footer-height;
+    z-index: 3;
+    @apply gl-overflow-hidden;
+    -webkit-overflow-scrolling: touch;
+    width: $wiki-sidebar-inner-width;
+    position: relative;
+    @apply gl-flex;
+    @apply gl-flex-col;
+    @apply gl-bg-default;
+
+    .blocks-container {
+      @apply gl-flex;
+      @apply gl-flex-col;
+      @apply gl-overflow-hidden;
+      @apply gl-grow;
+    }
+
+    .blocks-container > * {
+      @apply gl-px-3;
+      min-width: 200px;
+    }
+
+    .wiki-pages-list-container, .wiki-sidebar-custom-content  {
+      @apply gl-grow;
+      @apply gl-overflow-y-auto;
+    }
+  }
+
+  li > .wiki-list {
+    &:hover,
+    &.active {
+      @apply gl-bg-neutral-50;
+      @apply dark:gl-bg-neutral-900;
+    }
+
+    a {
+      color: var(--gl-text-color-default);
+    }
+
+    &:hover, &:focus, &:focus-within {
+      .wiki-list-create-child-button {
+        display: inline-flex;
+      }
+    }
+  }
+
+  ul.wiki-pages,
+  ul.wiki-pages li {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  ul.wiki-pages ul {
+    padding-left: 20px;
+  }
+
+  .wiki-sidebar-custom-content {
+    h1 {
+      @apply gl-heading-3;
+    }
+
+    h2 {
+      @apply gl-heading-4;
+    }
+
+    h3 {
+      @apply gl-heading-5;
+    }
+
+    h1, h2, h3 {
+      @apply gl-mb-4;
+    }
+
+    h4, h5, h6 {
+      @apply gl-text-base;
+      @apply gl-mt-0;
+      @apply gl-mb-2;
+    }
+
+    h5 {
+      @apply gl-font-semibold;
+    }
+
+    h6 {
+      @apply gl-font-normal;
+    }
+
+    ul, ol {
+      @apply gl-p-0;
+      @apply gl-mb-5;
+
+      ul, ol {
+        @apply gl-mb-0;
+      }
+
+      li {
+        @apply gl-ml-6;
+        @apply gl-leading-20;
+      }
+    }
+  }
+}
+
+/* Sidebar in edit mode */
+.wiki-overview:has(.wiki-form.immersive) .wiki-sidebar {
+
+  /* Hide the floating `open`-toggle since the edit header has its own */
+  .wiki-sidebar-toggle.toggle-action-open {
+    @apply gl-hidden;
+  }
+}
+
+.wiki-page-details, .wiki-comments {
+  @apply gl-w-full;
+  @apply gl-mx-auto;
+  @apply gl-relative;
+  max-width: $wiki-content-default-width;
+}
+
+.wiki-overview {
+  @apply gl-justify-stretch;
+}
+
+.layout-fluid .wiki-page-details {
+  max-width: $wiki-content-max-width;
+}
+
+ul.wiki-pages-list.content-list {
+  ul {
+    list-style: none;
+    margin-left: 0;
+    padding-left: 15px;
+
+    li {
+      margin-top: $gl-spacing-scale-2;
+    }
+  }
+}
+
+.wiki-pages-list:not(.wiki-templates-list) {
+  margin-top: $gl-spacing-scale-4;
+
+  li {
+    border-bottom: 0 !important;
+    padding: 0 !important;
+  }
+
+  li, ul, .wiki-list {
+    margin-bottom: $gl-spacing-scale-3;
+  }
+}
+
+.content:has(.wiki-overview),
+.panel-content:has(.wiki-overview) {
+  padding-bottom: 0;
+}
+
+.panel-content-inner:has(.wiki-overview) {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.wiki-overview:has(.wiki-form.immersive) {
+  gap: 0;
+}
+
+.wiki-page-details:has(.wiki-form.immersive) {
+  max-width: none;
+}
+
+.wiki-form .markdown-area,
+.wiki-form .ProseMirror {
+  min-height: min(20vh, 320px);
+  max-height: 55vh;
+}
+
+.wiki-form.immersive {
+  --immersive-editor-text-width: #{$wiki-content-default-width};
+}
+
+.wiki-form {
+  .flexible-input-container {
+    @apply gl-w-full;
+  }
+
+  @supports (field-sizing: content) {
+    .flexible-input {
+      // stylelint-disable-next-line property-no-unknown
+      field-sizing: content;
+    }
+
+    .flexible-input-container {
+      @apply gl-w-auto;
+    }
+  }
+}
+
+.wiki-list {
+  .wiki-list-create-child-button {
+    display: none;
+  }
+
+  .wiki-list-expand-button {
+    display: none;
+  }
+
+  &.collapsed {
+    .wiki-list-collapse-button {
+      display: none;
+    }
+
+    .wiki-list-expand-button {
+      display: block;
+    }
+  }
+
+  &.collapsed + .wiki-pages-list-container {
+    display: none;
+  }
+}
+
+/** Remove the below when the vue-wiki-sidebar FF is removed */
+.blocks-container:has(.wiki-list.collapsed) {
+  flex-grow: 0;
+}
+
+.drawio-editor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  border: 0;
+  z-index: 1100;
+  visibility: hidden;
+}
+
+@media print {
+  .top-bar-fixed {
+    display: none;
+  }
+
+  .wiki-sidebar {
+    display: none;
+  }
+
+  .content-wrapper {
+    padding: 0;
+  }
+
+  .container-limited.limit-container-width {
+    max-width: 100%;
+  }
+}
+
+.discussion {
+  .toggle-replies-widget {
+    border: 0;
+  }
+}
+
+@include gl-container-width-up(lg) {
+  @include wiki-screen-lg;
+}
+
+.paneled-view {
+  .wiki-overview {
+    @include gl-container-width-up(lg) {
+      .wiki-sidebar {
+        position: relative;
+        right: auto;
+      }
+    }
+  }
+
+  &.content-wrapper:has(.wiki-page-header),
+  &.content-wrapper:has(.wiki-page-details) {
+    .container-limited.project-highlight-puc {
+      max-width: 100%;
+    }
+
+    @include gl-container-width-up(lg) {
+      padding-right: 0 !important;
+    }
+  }
+
+  .wiki-sidebar {
+    .sidebar-container {
+      top: 0;
+      height: var(--panel-content-inner-height); /* This variable is subject to change */
+    }
+  }
+}
+
+/*
+* Remove the below after the UI has been fully migrated to paneled views.
+* These make the breakpoint queries backwards compatible when gl-container-width
+* is not available.
+*/
+html:not(.page-with-panels) {
+  @include media-breakpoint-up(lg) {
+    @include wiki-screen-lg;
+  }
+
+  .wiki-sidebar {
+    .sidebar-container {
+      height: $calc-application-viewport-height;
+    }
+  }
+}

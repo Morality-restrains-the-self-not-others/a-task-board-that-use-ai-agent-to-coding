@@ -1,0 +1,68 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "AGENTS.local.md",
+    ".ai/AGENTS.md"
+  ],
+  "plugin": [
+    "@gitlab/opencode-gitlab-plugin"
+  ],
+  "enabled_providers": [
+    "gitlab"
+  ],
+  "small_model": "gitlab/duo-chat-haiku-4-5",
+  "share": "disabled",
+  "default_agent": "plan",
+  "permission": {
+    "*": "ask",
+    "bash": {
+      "*": "ask",
+      "bundle exec rspec*": "allow",
+      "bundle exec rubocop -A *": "allow",
+      "date*": "allow",
+      "echo*": "allow",
+      "find*": "allow",
+      "git add*": "allow",
+      "git blame*": "allow",
+      "git branch*": "allow",
+      "git diff*": "allow",
+      "git --no-pager diff*": "allow",
+      "git grep*": "allow",
+      "git log*": "allow",
+      "git ls-files*": "allow",
+      "git remote -v": "allow",
+      "git rev-parse*": "allow",
+      "git show*": "allow",
+      "git status*": "allow",
+      "go build*": "allow",
+      "go test*": "allow",
+      "go vet*": "allow",
+      "golangci-lint run*": "allow",
+      "grep*": "allow",
+      "head*": "allow",
+      "ls*": "allow",
+      "markdownlint *": "allow",
+      "npx markdownlint-cli2 *": "allow",
+      "pre-commit *": "allow",
+      "sleep *": "allow",
+      "tail*": "allow",
+      "vale *": "allow",
+      "wc *": "allow",
+      "which*": "allow"
+    },
+    "glob": "allow",
+    "grep": "allow",
+    "knowledge-graph_list_projects": "allow",
+    "knowledge-graph_read_definitions": "allow",
+    "knowledge-graph_search_codebase_definitions": "allow",
+    "lazy-mcp_describe_commands": "allow",
+    "lazy-mcp_invoke_command": "allow",
+    "lazy-mcp_list_commands": "allow",
+    "lazy-mcp_list_servers": "allow",
+    "read": "allow",
+    "task": {
+      "explore": "allow"
+    },
+    "todowrite": "allow"
+  }
+}

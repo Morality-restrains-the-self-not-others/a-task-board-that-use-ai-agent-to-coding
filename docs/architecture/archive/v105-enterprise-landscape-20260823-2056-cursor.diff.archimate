@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v105 变迁 (v104→v105)" id="id-v105eldiff01">
+  <folder name="Business" id="id-v105eld-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v105-biz-admin" name="平台管理员"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v105-biz-tester" name="测试角色账号"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v105-biz-tenant" name="普通租户"/>
+    <element xsi:type="archimate:BusinessService" id="id-v105-biz-setrole" name="设置测试角色"/>
+    <element xsi:type="archimate:BusinessService" id="id-v105-biz-setmode" name="设置区域开发/发布模式"/>
+    <element xsi:type="archimate:BusinessService" id="id-v105-biz-usedev" name="使用开发模式 GitLab 区域"/>
+  </folder>
+  <folder name="Application" id="id-v105eld-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v105e-fe" name="taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v105e-auth" name="taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v105e-bill" name="taskBill"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v105eld-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v105e-pl104" name="Plateau v104"/>
+    <element xsi:type="archimate:Plateau" id="id-v105e-pl105" name="Plateau v105"/>
+    <element xsi:type="archimate:Gap" id="id-v105e-gap" name="无法把预发 GitLab 只开给测试账号"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v105e-wp" name="WP-tester-gitlab-access-mode"/>
+  </folder>
+  <folder name="Relations" id="id-v105eld-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v105e-rel-admin-role" source="id-v105-biz-admin" target="id-v105-biz-setrole"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v105e-rel-admin-mode" source="id-v105-biz-admin" target="id-v105-biz-setmode"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v105e-rel-tester-dev" source="id-v105-biz-tester" target="id-v105-biz-usedev"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v105e-rel-fe-role" source="id-v105e-fe" target="id-v105-biz-setrole"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v105e-rel-bill-dev" source="id-v105e-bill" target="id-v105-biz-usedev"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v105e-rel-pl104-gap" source="id-v105e-pl104" target="id-v105e-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v105e-rel-wp-gap" source="id-v105e-wp" target="id-v105e-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v105e-rel-wp-pl105" source="id-v105e-wp" target="id-v105e-pl105"/>
+  </folder>
+  <folder name="Views" id="id-v105eld-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v105e-view-mig" name="架构变迁 v104→v105 — tester landscape">
+      <child xsi:type="archimate:DiagramObject" id="id-v105e-do-pl104" archimateElement="id-v105e-pl104">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105e-c-pl104-gap" source="id-v105e-do-pl104" target="id-v105e-do-gap" archimateRelationship="id-v105e-rel-pl104-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105e-do-gap" targetConnections="id-v105e-c-pl104-gap id-v105e-c-wp-gap" archimateElement="id-v105e-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105e-do-wp" archimateElement="id-v105e-wp">
+        <bounds x="240" y="160" width="400" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105e-c-wp-gap" source="id-v105e-do-wp" target="id-v105e-do-gap" archimateRelationship="id-v105e-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105e-c-wp-pl105" source="id-v105e-do-wp" target="id-v105e-do-pl105" archimateRelationship="id-v105e-rel-wp-pl105"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105e-do-pl105" targetConnections="id-v105e-c-wp-pl105" archimateElement="id-v105e-pl105">
+        <bounds x="680" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v105e-view-topo" name="v105 Target — 角色与区域使用">
+      <child xsi:type="archimate:DiagramObject" id="id-v105e-do-admin" archimateElement="id-v105-biz-admin">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105e-c-admin-role" source="id-v105e-do-admin" target="id-v105e-do-setrole" archimateRelationship="id-v105e-rel-admin-role"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105e-c-admin-mode" source="id-v105e-do-admin" target="id-v105e-do-setmode" archimateRelationship="id-v105e-rel-admin-mode"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105e-do-tester" archimateElement="id-v105-biz-tester">
+        <bounds x="48" y="160" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105e-c-tester-dev" source="id-v105e-do-tester" target="id-v105e-do-usedev" archimateRelationship="id-v105e-rel-tester-dev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105e-do-setrole" targetConnections="id-v105e-c-admin-role id-v105e-c-fe-role" archimateElement="id-v105-biz-setrole">
+        <bounds x="240" y="16" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105e-do-setmode" targetConnections="id-v105e-c-admin-mode" archimateElement="id-v105-biz-setmode">
+        <bounds x="240" y="80" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105e-do-usedev" targetConnections="id-v105e-c-tester-dev id-v105e-c-bill-dev" archimateElement="id-v105-biz-usedev">
+        <bounds x="240" y="160" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105e-do-fe" archimateElement="id-v105e-fe">
+        <bounds x="520" y="16" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105e-c-fe-role" source="id-v105e-do-fe" target="id-v105e-do-setrole" archimateRelationship="id-v105e-rel-fe-role"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v105e-do-bill" archimateElement="id-v105e-bill">
+        <bounds x="520" y="160" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v105e-c-bill-dev" source="id-v105e-do-bill" target="id-v105e-do-usedev" archimateRelationship="id-v105e-rel-bill-dev"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

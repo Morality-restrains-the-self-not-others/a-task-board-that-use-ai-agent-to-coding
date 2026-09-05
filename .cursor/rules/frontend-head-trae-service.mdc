@@ -1,0 +1,23 @@
+---
+description: 前端入口 HTML head 须声明 trae-service，标明提供该页的服务
+globs: "**/*.{html,htm},**/front_project/**/index.html,**/frontend/index.html,**/onlineServiceJS/static/**,**/spa.html"
+alwaysApply: false
+---
+
+# HTML head 须标明提供页面的服务（元规则）
+
+适用于整个 monorepo **前端入口 HTML**。细则见 `.ai/01_project_constraints/26_frontend_head_trae_service.md`。
+
+## 强制要求
+
+- 入口页 `<head>` 必须包含：`<meta name="trae-service" content="<serviceId>" />`
+- `content` 优先与 monorepo 顶层目录名一致（如 `taskAiProvider`、`task2app`、`onlineServiceJS`）
+- 属性名固定为 **`trae-service`**，禁止用其他别名作为项目约定
+- 邮件模板、第三方/生成报告 HTML 不适用
+
+## 验收
+
+```bash
+# DevTools: document.querySelector('meta[name="trae-service"]')?.content
+python3 db/scripts/ci/check_frontend_head_trae_service.py
+```

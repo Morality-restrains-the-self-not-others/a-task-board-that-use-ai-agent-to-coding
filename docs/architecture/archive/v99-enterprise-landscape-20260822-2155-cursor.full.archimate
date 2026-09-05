@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v99 全量 (post-change)" id="id-v99elfull01">
+  <folder name="Business" id="id-v99eld-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v99-biz-staff" name="平台员工"/>
+    <element xsi:type="archimate:BusinessService" id="id-v99-biz-ops" name="订单与退款运营"/>
+    <element xsi:type="archimate:BusinessService" id="id-v99-biz-psq" name="待分账队列 [NEW v99]"/>
+  </folder>
+  <folder name="Application" id="id-v99eld-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v99-el-fe" name="taskFE [MODIFIED v99]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v99-el-bill" name="taskBill [MODIFIED v99]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v99eld-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v99-el-pl98" name="Plateau v98"/>
+    <element xsi:type="archimate:Plateau" id="id-v99-el-pl99" name="Plateau v99"/>
+    <element xsi:type="archimate:Gap" id="id-v99-el-gap" name="Gap: 运营看不到待分账订单总览"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v99-el-wp" name="WP-admin-pending-profit-sharing-list"/>
+  </folder>
+  <folder name="Relations" id="id-v99eld-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v99-rel-staff-ops" source="id-v99-biz-staff" target="id-v99-biz-ops"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v99-rel-staff-psq" source="id-v99-biz-staff" target="id-v99-biz-psq"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v99-rel-fe-ops" source="id-v99-el-fe" target="id-v99-biz-ops"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v99-rel-fe-psq" source="id-v99-el-fe" target="id-v99-biz-psq"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v99-rel-psq-bill" source="id-v99-biz-psq" target="id-v99-el-bill" name="GET /api/system-admin/profit-sharing/"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v99-rel-el-pl98-gap" source="id-v99-el-pl98" target="id-v99-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v99-rel-el-wp-gap" source="id-v99-el-wp" target="id-v99-el-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v99-rel-el-wp-pl99" source="id-v99-el-wp" target="id-v99-el-pl99"/>
+  </folder>
+  <folder name="Views" id="id-v99eld-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v99-el-view-mig" name="架构变迁 v98→v99 — admin-pending-profit-sharing-list">
+      <child xsi:type="archimate:DiagramObject" id="id-v99-eld-pl98" archimateElement="id-v99-el-pl98">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-elc-pl98-gap" source="id-v99-eld-pl98" target="id-v99-eld-gap" archimateRelationship="id-v99-rel-el-pl98-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-eld-gap" targetConnections="id-v99-elc-pl98-gap id-v99-elc-wp-gap" archimateElement="id-v99-el-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-eld-wp" archimateElement="id-v99-el-wp">
+        <bounds x="240" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-elc-wp-gap" source="id-v99-eld-wp" target="id-v99-eld-gap" archimateRelationship="id-v99-rel-el-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-elc-wp-pl99" source="id-v99-eld-wp" target="id-v99-eld-pl99" archimateRelationship="id-v99-rel-el-wp-pl99"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-eld-pl99" targetConnections="id-v99-elc-wp-pl99" archimateElement="id-v99-el-pl99">
+        <bounds x="600" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v99-el-view-flow" name="v99 Target — 待分账队列">
+      <child xsi:type="archimate:DiagramObject" id="id-v99-eld-staff" archimateElement="id-v99-biz-staff">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-elc-staff-ops" source="id-v99-eld-staff" target="id-v99-eld-ops" archimateRelationship="id-v99-rel-staff-ops"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-elc-staff-psq" source="id-v99-eld-staff" target="id-v99-eld-psq" archimateRelationship="id-v99-rel-staff-psq"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-eld-ops" targetConnections="id-v99-elc-staff-ops id-v99-elc-fe-ops" archimateElement="id-v99-biz-ops">
+        <bounds x="240" y="48" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-eld-psq" targetConnections="id-v99-elc-staff-psq id-v99-elc-fe-psq" archimateElement="id-v99-biz-psq">
+        <bounds x="240" y="140" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-elc-psq-bill" source="id-v99-eld-psq" target="id-v99-eld-bill" archimateRelationship="id-v99-rel-psq-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-eld-fe" archimateElement="id-v99-el-fe">
+        <bounds x="480" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-elc-fe-ops" source="id-v99-eld-fe" target="id-v99-eld-ops" archimateRelationship="id-v99-rel-fe-ops"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-elc-fe-psq" source="id-v99-eld-fe" target="id-v99-eld-psq" archimateRelationship="id-v99-rel-fe-psq"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-eld-bill" targetConnections="id-v99-elc-psq-bill" archimateElement="id-v99-el-bill">
+        <bounds x="480" y="140" width="160" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

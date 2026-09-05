@@ -1,0 +1,19 @@
+# relayToTraeUtils 单元测试意图
+
+## 测试范围
+测试从 `ServerConfig.logic.vue` 提取出的 relayToTrae 纯函数逻辑。
+
+## 被测试函数
+- **RELAY_TO_TRAE_ENV_KEYS**: 常量，三个必需环境变量 key，不可变
+- **TASK2APP_ACCESS_TOKEN_PLACEHOLDER**: 占位符常量
+- **isRouteRelayToTraeQuery**: 判断路由 query 中 relayToTrae 参数是否为 "true"
+- **parseRelayToTraeEnv**: 将 env items 数组转为 key-value 对象，跳过空 key
+- **buildDefaultRelayToTraeEnvItems**: 构建默认环境变量项列表（含占位符）
+- **buildRelayToTraeStartEnvPayload**: 验证并构建启动所需的 env payload
+
+## 测试场景
+1. 常量值验证
+2. Route query 解析（null/undefined/missing/false/true/array/大小写）
+3. Env items 解析（正常/空数组/空key/null key/缺失值/null值/类型转换）
+4. 默认 env items 构建（默认值/覆盖值）
+5. 启动 payload 构建（正常/缺失TASK_API/缺失BUSINESS_API/空白值/ACCESS_TOKEN占位符替换）

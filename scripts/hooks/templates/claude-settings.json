@@ -1,0 +1,81 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'if [ \"${CLAUDE_CODE_HEADLESS:-0}\" = \"1\" ]; then bash @META_ROOT@/scripts/lib/sessionctl.sh register --kind headless-task --pid $CLAUDE_PROCESS_ID --note \"夜间无头任务\"; else bash @META_ROOT@/scripts/lib/sessionctl.sh register --kind interactive --pid $CLAUDE_PROCESS_ID --note \"交互会话\"; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'setsid nohup @META_ROOT@/scripts/lib/sessionctl.sh heartbeat --daemon --pid $CLAUDE_PROCESS_ID >/dev/null 2>&1 &' || true"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash @META_ROOT@/scripts/lib/sessionctl.sh release --all --pid $CLAUDE_PROCESS_ID || true"
+          },
+          {
+            "type": "command",
+            "command": "bash @META_ROOT@/scripts/lib/auto-commit.sh",
+            "timeout": 900,
+            "statusMessage": "auto-commit: 会话结束检查点提交（随机单测门禁可能耗时数分钟）"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash @META_ROOT@/scripts/lib/sessionctl.sh release --all --pid $CLAUDE_PROCESS_ID || true"
+          },
+          {
+            "type": "command",
+            "command": "bash @META_ROOT@/scripts/lib/auto-commit.sh --checkpoint-threshold 1800",
+            "timeout": 900,
+            "statusMessage": "auto-commit: 会话中途低频检查点（阈值 30 分钟 + 幂等去重，走完整门禁）"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash @META_ROOT@/scripts/lib/sessionctl.sh heartbeat --pid $CLAUDE_PROCESS_ID || true"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash @META_ROOT@/scripts/lib/sessionctl.sh heartbeat --pid $CLAUDE_PROCESS_ID || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash @META_ROOT@/scripts/lib/sessionctl.sh precheck --pid $CLAUDE_PROCESS_ID || true"
+          }
+        ]
+      }
+    ]
+  }
+}

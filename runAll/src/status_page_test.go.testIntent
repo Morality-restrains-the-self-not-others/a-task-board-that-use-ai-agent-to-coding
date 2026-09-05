@@ -1,0 +1,14 @@
+# status_page_test.go 测试意图
+
+## 测试范围
+组装后的 9999 status.html 必须含进度面板手动清空入口，且不得再嵌入完成后自动隐藏延迟。
+
+## 关键业务断言
+- 含 `prog-clear-logs-btn`、`dismissProgressPanel`、`shouldAutoHideProgressPanel`
+- 不含 `? 10000 : 5000` 与 “Auto-hide faster for single service”
+
+## 破坏信号
+重启完成后进度日志数秒消失，页面上没有「清空」按钮。
+
+## 回归验证
+`go test -count=1 ./src -run TestAssembledStatusPage_ProgressPanelManualClear`

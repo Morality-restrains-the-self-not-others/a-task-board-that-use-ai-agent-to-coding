@@ -1,0 +1,626 @@
+2026-03-02 Version: 7.5.2
+- Update API DescribeDefenseResource: add response parameters Body.Resource.InstanceId.
+- Update API DescribeDefenseResources: add response parameters Body.Resources.$.InstanceId.
+
+
+2026-03-02 Version: 7.5.2
+- Update API DescribeDefenseResource: add response parameters Body.Resource.InstanceId.
+- Update API DescribeDefenseResources: add response parameters Body.Resources.$.InstanceId.
+
+
+2026-02-26 Version: 7.5.1
+- Update API CreateDomain: add request parameters Listen.HstsIncludeSubDomain.
+- Update API CreateDomain: add request parameters Listen.HstsMaxAge.
+- Update API CreateDomain: add request parameters Listen.HstsPreload.
+- Update API CreateDomain: add request parameters Redirect.ProxyProtocol.
+- Update API DescribeDomainDetail: add response parameters Body.Listen.HstsIncludeSubDomain.
+- Update API DescribeDomainDetail: add response parameters Body.Listen.HstsMaxAge.
+- Update API DescribeDomainDetail: add response parameters Body.Listen.HstsPreload.
+- Update API DescribeDomainDetail: add response parameters Body.Redirect.ProxyProtocol.
+- Update API ModifyDomain: add request parameters Listen.HstsIncludeSubDomain.
+- Update API ModifyDomain: add request parameters Listen.HstsMaxAge.
+- Update API ModifyDomain: add request parameters Listen.HstsPreload.
+- Update API ModifyDomain: add request parameters Redirect.ProxyProtocol.
+
+
+2026-02-06 Version: 7.5.0
+- Support API CreateCloudResourceExtensionCert.
+- Support API DeleteCloudResourceExtensionCert.
+- Support API ModifyCloudResourceDefaultCert.
+
+
+2026-01-13 Version: 7.4.0
+- Support API DescribeCloudResourceList.
+- Support API DescribeThreatEventTopMetric.
+
+
+2026-01-05 Version: 7.3.1
+- Update API DescribeDomains: add request parameters DomainId.
+
+
+2025-12-26 Version: 7.3.0
+- Support API AddAddress.
+- Support API ClearAddress.
+- Support API DeleteAddress.
+- Support API DescribeAddresses.
+- Support API DescribeApisecExamples.
+- Support API DescribeRelatedDefenseRules.
+
+
+2025-12-25 Version: 7.2.0
+- Support API DescribeAlarmBanner.
+- Support API DescribeAlarmList.
+- Support API DescribeBotAppKey.
+- Support API DescribeThreatEvent.
+- Support API DescribeThreatEventDetail.
+
+
+2025-12-25 Version: 7.2.0
+- Support API DescribeAlarmBanner.
+- Support API DescribeAlarmList.
+- Support API DescribeBotAppKey.
+- Support API DescribeThreatEvent.
+- Support API DescribeThreatEventDetail.
+
+
+2025-12-11 Version: 7.1.1
+- Update API CreateDomain: add request parameters Redirect.Http2Origin.
+- Update API CreateDomain: add request parameters Redirect.Http2OriginMaxConcurrency.
+- Update API DescribeDomainDetail: add response parameters Body.Redirect.Http2Origin.
+- Update API DescribeDomainDetail: add response parameters Body.Redirect.Http2OriginMaxConcurrency.
+- Update API ModifyDomain: add request parameters Redirect.Http2Origin.
+- Update API ModifyDomain: add request parameters Redirect.Http2OriginMaxConcurrency.
+
+
+2025-12-11 Version: 7.1.1
+- Update API CreateDomain: add request parameters Redirect.Http2Origin.
+- Update API CreateDomain: add request parameters Redirect.Http2OriginMaxConcurrency.
+- Update API DescribeDomainDetail: add response parameters Body.Redirect.Http2Origin.
+- Update API DescribeDomainDetail: add response parameters Body.Redirect.Http2OriginMaxConcurrency.
+- Update API ModifyDomain: add request parameters Redirect.Http2Origin.
+- Update API ModifyDomain: add request parameters Redirect.Http2OriginMaxConcurrency.
+
+
+2025-12-09 Version: 7.1.0
+- Support API DescribeBotRuleLabels.
+- Update API CreateCloudResource: add request parameters Listen.ResourceRegionId.
+
+
+2025-12-08 Version: 7.0.4
+- Generated python 2021-10-01 for waf-openapi.
+
+2025-12-05 Version: 7.0.3
+- Update API DescribeInstance: add response parameters Body.ProcessStatus.
+
+
+2025-11-25 Version: 7.0.2
+- Update API CreateCloudResource: add request parameters Redirect.MaxBodySize.
+- Update API CreateDomain: add request parameters Redirect.MaxBodySize.
+- Update API DescribeCloudResourceAccessPortDetails: add response parameters Body.AccessPortDetails.$.MaxBodySize.
+- Update API DescribeDomainDetail: add response parameters Body.Redirect.MaxBodySize.
+- Update API ModifyCloudResource: add request parameters Redirect.MaxBodySize.
+- Update API ModifyDomain: add request parameters Redirect.MaxBodySize.
+
+
+2025-11-19 Version: 7.0.1
+- Update API DeleteCloudResource: add request parameters CloudResourceId.
+- Update API DescribeAbnormalCloudResources: add response parameters Body.AbnormalCloudResources.$.CloudResourceId.
+- Update API DescribeCloudResourceAccessPortDetails: add response parameters Body.AccessPortDetails.$.CloudResourceId.
+- Update API ModifyCloudResource: add request parameters CloudResourceId.
+- Update API ModifyCloudResourceCert: add request parameters CloudResourceId.
+- Update API ReCreateCloudResource: add request parameters CloudResourceId.
+
+
+2025-11-04 Version: 7.0.0
+- Support API CreateLogDeliveryConfig.
+- Support API CreatePocFunction.
+- Support API DeleteHybridCloudGroup.
+- Support API DeleteLogDeliveryConfig.
+- Support API DescribeApisecEventDetail.
+- Support API DescribeChargeModule.
+- Support API DescribeChargeResult.
+- Support API DescribeHybridCloudProtectableCount.
+- Support API DescribeLogDeliveryConfig.
+- Support API DescribeLogDeliveryConfigs.
+- Support API DescribePocFunctions.
+- Support API DescribeResourceLogDeliveryStatus.
+- Support API DescribeResourceLogFieldConfig.
+- Support API DescribeRoleAuthStatus.
+- Support API DescribeVerifyContent.
+- Support API InitializeWafOperationRole.
+- Support API ModifyCloudResourceCert.
+- Support API ModifyDomainCert.
+- Support API ModifyLogDeliveryConfig.
+- Support API ModifyResourceLogDeliveryStatus.
+- Support API ModifyResourceLogFieldConfig.
+- Support API VerifyDomainOwner.
+- Update API DeleteApisecEvents: add request parameters EventScope.
+- Update API DescribeApisecApiResources: add response parameters Body.Data.$.AccountEventNum.
+- Update API DescribeApisecEvents: add request parameters Account.
+- Update API DescribeApisecEvents: add request parameters EventScope.
+- Update API DescribeApisecEvents: add response parameters Body.Data.$.AttackerList.
+- Update API DescribeApisecStatistics: add response parameters Body.Data.Account.
+- Update API DescribeInstance: add response parameters Body.Details.ElasticQps.
+- Update API DescribeInstance: add response parameters Body.Details.ExtendQps.
+- Update API DescribeInstance: add response parameters Body.Details.FreeQps.
+- Update API DescribeInstance: add response parameters Body.Details.QpsBillingCap.
+- Update API DescribeSensitiveRequestLog: add request parameters Account.
+- Update API DescribeSensitiveRequestLog: add response parameters Body.Data.$.Account.
+- Update API DescribeUserEventTrend: add request parameters EventScope.
+- Update API DescribeUserEventType: add request parameters EventScope.
+- Update API ModifyApisecEvents: add request parameters EventScope.
+
+
+2025-09-22 Version: 6.5.2
+- Update API DescribeTemplateResourceCount: add response parameters Body.ResourceCount.$.AssetCount.
+- Update API DescribeTemplateResources: add request parameters AssetApi.
+- Update API ModifyTemplateResources: add request parameters BindAssets.
+- Update API ModifyTemplateResources: add request parameters UnbindAssets.
+
+
+2025-09-18 Version: 6.5.1
+- Generated python 2021-10-01 for waf-openapi.
+
+2025-09-17 Version: 6.5.0
+- Support API DescribeHybridCloudBasicMonitor.
+- Support API DescribeHybridCloudClusterServers.
+- Support API DescribeHybridCloudProcessMonitor.
+- Support API DescribeHybridCloudResourceDetail.
+- Support API DescribeHybridCloudSdkServers.
+- Support API DescribeHybridCloudSupportRegions.
+- Support API DescribeHybridCloudUnsupportPorts.
+- Support API ModifyHybridCloudCluster.
+- Update API CreateDomain: add request parameters Redirect.WLProxyClientIp.
+- Update API CreateDomain: add request parameters Redirect.WebServerType.
+- Update API CreateDomain: add request parameters Redirect.XClientIp.
+- Update API CreateDomain: add request parameters Redirect.XTrueIp.
+- Update API DescribeDomainDetail: add response parameters Body.Redirect.WLProxyClientIp.
+- Update API DescribeDomainDetail: add response parameters Body.Redirect.WebServerType.
+- Update API DescribeDomainDetail: add response parameters Body.Redirect.XClientIp.
+- Update API DescribeDomainDetail: add response parameters Body.Redirect.XTrueIp.
+- Update API ModifyDomain: add request parameters Redirect.WLProxyClientIp.
+- Update API ModifyDomain: add request parameters Redirect.WebServerType.
+- Update API ModifyDomain: add request parameters Redirect.XClientIp.
+- Update API ModifyDomain: add request parameters Redirect.XTrueIp.
+
+
+2025-09-15 Version: 6.4.0
+- Support API CreateHybridCloudCluster.
+- Support API DescribeCommonLogFields.
+- Support API DescribeDefenseGroupValidResources.
+- Support API DescribeDefenseTemplateValidResources.
+- Support API DescribeUserLogFieldConfig.
+- Support API ModifyUserLogFieldConfig.
+- Support API ModifyUserWafLogStatus.
+
+
+2025-09-08 Version: 6.3.0
+- Support API DescribeBaseSystemRules.
+- Support API DescribeCustomBaseRuleCompileResult.
+- Support API DescribeDefenseRuleStatistics.
+
+
+2025-08-14 Version: 6.2.1
+- Update API CreateDomain: add request parameters Redirect.BackendPorts.
+- Update API DescribeDomainDetail: add response parameters Body.Redirect.BackendPorts.
+- Update API ModifyDomain: add request parameters Redirect.BackendPorts.
+
+
+2025-08-07 Version: 6.2.0
+- Support API DescribeDefenseSceneConfig.
+- Support API ModifyDefenseSceneConfig.
+- Update API DescribeDomainDetail: add response parameters Body.Redirect.BackUpBackendList.
+- Update API DescribeDomainDetail: add response parameters Body.Redirect.BackendList.
+
+
+2025-07-31 Version: 6.1.3
+- Update API DescribeSensitiveApiStatistic: add request parameters Type.
+
+
+2025-07-29 Version: 6.1.2
+- Update API DescribeApisecRules: add request parameters Lang.
+- Update API DescribeApisecStatistics: add request parameters EndTime.
+- Update API DescribeApisecStatistics: add request parameters StartTime.
+- Update API DescribeApisecStatistics: add request parameters UserStatusList.
+- Update API DescribeApisecStatistics: add response parameters Body.Data.NotFixed.
+- Update API DescribeApisecStatistics: add response parameters Body.Data.SystemFixed.
+- Update API DescribeApisecStatistics: add response parameters Body.Data.ToBeVerified.
+- Update API DescribeApisecUserOperations: add response parameters Body.Data.$.OperationSource.
+- Update API DescribeUserAbnormalType: add request parameters UserStatusList.
+- Update API DescribeUserEventType: add request parameters UserStatusList.
+
+
+2025-07-28 Version: 6.1.1
+- Update API DescribeDefenseRule: add response parameters Body.Rule.DefenseType.
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.DefenseType.
+- Update API DescribeTemplateResources: add response parameters Body.TemplateId.
+- Update API ModifyDefenseRuleStatus: add request parameters DefenseType.
+
+
+2025-07-14 Version: 6.1.0
+- Support API CreateHybridCloudClusterRule.
+- Support API DeleteHybridCloudClusterRule.
+- Support API DescribeHybridCloudClusterRules.
+
+
+2025-07-11 Version: 6.0.1
+- Update API DescribeHybridCloudClusterRule: add request parameters ClusterRuleResourceId.
+- Update API DescribeHybridCloudClusterRule: add response parameters Body.ClusterRule.ClusterRuleResourceId.
+- Update API ModifyHybridCloudClusterRule: add request parameters ClusterRuleResourceId.
+
+
+2025-07-11 Version: 6.0.0
+- Support API DeleteDefenseRuleBlockIp.
+- Update API DescribeDomainDetail: add request parameters DomainId.
+- Update API DescribeDomainDetail: add response parameters Body.DomainId.
+- Update API DescribeDomainDetail: update response parameters Body.Status' format has changed.
+- Update API DescribeDomains: add response parameters Body.Domains.$.DomainId.
+- Update API ModifyDomain: add request parameters DomainId.
+
+
+2025-06-27 Version: 5.6.0
+- Support API DescribeDefenseResourceOwnerUid.
+- Update API CreateDefenseTemplate: add request parameters UnbindResourceGroups.
+- Update API CreateDefenseTemplate: add request parameters UnbindResources.
+- Update API DescribeDefenseRules: add request parameters DefenseType.
+- Update API DescribeTemplateResources: add request parameters MaxResults.
+- Update API DescribeTemplateResources: add request parameters NextToken.
+- Update API DescribeTemplateResources: add request parameters Resource.
+- Update API DescribeTemplateResources: add response parameters Body.MaxResults.
+- Update API DescribeTemplateResources: add response parameters Body.NextToken.
+- Update API DescribeTemplateResources: add response parameters Body.TotalCount.
+
+
+2025-06-25 Version: 5.5.0
+- Support API CreateCerts.
+- Support API DescribeDomainUsedPorts.
+
+
+2025-06-19 Version: 5.4.0
+- Support API CreateDefenseResource.
+- Support API DeleteDefenseResource.
+
+
+2025-06-17 Version: 5.3.0
+- Support API DescribeIpAbroadCountryInfos.
+
+
+2025-06-11 Version: 5.2.1
+- Update API CreateDefenseRule: add request parameters DefenseType.
+- Update API DeleteDefenseRule: add request parameters DefenseType.
+- Update API DescribeDefenseRule: add request parameters DefenseType.
+- Update API ModifyDefenseRule: add request parameters DefenseType.
+
+
+2025-06-09 Version: 5.2.0
+- Support API DescribeAbnormalCloudResources.
+- Support API ReCreateCloudResource.
+- Update API CreateDefenseRule: add request parameters Resource.
+- Update API DeleteDefenseRule: add request parameters Resource.
+- Update API DescribeDefenseRule: add request parameters Resource.
+- Update API DescribeDefenseRule: add response parameters Body.Rule.Resource.
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.Resource.
+- Update API ModifyDefenseRule: add request parameters Resource.
+
+
+2025-05-22 Version: 5.1.3
+- Update API DescribeCloudResourceAccessPortDetails: add response parameters Body.AccessPortDetails.$.SubStatus.
+- Update API DescribeCloudResourceAccessPortDetails: add response parameters Body.AccessPortDetails.$.SubStatusDetails.
+- Update API DescribeProductInstances: add request parameters ResourceInstanceAccessStatus.
+- Update API DescribeProductInstances: add response parameters Body.ProductInstances.$.AccessInstanceId.
+- Update API DescribeProductInstances: add response parameters Body.ProductInstances.$.AccessPortAndProtocols.
+- Update API DescribeProductInstances: add response parameters Body.ProductInstances.$.AccessPorts.
+- Update API DescribeProductInstances: add response parameters Body.ProductInstances.$.ResourceInstanceAccessStatus.
+- Update API DescribeProductInstances: add response parameters Body.ProductInstances.$.ResourceInstanceEdition.
+- Update API DescribeProductInstances: add response parameters Body.ProductInstances.$.ResourcePorts.$.Certificates.$.AppliedType.
+- Update API DescribeProductInstances: add response parameters Body.ProductInstances.$.ResourcePorts.$.Certificates.$.Domain.
+
+
+2025-05-07 Version: 5.1.2
+- Generated python 2021-10-01 for waf-openapi.
+
+2025-03-27 Version: 5.1.1
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.ActionExternal.
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.Description.
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.DetailRuleIds.
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.ExternalInfo.
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.GmtCreate.
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.RuleType.
+
+
+2025-03-27 Version: 5.1.1
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.ActionExternal.
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.Description.
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.DetailRuleIds.
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.ExternalInfo.
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.GmtCreate.
+- Update API DescribeDefenseRules: add response parameters Body.Rules.$.RuleType.
+
+
+2025-03-27 Version: 5.1.0
+- Support API DescribeNetworkFlowTimeSeriesMetric.
+- Support API DescribeNetworkFlowTopNMetric.
+- Support API DescribeSecurityEventLogs.
+- Support API DescribeSecurityEventTimeSeriesMetric.
+- Support API DescribeSecurityEventTopNMetric.
+
+
+2025-02-26 Version: 5.0.6
+- Update API DescribeApisecAbnormals: update response param.
+- Update API DescribeApisecApiResources: update response param.
+- Update API DescribeApisecEvents: update response param.
+- Update API DescribeApisecStatistics: update response param.
+- Update API DescribeDefenseResource: update response param.
+- Update API DescribeDefenseResources: update response param.
+- Update API DescribeSensitiveRequestLog: update param PageSize.
+- Update API ModifyDefenseResourceXff: add param ResponseHeaders.
+
+
+2025-01-15 Version: 5.0.4
+- Update API DescribePunishedDomains: add param PunishType.
+- Update API DescribePunishedDomains: update param Domains.
+- Update API DescribePunishedDomains: update response param.
+
+
+2024-12-30 Version: 5.0.3
+- Update API DescribeDefenseResourceTemplates: add param RuleName.
+- Update API DescribeDefenseResourceTemplates: add param TemplateName.
+- Update API DescribeDefenseTemplates: add param TemplateIds.
+- Update API DescribeDefenseTemplates: add param TemplateName.
+- Update API ModifyHybridCloudClusterBypassStatus: add param RegionId.
+- Update API ModifyHybridCloudClusterBypassStatus: add param ResourceManagerResourceGroupId.
+
+
+2024-12-12 Version: 5.0.2
+- Update API CreateCloudResource: add param Tag.
+- Update API CreateDomain: add param Tag.
+- Update API CreateDomain: update param Redirect.
+- Update API CreateDomain: update response param.
+- Update API DescribeApisecProtectionGroups: update param ResourceGroup.
+- Update API DescribeDomainDetail: update response param.
+- Update API ModifyDomain: update param Redirect.
+
+
+2024-11-27 Version: 5.0.1
+- Update API DescribeSensitiveRequestLog: update response param.
+
+
+2024-11-14 Version: 5.0.0
+- Support API CreateApiExport.
+- Support API DeleteApisecAbnormals.
+- Support API DeleteApisecEvents.
+- Support API DescribeApiExports.
+- Support API DescribeApisecAbnormals.
+- Support API DescribeApisecApiResources.
+- Support API DescribeApisecEvents.
+- Support API DescribeApisecMatchedHosts.
+- Support API DescribeApisecProtectionGroups.
+- Support API DescribeApisecProtectionResources.
+- Support API DescribeApisecRules.
+- Support API DescribeApisecStatistics.
+- Support API DescribeApisecSuggestions.
+- Support API DescribeApisecUserOperations.
+- Support API DescribeFreeUserAssetCount.
+- Support API DescribeFreeUserEventCount.
+- Support API DescribeFreeUserEventTypes.
+- Support API DescribeFreeUserEvents.
+- Support API DescribeSensitiveApiStatistic.
+- Support API DescribeSensitiveDetectionResult.
+- Support API DescribeSensitiveOutboundDistribution.
+- Support API DescribeSensitiveOutboundStatistic.
+- Support API DescribeSensitiveOutboundTrend.
+- Support API DescribeSensitiveRequestLog.
+- Support API DescribeSensitiveRequests.
+- Support API DescribeSensitiveStatistic.
+- Support API DescribeUserAbnormalTrend.
+- Support API DescribeUserAbnormalType.
+- Support API DescribeUserApiRequest.
+- Support API DescribeUserAsset.
+- Support API DescribeUserEventTrend.
+- Support API DescribeUserEventType.
+- Support API ModifyApisecAbnormals.
+- Support API ModifyApisecApiResource.
+- Support API ModifyApisecEvents.
+- Support API ModifyApisecModuleStatus.
+- Support API ModifyApisecStatus.
+- Delete API DeleteApisecAbnormal.
+- Delete API DeleteApisecEvent.
+- Update API ChangeResourceGroup: update param NewResourceGroupId.
+- Update API ChangeResourceGroup: update param ResourceId.
+- Update API ChangeResourceGroup: update param ResourceType.
+- Update API ChangeResourceGroup: update response param.
+- Update API CreateCloudResource: update param Listen.
+- Update API CreateDefenseRule: update param Rules.
+- Update API CreateDefenseRule: update response param.
+- Update API CreateSM2Cert: update param InstanceId.
+- Update API CreateSM2Cert: update param RegionId.
+- Update API DeleteDefenseResourceGroup: update response param.
+- Update API DescribeAccountDelegatedStatus: update param ResourceManagerResourceGroupId.
+- Update API DescribeApisecAbnormalDomainStatistic: delete param Region.
+- Update API DescribeApisecAbnormalDomainStatistic: update param PageNumber.
+- Update API DescribeApisecAbnormalDomainStatistic: update param PageSize.
+- Update API DescribeApisecAssetTrend: delete param Region.
+- Update API DescribeApisecEventDomainStatistic: delete param Region.
+- Update API DescribeApisecEventDomainStatistic: update param PageNumber.
+- Update API DescribeApisecEventDomainStatistic: update param PageSize.
+- Update API DescribeApisecSensitiveDomainStatistic: delete param Region.
+- Update API DescribeApisecSensitiveDomainStatistic: update param PageNumber.
+- Update API DescribeApisecSensitiveDomainStatistic: update param PageSize.
+- Update API DescribeCnameCount: update param InstanceId.
+- Update API DescribeCnameCount: update param RegionId.
+- Update API DescribeDDoSStatus: update param RegionId.
+- Update API DescribeDDoSStatus: update param ResourceManagerResourceGroupId.
+- Update API DescribeDefenseResources: update param ResourceManagerResourceGroupId.
+- Update API DescribeResourceSupportRegions: add param ResourceProduct.
+- Update API DescribeResourceSupportRegions: update response param.
+- Update API DescribeRuleHitsTopClientIp: update param RuleType.
+- Update API DescribeRuleHitsTopRuleId: update param RuleType.
+- Update API DescribeRuleHitsTopTuleType: add param ResourceManagerResourceGroupId.
+- Update API DescribeVisitUas: add param ResourceManagerResourceGroupId.
+- Update API ListTagKeys: update param InstanceId.
+- Update API ListTagValues: add param InstanceId.
+- Update API ListTagValues: add param ResourceManagerResourceGroupId.
+- Update API ListTagValues: update param RegionId.
+- Update API ModifyCloudResource: update param Listen.
+- Update API ModifyDefenseRule: update param Rules.
+- Update API ModifyResourceLogStatus: update response param.
+
+
+2024-07-31 Version: 4.6.0
+- Support API CreateCloudResource.
+- Support API CreateHybridCloudGroup.
+- Support API DeleteCloudResource.
+- Support API DescribeCloudResourceAccessPortDetails.
+- Support API DescribeCloudResourceAccessedPorts.
+- Support API DescribeDefaultHttps.
+- Support API DescribeHybridCloudClusterRule.
+- Support API DescribeHybridCloudClusters.
+- Support API DescribeHybridCloudServerRegions.
+- Support API DescribeHybridCloudUnassignedMachines.
+- Support API ModifyCloudResource.
+- Support API ModifyDefaultHttps.
+- Support API ModifyHybridCloudClusterRule.
+- Support API ModifyHybridCloudGroup.
+- Support API ModifyHybridCloudGroupExpansionServer.
+- Support API ModifyHybridCloudGroupShrinkServer.
+- Support API ModifyHybridCloudSdkPullinStatus.
+- Support API ModifyHybridCloudServer.
+
+
+2024-07-12 Version: 4.5.0
+- Support API ChangeResourceGroup.
+
+
+2024-07-09 Version: 4.4.0
+- Support API DescribeCnameCount.
+- Update API DescribeCloudResources: add param ResourceInstanceName.
+- Update API DescribeCloudResources: update param ResourceName.
+- Update API DescribeCloudResources: update response param.
+- Update API DescribeProductInstances: add param ResourceInstanceIp.
+- Update API DescribeProductInstances: add param ResourceInstanceName.
+- Update API DescribeProductInstances: update param ResourceIp.
+- Update API DescribeProductInstances: update param ResourceName.
+- Update API DescribeProductInstances: update response param.
+
+
+2024-07-05 Version: 4.3.0
+- Support API ReleaseInstance.
+
+
+2024-07-03 Version: 4.2.0
+- Support API CreateSM2Cert.
+- Support API DescribeDDoSStatus.
+- Support API DescribePauseProtectionStatus.
+- Support API ModifyPauseProtectionStatus.
+
+
+2024-06-26 Version: 4.1.0
+- Support API DescribePauseProtectionStatus.
+- Support API ModifyPauseProtectionStatus.
+
+
+2024-06-19 Version: 4.0.0
+- Support API DescribeApisecLogDeliveries.
+- Support API DescribeApisecSlsLogStores.
+- Support API DescribeApisecSlsProjects.
+- Support API ModifyApisecLogDelivery.
+- Support API ModifyApisecLogDeliveryStatus.
+- Update API DescribeDomainDetail: update response param.
+
+
+2024-06-04 Version: 3.5.0
+- Support API DeleteApisecAbnormal.
+- Support API DeleteApisecEvent.
+- Support API DescribeApisecAbnormalDomainStatistic.
+- Support API DescribeApisecAssetTrend.
+- Support API DescribeApisecEventDomainStatistic.
+- Support API DescribeApisecSensitiveDomainStatistic.
+
+
+2024-04-24 Version: 3.4.0
+- Support API CopyDefenseTemplate.
+- Support API CreatePostpaidInstance.
+- Support API DescribeCertDetail.
+- Support API DescribeDefenseResource.
+- Support API DescribeDefenseResourceGroupNames.
+- Support API DescribeDefenseResourceGroups.
+- Support API DescribeDefenseResourceNames.
+- Support API DescribeDefenseTemplateValidGroups.
+- Support API DescribePunishedDomains.
+- Support API DescribeTemplateResourceCount.
+- Support API ListTagKeys.
+- Support API ListTagResources.
+- Support API ListTagValues.
+- Support API ModifyDomainPunishStatus.
+- Support API TagResources.
+- Support API UntagResources.
+- Update API DescribeResponseCodeTrendGraph: update response param.
+
+
+2024-04-07 Version: 3.3.0
+- Support API DescribeCerts.
+- Support API DescribeCloudResources.
+- Support API DescribeDomainDNSRecord.
+- Support API DescribeProductInstances.
+- Support API DescribeResourceRegionId.
+- Support API DescribeResourceSupportRegions.
+- Support API ModifyDefenseResourceXff.
+- Support API ModifyDefenseRuleCache.
+- Support API SyncProductInstance.
+
+
+2024-03-28 Version: 3.2.0
+- Support API DescribeCerts.
+- Support API DescribeDomainDNSRecord.
+- Support API DescribeResourceRegionId.
+- Support API DescribeResourceSupportRegions.
+- Support API ModifyDefenseResourceXff.
+- Support API ModifyDefenseRuleCache.
+
+
+2024-03-26 Version: 3.1.0
+- Support API CreateMemberAccounts.
+- Support API DeleteMemberAccount.
+- Support API DescribeAccountDelegatedStatus.
+- Support API DescribeDefenseResourceTemplates.
+- Support API DescribeDefenseTemplates.
+- Support API DescribeMemberAccounts.
+- Support API DescribeResourceInstanceCerts.
+- Support API DescribeSlsAuthStatus.
+- Support API DescribeSlsLogStore.
+- Support API DescribeSlsLogStoreStatus.
+- Support API DescribeUserSlsLogRegions.
+- Support API DescribeUserWafLogStatus.
+- Support API ModifyMemberAccount.
+- Update API CreateDomain: update param Redirect.
+- Update API DescribeDefenseResources: update response param.
+- Update API DescribeDomainDetail: update response param.
+- Update API DescribeHybridCloudResources: update response param.
+- Update API ModifyDomain: update param Redirect.
+
+
+2024-02-22 Version: 3.0.0
+- Update API CreateDomain: update param Redirect.
+- Update API DescribeDomainDetail: update response param.
+- Update API DescribeHybridCloudResources: update response param.
+- Update API ModifyDomain: update param Redirect.
+
+
+2023-10-18 Version: 2.1.1
+- Generated python 2021-10-01 for waf-openapi.
+
+2023-09-20 Version: 2.1.0
+- Generated python 2021-10-01 for waf-openapi.
+
+2023-04-27 Version: 2.0.2
+- Sdk.
+
+2022-12-05 Version: 2.0.1
+- Sdk.
+
+2022-11-02 Version: 2.0.0
+- Sdk.
+
+2022-06-09 Version: 1.0.0
+- Sdk.
+

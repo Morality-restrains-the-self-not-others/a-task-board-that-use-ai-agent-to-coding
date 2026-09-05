@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <title>taskGateway Ops API Docs</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    code { background: #f4f4f4; padding: 0.1rem 0.3rem; }
+    .warn { color: #8a4b08; background: #fff8e6; padding: 0.75rem 1rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>taskGateway — 运维内部 API 文档</h1>
+  <p class="warn">本页需有效 <code>Authorization: Token &lt;key&gt;</code>（forward-auth）。
+  不在公开 <code>/gateway/docs/</code> 列出；请勿将链接嵌入面向终端用户的门户。</p>
+  <p>网关入口：<code>${subdomains.gateway}</code></p>
+  <ul>
+<li><strong>taskAuth</strong> — <a href="${subdomains.gateway}/gateway/ops/docs/taskAuth/api/swagger-internal/">Internal Swagger UI</a> · <a href="${subdomains.gateway}/gateway/ops/openapi/taskAuth.json">OpenAPI JSON</a></li>
+<li><strong>taskBill</strong> — <a href="${subdomains.gateway}/gateway/ops/docs/taskBill/api/swagger-internal/">Internal Swagger UI</a> · <a href="${subdomains.gateway}/gateway/ops/openapi/taskBill.json">OpenAPI JSON</a></li>
+<li><strong>taskCloudService</strong> — <a href="${subdomains.gateway}/gateway/ops/docs/taskCloudService/api/swagger-internal/">Internal Swagger UI</a> · <a href="${subdomains.gateway}/gateway/ops/openapi/taskCloudService.json">OpenAPI JSON</a></li>
+<li><strong>taskReferral</strong> — <a href="${subdomains.gateway}/gateway/ops/docs/taskReferral/api/swagger-internal/">Internal Swagger UI</a> · <a href="${subdomains.gateway}/gateway/ops/openapi/taskReferral.json">OpenAPI JSON</a></li>
+  </ul>
+</body>
+</html>

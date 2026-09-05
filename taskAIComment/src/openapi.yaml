@@ -1,0 +1,128 @@
+openapi: 3.0.3
+info:
+  title: taskAIComment API
+  version: 1.0.0
+  description: AI comments and container agent comment streaming
+paths:
+  /api/tenant/:
+    get:
+      summary: endpoint (/api/tenant/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/task-ai-comment/:
+    get:
+      summary: endpoint (/api/internal/task-ai-comment/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/ai-comment/:
+    get:
+      summary: endpoint (/api/ai-comment/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/health/:
+    get:
+      summary: 健康检查
+      tags:
+      - meta
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    TaskAICommentInternalSecret:
+      type: apiKey
+      in: header
+      name: X-TaskAIComment-Internal-Secret
+  parameters:
+    tenant_id:
+      name: tenant_id
+      in: path
+      required: true
+      schema:
+        type: string
+    workspace_id:
+      name: workspace_id
+      in: path
+      required: true
+      schema:
+        type: string
+    task_id:
+      name: task_id
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    ContainerAgentCommentCreate:
+      type: object
+      required:
+      - tenant_id
+      - workspace_id
+      - task_id
+      - parent_comment_id
+      - installed_image_id
+      properties:
+        tenant_id:
+          type: string
+        workspace_id:
+          type: string
+        task_id:
+          type: string
+        parent_comment_id:
+          type: string
+        installed_image_id:
+          type: string
+        content:
+          type: string
+    ContainerAgentComment:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        workspace_id:
+          type: string
+        task_id:
+          type: string
+        parent_comment_id:
+          type: string
+        installed_image_id:
+          type: string
+        run_status:
+          type: string
+          enum:
+          - pending
+          - starting
+          - running
+          - streaming
+          - completed
+          - failed
+        content:
+          type: string
+          nullable: true
+        assistant_response:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+        updated_at:
+          type: string

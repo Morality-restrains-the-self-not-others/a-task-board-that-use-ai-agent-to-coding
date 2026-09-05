@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v104 全量" id="id-v104aifull01">
+  <folder name="Application" id="id-v104aif-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v104f-fe" name="taskFE SPA"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v104f-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v104f-cloud" name="taskCloudService"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v104f-osjs" name="onlineServiceJS"/>
+    <element xsi:type="archimate:DataObject" id="id-v104f-snap" name="cloud_layer_graph_snapshot"/>
+    <element xsi:type="archimate:DataObject" id="id-v104f-ptr" name="cloud_job_step_full_object"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v104f-arch" name="JobStepFullArchived"/>
+  </folder>
+  <folder name="Technology" id="id-v104aif-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v104f-cos" name="Tencent COS"/>
+    <element xsi:type="archimate:Node" id="id-v104f-kafka" name="Kafka"/>
+  </folder>
+  <folder name="Relations" id="id-v104aif-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v104f-rel-osjs-cloud" source="id-v104f-osjs" target="id-v104f-cloud"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v104f-rel-fe-gw" source="id-v104f-fe" target="id-v104f-gw"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v104f-rel-gw-cloud" source="id-v104f-gw" target="id-v104f-cloud"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v104f-rel-cloud-cos" source="id-v104f-cloud" target="id-v104f-cos"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v104f-rel-cloud-ptr" source="id-v104f-cloud" target="id-v104f-ptr"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v104f-rel-cloud-snap" source="id-v104f-cloud" target="id-v104f-snap"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v104f-rel-cloud-arch" source="id-v104f-cloud" target="id-v104f-arch"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v104f-rel-arch-k" source="id-v104f-arch" target="id-v104f-kafka"/>
+  </folder>
+  <folder name="Views" id="id-v104aif-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v104f-view" name="v104 Full — step_full COS archive">
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-osjs" archimateElement="id-v104f-osjs">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104f-c-osjs-cloud" source="id-v104f-d-osjs" target="id-v104f-d-cloud" archimateRelationship="id-v104f-rel-osjs-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-fe" archimateElement="id-v104f-fe">
+        <bounds x="48" y="160" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104f-c-fe-gw" source="id-v104f-d-fe" target="id-v104f-d-gw" archimateRelationship="id-v104f-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-gw" targetConnections="id-v104f-c-fe-gw" archimateElement="id-v104f-gw">
+        <bounds x="260" y="160" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104f-c-gw-cloud" source="id-v104f-d-gw" target="id-v104f-d-cloud" archimateRelationship="id-v104f-rel-gw-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-cloud" targetConnections="id-v104f-c-osjs-cloud id-v104f-c-gw-cloud" archimateElement="id-v104f-cloud">
+        <bounds x="480" y="96" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104f-c-cloud-cos" source="id-v104f-d-cloud" target="id-v104f-d-cos" archimateRelationship="id-v104f-rel-cloud-cos"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104f-c-cloud-ptr" source="id-v104f-d-cloud" target="id-v104f-d-ptr" archimateRelationship="id-v104f-rel-cloud-ptr"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104f-c-cloud-snap" source="id-v104f-d-cloud" target="id-v104f-d-snap" archimateRelationship="id-v104f-rel-cloud-snap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104f-c-cloud-arch" source="id-v104f-d-cloud" target="id-v104f-d-arch" archimateRelationship="id-v104f-rel-cloud-arch"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-cos" targetConnections="id-v104f-c-cloud-cos" archimateElement="id-v104f-cos">
+        <bounds x="720" y="48" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-ptr" targetConnections="id-v104f-c-cloud-ptr" archimateElement="id-v104f-ptr">
+        <bounds x="720" y="128" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-snap" targetConnections="id-v104f-c-cloud-snap" archimateElement="id-v104f-snap">
+        <bounds x="720" y="208" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-arch" targetConnections="id-v104f-c-cloud-arch" archimateElement="id-v104f-arch">
+        <bounds x="480" y="240" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104f-c-arch-k" source="id-v104f-d-arch" target="id-v104f-d-k" archimateRelationship="id-v104f-rel-arch-k"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-k" targetConnections="id-v104f-c-arch-k" archimateElement="id-v104f-kafka">
+        <bounds x="720" y="288" width="120" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

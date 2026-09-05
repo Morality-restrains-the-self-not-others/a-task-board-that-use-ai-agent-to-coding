@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v20-ai-20260713-2005">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v20 Target</name>
+  <purpose>Work-panel filter preference persistence in taskProjectService</purpose>
+
+  <folder name="Application" id="id-v20-f-app" type="application"/>
+  <folder name="Technology" id="id-v20-f-tech" type="technology"/>
+  <folder name="Relations" id="id-v20-f-rel" type="relations"/>
+  <folder name="Implementation" id="id-v20-f-impl" type="implementation_migration"/>
+
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue WorkPanel [MODIFIED v20]" id="id-v20-vue-work"/>
+  <element xsi:type="archimate:ApplicationComponent" name="task-gateway APISIX" id="id-v20-gw"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 taskProjectService [MODIFIED v20]" id="id-v20-tps"/>
+  <element xsi:type="archimate:DataObject" name="🟢 user_workspace_work_panel_filters [NEW v20]" id="id-v20-pref"/>
+
+  <element xsi:type="archimate:FlowRelationship" id="id-v20-flow-vue-gw" source="id-v20-vue-work" target="id-v20-gw" name="GET/PUT work-panel-filters"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v20-flow-gw-tps" source="id-v20-gw" target="id-v20-tps" name="workspaces API"/>
+  <element xsi:type="archimate:AccessRelationship" id="id-v20-acc-tps-pref" source="id-v20-tps" target="id-v20-pref" name="RW upsert"/>
+
+  <element xsi:type="archimate:Plateau" name="Plateau v19 — workspace machine idle policy" id="id-v20-plat-v19"/>
+  <element xsi:type="archimate:Plateau" name="🎯 Plateau v20 — work-panel filter persistence" id="id-v20-plat-v20"/>
+  <element xsi:type="archimate:Gap" name="Gap: 过滤栏仅内存，刷新/切空间丢失" id="id-v20-gap"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-v20-work-panel-filter-persistence" id="id-v20-wp"/>
+  <element xsi:type="archimate:AssociationRelationship" id="id-v20-rel-plat19-gap" source="id-v20-plat-v19" target="id-v20-gap"/>
+  <element xsi:type="archimate:RealizationRelationship" id="id-v20-rel-wp-gap" source="id-v20-wp" target="id-v20-gap"/>
+  <element xsi:type="archimate:RealizationRelationship" id="id-v20-rel-wp-plat20" source="id-v20-wp" target="id-v20-plat-v20"/>
+  <element xsi:type="archimate:CompositionRelationship" id="id-v20-rel-plat20-tps" source="id-v20-plat-v20" target="id-v20-tps"/>
+
+  <folder name="Views" id="id-v20-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v19→v20 — work-panel 过滤持久化" id="id-v20-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v20-do-plat19" archimateElement="id-v20-plat-v19">
+        <bounds x="48" y="120" width="300" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v20-conn-plat19-gap"
+          source="id-v20-do-plat19" target="id-v20-do-gap"
+          archimateRelationship="id-v20-rel-plat19-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v20-do-gap" archimateElement="id-v20-gap"
+        targetConnections="id-v20-conn-plat19-gap id-v20-conn-wp-gap">
+        <bounds x="400" y="120" width="320" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v20-do-wp" archimateElement="id-v20-wp">
+        <bounds x="780" y="80" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v20-conn-wp-gap"
+          source="id-v20-do-wp" target="id-v20-do-gap"
+          archimateRelationship="id-v20-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v20-conn-wp-plat20"
+          source="id-v20-do-wp" target="id-v20-do-plat20"
+          archimateRelationship="id-v20-rel-wp-plat20"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v20-do-plat20" archimateElement="id-v20-plat-v20"
+        targetConnections="id-v20-conn-wp-plat20">
+        <bounds x="780" y="180" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v20-conn-plat20-tps"
+          source="id-v20-do-plat20" target="id-v20-do-tps-m"
+          archimateRelationship="id-v20-rel-plat20-tps"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v20-do-tps-m" archimateElement="id-v20-tps"
+        targetConnections="id-v20-conn-plat20-tps">
+        <bounds x="860" y="280" width="160" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v20 Target — 过滤偏好数据流" id="id-v20-view-flow">
+      <child xsi:type="archimate:DiagramObject" id="id-v20-do-vue" archimateElement="id-v20-vue-work">
+        <bounds x="40" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v20-conn-vue-gw"
+          source="id-v20-do-vue" target="id-v20-do-gw"
+          archimateRelationship="id-v20-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v20-do-gw" archimateElement="id-v20-gw"
+        targetConnections="id-v20-conn-vue-gw">
+        <bounds x="260" y="80" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v20-conn-gw-tps"
+          source="id-v20-do-gw" target="id-v20-do-tps"
+          archimateRelationship="id-v20-flow-gw-tps"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v20-do-tps" archimateElement="id-v20-tps"
+        targetConnections="id-v20-conn-gw-tps">
+        <bounds x="460" y="80" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v20-conn-tps-pref"
+          source="id-v20-do-tps" target="id-v20-do-pref"
+          archimateRelationship="id-v20-acc-tps-pref"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v20-do-pref" archimateElement="id-v20-pref"
+        targetConnections="id-v20-conn-tps-pref">
+        <bounds x="460" y="180" width="220" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

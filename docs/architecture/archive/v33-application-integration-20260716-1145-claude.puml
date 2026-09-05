@@ -1,0 +1,72 @@
+' @title: Application Integration — 终态优雅通知容器收尾与回调释放
+' @view: application-integration
+' @status: archived
+' @version: 33
+' @author: claude
+' @based_on: v32 current (v32-application-integration-20260716-0013-claude.puml); extends v27 terminal hard release
+' @updated: 2026-07-16 12:10
+' @description: 终态先通知容器 graceful shutdown；容器 request-machine-release；sole/empty 才释放节点；超时补偿硬释放
+' @iteration: terminal-graceful-container-shutdown
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v33 — Terminal Graceful Container Shutdown (2026-07-16 12:10)
+
+rectangle "Motivation" {
+  Motivation_Constraint(graceful, "Constraint\n终态先通知容器收尾\n再回调释放")
+  Motivation_Constraint(soleGate, "Constraint\nsole/empty 才销毁节点")
+}
+
+rectangle "Application" {
+  Application_Component(vue, "Vue TaskDetail\nprogress PATCH")
+  Application_Component(gw, "task-gateway")
+  Application_Component(task, "taskTaskService\nTASK_STATUS_CHANGED")
+  Application_Component(events, "taskEvents\nnotify + timeout")
+  Application_Component(cloud, "taskCloudService\nrequest-machine-release")
+  Application_Component(cgw, "taskContainerGateway\nL0 shutdown")
+  Application_Component(osjs, "onlineServiceJS\ntask-lifecycle/shutdown")
+  Application_DataObject(csc, "cloud_server_configs")
+  Application_DataObject(evt, "TASK_STATUS_CHANGED\nTASK_GRACEFUL_SHUTDOWN_AWAIT")
+}
+
+rectangle "Technology" {
+  Technology_Node(kafka, "Kafka")
+  Technology_Node(ecs, "Aliyun ECS")
+  Technology_Node(docker, "镜像容器")
+}
+
+note top of events
+  终态：migrate → notify shutdown
+  OK→await；失败→v27硬释放
+  @author: claude @2026-07-16 12:10
+end note
+
+note top of osjs
+  interrupt jobs → layer-graph-push
+  → request-machine-release → exit
+end note
+
+note top of cloud
+  SoleContainerGate：busy≤1 才
+  CLOUD_SERVER_STOPPED / local stop
+end note
+
+Rel_Flow(vue, gw, "PATCH todos")
+Rel_Flow(gw, task, "update task")
+Rel_Flow(task, kafka, "TASK_STATUS_CHANGED")
+Rel_Flow(kafka, events, "consume")
+Rel_Flow(events, cloud, "migrate+bindings")
+Rel_Flow(events, osjs, "POST /task-lifecycle/shutdown")
+Rel_Flow(events, kafka, "AWAIT event")
+Rel_Flow(osjs, cloud, "request-machine-release")
+Rel_Access_W(cloud, csc, "W released")
+Rel_Flow(cloud, kafka, "CLOUD_SERVER_STOPPED")
+Rel_Flow(cloud, ecs, "DeleteInstance")
+Rel_Flow(cgw, osjs, "L0 proxy shutdown")
+Rel_Flow(osjs, docker, "self stop")
+Rel_Access_W(task, evt, "W")
+Rel_Influence(graceful, events, "notify first")
+Rel_Influence(soleGate, cloud, "sole gate")
+
+@enduml

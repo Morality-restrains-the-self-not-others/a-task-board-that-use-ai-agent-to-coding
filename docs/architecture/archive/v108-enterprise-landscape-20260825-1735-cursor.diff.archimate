@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v108 变迁 (v107→v108)" id="id-v108eldiff01">
+  <folder name="Business" id="id-v108el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v108-biz-staff" name="平台员工 / 超管"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v108-biz-wxmch" name="微信支付商户后台"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v108-biz-recon" name="分账对账与补分账 [MODIFIED v108]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v108-biz-notify" name="配置动账通知 URL [NEW v108]"/>
+  </folder>
+  <folder name="Application" id="id-v108el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v108-app-fe" name="taskFE 系统管理 [MODIFIED v108]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v108-app-bill" name="taskBill [MODIFIED v108]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v108el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v108-pl-v107" name="Plateau v107"/>
+    <element xsi:type="archimate:Plateau" id="id-v108-pl-v108" name="Plateau v108"/>
+    <element xsi:type="archimate:Gap" id="id-v108-gap" name="Gap: 超管无法对照微信单号并带审计补分账"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v108-wp" name="WP-admin-profit-sharing-change-notify"/>
+  </folder>
+  <folder name="Relations" id="id-v108el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v108-rel-staff-recon" source="id-v108-biz-staff" target="id-v108-biz-recon"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v108-rel-wxmch-notify" source="id-v108-biz-wxmch" target="id-v108-biz-notify"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v108-rel-staff-fe" source="id-v108-biz-staff" target="id-v108-app-fe" name="查看单号 / 填缘由分账"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v108-rel-fe-bill" source="id-v108-app-fe" target="id-v108-app-bill" name="admin profit-sharing APIs"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v108-rel-wxmch-bill" source="id-v108-biz-wxmch" target="id-v108-app-bill" name="HTTPS 动账通知"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v108-rel-pl107-gap" source="id-v108-pl-v107" target="id-v108-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v108-rel-wp-gap" source="id-v108-wp" target="id-v108-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v108-rel-wp-pl108" source="id-v108-wp" target="id-v108-pl-v108"/>
+  </folder>
+  <folder name="Views" id="id-v108el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v108-el-view-mig" name="架构变迁 v107→v108 — 超管分账">
+      <child xsi:type="archimate:DiagramObject" id="id-v108-el-do-pl107" archimateElement="id-v108-pl-v107">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v108-el-c-pl107-gap" source="id-v108-el-do-pl107" target="id-v108-el-do-gap" archimateRelationship="id-v108-rel-pl107-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v108-el-do-gap" targetConnections="id-v108-el-c-pl107-gap id-v108-el-c-wp-gap" archimateElement="id-v108-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v108-el-do-wp" archimateElement="id-v108-wp">
+        <bounds x="240" y="160" width="400" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v108-el-c-wp-gap" source="id-v108-el-do-wp" target="id-v108-el-do-gap" archimateRelationship="id-v108-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v108-el-c-wp-pl108" source="id-v108-el-do-wp" target="id-v108-el-do-pl108" archimateRelationship="id-v108-rel-wp-pl108"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v108-el-do-pl108" targetConnections="id-v108-el-c-wp-pl108" archimateElement="id-v108-pl-v108">
+        <bounds x="680" y="160" width="160" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v108-el-view-topo" name="v108 Target — 超管分账企业景观">
+      <child xsi:type="archimate:DiagramObject" id="id-v108-el-do-staff" archimateElement="id-v108-biz-staff">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v108-el-c-staff-recon" source="id-v108-el-do-staff" target="id-v108-el-do-recon" archimateRelationship="id-v108-rel-staff-recon"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v108-el-c-staff-fe" source="id-v108-el-do-staff" target="id-v108-el-do-fe" archimateRelationship="id-v108-rel-staff-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v108-el-do-wxmch" archimateElement="id-v108-biz-wxmch">
+        <bounds x="48" y="200" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v108-el-c-wxmch-notify" source="id-v108-el-do-wxmch" target="id-v108-el-do-notify" archimateRelationship="id-v108-rel-wxmch-notify"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v108-el-c-wxmch-bill" source="id-v108-el-do-wxmch" target="id-v108-el-do-bill" archimateRelationship="id-v108-rel-wxmch-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v108-el-do-recon" targetConnections="id-v108-el-c-staff-recon" archimateElement="id-v108-biz-recon">
+        <bounds x="280" y="16" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v108-el-do-notify" targetConnections="id-v108-el-c-wxmch-notify" archimateElement="id-v108-biz-notify">
+        <bounds x="280" y="200" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v108-el-do-fe" targetConnections="id-v108-el-c-staff-fe" archimateElement="id-v108-app-fe">
+        <bounds x="280" y="96" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v108-el-c-fe-bill" source="id-v108-el-do-fe" target="id-v108-el-do-bill" archimateRelationship="id-v108-rel-fe-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v108-el-do-bill" targetConnections="id-v108-el-c-fe-bill id-v108-el-c-wxmch-bill" archimateElement="id-v108-app-bill">
+        <bounds x="540" y="96" width="160" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

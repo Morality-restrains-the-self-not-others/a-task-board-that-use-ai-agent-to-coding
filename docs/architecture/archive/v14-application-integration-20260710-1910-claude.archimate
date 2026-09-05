@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v14-ai-20260710-1910">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v14 Target</name>
+  <purpose>relayToTrae Token lifecycle cloud parity — OSJS first exchange; go_relay sync only</purpose>
+
+  <folder name="Application" id="f-app" type="application"/>
+  <folder name="Relations" id="f-rel" type="relations"/>
+  <folder name="Implementation" id="f-impl" type="implementation_migration"/>
+
+  <element xsi:type="archimate:ApplicationComponent" name="Vue Frontend (:4000)" id="VUE"/>
+  <element xsi:type="archimate:ApplicationComponent" name="task-gateway APISIX (:18081)" id="GW"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskContainerGateway (:8014)" id="TCG"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskCredentialService (:8015)" id="CRED"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 go_relayToTrae [MODIFIED v14]" id="RELAY"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 onlineServiceJS (:8765) [MODIFIED v14]" id="OSJS"/>
+  <element xsi:type="archimate:ApplicationComponent" name="Cloud VM UserData container" id="CLOUD"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🔴 [DEPRECATED v14] parent exchange + TRAE_SKIP" id="DEPR"/>
+
+  <element xsi:type="archimate:FlowRelationship" id="r1" source="VUE" target="GW"/>
+  <element xsi:type="archimate:FlowRelationship" id="r2" source="GW" target="TCG"/>
+  <element xsi:type="archimate:FlowRelationship" id="r3" source="TCG" target="CRED"/>
+  <element xsi:type="archimate:FlowRelationship" id="r4" source="TCG" target="RELAY"/>
+  <element xsi:type="archimate:FlowRelationship" id="r5" source="RELAY" target="OSJS"/>
+  <element xsi:type="archimate:FlowRelationship" id="r6" source="OSJS" target="CRED"/>
+  <element xsi:type="archimate:FlowRelationship" id="r7" source="OSJS" target="RELAY"/>
+  <element xsi:type="archimate:FlowRelationship" id="r8" source="CLOUD" target="CRED"/>
+  <element xsi:type="archimate:AssociationRelationship" id="r9" source="RELAY" target="DEPR"/>
+
+  <element xsi:type="archimate:Plateau" name="Plateau v13 — Container Exec Hot-Path Zero-Django" id="platV13"/>
+  <element xsi:type="archimate:Plateau" name="🎯 Plateau v14 — relay Token cloud parity" id="platV14"/>
+  <element xsi:type="archimate:Gap" name="Gap: mock start token lifecycle diverges from cloud VM" id="gapToken"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-v14-relay-token-cloud-parity" id="wpV14"/>
+  <element xsi:type="archimate:AssociationRelationship" id="r10" source="platV13" target="gapToken"/>
+  <element xsi:type="archimate:RealizationRelationship" id="r11" source="wpV14" target="gapToken"/>
+  <element xsi:type="archimate:RealizationRelationship" id="r12" source="wpV14" target="platV14"/>
+  <element xsi:type="archimate:CompositionRelationship" id="r13" source="platV14" target="RELAY"/>
+  <element xsi:type="archimate:CompositionRelationship" id="r14" source="platV14" target="OSJS"/>
+
+  <folder name="Views" id="f-views" type="diagrams">
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v14 Target — relay Token cloud parity data flow" id="view-topo">
+      <child xsi:type="archimate:DiagramObject" id="do-VUE" archimateElement="VUE">
+        <bounds x="48" y="200" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-vue-gw" source="do-VUE" target="do-GW" archimateRelationship="r1"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-GW" archimateElement="GW" targetConnections="c-vue-gw">
+        <bounds x="200" y="200" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-gw-tcg" source="do-GW" target="do-TCG" archimateRelationship="r2"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-TCG" archimateElement="TCG" targetConnections="c-gw-tcg">
+        <bounds x="380" y="200" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-tcg-cred" source="do-TCG" target="do-CRED" archimateRelationship="r3"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-tcg-relay" source="do-TCG" target="do-RELAY" archimateRelationship="r4"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-CRED" archimateElement="CRED" targetConnections="c-tcg-cred c-osjs-cred c-cloud-cred">
+        <bounds x="600" y="48" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-RELAY" archimateElement="RELAY" targetConnections="c-tcg-relay c-osjs-relay">
+        <bounds x="380" y="320" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-relay-osjs" source="do-RELAY" target="do-OSJS" archimateRelationship="r5"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-relay-depr" source="do-RELAY" target="do-DEPR" archimateRelationship="r9"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-OSJS" archimateElement="OSJS" targetConnections="c-relay-osjs">
+        <bounds x="600" y="320" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-osjs-cred" source="do-OSJS" target="do-CRED" archimateRelationship="r6"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-osjs-relay" source="do-OSJS" target="do-RELAY" archimateRelationship="r7"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-CLOUD" archimateElement="CLOUD">
+        <bounds x="840" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-cloud-cred" source="do-CLOUD" target="do-CRED" archimateRelationship="r8"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-DEPR" archimateElement="DEPR" targetConnections="c-relay-depr">
+        <bounds x="380" y="420" width="260" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v13→v14 — relay Token 云对齐" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-platV13" archimateElement="platV13">
+        <bounds x="48" y="120" width="240" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-v13-gap" source="do-platV13" target="do-gap" archimateRelationship="r10"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap" archimateElement="gapToken" targetConnections="c-v13-gap c-wp-gap">
+        <bounds x="320" y="120" width="280" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wpV14" archimateElement="wpV14">
+        <bounds x="640" y="80" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-wp-gap" source="do-wpV14" target="do-gap" archimateRelationship="r11"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-wp-v14" source="do-wpV14" target="do-platV14" archimateRelationship="r12"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-platV14" archimateElement="platV14" targetConnections="c-wp-v14 c-v14-relay c-v14-osjs">
+        <bounds x="640" y="180" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-v14-relay" source="do-platV14" target="do-RELAY-m" archimateRelationship="r13"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-v14-osjs" source="do-platV14" target="do-OSJS-m" archimateRelationship="r14"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-RELAY-m" archimateElement="RELAY" targetConnections="c-v14-relay">
+        <bounds x="560" y="280" width="180" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-OSJS-m" archimateElement="OSJS" targetConnections="c-v14-osjs">
+        <bounds x="780" y="280" width="180" height="45"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

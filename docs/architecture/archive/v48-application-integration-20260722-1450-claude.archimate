@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="v48-admin-recharge-consumption-overview" id="model-v48">
+  <folder name="Motivation" id="folder-motivation" type="motivation">
+    <element xsi:type="archimate:Constraint" name="聚合落Go taskBill" id="mot-go-first"/>
+    <element xsi:type="archimate:Principle" name="可分成=已消费" id="mot-referral-base"/>
+  </folder>
+  <folder name="Application" id="folder-application" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Vue PriceManagement" id="app-vue-price"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Vue UserReferral" id="app-vue-referral"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Django system-admin" id="app-django"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskBill aggregate" id="app-taskbill"/>
+    <element xsi:type="archimate:DataObject" name="billing_transaction" id="data-txn"/>
+    <element xsi:type="archimate:DataObject" name="billing_payment_ledger" id="data-ledger"/>
+  </folder>
+  <folder name="Technology" id="folder-technology" type="technology">
+    <element xsi:type="archimate:Node" name="billing.db" id="tech-billdb"/>
+  </folder>
+  <folder name="Relations" id="folder-relations" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="rel-vue-django" source="app-vue-price" target="app-django" name="GET summaries"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-django-bill" source="app-django" target="app-taskbill" name="internal"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-bill-txn" source="app-taskbill" target="data-txn" name="R"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-bill-ledger" source="app-taskbill" target="data-ledger" name="R"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-bill-db" source="app-taskbill" target="tech-billdb" name="R"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="rel-go-bill" source="mot-go-first" target="app-taskbill"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="rel-base-ref" source="mot-referral-base" target="app-vue-referral"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp-plateau" source="mig-wp" target="mig-plateau-v48"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-gap-plateau41" source="mig-gap" target="mig-plateau-v41"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="mig-wp" target="mig-gap"/>
+  </folder>
+  <folder name="Migration" id="folder-migration" type="migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v41" id="mig-plateau-v41"/>
+    <element xsi:type="archimate:Gap" name="Gap: 无超管充值消费总览" id="mig-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v48-admin-recharge-consumption" id="mig-wp"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v48" id="mig-plateau-v48"/>
+  </folder>
+  <folder name="Views" id="folder-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="Application Integration v48" id="view-app-v48">
+      <child xsi:type="archimate:DiagramObject" id="do-vue" archimateElement="app-vue-price">
+        <bounds x="48" y="120" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-vue-django" source="do-vue" target="do-django" archimateRelationship="rel-vue-django"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-django" archimateElement="app-django" targetConnections="conn-vue-django">
+        <bounds x="240" y="120" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-django-bill" source="do-django" target="do-bill" archimateRelationship="rel-django-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-bill" archimateElement="app-taskbill" targetConnections="conn-django-bill">
+        <bounds x="432" y="120" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-bill-txn" source="do-bill" target="do-txn" archimateRelationship="rel-bill-txn"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-bill-ledger" source="do-bill" target="do-ledger" archimateRelationship="rel-bill-ledger"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-txn" archimateElement="data-txn" targetConnections="conn-bill-txn">
+        <bounds x="432" y="220" width="140" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-ledger" archimateElement="data-ledger" targetConnections="conn-bill-ledger">
+        <bounds x="600" y="220" width="160" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-referral" archimateElement="app-vue-referral">
+        <bounds x="48" y="220" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="Migration v48" id="view-mig-v48">
+      <child xsi:type="archimate:DiagramObject" id="do-p41" archimateElement="mig-plateau-v41">
+        <bounds x="48" y="48" width="120" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gap-p41" source="do-gap" target="do-p41" archimateRelationship="rel-gap-plateau41"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap" archimateElement="mig-gap" targetConnections="conn-wp-gap">
+        <bounds x="220" y="48" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp" archimateElement="mig-wp">
+        <bounds x="220" y="140" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wp" target="do-gap" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-p48" source="do-wp" target="do-p48" archimateRelationship="rel-wp-plateau"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-p48" archimateElement="mig-plateau-v48" targetConnections="conn-wp-p48">
+        <bounds x="450" y="140" width="120" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

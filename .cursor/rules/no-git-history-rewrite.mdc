@@ -1,0 +1,30 @@
+---
+description: 禁止 git filter-repo/filter-branch/replace 重写历史清理私密信息；泄露凭据须废弃并重新生成
+alwaysApply: true
+---
+
+# 禁止重写 Git 历史清理私密信息（元规则）
+
+适用于 meta 仓库及全部子仓的 Git 历史与协作流程（含 gitService 平台 GitLab 承载的仓库）。细则见 `.ai/01_project_constraints/61_no_git_history_rewrite.md`；约束索引第 56 条；门禁 `.githooks/pre-commit`（v1.4.0）。
+
+## 强制要求
+
+- **禁止**使用 `git filter-repo`、`git filter-branch`、`git replace`、`git rebase --onto` 或 force-push 覆盖共享 ref 来「清除」已推送历史中的私密信息
+- 私密信息（密钥、密码、Token、Cookie、证书、连接串）一旦进入已推送历史，一律按**已泄露**处理：**立即废弃 → 生成新凭据 → 部署替换**（轮换），再加防再犯（gitignore、secret 扫描）
+- 已分发副本（各协作者 clone、CI 缓存、gitService 服务端对象、备份、issue/PR 引用）无法被重写删除；清历史不能保密，且破坏全员 SHA 基线
+- **允许**：本地未推送提交的 rebase/squash/amend；`git filter-repo --analyze` 只读分析；删除整个分支/仓库
+- Agent 收到「清历史 / 删掉提交中的密钥」类请求时**必须拒绝执行**，说明本项目元规则并引导标准处置流程（废弃 + 重新生成）
+
+## 触发
+
+- 任何「清理 git 历史」「filter-repo / filter-branch 删除提交内容」请求
+- 密钥 / Token / 证书泄露事件响应、安全审计
+- pre-commit 报出 `.git/filter-repo/`、`refs/original/*`、`refs/replace/*` 标记（门禁阻断提交）
+
+## 验收
+
+```bash
+# 无历史重写遗留标记（meta + 全部子仓）：
+bash scripts/lib/check_git_history_rewrite.sh --scan-all
+# 全部输出 ✓ 且退出码 0
+```

@@ -1,0 +1,17 @@
+# config_test.go 测试意图（gitlab-regions 增量）
+
+## 测试范围
+生产 `conf/runAll.yaml` 必须把各区域 GitLab 编进独立组，供 9999「启动本组」管理。
+
+## 关键业务断言
+- 存在 `gitlab-regions` 组
+- `git-service` 与 `git-service-tencent-sh-1` 同组且启动命令/探活端口不同
+- SH-1 探活指向 Host sh `:8014`，不得落在 INFRA_HOST（与 task-container-gateway 冲突）
+- SH-1 start/stop 走 `runall_ssh_sh_gitlab.sh`（SSH），不是本机 `deploy_tencent_sh_1.sh`
+- `infrastructure` 不再包含 git-service
+
+## 破坏信号
+9999 仍只在 infrastructure 看到一个 git-service，或两区域共用 :8012 / 同一条 start_command。
+
+## 回归验证
+`go test -count=1 ./src -run TestProductionConfig_GitlabRegionsGroup`

@@ -1,0 +1,16 @@
+query searchUserProjectsToMove($search: String, $sort: String) {
+  projects(
+    search: $search
+    searchNamespaces: true
+    minAccessLevel: PLANNER
+    withIssuesEnabled: true
+    sort: $sort
+  ) {
+    nodes {
+      id
+      name
+      nameWithNamespace
+      fullPath
+    }
+  }
+}

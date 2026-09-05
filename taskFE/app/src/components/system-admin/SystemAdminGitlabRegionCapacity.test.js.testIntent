@@ -1,0 +1,12 @@
+# SystemAdminGitlabRegionCapacity 测试意图
+
+## 测试范围
+系统管理 GitLab 区域卡片容量区：带宽共享标记、总带宽、剩余带宽。
+
+## 关键业务断言
+- `bandwidth_shared=true` 文案为「带宽共享分区」
+- 总量与剩余以 Mbps 展示
+- 保存事件携带三字段
+
+## 破坏信号
+卡片只剩磁盘/流量、无带宽行或共享标记。

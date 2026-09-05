@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v129 变迁 (v128→v129)" id="id-v129eldiff01">
+  <folder name="Business" id="id-v129el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v129-el-ops" name="平台运维"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v129-el-rst" name="平滑重启托管栈 [NEW v129]"/>
+  </folder>
+  <folder name="Application" id="id-v129el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v129-el-ui" name="runAll Status [MODIFIED v129]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v129-el-orch" name="runAll Runner [MODIFIED v129]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v129-el-svc" name="业务 HTTP 服务 [MODIFIED v129]"/>
+  </folder>
+  <folder name="Technology" id="id-v129el-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v129-el-host" name="宿主机 SO_REUSEPORT [NEW v129]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v129el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v129-el-pl128" name="Plateau v128"/>
+    <element xsi:type="archimate:Plateau" id="id-v129-el-pl129" name="Plateau v129"/>
+    <element xsi:type="archimate:Gap" id="id-v129-el-gap" name="Gap: 整栈空窗"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v129-el-wp" name="WP-runall-smooth-canary-restart"/>
+  </folder>
+  <folder name="Relations" id="id-v129el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v129-el-rel-ops-rst" source="id-v129-el-ops" target="id-v129-el-rst"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v129-el-rel-rst-ui" source="id-v129-el-rst" target="id-v129-el-ui" name="点击按钮"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v129-el-rel-ui-orch" source="id-v129-el-ui" target="id-v129-el-orch" name="API"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v129-el-rel-orch-svc" source="id-v129-el-orch" target="id-v129-el-svc" name="canary"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v129-el-rel-host-svc" source="id-v129-el-host" target="id-v129-el-svc" name="同端口双 listen"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v129-el-rel-pl-gap" source="id-v129-el-pl128" target="id-v129-el-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v129-el-rel-wp-gap" source="id-v129-el-wp" target="id-v129-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v129-el-rel-wp-pl" source="id-v129-el-wp" target="id-v129-el-pl129"/>
+  </folder>
+  <folder name="Views" id="id-v129el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v129-el-view-mig" name="架构变迁 v128→v129 — 平滑重启">
+      <child xsi:type="archimate:DiagramObject" id="id-v129-el-do-pl128" archimateElement="id-v129-el-pl128">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-el-c-pl-gap" source="id-v129-el-do-pl128" target="id-v129-el-do-gap" archimateRelationship="id-v129-el-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-el-do-gap" targetConnections="id-v129-el-c-pl-gap id-v129-el-c-wp-gap" archimateElement="id-v129-el-gap">
+        <bounds x="280" y="48" width="240" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-el-do-wp" archimateElement="id-v129-el-wp">
+        <bounds x="280" y="140" width="360" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-el-c-wp-gap" source="id-v129-el-do-wp" target="id-v129-el-do-gap" archimateRelationship="id-v129-el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-el-c-wp-pl" source="id-v129-el-do-wp" target="id-v129-el-do-pl129" archimateRelationship="id-v129-el-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-el-do-pl129" targetConnections="id-v129-el-c-wp-pl" archimateElement="id-v129-el-pl129">
+        <bounds x="680" y="140" width="200" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v129-el-view-topo" name="v129 Target — 运维平滑重启">
+      <child xsi:type="archimate:DiagramObject" id="id-v129-el-do-ops" archimateElement="id-v129-el-ops">
+        <bounds x="48" y="48" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-el-c-ops-rst" source="id-v129-el-do-ops" target="id-v129-el-do-rst" archimateRelationship="id-v129-el-rel-ops-rst"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-el-do-rst" targetConnections="id-v129-el-c-ops-rst" archimateElement="id-v129-el-rst">
+        <bounds x="220" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-el-c-rst-ui" source="id-v129-el-do-rst" target="id-v129-el-do-ui" archimateRelationship="id-v129-el-rel-rst-ui"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-el-do-ui" targetConnections="id-v129-el-c-rst-ui" archimateElement="id-v129-el-ui">
+        <bounds x="460" y="48" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-el-c-ui-orch" source="id-v129-el-do-ui" target="id-v129-el-do-orch" archimateRelationship="id-v129-el-rel-ui-orch"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-el-do-orch" targetConnections="id-v129-el-c-ui-orch" archimateElement="id-v129-el-orch">
+        <bounds x="460" y="120" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-el-c-orch-svc" source="id-v129-el-do-orch" target="id-v129-el-do-svc" archimateRelationship="id-v129-el-rel-orch-svc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-el-do-svc" targetConnections="id-v129-el-c-orch-svc id-v129-el-c-host-svc" archimateElement="id-v129-el-svc">
+        <bounds x="460" y="192" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v129-el-do-host" archimateElement="id-v129-el-host">
+        <bounds x="220" y="192" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v129-el-c-host-svc" source="id-v129-el-do-host" target="id-v129-el-do-svc" archimateRelationship="id-v129-el-rel-host-svc"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

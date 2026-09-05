@@ -1,0 +1,20 @@
+@startuml
+title Chrome 插件 · DevTools 请求列表过滤与排序
+
+rectangle "DevTools 单请求 Tab" {
+  (HAR/SW 缓冲 recentRequests) as CAP
+  (搜索 + 方法 + 状态 + 类型芯片) as FILTER
+  (列头排序) as SORT
+  (点选填任务描述) as PICK
+  CAP --> FILTER
+  FILTER --> SORT
+  SORT --> PICK
+}
+
+note right of SORT
+  测试：taskChromePlugin/test/request-list-query.test.js
+  测试：taskChromePlugin/test/user-guide.test.js
+  意图：frontend/task_chrome_plugin_devtools_request_filter_sort
+  测试点：T1-T14
+end note
+@enduml

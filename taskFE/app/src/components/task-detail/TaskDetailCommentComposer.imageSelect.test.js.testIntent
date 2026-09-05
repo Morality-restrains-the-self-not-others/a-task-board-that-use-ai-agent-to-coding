@@ -1,0 +1,30 @@
+# TaskDetailCommentComposer.imageSelect.test.js
+
+## 意图
+
+守住任务详情评论提交区：@镜像 后展示将运行的镜像说明（含具体版本号），并与智能体资源配置、硬件卡布局约定一致。
+
+## 关键业务断言
+
+- 无 @镜像 时不渲染硬件卡；feature-params 槽常驻但隐藏
+- @镜像 后出现 `comment-composer-mentioned-image`，文案为「将使用镜像 {name}:{version} 运行」
+- 已安装镜像无 version 时文案为「将使用镜像 {name} 运行」
+- 无 version 但有 tag 时使用 tag 作为版本号
+- 镜像说明在左、智能体配置在右同一行；硬件卡在该行之后、提交按钮之前
+- Composer 直挂 `CommentComposerHardwareCard`（非 Teleport）
+- ServerConfig.logic 不再含 `id="detail-image"`
+- 镜像 hints 收到非空 task 与 viewerTaskId
+
+## 典型破坏信号
+
+- 说明只显示镜像名、丢掉 installed-images 的 version
+- 镜像下拉或硬件卡重新回到 ServerConfig 顶部
+- 用 Teleport 把硬件卡送到远亲槽位
+
+## 回归验证
+
+在 `taskFE/app` 执行：
+
+```bash
+npx vitest run src/components/task-detail/TaskDetailCommentComposer.imageSelect.test.js
+```

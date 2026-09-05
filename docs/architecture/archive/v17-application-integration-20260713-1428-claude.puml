@@ -1,0 +1,66 @@
+' @title: Application Integration — 任务状态变更终态释放服务器
+' @view: application-integration
+' @status: archived
+' @version: v17
+' @author: claude
+' @based_on: v16-application-integration-20260711-1726-claude
+' @updated: 2026-07-13 15:55
+' @description: taskTaskService 发 TASK_STATUS_CHANGED；taskEvents 终态编排释放 ECS/relay/mock（已被 v19 取代为 current）
+' @iteration: task-status-changed-release-servers
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v17 — 任务终态自动释放服务器 (2026-07-13 14:28)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v17 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v17 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v17 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件 |
+endlegend
+
+' ── Application ──
+Application_Component(vue, "Vue TaskDetail / WorkPanel")
+Application_Component(gw, "task-gateway\nAPISIX")
+Application_Component(tts, "🟡 taskTaskService\n:8017")
+Application_Component(tev, "🟢 taskEvents\nintent release_servers")
+Application_Component(tcs, "taskCloudService\n:8018")
+Application_Component(cgw, "taskContainerGateway\n:8014")
+Application_Component(css, "cloudserverstopped\nhandler")
+
+' ── Technology ──
+Technology_Node(kafka, "🟢 Kafka\ntopic task-status-changed")
+Technology_Node(kafkaStop, "Kafka\ntopic cloud-server-stopped")
+
+note top of tts
+  [MODIFIED v17]
+  handleUpdateTask 成功后
+  progress_column / completed 变化
+  → publish TASK_STATUS_CHANGED
+  @author: claude @2026-07-13 14:28
+end note
+
+note right of tev
+  [NEW v17]
+  终态判定（已完成/已取消）
+  → 查 CloudServerConfig
+  → ECS: publish CLOUD_SERVER_STOPPED
+  → relay/mock: HTTP stop
+  @author: claude @2026-07-13 14:28
+end note
+
+note bottom of kafka
+  [NEW v17] event_type=TASK_STATUS_CHANGED
+end note
+
+Rel_Flow(vue, gw, "PATCH todos")
+Rel_Flow(gw, tts, "更新 progress_column")
+Rel_Flow(tts, kafka, "TASK_STATUS_CHANGED")
+Rel_Flow(kafka, tev, "consume")
+Rel_Flow(tev, tcs, "load config / clear")
+Rel_Flow(tev, kafkaStop, "CLOUD_SERVER_STOPPED")
+Rel_Flow(kafkaStop, css, "DeleteInstance + clear")
+Rel_Flow(tev, cgw, "relay/mock stop")
+
+@enduml

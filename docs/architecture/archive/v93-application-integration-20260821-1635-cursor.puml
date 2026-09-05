@@ -1,0 +1,74 @@
+' @title: 镜像容器技能列表绑定
+' @view: application-integration
+' @status: archived
+' @version: 93
+' @iteration: image-container-skill-list
+' @author: cursor
+' @based_on: v92 (v92-application-integration-20260820-2140-cursor.puml)
+' @updated: 2026-08-21 17:35
+' @description: 上传时抽取 /app/imageSkills.yaml 绑定镜像；市场/任务/评论引用 /skill
+
+@startuml
+!include <archimate/Archimate>
+
+title v93 Current — 镜像技能列表 2026-08-21 17:35
+
+Application_Component(fe, "taskFE Vue SPA")
+note right of fe
+  ImageMarket 技能列表
+  创建任务 /skill 高亮
+  评论 @镜像 /skill
+end note
+
+Application_Component(prov, "taskAiProvider")
+note right of prov
+  OCI 抽 imageSkills.yaml
+  事件 ContainerImageSkillsExtracted
+end note
+
+Application_Component(cloud, "taskCloudService")
+note right of cloud
+  安装快照 image_skills_json
+  IMAGE_SKILL 注入
+end note
+
+Application_Component(task, "taskTaskService")
+note right of task
+  mentions[].skill
+end note
+
+Application_Component(portal, "provider SPA skill 页")
+Application_DataObject(img, "ai_provider_vendorcontainerimage")
+note right of img
+  image_skills_json
+  extract_status / digest
+end note
+
+Application_DataObject(inst, "cloud_tenant_installed_images")
+note right of inst
+  image_skills_json 快照
+end note
+
+Technology_Artifact(yaml, "/app/imageSkills.yaml")
+Technology_Node(mysqlP, "MySQL ai_provider utf8mb4")
+Technology_Node(mysqlC, "MySQL task_cloud utf8mb4")
+
+Rel_Flow(fe, prov, "catalog image_skills")
+Rel_Flow(fe, cloud, "installed images")
+Rel_Flow(fe, task, "comment mentions.skill")
+Rel_Flow(prov, yaml, "OCI layer extract")
+Rel_Flow(prov, img, "bind JSON")
+Rel_Flow(cloud, inst, "copy/re-extract")
+Rel_Flow(portal, yaml, "saas-machine-container 规范")
+Rel_Serving(mysqlP, img, "InnoDB")
+Rel_Serving(mysqlC, inst, "InnoDB")
+
+Implementation_Plateau(plateauV92, "Plateau v92")
+Implementation_Plateau(plateauV93, "Plateau v93 image skills")
+Implementation_Gap(gapSk, "Gap: 镜像无技能目录约定")
+Implementation_WorkPackage(wpSk, "WP-image-container-skill-list")
+Rel_Triggering(plateauV92, gapSk, "identifies")
+Rel_Realization(wpSk, gapSk, "closes")
+Rel_Realization(wpSk, plateauV93, "delivers")
+
+@enduml

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="v78-comment-scoped-container-token-diff" id="id-v78diff01">
+  <folder name="Application" id="id-v78diff-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v78-app-cloud" name="taskCloudService [MOD]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v78-app-cred" name="taskCredentialService [MOD]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v78-app-osjs" name="onlineServiceJS [MOD]"/>
+    <element xsi:type="archimate:DataObject" id="id-v78-do-tok" name="credential_container_tokens.comment_id [NEW]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v78diff-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v78-pl-v77" name="Plateau v77"/>
+    <element xsi:type="archimate:Plateau" id="id-v78-pl-v78" name="Plateau v78"/>
+    <element xsi:type="archimate:Gap" id="id-v78-gap" name="Gap: task-scoped token races two comments"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v78-wp" name="WP: comment-scoped-container-token"/>
+  </folder>
+  <folder name="Relations" id="id-v78diff-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v78-rel-init" source="id-v78-app-cloud" target="id-v78-app-cred" name="token init + comment"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v78-rel-tok" source="id-v78-app-cred" target="id-v78-do-tok" name="R/W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v78-rel-ex" source="id-v78-app-osjs" target="id-v78-app-cred" name="exchange-refresh + comment_id"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v78-rel-reg" source="id-v78-app-osjs" target="id-v78-app-cloud" name="register-reachability + comment_id"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v78-rel-pl77-gap" source="id-v78-pl-v77" target="id-v78-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v78-rel-wp-gap" source="id-v78-wp" target="id-v78-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v78-rel-wp-pl78" source="id-v78-wp" target="id-v78-pl-v78"/>
+  </folder>
+  <folder name="Views" id="id-v78diff-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v78-view-mig" name="架构变迁 v77→v78 — comment-scoped-container-token">
+      <child xsi:type="archimate:DiagramObject" id="id-v78-do-pl77" archimateElement="id-v78-pl-v77">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78-conn-pl77-gap" source="id-v78-do-pl77" target="id-v78-do-gap" archimateRelationship="id-v78-rel-pl77-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78-do-gap" targetConnections="id-v78-conn-pl77-gap id-v78-conn-wp-gap" archimateElement="id-v78-gap">
+        <bounds x="240" y="48" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78-do-wp" archimateElement="id-v78-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78-conn-wp-gap" source="id-v78-do-wp" target="id-v78-do-gap" archimateRelationship="id-v78-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78-conn-wp-pl78" source="id-v78-do-wp" target="id-v78-do-pl78" archimateRelationship="id-v78-rel-wp-pl78"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78-do-pl78" targetConnections="id-v78-conn-wp-pl78" archimateElement="id-v78-pl-v78">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v78-view-flow" name="v78 Target — comment-scoped token">
+      <child xsi:type="archimate:DiagramObject" id="id-v78-d-cloud" archimateElement="id-v78-app-cloud">
+        <bounds x="48" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78-c-init" source="id-v78-d-cloud" target="id-v78-d-cred" archimateRelationship="id-v78-rel-init"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78-d-cred" targetConnections="id-v78-c-init id-v78-c-ex" archimateElement="id-v78-app-cred">
+        <bounds x="300" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78-c-tok" source="id-v78-d-cred" target="id-v78-d-tok" archimateRelationship="id-v78-rel-tok"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78-d-tok" targetConnections="id-v78-c-tok" archimateElement="id-v78-do-tok">
+        <bounds x="300" y="160" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78-d-osjs" archimateElement="id-v78-app-osjs">
+        <bounds x="48" y="160" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78-c-ex" source="id-v78-d-osjs" target="id-v78-d-cred" archimateRelationship="id-v78-rel-ex"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78-c-reg" source="id-v78-d-osjs" target="id-v78-d-cloud" archimateRelationship="id-v78-rel-reg"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

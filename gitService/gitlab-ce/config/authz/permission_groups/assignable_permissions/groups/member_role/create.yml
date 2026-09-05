@@ -1,0 +1,8 @@
+---
+name: create_member_role
+description: Grants the ability to create member roles
+boundaries:
+  - group
+  - instance
+permissions:
+  - create_member_role

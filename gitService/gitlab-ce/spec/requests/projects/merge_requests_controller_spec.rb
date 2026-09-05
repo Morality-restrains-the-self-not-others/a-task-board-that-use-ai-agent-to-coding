@@ -1,0 +1,868 @@
+# frozen_string_literal: true
+
+require 'spec_helper'
+
+RSpec.describe Projects::MergeRequestsController, feature_category: :source_code_management do
+  include RepoHelpers
+
+  let_it_be(:merge_request) { create(:merge_request) }
+  let_it_be(:project) { merge_request.project }
+  let_it_be(:user) { merge_request.author }
+
+  let_it_be(:base_diff_1) { merge_request.merge_request_diff }
+
+  let_it_be(:commit_id) do
+    create_file_in_repo(
+      merge_request.project,
+      'master',
+      'master',
+      'new_file.txt',
+      'new content'
+    )[:result]
+  end
+
+  let_it_be(:base_diff_2) do
+    merge_request.clear_memoized_shas
+    merge_request.create_merge_request_diff
+  end
+
+  describe 'GET #show' do
+    let_it_be(:group) { create(:group) }
+    let_it_be(:user) { create(:user) }
+    let_it_be(:project) { create(:project, :public, group: group) }
+
+    let(:merge_request) { create :merge_request, source_project: project, author: user }
+
+    context 'when the author of the merge request is banned', feature_category: :insider_threat do
+      let_it_be(:user) { create(:user, :banned) }
+
+      subject { response }
+
+      before do
+        get project_merge_request_path(project, merge_request)
+      end
+
+      it { is_expected.to have_gitlab_http_status(:not_found) }
+    end
+
+    context 'when diff version limit is reached' do
+      before do
+        stub_const('MergeRequest::DIFF_VERSION_LIMIT', 1)
+      end
+
+      it 'displays a warning' do
+        get project_merge_request_path(project, merge_request)
+
+        expect(flash[:alert]).to include('This merge request has reached the maximum limit')
+        expect(flash[:alert]).not_to include("This merge request has too many diff commits, and can't be updated")
+      end
+
+      context 'when "merge_requests_diffs_limit" feature flag is disabled' do
+        before do
+          stub_feature_flags(merge_requests_diffs_limit: false)
+        end
+
+        it 'does not display a warning' do
+          get project_merge_request_path(project, merge_request)
+
+          expect(flash[:alert]).to be_blank
+        end
+      end
+    end
+
+    context 'when diff commits limit is reached' do
+      before do
+        stub_const('MergeRequest::DIFF_COMMITS_LIMIT', 1)
+        # merge_request_diff model has a after_save callback that nullifies commits counts
+        # using #update_column to override this behavior
+        merge_request.merge_request_diff.update_column(:commits_count, 2)
+      end
+
+      it 'displays a warning' do
+        get project_merge_request_path(project, merge_request)
+
+        expect(flash[:alert]).to include("This merge request has too many diff commits, and can't be updated")
+      end
+
+      context 'when "merge_requests_diff_commits_limit" feature flag is disabled' do
+        before do
+          stub_feature_flags(merge_requests_diff_commits_limit: false)
+        end
+
+        it 'does not display a warning' do
+          get project_merge_request_path(project, merge_request)
+
+          expect(flash[:alert]).to be_blank
+        end
+      end
+
+      context 'when diff version limit is also reached' do
+        before do
+          stub_const('MergeRequest::DIFF_VERSION_LIMIT', 1)
+        end
+
+        it 'displays only one warning' do
+          get project_merge_request_path(project, merge_request)
+
+          expect(flash[:alert]).to include('This merge request has reached the maximum limit')
+          expect(flash[:alert]).not_to include("This merge request has too many diff commits, and can't be updated")
+        end
+      end
+    end
+  end
+
+  describe 'GET #index' do
+    let_it_be(:public_project) { create(:project, :public) }
+
+    it_behaves_like 'rate limited endpoint', rate_limit_key: :search_rate_limit, use_second_scope: false do
+      let(:current_user) { user }
+
+      before do
+        sign_in current_user
+      end
+
+      def request
+        get project_merge_requests_path(public_project), params: { scope: 'merge_requests', search: 'test' }
+      end
+    end
+
+    it_behaves_like 'rate limited endpoint', rate_limit_key: :search_rate_limit_unauthenticated do
+      def request
+        get project_merge_requests_path(public_project), params: { scope: 'merge_requests', search: 'test' }
+      end
+
+      def request_with_second_scope
+        get project_merge_requests_path(public_project),
+          params: { scope: 'merge_requests', search: 'test' },
+          headers: { 'REMOTE_ADDR' => '1.2.3.5' }
+      end
+    end
+  end
+
+  describe 'GET #discussions' do
+    let_it_be(:discussion) { create(:discussion_note_on_merge_request, noteable: merge_request, project: project) }
+    let_it_be(:discussion_reply) do
+      create(:discussion_note_on_merge_request, noteable: merge_request, project: project, in_reply_to: discussion)
+    end
+
+    let_it_be(:state_event) { create(:resource_state_event, merge_request: merge_request) }
+    let_it_be(:discussion_2) { create(:discussion_note_on_merge_request, noteable: merge_request, project: project) }
+    let_it_be(:discussion_3) { create(:diff_note_on_merge_request, noteable: merge_request, project: project) }
+
+    before do
+      login_as(user)
+    end
+
+    context 'pagination' do
+      def get_discussions(**params)
+        get discussions_project_merge_request_path(project, merge_request, params: params.merge(format: :json))
+      end
+
+      it 'returns paginated notes and cursor based on per_page param' do
+        get_discussions(per_page: 2)
+
+        discussions = Gitlab::Json.parse(response.body)
+        notes = discussions.flat_map { |d| d['notes'] }
+
+        expect(discussions.count).to eq(2)
+        expect(notes).to match(
+          [
+            a_hash_including('id' => discussion.id.to_s),
+            a_hash_including('id' => discussion_reply.id.to_s),
+            a_hash_including('type' => 'StateNote')
+          ])
+
+        cursor = response.header['X-Next-Page-Cursor']
+        expect(cursor).to be_present
+
+        get_discussions(per_page: 1, cursor: cursor)
+
+        discussions = Gitlab::Json.parse(response.body)
+        notes = discussions.flat_map { |d| d['notes'] }
+
+        expect(discussions.count).to eq(1)
+        expect(notes).to match([a_hash_including('id' => discussion_2.id.to_s)])
+      end
+    end
+  end
+
+  context 'token authentication' do
+    context 'when public project' do
+      let_it_be(:public_project) { create(:project, :public) }
+
+      it_behaves_like 'authenticates sessionless user for the request spec', 'index atom', public_resource: true do
+        let(:url) { project_merge_requests_url(public_project, format: :atom) }
+      end
+    end
+
+    context 'when private project' do
+      let_it_be(:private_project) { create(:project, :private) }
+
+      it_behaves_like 'authenticates sessionless user for the request spec', 'index atom',
+        public_resource: false,
+        ignore_metrics: true do
+        let(:url) { project_merge_requests_url(private_project, format: :atom) }
+
+        before do
+          private_project.add_maintainer(user)
+        end
+      end
+    end
+  end
+
+  describe 'GET #pipelines.json' do
+    before do
+      login_as(user)
+    end
+
+    it 'avoids N+1 queries', :use_sql_query_cache do
+      pipeline_1 = create_pipeline
+      add_manual_stage(pipeline_1)
+
+      # warm up
+      get pipelines_project_merge_request_path(project, merge_request, format: :json)
+
+      control = ActiveRecord::QueryRecorder.new(skip_cached: false) do
+        get pipelines_project_merge_request_path(project, merge_request, format: :json)
+      end
+
+      expect(response).to have_gitlab_http_status(:ok)
+      expect(Gitlab::Json.parse(response.body)['count']['all']).to eq(1)
+
+      pipeline_2 = create_pipeline
+      add_manual_stage(pipeline_2)
+
+      expect do
+        get pipelines_project_merge_request_path(project, merge_request, format: :json)
+      end.to issue_same_number_of_queries_as(control)
+
+      expect(response).to have_gitlab_http_status(:ok)
+      expect(Gitlab::Json.parse(response.body)['count']['all']).to eq(2)
+    end
+
+    context 'when there are pipelines with failed builds' do
+      before do
+        pipeline = create_pipeline
+
+        create(:ci_build, :failed, pipeline: pipeline)
+        create(:ci_build, :failed, pipeline: pipeline)
+      end
+
+      it 'returns the failed build count but not the failed builds' do
+        get pipelines_project_merge_request_path(project, merge_request, format: :json)
+
+        expect(response).to have_gitlab_http_status(:ok)
+        expect(Gitlab::Json.parse(response.body)['pipelines'].size).to eq(1)
+        expect(Gitlab::Json.parse(response.body)['pipelines'][0]['failed_builds_count']).to eq(2)
+        expect(Gitlab::Json.parse(response.body)['pipelines'][0]).not_to have_key('failed_builds')
+      end
+
+      it 'avoids N+1 queries', :use_sql_query_cache do
+        # warm up
+        get pipelines_project_merge_request_path(project, merge_request, format: :json)
+
+        control = ActiveRecord::QueryRecorder.new(skip_cached: false) do
+          get pipelines_project_merge_request_path(project, merge_request, format: :json)
+        end
+
+        expect(response).to have_gitlab_http_status(:ok)
+        expect(Gitlab::Json.parse(response.body)['count']['all']).to eq(1)
+
+        pipeline_2 = create_pipeline
+        create(:ci_build, :failed, pipeline: pipeline_2)
+        create(:ci_build, :failed, pipeline: pipeline_2)
+
+        expect do
+          get pipelines_project_merge_request_path(project, merge_request, format: :json)
+        end.to issue_same_number_of_queries_as(control)
+
+        expect(response).to have_gitlab_http_status(:ok)
+        expect(Gitlab::Json.parse(response.body)['count']['all']).to eq(2)
+      end
+    end
+
+    describe '#rapid_diffs' do
+      it 'returns 200' do
+        get diffs_project_merge_request_path(project, merge_request, rapid_diffs: 'true')
+
+        expect(response).to have_gitlab_http_status(:ok)
+        expect(response.body).to include('data-page="projects:merge_requests:rapid_diffs"')
+      end
+
+      it 'uses diffs action when rapid_diffs query parameter doesnt exist' do
+        get diffs_project_merge_request_path(project, merge_request)
+
+        expect(response).to have_gitlab_http_status(:ok)
+        expect(response.body).to include('data-page="projects:merge_requests:diffs"')
+      end
+
+      it 'enables rapid diffs when rapid_diffs_enabled cookie is set' do
+        cookies[:rapid_diffs_enabled] = 'true'
+
+        get diffs_project_merge_request_path(project, merge_request)
+
+        expect(response).to have_gitlab_http_status(:ok)
+        expect(response.body).to include('data-page="projects:merge_requests:rapid_diffs"')
+      end
+
+      it 'returns 404 when cookie is set but feature flag is disabled' do
+        stub_feature_flags(rapid_diffs_on_mr_show: false)
+        cookies[:rapid_diffs_enabled] = 'true'
+
+        get diffs_project_merge_request_path(project, merge_request)
+
+        expect(response).to have_gitlab_http_status(:not_found)
+      end
+
+      it 'shows only first 5 files' do
+        get diffs_project_merge_request_path(project, merge_request, rapid_diffs: 'true')
+
+        expect(response.body.scan('<diff-file ').size).to eq(5)
+      end
+
+      context 'when diff_id and start_sha params are set' do
+        let(:params) { { diff_id: base_diff_2.id, start_sha: base_diff_1.head_commit_sha } }
+
+        it 'shows only files in the diff between versions' do
+          get diffs_project_merge_request_path(project, merge_request, params.merge(rapid_diffs: 'true'))
+
+          expect(response.body.scan('<diff-file ').size).to eq(1)
+          expect(response.body).to include('new_file.txt')
+          expect(response.body).to include('new content')
+        end
+      end
+
+      context 'when commit_id param is set' do
+        let(:params) { { commit_id: commit_id } }
+
+        it 'shows only files in the commit' do
+          get diffs_project_merge_request_path(project, merge_request, params.merge(rapid_diffs: 'true'))
+
+          expect(response.body.scan('<diff-file ').size).to eq(1)
+          expect(response.body).to include('new_file.txt')
+          expect(response.body).to include('new content')
+        end
+      end
+
+      context 'internal events tracking' do
+        subject(:action) { get diffs_project_merge_request_path(project, merge_request, rapid_diffs: true) }
+
+        before do
+          sign_in(user)
+        end
+
+        it 'tracks view_merge_request_diffs internal event', :clean_gitlab_redis_shared_state do
+          expect { action }
+            .to trigger_internal_events('view_merge_request_diffs')
+            .with(
+              user: user,
+              project: project,
+              namespace: project.namespace,
+              category: 'InternalEventTracking',
+              additional_properties: { label: 'rapid_diffs' }
+            )
+            .and increment_usage_metrics(
+              'redis_hll_counters.count_distinct_user_id_from_view_merge_request_diffs_monthly',
+              'redis_hll_counters.count_distinct_user_id_from_view_merge_request_diffs_weekly',
+              'redis_hll_counters.count_distinct_user_id_from_view_merge_request_diffs_using_rapid_diffs_monthly',
+              'redis_hll_counters.count_distinct_user_id_from_view_merge_request_diffs_using_rapid_diffs_weekly'
+            )
+        end
+      end
+
+      context 'when an error occurs during rendering' do
+        it 'logs the exception, deletes the cookie, and redirects with an alert' do
+          cookies['rapid_diffs_enabled'] = 'true'
+
+          expect_next_instance_of(described_class) do |instance|
+            allow(instance)
+              .to receive(:show_merge_request)
+              .and_raise(StandardError, 'something went wrong')
+
+            expect(instance)
+              .to receive(:log_exception)
+              .with(instance_of(StandardError))
+          end
+
+          get diffs_project_merge_request_path(project, merge_request)
+
+          expect(response).to redirect_to(diffs_project_merge_request_path(project, merge_request))
+          expect(response.cookies['rapid_diffs_enabled']).to be_nil
+          expect(flash[:alert]).to eq(
+            _("Rapid Diffs encountered an error and has been temporarily disabled. " \
+              "The page has loaded using the standard diff view. " \
+              "<a class=\"gl-link\" target=\"_blank\" rel=\"noopener noreferrer\" " \
+              "href=\"https://gitlab.com/gitlab-org/gitlab/-/work_items/596236\">Leave feedback</a>")
+          )
+        end
+      end
+    end
+
+    private
+
+    def create_pipeline
+      create(
+        :ci_pipeline, :with_job, :success,
+        project: merge_request.source_project,
+        ref: merge_request.source_branch,
+        sha: merge_request.diff_head_sha
+      )
+    end
+
+    def add_manual_stage(pipeline)
+      stage = create(:ci_stage, name: 'manual-stage', status: 'skipped', pipeline: pipeline)
+      create(:ci_build, :manual, stage: stage)
+      create(:ci_build, :manual, stage: stage)
+    end
+  end
+
+  describe 'GET #diff_files_metadata' do
+    before do
+      project.add_developer(user)
+      login_as(user)
+    end
+
+    let(:additional_params) { {} }
+
+    let(:send_request) do
+      get diff_files_metadata_project_merge_request_path(project, merge_request, params: additional_params)
+    end
+
+    include_examples 'diff files metadata'
+
+    context 'when merge_request_diff does not exist' do
+      let(:merge_request) { create(:merge_request, :skip_diff_creation, author: user) }
+      let(:project) { merge_request.project }
+
+      it 'returns an empty array' do
+        send_request
+
+        expect(json_response['diff_files']).to be_empty
+      end
+    end
+
+    context 'when diff_id param is set' do
+      let(:additional_params) { { diff_id: base_diff_2.id } }
+
+      include_examples 'diff files metadata'
+
+      context 'when start_sha param is set' do
+        let(:additional_params) { { diff_id: base_diff_2.id, start_sha: base_diff_1.head_commit_sha } }
+
+        include_examples 'diff files metadata'
+      end
+    end
+
+    context 'when commit_id param is set' do
+      let(:additional_params) { { commit_id: commit_id } }
+
+      include_examples 'diff files metadata'
+    end
+  end
+
+  describe 'GET #diffs_stats' do
+    before do
+      project.add_developer(user)
+      login_as(user)
+    end
+
+    let(:additional_params) { {} }
+    let(:send_request) { get diffs_stats_project_merge_request_path(project, merge_request, params: additional_params) }
+
+    include_examples 'diffs stats' do
+      let(:expected_stats) do
+        {
+          added_lines: 119,
+          removed_lines: 9,
+          diffs_count: 21
+        }
+      end
+    end
+
+    context 'when diffs overflow' do
+      include_examples 'overflow' do
+        let(:expected_stats) do
+          {
+            visible_count: 21,
+            email_path: "/#{project.full_path}/-/merge_requests/1.patch",
+            diff_path: "/#{project.full_path}/-/merge_requests/1.diff"
+          }
+        end
+      end
+    end
+
+    context 'when merge_request_diff does not exist' do
+      let(:merge_request) { create(:merge_request, :skip_diff_creation, author: user) }
+      let(:project) { merge_request.project }
+
+      it 'returns an empty array' do
+        send_request
+
+        expect(json_response['diffs_stats']).to eq({ "added_lines" => 0, "removed_lines" => 0, "diffs_count" => 0 })
+      end
+    end
+
+    context 'when diff_id param is set' do
+      let(:additional_params) { { diff_id: base_diff_2.id } }
+
+      it_behaves_like 'diffs stats' do
+        let(:expected_stats) do
+          {
+            added_lines: 119,
+            removed_lines: 9,
+            diffs_count: 21
+          }
+        end
+      end
+
+      context 'when start_sha param is set' do
+        let(:additional_params) { { diff_id: base_diff_2.id, start_sha: base_diff_1.head_commit_sha } }
+
+        it_behaves_like 'diffs stats' do
+          let(:expected_stats) do
+            {
+              added_lines: 1,
+              removed_lines: 0,
+              diffs_count: 1
+            }
+          end
+        end
+      end
+    end
+
+    context 'when commit_id param is set' do
+      let(:additional_params) { { commit_id: commit_id } }
+
+      it_behaves_like 'diffs stats' do
+        let(:expected_stats) do
+          {
+            added_lines: 1,
+            removed_lines: 0,
+            diffs_count: 1
+          }
+        end
+      end
+    end
+  end
+
+  describe 'GET #diff_file' do
+    before do
+      project.add_developer(user)
+      login_as(user)
+    end
+
+    let_it_be(:merge_request) { create(:merge_request, author: user) }
+    let(:diff_file_path) { diff_file_project_merge_request_path(project, merge_request) }
+    let(:diff_file) { merge_request.merge_request_diff.diffs.diff_files.first }
+    let(:old_path) { diff_file.old_path }
+    let(:new_path) { diff_file.new_path }
+    let(:ignore_whitespace_changes) { false }
+    let(:view) { 'inline' }
+
+    let(:params) do
+      {
+        old_path: old_path,
+        new_path: new_path,
+        ignore_whitespace_changes: ignore_whitespace_changes,
+        view: view
+      }.compact
+    end
+
+    let(:send_request) { get diff_file_path, params: params }
+
+    include_examples 'diff file endpoint'
+
+    context 'with whitespace-only diffs' do
+      let(:ignore_whitespace_changes) { true }
+      let(:diffs_collection) { instance_double(Gitlab::Diff::FileCollection::Base, diff_files: [diff_file]) }
+
+      before do
+        allow(diff_file).to receive_messages(whitespace_only?: true, conflict: nil)
+      end
+
+      it 'makes a call to presenter diff_files with ignore_whitespace_change: false' do
+        expect_next_instance_of(described_class) do |instance|
+          presenter = instance_double(RapidDiffs::MergeRequestPresenter)
+          allow(instance).to receive(:rapid_diffs_presenter).and_return(presenter)
+          allow(presenter).to receive(:diff_files).and_return([diff_file])
+
+          expect(presenter).to receive(:diff_files).with(
+            hash_including(ignore_whitespace_change: false)
+          ).and_return([diff_file])
+        end
+
+        send_request
+
+        expect(response).to have_gitlab_http_status(:success)
+      end
+    end
+  end
+
+  describe 'PUT #update' do
+    before do
+      project.add_developer(user)
+      login_as(user)
+    end
+
+    context 'with composite identity', :request_store, :sidekiq_inline do
+      let_it_be(:service_account) do
+        create(:user, :service_account, composite_identity_enforced: true, developer_of: project)
+      end
+
+      it 'attributes the system note to the human user when assigning a service account as reviewer' do
+        put project_merge_request_path(project, merge_request),
+          params: { merge_request: { reviewer_ids: [service_account.id] } }
+
+        expect(merge_request.notes.system.last.author).to eq(user)
+      end
+    end
+
+    it 'applies correct timezone to merge_after' do
+      put project_merge_request_path(project, merge_request, merge_request: { merge_after: '2024-09-03T21:18' })
+
+      expect(response).to redirect_to(project_merge_request_path(project, merge_request))
+
+      expect(merge_request.reload.merge_schedule.merge_after).to eq(
+        Time.zone.parse('2024-09-03T21:18')
+      )
+    end
+
+    it 'resets merge_schedule if merge_after is not set' do
+      create(:merge_request_merge_schedule, merge_request: merge_request, merge_after: '2024-10-27T21:06')
+
+      expect do
+        put project_merge_request_path(project, merge_request, merge_request: { merge_after: '' })
+      end.to change { merge_request.reload.merge_schedule }.to(nil)
+    end
+
+    it 'does not reset merge_schedule if merge_after is not sent' do
+      create(:merge_request_merge_schedule, merge_request: merge_request, merge_after: '2024-10-27T21:06')
+
+      expect do
+        put project_merge_request_path(project, merge_request, merge_request: { title: 'Something' })
+      end.not_to change { merge_request.reload.merge_schedule.merge_after }
+    end
+  end
+
+  describe 'GET #versions' do
+    let(:previous_mr_diff) { merge_request.merge_request_diffs.first }
+    let(:latest_mr_diff) { merge_request.merge_request_diff }
+    let(:full_path) { project.full_path }
+    let(:iid) { merge_request.iid }
+    let(:diffs_path) { "/#{full_path}/-/merge_requests/#{iid}/diffs" }
+    let(:previous_diff_id) { previous_mr_diff.id }
+    let(:latest_diff_id) { latest_mr_diff.id }
+    let(:previous_start_sha) { previous_mr_diff.head_commit_sha }
+    let(:latest_start_sha) { latest_mr_diff.head_commit_sha }
+
+    before do
+      project.add_developer(user)
+      login_as(user)
+    end
+
+    it 'responds with list of diff versions' do
+      get versions_project_merge_request_path(project, merge_request)
+
+      expect(json_response).to be_kind_of(Hash)
+      expect(json_response['source_versions'].size).to eq(2)
+      expect(json_response['source_versions'].first).to include(
+        "id" => latest_diff_id,
+        "version_index" => 2,
+        "head" => false,
+        "latest" => true,
+        "short_commit_sha" => Commit.truncate_sha(latest_start_sha),
+        "commits_count" => latest_mr_diff.commits_count,
+        "href" => "#{diffs_path}?diff_id=#{latest_diff_id}&rapid_diffs=true",
+        "selected" => true
+      )
+      expect(json_response['source_versions'].last).to include(
+        "id" => previous_diff_id,
+        "version_index" => 1,
+        "head" => false,
+        "latest" => false,
+        "short_commit_sha" => Commit.truncate_sha(previous_start_sha),
+        "commits_count" => previous_mr_diff.commits_count,
+        "href" => "#{diffs_path}?diff_id=#{previous_diff_id}&rapid_diffs=true",
+        "selected" => false
+      )
+
+      expect(json_response['target_versions'].size).to eq(2)
+      expect(json_response['target_versions'].first).to include(
+        "id" => latest_diff_id,
+        "version_index" => nil,
+        "head" => false,
+        "latest" => true,
+        "short_commit_sha" => Commit.truncate_sha(latest_start_sha),
+        "href" => "#{diffs_path}?rapid_diffs=true",
+        "commits_count" => latest_mr_diff.commits_count,
+        "selected" => true,
+        "branch" => merge_request.target_branch
+      )
+      expect(json_response['target_versions'].last).to include(
+        "id" => previous_diff_id,
+        "version_index" => 1,
+        "head" => false,
+        "latest" => false,
+        "short_commit_sha" => Commit.truncate_sha(previous_start_sha),
+        "commits_count" => previous_mr_diff.commits_count,
+        "href" => "#{diffs_path}?diff_id=#{latest_diff_id}&rapid_diffs=true&start_sha=#{previous_start_sha}",
+        "selected" => false
+      )
+    end
+
+    context 'when diff_id is set' do
+      it 'responds with list of diff versions' do
+        get(
+          versions_project_merge_request_path(
+            project,
+            merge_request,
+            diff_id: previous_diff_id
+          )
+        )
+
+        expect(json_response).to be_kind_of(Hash)
+        expect(json_response['source_versions'].size).to eq(2)
+        expect(json_response['source_versions'].first).to include(
+          "id" => latest_diff_id,
+          "version_index" => 2,
+          "head" => false,
+          "latest" => true,
+          "short_commit_sha" => Commit.truncate_sha(latest_start_sha),
+          "commits_count" => latest_mr_diff.commits_count,
+          "href" => "#{diffs_path}?diff_id=#{latest_diff_id}&rapid_diffs=true",
+          "selected" => false
+        )
+        expect(json_response['source_versions'].last).to include(
+          "id" => previous_diff_id,
+          "version_index" => 1,
+          "head" => false,
+          "latest" => false,
+          "short_commit_sha" => Commit.truncate_sha(previous_start_sha),
+          "commits_count" => previous_mr_diff.commits_count,
+          "href" => "#{diffs_path}?diff_id=#{previous_diff_id}&rapid_diffs=true",
+          "selected" => true
+        )
+
+        expect(json_response['target_versions'].size).to eq(2)
+        expect(json_response['target_versions'].first).to include(
+          "id" => latest_diff_id,
+          "version_index" => nil,
+          "head" => false,
+          "latest" => true,
+          "short_commit_sha" => Commit.truncate_sha(latest_start_sha),
+          "href" => "#{diffs_path}?rapid_diffs=true",
+          "commits_count" => latest_mr_diff.commits_count,
+          "selected" => true,
+          "branch" => merge_request.target_branch
+        )
+        expect(json_response['target_versions'].last).to include(
+          "id" => previous_diff_id,
+          "version_index" => 1,
+          "head" => false,
+          "latest" => false,
+          "short_commit_sha" => Commit.truncate_sha(previous_start_sha),
+          "commits_count" => previous_mr_diff.commits_count,
+          "href" => "#{diffs_path}?diff_id=#{previous_diff_id}&rapid_diffs=true&start_sha=#{previous_start_sha}",
+          "selected" => false
+        )
+      end
+
+      context 'when start_sha is set' do
+        it 'responds with list of diff versions' do
+          get(
+            versions_project_merge_request_path(
+              project,
+              merge_request,
+              diff_id: previous_diff_id,
+              start_sha: previous_start_sha
+            )
+          )
+
+          expect(json_response).to be_kind_of(Hash)
+          expect(json_response['source_versions'].size).to eq(2)
+          expect(json_response['source_versions'].first).to include(
+            "id" => latest_diff_id,
+            "version_index" => 2,
+            "head" => false,
+            "latest" => true,
+            "short_commit_sha" => Commit.truncate_sha(latest_start_sha),
+            "commits_count" => latest_mr_diff.commits_count,
+            "href" => "#{diffs_path}?diff_id=#{latest_diff_id}&rapid_diffs=true&start_sha=#{previous_start_sha}",
+            "selected" => false
+          )
+          expect(json_response['source_versions'].last).to include(
+            "id" => previous_diff_id,
+            "version_index" => 1,
+            "head" => false,
+            "latest" => false,
+            "short_commit_sha" => Commit.truncate_sha(previous_start_sha),
+            "commits_count" => previous_mr_diff.commits_count,
+            "href" => "#{diffs_path}?diff_id=#{previous_diff_id}&rapid_diffs=true&start_sha=#{previous_start_sha}",
+            "selected" => true
+          )
+
+          expect(json_response['target_versions'].size).to eq(2)
+          expect(json_response['target_versions'].first).to include(
+            "id" => latest_diff_id,
+            "version_index" => nil,
+            "head" => false,
+            "latest" => true,
+            "short_commit_sha" => Commit.truncate_sha(latest_start_sha),
+            "href" => "#{diffs_path}?rapid_diffs=true",
+            "commits_count" => latest_mr_diff.commits_count,
+            "selected" => false,
+            "branch" => merge_request.target_branch
+          )
+          expect(json_response['target_versions'].last).to include(
+            "id" => previous_diff_id,
+            "version_index" => 1,
+            "head" => false,
+            "latest" => false,
+            "short_commit_sha" => Commit.truncate_sha(previous_start_sha),
+            "commits_count" => previous_mr_diff.commits_count,
+            "href" => "#{diffs_path}?diff_id=#{previous_diff_id}&rapid_diffs=true&start_sha=#{previous_start_sha}",
+            "selected" => true
+          )
+        end
+      end
+    end
+
+    context 'when rapid_diffs_on_mr_show feature flag is disabled' do
+      subject { response }
+
+      before do
+        stub_feature_flags(rapid_diffs_on_mr_show: false)
+
+        get versions_project_merge_request_path(project, merge_request)
+      end
+
+      it { is_expected.to have_gitlab_http_status(:not_found) }
+    end
+  end
+
+  describe 'GET #diffs' do
+    subject(:action) { get diffs_project_merge_request_path(project, merge_request) }
+
+    before do
+      sign_in(user)
+    end
+
+    it 'tracks view_merge_request_diffs internal event', :clean_gitlab_redis_shared_state do
+      expect { action }
+        .to trigger_internal_events('view_merge_request_diffs')
+        .with(
+          user: user,
+          project: project,
+          namespace: project.namespace,
+          category: 'InternalEventTracking',
+          additional_properties: { label: 'legacy_diffs' }
+        )
+        .and increment_usage_metrics(
+          'redis_hll_counters.count_distinct_user_id_from_view_merge_request_diffs_monthly',
+          'redis_hll_counters.count_distinct_user_id_from_view_merge_request_diffs_weekly',
+          'redis_hll_counters.count_distinct_user_id_from_view_merge_request_diffs_using_legacy_diffs_monthly',
+          'redis_hll_counters.count_distinct_user_id_from_view_merge_request_diffs_using_legacy_diffs_weekly'
+        )
+    end
+  end
+end

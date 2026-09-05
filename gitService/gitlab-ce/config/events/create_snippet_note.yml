@@ -1,0 +1,15 @@
+---
+description: Snippet comment created
+internal_events: true
+action: create_snippet_note
+identifiers:
+- project
+- namespace
+- user
+product_group: source_code
+milestone: '17.0'
+introduced_by_url: https://gitlab.com/gitlab-org/gitlab/-/merge_requests/150768
+tiers:
+- free
+- premium
+- ultimate

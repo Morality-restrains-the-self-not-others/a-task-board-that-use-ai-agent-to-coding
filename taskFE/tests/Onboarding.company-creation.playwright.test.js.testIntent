@@ -1,0 +1,27 @@
+# Onboarding.company-creation.playwright.test.js
+
+## 意图
+验证 Onboarding 页面（首次创建公司）的 UI 渲染、表单验证、API 调用和错误处理完整流程正确性。
+
+## 被测功能
+1. 页面渲染：标题、输入框（#companyName）、提交按钮存在且初始状态正确
+2. 表单验证：空名称提交被阻止、输入名称后按钮启用、仅空格无效
+3. 提交状态：按钮显示 "正在创建..." loading 文字
+4. API 集成：POST /api/tenant/_/accounts/companies/ 非空名称返回非 404（回归 #django-tenant-accounts 路由）
+5. API 集成：已存在公司时返回 409 + JSON 错误详情
+6. 错误展示：错误 div 带有 data-traceId 属性（回归 2026-07-29 fix）
+7. 全链路：新建用户 API 调用返回合法 JSON（company_id, name 字段）
+
+## 前置条件
+- 前端 Vite dev server 运行中
+- 后端 Django + APISIX 网关运行中
+- 测试账号已存在 (contact@daydaymoney.com)
+- APISIX 路由 `django-tenant-accounts` (priority 856, `/api/tenant/*/accounts/*`) 已部署
+
+## 测试环境变量
+- `PLAYWRIGHT_TEST_EMAIL` (默认: contact@daydaymoney.com)
+- `PLAYWRIGHT_TEST_PASSWORD` (默认: <env:PLAYWRIGHT_TEST_PASSWORD>)
+- `PLAYWRIGHT_SITE_ORIGIN` (默认: from port_config.json)
+
+## 预期结果
+所有测试通过：页面渲染正确、表单行为正常、API 返回非 404、错误绑定 traceId。

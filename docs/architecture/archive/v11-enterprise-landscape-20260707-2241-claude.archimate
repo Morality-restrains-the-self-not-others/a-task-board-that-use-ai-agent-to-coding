@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v11-el-20260707-2241">
+
+  <name xml:lang="en">daydaymoney Enterprise Landscape v11 Target</name>
+  <purpose>镜像厂商云平台测试密钥 — Vendor 自管 AK，taskCloudService SSOT，ai-provider 消费</purpose>
+
+  <folder name="Business" id="f-biz" type="business"/>
+  <folder name="Application" id="f-app" type="application"/>
+  <folder name="Technology" id="f-tech" type="technology"/>
+  <folder name="Implementation" id="f-impl" type="implementation_migration"/>
+  <folder name="Relations" id="f-rel" type="relations"/>
+
+  <element xsi:type="archimate:BusinessActor" name="Marketplace Vendor" id="vendor"/>
+  <element xsi:type="archimate:BusinessService" name="Image Marketplace Service" id="imageMarket"/>
+  <element xsi:type="archimate:BusinessObject" name="Vendor Cloud Test Credential" id="vendorCredBO"/>
+
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 ai-provider Django (:8010) [MODIFIED v11]" id="aiProvider"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 taskCloudService Go (:8018) [MODIFIED v11]" id="taskCloudSvc"/>
+  <element xsi:type="archimate:ApplicationService" name="Vendor Cloud Credential API" id="vendorCredAPI"/>
+  <element xsi:type="archimate:ApplicationService" name="Image Marketplace API" id="imageMarketAPI"/>
+  <element xsi:type="archimate:ApplicationDataObject" name="vendor_cloud_platform_credentials [NEW v11]" id="vendorCredDB"/>
+
+  <element xsi:type="archimate:Artifact" name="SQLite task_cloud.db" id="sqliteCloud"/>
+
+  <element xsi:type="archimate:Plateau" name="Plateau v10 — Cloud CPA + Aliyun Query SSOT" id="platV10"/>
+  <element xsi:type="archimate:Plateau" name="🎯 Plateau v11 — Vendor Cloud Test Credentials" id="platV11"/>
+  <element xsi:type="archimate:Gap" name="Gap: 厂商无法自配云测试密钥" id="gapVendorCred"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-v11-vendor-cloud-credentials" id="wpV11"/>
+
+  <element xsi:type="archimate:RealizationRelationship" id="rel1" source="taskCloudSvc" target="vendorCredAPI"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel2" source="aiProvider" target="imageMarketAPI"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel3" source="vendorCredAPI" target="imageMarket"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel4" source="imageMarketAPI" target="imageMarket"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel5" source="aiProvider" target="taskCloudSvc"/>
+  <element xsi:type="archimate:AccessRelationship" id="rel6" source="taskCloudSvc" target="vendorCredDB"/>
+  <element xsi:type="archimate:AssociationRelationship" id="rel7" source="platV10" target="gapVendorCred"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel8" source="wpV11" target="gapVendorCred"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel9" source="wpV11" target="platV11"/>
+  <element xsi:type="archimate:CompositionRelationship" id="rel10" source="platV11" target="taskCloudSvc"/>
+  <element xsi:type="archimate:CompositionRelationship" id="rel11" source="platV11" target="aiProvider"/>
+
+  <folder name="Views" id="f-views" type="diagrams">
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v10→v11 — 厂商测试密钥" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-platV10" archimateElement="platV10">
+        <bounds x="48" y="120" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v10-gap" source="do-platV10" target="do-gapVendorCred" archimateRelationship="rel7"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gapVendorCred" archimateElement="gapVendorCred" targetConnections="conn-v10-gap conn-wp-gap">
+        <bounds x="300" y="120" width="260" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wpV11" archimateElement="wpV11">
+        <bounds x="600" y="80" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wpV11" target="do-gapVendorCred" archimateRelationship="rel8"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-v11" source="do-wpV11" target="do-platV11" archimateRelationship="rel9"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-platV11" archimateElement="platV11" targetConnections="conn-wp-v11">
+        <bounds x="600" y="180" width="260" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

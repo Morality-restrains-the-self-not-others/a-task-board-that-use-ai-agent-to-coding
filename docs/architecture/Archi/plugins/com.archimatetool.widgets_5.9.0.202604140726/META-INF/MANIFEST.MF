@@ -1,0 +1,24 @@
+Manifest-Version: 1.0
+Created-By: Maven Archiver 3.6.6
+Build-Jdk-Spec: 21
+Bundle-ManifestVersion: 2
+Bundle-Name: Archi Widgets
+Bundle-SymbolicName: com.archimatetool.widgets;singleton:=true
+Bundle-Version: 5.9.0.202604140726
+Bundle-Vendor: Archi
+Eclipse-BundleShape: dir
+Bundle-ClassPath: com.archimatetool.widgets.jar,lib/org.eclipse.nebula.w
+ idgets.gallery_1.0.0.202509131601.jar,lib/org.eclipse.nebula.widgets.gr
+ id_1.2.0.202509131601.jar
+Export-Package: com.archimatetool.widgets,org.eclipse.nebula.animation,o
+ rg.eclipse.nebula.animation.effects,org.eclipse.nebula.animation.moveme
+ nt,org.eclipse.nebula.jface.galleryviewer,org.eclipse.nebula.jface.grid
+ viewer,org.eclipse.nebula.jface.gridviewer.internal,org.eclipse.nebula.
+ widgets.gallery,org.eclipse.nebula.widgets.grid,org.eclipse.nebula.widg
+ ets.grid.internal
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.eclipse.core.runtime,org.eclipse.ui
+Bundle-Activator: com.archimatetool.widgets.ArchiWidgetsPlugin
+Automatic-Module-Name: com.archimatetool.widgets
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=21))"
+

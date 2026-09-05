@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v130 变迁 (v129→v130)" id="id-v130-diff" version="4.0.0">
+  <folder name="Application" id="folder-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="app-fe" name="taskFE Projects / GitlabSyncModal [MODIFIED v130]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="app-bill" name="taskBill"/>
+    <element xsi:type="archimate:ApplicationComponent" id="app-proj" name="taskProjectService"/>
+    <element xsi:type="archimate:ApplicationComponent" id="app-oauth" name="taskGitOauth"/>
+    <element xsi:type="archimate:ApplicationComponent" id="app-gl" name="租户已购 GitLab 实例"/>
+    <element xsi:type="archimate:DataObject" id="data-res" name="billing_tenant_gitlab_resource"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="folder-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="plt-129" name="Plateau v129"/>
+    <element xsi:type="archimate:Plateau" id="plt-130" name="Plateau v130"/>
+    <element xsi:type="archimate:Gap" id="gap-default-host" name="Gap: 默认证默认 GitLab 站"/>
+    <element xsi:type="archimate:WorkPackage" id="wp-select" name="WP-gitlab-sync-purchased-region-select"/>
+  </folder>
+  <folder name="Relations" id="folder-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="rel-fe-bill" name="GET gitlab-resources" source="app-fe" target="app-bill"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-bill-res" name="list summaries" source="app-bill" target="data-res"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-fe-proj" name="GET remote-repos?gitlab_host" source="app-fe" target="app-proj"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-proj-oauth" name="access-for-user" source="app-proj" target="app-oauth"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-proj-gl" name="API v4 projects" source="app-proj" target="app-gl"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-p129-gap" name="identifies" source="plt-129" target="gap-default-host"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" name="closes" source="wp-select" target="gap-default-host"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp-p130" name="delivers" source="wp-select" target="plt-130"/>
+  </folder>
+  <folder name="Views" id="folder-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-migration" name="架构变迁 v129→v130 — gitlab-sync-purchased-region-select">
+      <child xsi:type="archimate:DiagramObject" id="do-p129" archimateElement="plt-129">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-p129-gap" source="do-p129" target="do-gap" archimateRelationship="rel-p129-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap" archimateElement="gap-default-host" targetConnections="conn-p129-gap conn-wp-gap">
+        <bounds x="240" y="48" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp" archimateElement="wp-select">
+        <bounds x="240" y="140" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wp" target="do-gap" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-p130" source="do-wp" target="do-p130" archimateRelationship="rel-wp-p130"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-p130" archimateElement="plt-130" targetConnections="conn-wp-p130">
+        <bounds x="480" y="140" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-target" name="目标拓扑 v130 — 已购区域同步">
+      <child xsi:type="archimate:DiagramObject" id="do-fe" archimateElement="app-fe">
+        <bounds x="48" y="48" width="200" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-fe-bill" source="do-fe" target="do-bill" archimateRelationship="rel-fe-bill"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-fe-proj" source="do-fe" target="do-proj" archimateRelationship="rel-fe-proj"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-bill" archimateElement="app-bill" targetConnections="conn-fe-bill">
+        <bounds x="300" y="24" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-bill-res" source="do-bill" target="do-res" archimateRelationship="rel-bill-res"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-res" archimateElement="data-res" targetConnections="conn-bill-res">
+        <bounds x="480" y="24" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-proj" archimateElement="app-proj" targetConnections="conn-fe-proj">
+        <bounds x="300" y="120" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-proj-oauth" source="do-proj" target="do-oauth" archimateRelationship="rel-proj-oauth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-proj-gl" source="do-proj" target="do-gl" archimateRelationship="rel-proj-gl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-oauth" archimateElement="app-oauth" targetConnections="conn-proj-oauth">
+        <bounds x="500" y="100" width="140" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gl" archimateElement="app-gl" targetConnections="conn-proj-gl">
+        <bounds x="500" y="170" width="160" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

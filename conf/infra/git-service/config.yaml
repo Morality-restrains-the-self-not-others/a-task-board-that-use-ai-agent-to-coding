@@ -1,0 +1,53 @@
+# GitLab external URL（用户浏览器访问和 clone 地址显示的域名）
+allowedHost: ${scheme}://${subdomains.gitlab}
+# 容器内部绑定地址（仅用于端口映射，不影响外部 URL 显示）
+host: 0.0.0.0
+port: 8012
+logging.log_file: logs/infra/git-service.log
+# 本机 docker 宿主机映射端口（gitlab-shell）；公网经边缘 :22 隧道转到此口
+sshPort: 22
+# 浏览器/clone URL 展示端口（公网 git@gitlab.… 默认 22；勿与 sshPort 混用）
+advertiseSshPort: 22
+publicUrl: ${scheme}://${subdomains.gitlab}
+# 宿主机持久目录（Docker bind-mount 根）。由 gitService/run.sh 导出为 GITLAB_HOME。
+# compose 挂载（见 gitService/docker-compose.yml）:
+#   ${gitlabHome}/config          → /etc/gitlab
+#   ${gitlabHome}/logs            → /var/log/gitlab
+#   ${gitlabHome}/data            → /var/opt/gitlab
+#   ${gitlabHome}/bootstrap_marks → /opt/gitlab/bootstrap_marks
+# 禁止指向 tmpfs worktree（如 /tmp/ram-work/...），否则重启/重建丢数。
+# 优先级: 环境变量 GITLAB_HOME > 本字段 > 脚本默认
+#   ($XDG_DATA_HOME/daydaymoney/gitService 或 ~/.local/share/daydaymoney/gitService)
+gitlabHome: /home/ljy/.local/share/daydaymoney/gitService
+
+# --- 容器资源与进程并发（人工可改；SSOT 在此，勿改 docker-compose 默认为第二源）---
+# 见 .ai/01_project_constraints/47_conf_app_human_editable_config_ssot.md
+# gitService/run.sh 读入后导出 GITLAB_MEM_LIMIT / GITLAB_PUMA_WORKERS / …
+# Omnibus 镜像标签（升级只改这里；compose 消费 GITLAB_IMAGE）
+# 升级路径须经官方 required stop：19.0.x → 19.2.x（不可从 19.0.0 一次跳到 19.5）
+imageTag: 19.2.4-ce.0
+memLimit: 6g
+shmSize: 512m
+pumaWorkers: 2
+sidekiqConcurrency: 5
+# Docker Desktop / 引擎可用内存低于此值（MiB）时，run.sh 进入精简模式（更低 mem/workers）
+minDockerMemoryMib: 6144
+
+# --- 登录/注册开关（OPT-20260807-034；SSOT 在此，gitService compose 消费）---
+# 关闭 GitLab 手动注册，仅允许平台 OIDC 单点登录（signup_enabled=false）
+signupEnabled: false
+# 关闭 Web 账密登录（password_authentication_enabled_for_web=false）
+passwordAuthWeb: ''
+# 关闭 Git 账密认证（password_authentication_enabled_for_git=false；SSH key 不受影响）
+passwordAuthGit: ''
+# 本机 GitLab 默认禁止被 runAll 面板 / run.sh start 拉起（Puma 空转会打满 CPU）。
+# 需要本机实例时：在 conf-local/infra/git-service/config.yaml 写 runAllStartEnabled: true，再从 :9999 启动 git-service。
+# 上海实例 git-service-tencent-sh-1 不受此键约束。见 ADR-0047。
+runAllStartEnabled: false
+# 区域 slug（流量闸门 POST region）；默认实例对应 billing_gitlab_region
+regionSlug: tencent-shanghai-5
+# 同节点 GitLab 容器访问宿主机 taskBill（拆分时改 http://${INFRA_HOST}:8004）
+trafficGateTaskBillBase: http://host.docker.internal:8004
+# 机密只写 conf-local 同路径；已跟踪文件必须留空（ADR-0054 / OPT-20260831-012）
+oidcClientSecret: ""
+trafficGateInternalSecret: ""

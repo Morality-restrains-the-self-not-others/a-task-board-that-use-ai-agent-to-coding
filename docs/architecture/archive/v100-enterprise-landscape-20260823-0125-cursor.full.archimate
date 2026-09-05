@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v100 全量 (post-change)" id="id-v100elfull01">
+  <folder name="Business" id="id-v100eld-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v100-biz-tenant" name="租户管理员"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v100-biz-staff" name="平台员工"/>
+    <element xsi:type="archimate:BusinessService" id="id-v100-biz-ops" name="订单与退款运营"/>
+    <element xsi:type="archimate:BusinessService" id="id-v100-biz-inv" name="电子发票 [NEW v100]"/>
+  </folder>
+  <folder name="Application" id="id-v100eld-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v100-el-fe" name="taskFE [MODIFIED v100]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v100-el-bill" name="taskBill [MODIFIED v100]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v100eld-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v100-el-pl99" name="Plateau v99"/>
+    <element xsi:type="archimate:Plateau" id="id-v100-el-pl100" name="Plateau v100"/>
+    <element xsi:type="archimate:Gap" id="id-v100-el-gap" name="Gap: 支付成功后无法合规开票"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v100-el-wp" name="WP-order-wechat-fapiao"/>
+  </folder>
+  <folder name="Relations" id="id-v100eld-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v100-rel-tenant-inv" source="id-v100-biz-tenant" target="id-v100-biz-inv"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v100-rel-staff-ops" source="id-v100-biz-staff" target="id-v100-biz-ops"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v100-rel-staff-inv" source="id-v100-biz-staff" target="id-v100-biz-inv"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v100-rel-fe-ops" source="id-v100-el-fe" target="id-v100-biz-ops"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v100-rel-fe-inv" source="id-v100-el-fe" target="id-v100-biz-inv"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v100-rel-inv-bill" source="id-v100-biz-inv" target="id-v100-el-bill" name="invoice-applications + fapiao API"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v100-rel-el-pl99-gap" source="id-v100-el-pl99" target="id-v100-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v100-rel-el-wp-gap" source="id-v100-el-wp" target="id-v100-el-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v100-rel-el-wp-pl100" source="id-v100-el-wp" target="id-v100-el-pl100"/>
+  </folder>
+  <folder name="Views" id="id-v100eld-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v100-el-view-mig" name="架构变迁 v99→v100 — order-wechat-fapiao">
+      <child xsi:type="archimate:DiagramObject" id="id-v100-eld-pl99" archimateElement="id-v100-el-pl99">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v100-elc-pl99-gap" source="id-v100-eld-pl99" target="id-v100-eld-gap" archimateRelationship="id-v100-rel-el-pl99-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v100-eld-gap" targetConnections="id-v100-elc-pl99-gap id-v100-elc-wp-gap" archimateElement="id-v100-el-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v100-eld-wp" archimateElement="id-v100-el-wp">
+        <bounds x="240" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v100-elc-wp-gap" source="id-v100-eld-wp" target="id-v100-eld-gap" archimateRelationship="id-v100-rel-el-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v100-elc-wp-pl100" source="id-v100-eld-wp" target="id-v100-eld-pl100" archimateRelationship="id-v100-rel-el-wp-pl100"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v100-eld-pl100" targetConnections="id-v100-elc-wp-pl100" archimateElement="id-v100-el-pl100">
+        <bounds x="600" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v100-el-view-flow" name="v100 Target — 电子发票">
+      <child xsi:type="archimate:DiagramObject" id="id-v100-eld-tenant" archimateElement="id-v100-biz-tenant">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v100-elc-tenant-inv" source="id-v100-eld-tenant" target="id-v100-eld-inv" archimateRelationship="id-v100-rel-tenant-inv"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v100-eld-staff" archimateElement="id-v100-biz-staff">
+        <bounds x="48" y="140" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v100-elc-staff-ops" source="id-v100-eld-staff" target="id-v100-eld-ops" archimateRelationship="id-v100-rel-staff-ops"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v100-elc-staff-inv" source="id-v100-eld-staff" target="id-v100-eld-inv" archimateRelationship="id-v100-rel-staff-inv"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v100-eld-ops" targetConnections="id-v100-elc-staff-ops id-v100-elc-fe-ops" archimateElement="id-v100-biz-ops">
+        <bounds x="240" y="140" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v100-eld-inv" targetConnections="id-v100-elc-tenant-inv id-v100-elc-staff-inv id-v100-elc-fe-inv" archimateElement="id-v100-biz-inv">
+        <bounds x="240" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v100-elc-inv-bill" source="id-v100-eld-inv" target="id-v100-eld-bill" archimateRelationship="id-v100-rel-inv-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v100-eld-fe" archimateElement="id-v100-el-fe">
+        <bounds x="480" y="140" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v100-elc-fe-ops" source="id-v100-eld-fe" target="id-v100-eld-ops" archimateRelationship="id-v100-rel-fe-ops"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v100-elc-fe-inv" source="id-v100-eld-fe" target="id-v100-eld-inv" archimateRelationship="id-v100-rel-fe-inv"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v100-eld-bill" targetConnections="id-v100-elc-inv-bill" archimateElement="id-v100-el-bill">
+        <bounds x="480" y="48" width="160" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

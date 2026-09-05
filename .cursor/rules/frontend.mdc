@@ -1,0 +1,13 @@
+---
+description: 前端开发规则 - 引用 .ai/04_frontend_development
+globs: "**/*.vue,**/*.tsx,**/*.jsx,frontend/**/*"
+alwaysApply: false
+---
+
+# 前端开发
+
+修改 Vue、React 或前端代码时，必须读取并遵循：
+
+- `.ai/04_frontend_development/00_frontend_development.md`
+
+包含：界面/逻辑组件拆分、**单组件文件物理行数大于 500 须自动拆分；行数门禁触发后须立即削到 ≤ 阈值**（详见正文「大型组件行数门禁」与 `.ai/01_project_constraints/27_source_file_line_limit_auto_reduce.md`）、按钮 className、模态框、**下拉菜单（单击展开、双击收起）**、**副作用按钮须防重放（同步锁 + Idempotency-Key，见 `.ai/01_project_constraints/57_frontend_button_anti_replay.md`）**、**静态资源 URL 须带内容 hash 查询参数**（见 `.ai/01_project_constraints/18_static_resource_cache_bust_query.md`）、**请求报错展示须带 `data-traceId`**（见 `.ai/01_project_constraints/24_frontend_error_data_trace_id.md` 与 `.cursor/rules/frontend-error-data-trace-id.mdc`）、**入口 HTML head 须声明 `trae-service`**（见 `.ai/01_project_constraints/26_frontend_head_trae_service.md`）、**无必要禁止 Teleport / createPortal**（见 `.ai/01_project_constraints/50_no_unnecessary_vue_teleport.md` 与 `.cursor/rules/no-unnecessary-vue-teleport.mdc`）、**禁止无触发后台 API 轮询**（见 `.ai/01_project_constraints/51_no_service_internal_poll_loop.md`）、**公网 SPA 改动后须 `runall-lifecycle.sh build`（build + collectstatic，见 `task2app/front_project/ai.md`）** 等规范。

@@ -1,0 +1,11 @@
+query workItemRelatedItem($id: WorkItemID!) {
+  workItem(id: $id) {
+    id
+    reference(full: true)
+    webUrl
+    workItemType {
+      id
+      name
+    }
+  }
+}

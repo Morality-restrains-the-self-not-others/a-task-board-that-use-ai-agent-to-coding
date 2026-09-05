@@ -1,0 +1,26 @@
+.pytest_cache/
+.claude/
+.runall/
+logs/
+/bin/
+taskCloudService/task_cloud.db
+
+# 本机覆盖（含密钥），禁止入库
+**/config.local.yaml
+**/*.local.yaml
+**/step-full-cos.local.yaml
+billing/wechatPay/*.pem
+__pycache__/
+*.pyc
+# macOS Finder
+.DS_Store
+._.DS_Store
+._*
+# taskChromePlugin 扩展签名密钥（dev），禁止入库
+taskChromePlugin/*.pem
+# Secret env files (meta gitignore parity — OPT-20260827-017)
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template

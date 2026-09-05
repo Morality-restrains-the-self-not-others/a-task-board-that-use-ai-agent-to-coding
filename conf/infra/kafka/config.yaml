@@ -1,0 +1,7 @@
+# Kafka 连接地址。默认 10.2.150.68（生产内网）；本地开发可设 INFRA_HOST=127.0.0.1。
+# 参见 .ai/01_project_constraints/39_network_topology_aware_config.md
+# SSOT：dockerInfra/kafka/docker-compose.yml 的 KAFKA_ADVERTISED_LISTENERS 消费本 host
+# （PLAINTEXT_HOST://<host>:9093），禁止再硬编码 localhost/127.0.0.1。
+host: ${INFRA_HOST:-10.2.150.68}
+kafkaUiPort: 18080
+logging.log_file: logs/infra/docker-kafka.log

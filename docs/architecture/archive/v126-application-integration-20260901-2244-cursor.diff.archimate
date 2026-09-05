@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v126 变迁 (v125→v126)" id="id-v126aidiff01">
+  <folder name="Application" id="id-v126ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126-app-fe-create" name="taskFE CreateTask/Fork [MODIFIED v126]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126-app-gw" name="taskGateway APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126-app-proj" name="taskProjectService [MODIFIED v126]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v126-app-task" name="taskTaskService [MODIFIED v126]"/>
+    <element xsi:type="archimate:DataObject" id="id-v126-data-pgrant" name="project_git_oauth_grant"/>
+    <element xsi:type="archimate:DataObject" id="id-v126-data-cgrant" name="comment repo_identities oauth [MODIFIED v126]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v126ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v126-pl-v125" name="Plateau v125 ImageMarket"/>
+    <element xsi:type="archimate:Plateau" id="id-v126-pl-v126" name="Plateau v126 项目 L2 seed"/>
+    <element xsi:type="archimate:Gap" id="id-v126-gap" name="Gap: 创建任务只认 session grant_ticket"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v126-wp" name="WP-project-l2-seed-autorun-comment"/>
+  </folder>
+  <folder name="Relations" id="id-v126ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v126-rel-fe-gw" source="id-v126-app-fe-create" target="id-v126-app-gw" name="validate-git-repos + create task"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v126-rel-gw-proj" source="id-v126-app-gw" target="id-v126-app-proj" name="validate with project_id"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v126-rel-gw-task" source="id-v126-app-gw" target="id-v126-app-task" name="POST task auto_run"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v126-rel-task-proj" source="id-v126-app-task" target="id-v126-app-proj" name="GET internal grant [NEW v126]"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v126-rel-proj-pgrant" source="id-v126-app-proj" target="id-v126-data-pgrant" name="lookup"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v126-rel-task-cgrant" source="id-v126-app-task" target="id-v126-data-cgrant" name="stamp L2 seed"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v126-rel-pl-gap" source="id-v126-pl-v125" target="id-v126-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v126-rel-wp-gap" source="id-v126-wp" target="id-v126-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v126-rel-wp-pl" source="id-v126-wp" target="id-v126-pl-v126"/>
+  </folder>
+  <folder name="Views" id="id-v126ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v126-view-mig" name="架构变迁 v125→v126 — 项目 L2 种下自动运行评论">
+      <child xsi:type="archimate:DiagramObject" id="id-v126-do-pl125" archimateElement="id-v126-pl-v125">
+        <bounds x="48" y="48" width="260" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126-c-pl-gap" source="id-v126-do-pl125" target="id-v126-do-gap" archimateRelationship="id-v126-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126-do-gap" targetConnections="id-v126-c-pl-gap id-v126-c-wp-gap" archimateElement="id-v126-gap">
+        <bounds x="340" y="48" width="480" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126-do-wp" archimateElement="id-v126-wp">
+        <bounds x="340" y="140" width="480" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126-c-wp-gap" source="id-v126-do-wp" target="id-v126-do-gap" archimateRelationship="id-v126-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126-c-wp-pl" source="id-v126-do-wp" target="id-v126-do-pl126" archimateRelationship="id-v126-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126-do-pl126" targetConnections="id-v126-c-wp-pl" archimateElement="id-v126-pl-v126">
+        <bounds x="860" y="140" width="280" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v126-view-topo" name="v126 Target — 项目 L2 seed 自动运行评论">
+      <child xsi:type="archimate:DiagramObject" id="id-v126-do-fe" archimateElement="id-v126-app-fe-create">
+        <bounds x="48" y="80" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126-c-fe-gw" source="id-v126-do-fe" target="id-v126-do-gw" archimateRelationship="id-v126-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126-do-gw" targetConnections="id-v126-c-fe-gw" archimateElement="id-v126-app-gw">
+        <bounds x="300" y="80" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126-c-gw-proj" source="id-v126-do-gw" target="id-v126-do-proj" archimateRelationship="id-v126-rel-gw-proj"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126-c-gw-task" source="id-v126-do-gw" target="id-v126-do-task" archimateRelationship="id-v126-rel-gw-task"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126-do-proj" targetConnections="id-v126-c-gw-proj id-v126-c-task-proj" archimateElement="id-v126-app-proj">
+        <bounds x="540" y="48" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126-c-proj-pgrant" source="id-v126-do-proj" target="id-v126-do-pgrant" archimateRelationship="id-v126-rel-proj-pgrant"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126-do-task" targetConnections="id-v126-c-gw-task" archimateElement="id-v126-app-task">
+        <bounds x="540" y="140" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126-c-task-proj" source="id-v126-do-task" target="id-v126-do-proj" archimateRelationship="id-v126-rel-task-proj"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v126-c-task-cgrant" source="id-v126-do-task" target="id-v126-do-cgrant" archimateRelationship="id-v126-rel-task-cgrant"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126-do-pgrant" targetConnections="id-v126-c-proj-pgrant" archimateElement="id-v126-data-pgrant">
+        <bounds x="800" y="48" width="220" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v126-do-cgrant" targetConnections="id-v126-c-task-cgrant" archimateElement="id-v126-data-cgrant">
+        <bounds x="800" y="140" width="260" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

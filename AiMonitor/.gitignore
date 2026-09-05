@@ -1,0 +1,23 @@
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+# Python cache
+__pycache__/
+# Docker volumes
+grafana/data/
+prometheus/data/
+/bin/
+# Secret env files (meta gitignore parity — OPT-20260827-017)
+.env.*
+!.env.example
+!.env.sample
+!.env.template

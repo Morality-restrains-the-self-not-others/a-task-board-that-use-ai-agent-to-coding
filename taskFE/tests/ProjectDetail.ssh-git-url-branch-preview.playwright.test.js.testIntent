@@ -1,0 +1,9 @@
+# 测试意图：ProjectDetail SSH Git 仓库分支预览
+
+## 背景
+项目详情页 Git 仓库可能配置为 `git@host:path` SSH 格式。OAuth 授权状态（已授权）与分支列表预览使用不同代码路径；修复前会出现「已授权」与「SSH Git URLs cannot be checked...」并存。
+
+## 验收点
+1. `token_available`（已授权）时，点击「分支列表预览」不应出现 SSH 凭证错误文案。
+2. branches API 对 SSH URL 应规范化后用 OAuth token 查询（返回分支或标准授权提示）。
+3. 单元测试覆盖 Go/Python URL 规范化；Playwright 覆盖 UI 与 API 契约。

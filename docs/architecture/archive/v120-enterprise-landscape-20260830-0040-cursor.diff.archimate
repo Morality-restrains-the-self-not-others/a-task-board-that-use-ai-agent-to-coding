@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v120 变迁 (v118→v120)" id="id-v120eldiff01">
+  <folder name="Business" id="id-v120el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v120-el-editor" name="工作空间成员 / 项目成员"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v120-el-edit" name="修改标题或正文"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v120-el-view" name="查阅历史版本 [NEW v120]"/>
+  </folder>
+  <folder name="Application" id="id-v120el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v120-el-fe" name="taskFE [MODIFIED v120]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v120-el-task" name="taskTaskService [MODIFIED v120]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v120-el-proj" name="taskProjectService [MODIFIED v120]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v120el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v120-el-pl118" name="Plateau v118"/>
+    <element xsi:type="archimate:Plateau" id="id-v120-el-pl120" name="Plateau v120"/>
+    <element xsi:type="archimate:Gap" id="id-v120-el-gap" name="Gap: 标题正文只留最新值"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v120-el-wp" name="WP-entity-revisions"/>
+  </folder>
+  <folder name="Relations" id="id-v120el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v120-el-rel-as1" source="id-v120-el-editor" target="id-v120-el-edit"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v120-el-rel-as2" source="id-v120-el-editor" target="id-v120-el-view"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v120-el-rel-ed-fe" source="id-v120-el-editor" target="id-v120-el-fe" name="edit / open history"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v120-el-rel-fe-task" source="id-v120-el-fe" target="id-v120-el-task" name="PATCH task / GET revisions"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v120-el-rel-fe-proj" source="id-v120-el-fe" target="id-v120-el-proj" name="PATCH project / GET revisions"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v120-el-rel-pl-gap" source="id-v120-el-pl118" target="id-v120-el-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v120-el-rel-wp-gap" source="id-v120-el-wp" target="id-v120-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v120-el-rel-wp-pl" source="id-v120-el-wp" target="id-v120-el-pl120"/>
+  </folder>
+  <folder name="Views" id="id-v120el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v120-el-view-mig" name="架构变迁 v118→v120 — task-project-entity-revisions">
+      <child xsi:type="archimate:DiagramObject" id="id-v120-el-do-pl118" archimateElement="id-v120-el-pl118">
+        <bounds x="48" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-el-c-pl-gap" source="id-v120-el-do-pl118" target="id-v120-el-do-gap" archimateRelationship="id-v120-el-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-el-do-gap" targetConnections="id-v120-el-c-pl-gap id-v120-el-c-wp-gap" archimateElement="id-v120-el-gap">
+        <bounds x="300" y="48" width="320" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-el-do-wp" archimateElement="id-v120-el-wp">
+        <bounds x="300" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-el-c-wp-gap" source="id-v120-el-do-wp" target="id-v120-el-do-gap" archimateRelationship="id-v120-el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-el-c-wp-pl" source="id-v120-el-do-wp" target="id-v120-el-do-pl120" archimateRelationship="id-v120-el-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-el-do-pl120" targetConnections="id-v120-el-c-wp-pl" archimateElement="id-v120-el-pl120">
+        <bounds x="680" y="160" width="200" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v120-el-view-topo" name="v120 Target — 查阅内容历史">
+      <child xsi:type="archimate:DiagramObject" id="id-v120-el-do-editor" archimateElement="id-v120-el-editor">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-el-c-as1" source="id-v120-el-do-editor" target="id-v120-el-do-edit" archimateRelationship="id-v120-el-rel-as1"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-el-c-as2" source="id-v120-el-do-editor" target="id-v120-el-do-view" archimateRelationship="id-v120-el-rel-as2"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-el-c-ed-fe" source="id-v120-el-do-editor" target="id-v120-el-do-fe" archimateRelationship="id-v120-el-rel-ed-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-el-do-edit" targetConnections="id-v120-el-c-as1" archimateElement="id-v120-el-edit">
+        <bounds x="280" y="16" width="180" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-el-do-view" targetConnections="id-v120-el-c-as2" archimateElement="id-v120-el-view">
+        <bounds x="280" y="80" width="180" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-el-do-fe" targetConnections="id-v120-el-c-ed-fe" archimateElement="id-v120-el-fe">
+        <bounds x="500" y="48" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-el-c-fe-task" source="id-v120-el-do-fe" target="id-v120-el-do-task" archimateRelationship="id-v120-el-rel-fe-task"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v120-el-c-fe-proj" source="id-v120-el-do-fe" target="id-v120-el-do-proj" archimateRelationship="id-v120-el-rel-fe-proj"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-el-do-task" targetConnections="id-v120-el-c-fe-task" archimateElement="id-v120-el-task">
+        <bounds x="680" y="16" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v120-el-do-proj" targetConnections="id-v120-el-c-fe-proj" archimateElement="id-v120-el-proj">
+        <bounds x="680" y="80" width="200" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

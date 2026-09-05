@@ -1,0 +1,7 @@
+intents:
+  1_execute_due:
+    host: 0.0.0.0
+    port: 18068
+    groupId: task-events-user-account-deletion-execute-scan-1-execute-due
+    events:
+    - USER_ACCOUNT_DELETION_EXECUTE_SCAN

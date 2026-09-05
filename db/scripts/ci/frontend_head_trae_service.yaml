@@ -1,0 +1,23 @@
+# SSOT: 入口 HTML → trae-service meta content
+# Rule: .ai/01_project_constraints/26_frontend_head_trae_service.md
+entries:
+  - path: taskAiProvider/frontend/index.html
+    service: taskAiProvider
+  - path: task2app/front_project/app/src/index.html
+    service: task2app
+  - path: task2app/Saas_project/frontend_app/templates/frontend/spa.html
+    service: task2app
+  - path: trae-agent/onlineServiceJS/static/index.html
+    service: onlineServiceJS
+  - path: trae-agent/onlineServiceJS/static/render-hints.html
+    service: onlineServiceJS
+  - path: runAll/src/status.html
+    service: runAll
+  - path: valueStream/src/index.html
+    service: valueStream
+  - path: taskChromePlugin/popup/popup.html
+    service: taskChromePlugin
+  - path: taskChromePlugin/panel/panel.html
+    service: taskChromePlugin
+  - path: taskChromePlugin/devtools/devtools.html
+    service: taskChromePlugin

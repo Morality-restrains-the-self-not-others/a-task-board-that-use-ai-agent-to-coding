@@ -1,0 +1,69 @@
+' @title: 推荐资格服务号关注闸门（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 112
+' @iteration: referral-mp-follow-gate
+' @author: cursor
+' @based_on: v111 (v111-application-integration-20260825-2249-cursor.puml)
+' @updated: 2026-08-26 09:50
+' @description: 微信服务号 subscribe 回调写入 wechat_identity mp 别名；申请前须绑定
+
+@startuml
+!include <archimate/Archimate>
+
+title v112 — 服务号关注闸门 2026-08-26 09:50
+
+Application_Component(wxmp, "微信服务号")
+note right of wxmp
+  AppID = 支付 appid
+  @author: cursor @2026-08-26 09:50
+end note
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  QR 闸门后再展示申请表
+  @author: cursor @2026-08-26 09:50
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+note right of gw
+  mp/callback public；
+  follow-status token
+  @author: cursor @2026-08-26 09:50
+end note
+
+Application_Component(auth, "taskAuth")
+note right of auth
+  验签；unionId 锁定；
+  upsert app_key=mp
+  @author: cursor @2026-08-26 09:50
+end note
+
+Application_Component(ref, "taskReferral")
+note right of ref
+  apply 须 mp 别名
+  @author: cursor @2026-08-26 09:50
+end note
+
+Application_DataObject(ident, "wechat_identity")
+Application_DataObject(pend, "auth_wechat_mp_subscribe_pending")
+Business_Event(evSub, "WECHAT_MP_SUBSCRIBED")
+
+Rel_Flow(wxmp, gw, "subscribe XML")
+Rel_Flow(gw, auth, "mp/callback")
+Rel_Flow(taskFE, gw, "follow-status / apply")
+Rel_Flow(gw, ref, "referral apply/status")
+Rel_Access(auth, ident, "upsert mp alias")
+Rel_Access(auth, pend, "unmatched subscribe")
+Rel_Flow(auth, evSub, "发布")
+Rel_Flow(ref, auth, "read mp bound via authDB")
+
+Implementation_Plateau(plateauV111, "Plateau v111")
+Implementation_Plateau(plateauV112, "Plateau v112 服务号关注闸门")
+Implementation_Gap(gapMp, "Gap: 无服务号回调，分账缺 mp openid")
+Implementation_WorkPackage(wpMp, "WP-referral-mp-follow-gate")
+Rel_Triggering(plateauV111, gapMp, "identifies")
+Rel_Realization(wpMp, gapMp, "closes")
+Rel_Realization(wpMp, plateauV112, "delivers")
+
+@enduml

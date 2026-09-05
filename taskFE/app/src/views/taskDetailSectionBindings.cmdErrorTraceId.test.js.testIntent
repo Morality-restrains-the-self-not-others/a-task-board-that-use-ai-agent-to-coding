@@ -1,0 +1,6 @@
+# taskDetailSectionBindings.cmdErrorTraceId.test.js
+
+- **目标**：任务详情评论区绑定不得丢掉 `layerGraphCmdErrorTraceId`，否则 ztree 命令失败红字无法挂 `data-traceId`，用户只看到裸 `HTTP 403`。
+- **关键断言**：`useTaskDetailCommentsSectionBindings` 把 cmd error 文案与 traceId 写入 `commentsSectionProps`；`TaskDetail.vue` 仍解构并传入该字段。
+- **破坏信号**：bindings 漏抄 `layerGraphCmdErrorTraceId`，或 TaskDetail 不再把它交给 comments 绑定。
+- **回归**：改 `taskDetailSectionBindings.js` / `TaskDetail.vue` 评论区 props 后跑本文件。

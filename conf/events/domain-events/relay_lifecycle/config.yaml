@@ -1,0 +1,36 @@
+intents:
+  1_append_token_audit:
+    host: 0.0.0.0
+    port: 18039
+    groupId: task-events-relay-lifecycle-1-append-token-audit
+    events:
+    - RELAY_REGISTER_ATTEMPTED
+    - RELAY_REGISTER_SUCCEEDED
+    - RELAY_REGISTER_FAILED
+    - RELAY_START_ACCEPTED
+    - RELAY_START_ATTEMPTED
+    - RELAY_START_DISPATCH_SUCCEEDED
+    - RELAY_START_DISPATCH_FAILED
+    - RELAY_STOP_REQUESTED
+    - RELAY_STOP_SUCCEEDED
+    - RELAY_STOP_FAILED
+  2_open_runtime_session:
+    host: 0.0.0.0
+    port: 18040
+    groupId: task-events-relay-lifecycle-2-open-runtime-session
+    events:
+    - RELAY_START_ACCEPTED
+  3_clear_reachability:
+    host: 0.0.0.0
+    port: 18041
+    groupId: task-events-relay-lifecycle-3-clear-reachability
+    events:
+    - RELAY_STOP_SUCCEEDED
+  4_relay_workflow_update:
+    host: 0.0.0.0
+    port: 18042
+    groupId: task-events-relay-lifecycle-4-relay-workflow-update
+    events:
+    - RELAY_START_ACCEPTED
+    - RELAY_START_ATTEMPTED
+    - RELAY_START_DISPATCH_FAILED

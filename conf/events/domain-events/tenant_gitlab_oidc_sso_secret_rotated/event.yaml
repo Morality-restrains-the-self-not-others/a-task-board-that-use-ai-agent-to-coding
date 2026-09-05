@@ -1,0 +1,2 @@
+event_type: TenantGitLabOidcSsoSecretRotated
+topic: tenant-gitlab-oidc-sso-secret-rotated

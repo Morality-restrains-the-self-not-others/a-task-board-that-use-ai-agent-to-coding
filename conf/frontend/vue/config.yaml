@@ -1,0 +1,27 @@
+allowedHost: ${scheme}://${baseDomain}
+allowedExtendHosts:
+- '*'
+- ${baseDomain}
+- ${subdomains.www}
+host: 0.0.0.0
+port: 4000
+# 公网 / runAll：Docker nginx 常驻 :4000；Vite 只负责 build。vite-preview 仅本机对照。
+serve: nginx
+releaseKeep: 2
+nginxImage: nginx:1.27-alpine
+memLimit: 128m
+logging:
+  log_file: logs/taskFE/frontend.log
+publicBaseUrl: ${scheme}://${subdomains.www}
+# 空 = 浏览器同源 /api（边缘 nginx 或 Vite proxy 转发到 gateway）；多域名入口共用
+apiBaseUrl: ''
+# 公网入口 Origin 白名单（CSRF / CORS / 文档）
+publicEntryOrigins:
+- ${scheme}://${subdomains.www}
+- ${scheme}://${baseDomain}
+- http://127.0.0.1:4000
+- http://localhost:4000
+# 公网 FAQ 等展示用联系邮箱（非 SMTP 发件人；SMTP 见 conf/core/email）
+contactEmail: author@example.com
+# 工信部 ICP 备案号（页脚展示；空字符串则不渲染链接）
+icpBeian: 闽ICP备19027308号-4

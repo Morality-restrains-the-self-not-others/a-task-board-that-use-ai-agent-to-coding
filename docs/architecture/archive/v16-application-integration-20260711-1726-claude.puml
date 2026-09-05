@@ -1,0 +1,68 @@
+' @title: Application Integration — 多入口同源 API
+' @view: application-integration
+' @status: target
+' @version: v16
+' @author: claude
+' @based_on: v15-application-integration-20260710-2009-claude
+' @updated: 2026-07-11 17:26
+' @description: 多域名/IP 边缘同源反代；Vue API_BASE_URL 默认同源；Vite /api 代理
+' @iteration: multi-entry-same-origin-api
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v16 — 多入口同源 API (2026-07-11 17:26)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v16 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v16 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v16 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件 |
+endlegend
+
+' ── Application ──
+Application_Component(browser, "Browser")
+Application_Component(vue, "Vue Frontend")
+Application_Component(gw, "task-gateway\nAPISIX :18081")
+Application_Component(be, "saas-backend\nDjango :8001")
+
+' ── Technology ──
+Technology_Node(edge, "Edge nginx\n(daydaymoney / IP / …)")
+Technology_Node(vite, "Vite :4000\n(+ /api proxy)")
+
+note right of edge
+  [NEW v16] 每入口同构：
+  / → Vue
+  /api/ → gateway
+  Host + X-Forwarded-Proto
+  @author: claude @2026-07-11 17:26
+end note
+
+note top of vue
+  [MODIFIED v16]
+  API_BASE_URL 默认 ''
+  请求同源 /api/...
+  @author: claude @2026-07-11 17:26
+end note
+
+note bottom of vite
+  [MODIFIED v16]
+  server.proxy /api → gateway
+  （直连 :4000 兜底）
+end note
+
+Application_Component(absApi, "绝对 http://IP:18081\nAPI 基址")
+note top of absApi
+  [DEPRECATED v16]
+  HTTPS 入口下触发 Mixed Content
+  @author: claude @2026-07-11 17:26
+end note
+
+Rel_Flow(browser, edge, "HTTPS/HTTP 任意入口")
+Rel_Flow(edge, vite, "/ 静态与 HMR")
+Rel_Flow(edge, gw, "/api/ 同源反代")
+Rel_Flow(vite, gw, "dev proxy /api")
+Rel_Flow(gw, be, "上游 API")
+Rel_Flow(browser, absApi, "🔴 废弃路径")
+
+@enduml

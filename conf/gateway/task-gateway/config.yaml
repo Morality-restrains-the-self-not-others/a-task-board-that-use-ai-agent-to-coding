@@ -1,0 +1,43 @@
+host: 0.0.0.0
+tlsPort: 18444
+httpPort: 18081
+logging:
+  log_file: logs/task-gateway/task-gateway.log
+publicBase: ${subdomains.gateway}
+adminPort: 9180
+enabled: true
+gatewayInternalSecret: ""
+docker:
+  # Stable Docker→host alias (extra_hosts host-gateway). Do not hardcode bridge
+  # IPs like 172.23.0.1 — compose network subnets change and break readiness.
+  upstreamHost: host.docker.internal
+tls:
+  certFile: taskGateway/certs/dev-gateway.pem
+  keyFile: taskGateway/certs/dev-gateway-key.pem
+cors:
+  allowedOrigins:
+  - http://127.0.0.1:4000
+  - http://localhost:4000
+  - ${scheme}://${subdomains.www}
+  - ${scheme}://${baseDomain}
+  - http://127.0.0.1:3000
+  - http://localhost:3000
+  # Grafana Daydaymoney 插件经 INFRA_HOST 访问时的 Origin（与 localhost:3000 不同源）
+  # 解析顺序：环境变量 INFRA_HOST → conf/infra/docker-infra/config.yaml infraHost → localhost
+  - http://${INFRA_HOST}:3000
+  allowCredentials: true
+rateLimit:
+  globalPerMinute: 3000
+  loginPerMinute: 30
+auth:
+  forwardAuthPath: /api/internal/gateway/forward-auth/
+  taskauthInternalSecret: ""
+docs:
+  enabled: true
+  portalPath: /gateway/docs/
+  schemaPathPrefix: /gateway/openapi/
+  portalUpstream:
+    host: docs-portal
+    port: 80
+    nativeHost: 127.0.0.1
+    nativePort: 9088

@@ -1,0 +1,1186 @@
+openapi: 3.0.3
+info:
+  title: taskBill Internal API
+  description: '运维与服务间可见的内部计费接口（请求/响应字段按 handler 整理）。
+
+    访问：`/api/swagger-internal/` 或网关 `/gateway/ops/docs/taskBill/`（token）。'
+  version: 1.4.0
+servers:
+- url: http://127.0.0.1:8004
+  description: taskBill 直连（运维）
+paths:
+  /api/internal/taskbill/pricing-packages/:
+    get:
+      summary: endpoint (/api/internal/taskbill/pricing-packages/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/internal/taskbill/refund-policy/:
+    get:
+      summary: 内部 — 获取退款申请开关
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: 策略
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+        '403':
+          description: forbidden
+    put:
+      summary: 内部 — 更新退款申请开关
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled:
+                  type: boolean
+                actor_user_id:
+                  type: string
+      responses:
+        '200':
+          description: 已更新
+        '400':
+          description: 参数错误
+        '403':
+          description: forbidden
+  /api/internal/taskbill/refund-applications/:
+    get:
+      summary: 内部 — 退款申请列表
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [pending, approved, rejected]
+      responses:
+        '200':
+          description: 申请列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+        '403':
+          description: forbidden
+  /api/internal/taskbill/invoice-applications/:
+    get:
+      summary: 内部 — 开票申请列表
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [pending, approved, rejected, cancelled]
+      - name: id
+        in: query
+        description: 申请 ID 等值过滤（OPT-20260823-045）
+        schema:
+          type: string
+      - name: tenant_id
+        in: query
+        description: 租户 ID 等值过滤（OPT-20260823-045）
+        schema:
+          type: string
+      - name: order_id
+        in: query
+        description: 订单 ID 等值过滤（OPT-20260823-045）
+        schema:
+          type: string
+      - name: buyer_name
+        in: query
+        description: 抬头名称模糊过滤（OPT-20260823-045）
+        schema:
+          type: string
+      responses:
+        '200':
+          description: 申请列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+        '403':
+          description: forbidden
+  /api/internal/taskbill/invoice-applications/{application_id}/approve/:
+    post:
+      summary: 内部 — 批准开票并调用微信开具
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: application_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reviewer_user_id:
+                  type: string
+                note:
+                  type: string
+      responses:
+        '200':
+          description: 已受理开具
+        '400':
+          description: 状态无效、发票号过长、或订单金额为 0
+        '403':
+          description: forbidden
+  /api/internal/taskbill/invoice-applications/{application_id}/reject/:
+    post:
+      summary: 内部 — 驳回开票申请
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: application_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reviewer_user_id:
+                  type: string
+                note:
+                  type: string
+      responses:
+        '200':
+          description: 已拒绝
+        '400':
+          description: 状态无效
+        '403':
+          description: forbidden
+  /api/internal/taskbill/refund-applications/{application_id}/approve/:
+    post:
+      summary: 内部 — 批准退款申请
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: application_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reviewer_user_id:
+                  type: string
+                note:
+                  type: string
+      responses:
+        '200':
+          description: 已批准并完成原路退
+        '400':
+          description: 状态无效
+        '403':
+          description: forbidden
+  /api/internal/taskbill/refund-applications/{application_id}/reject/:
+    post:
+      summary: 内部 — 驳回退款申请
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: application_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reviewer_user_id:
+                  type: string
+                note:
+                  type: string
+      responses:
+        '200':
+          description: 已驳回并解冻
+        '400':
+          description: 状态无效
+        '403':
+          description: forbidden
+  /api/internal/taskbill/users/:
+    get:
+      summary: 内部 — 用户注销阻断项前缀路由
+      description: 实际处理路径为 `/api/internal/taskbill/users/{user_id}/account-deletion-blockers/`。
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: blockers 列表
+        '403':
+          description: forbidden
+        '404':
+          description: 未找到
+  /api/internal/taskbill/accounts/:
+    get:
+      summary: 内部 — 账户查询前缀路由（GET /accounts/{tenant_id}）
+      description: 实际处理路径为 `/api/internal/taskbill/accounts/{tenant_id}`。
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: 见 /accounts/{tenant_id}
+        '403':
+          description: 缺内部密钥
+        '404':
+          description: 未找到
+  /api/internal/taskbill/charge-server-start/:
+    post:
+      summary: 任务服务器启动扣费
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tenant_id
+              properties:
+                tenant_id:
+                  type: string
+                cloud_event_id:
+                  type: string
+                task_id:
+                  type: string
+                workspace_id:
+                  type: string
+                user_id:
+                  type: string
+                project_id:
+                  type: string
+      responses:
+        '200':
+          description: 扣费成功
+        '402':
+          description: 余额不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsufficientBalance'
+        '403':
+          description: forbidden
+  /api/internal/taskbill/charge-gitlab-traffic/:
+    post:
+      summary: GitLab 出站流量计量（workhorse written_bytes SSOT；按实际字节抬高 traffic_used_gb；不按 1GB 向上取整；CI/同区域内网不计）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: []
+              properties:
+                tenant_id:
+                  type: string
+                  description: 可省略；省略时按 project_path 解析租户（tenant-{id} 或用户名归集）
+                project_path:
+                  type: string
+                  description: GitLab 项目全路径（workhorse uri 解析）；与 tenant_id 二选一
+                gitlab_username:
+                  type: string
+                from_ci:
+                  type: boolean
+                  description: CI job 下载不计流量（与闸门 CI_SKIP 对齐）
+                gb:
+                  type: number
+                bytes:
+                  type: number
+                  description: 出站字节（GitLab workhorse written_bytes）；与 gb 二选一，优先 bytes
+                repo_url:
+                  type: string
+                  description: 克隆 URL；按 gitlab_web_url 主机解析 region，非平台 GitLab 跳过
+                region:
+                  type: string
+                  description: 区域 slug（shipper 来自 TRAE_GITLAB_REGION）；禁止缺省写入 defaultGitlabRegion
+                is_intranet:
+                  type: boolean
+                  description: 同区域内网则不计费
+                same_region_intranet:
+                  type: boolean
+                idempotency_key:
+                  type: string
+                  description: "workhorse correlation_id，建议前缀 wh:"
+                task_id:
+                  type: string
+                workspace_id:
+                  type: string
+                user_id:
+                  type: string
+                project_id:
+                  type: string
+      responses:
+        '200':
+          description: 扣费成功或跳过
+        '400':
+          description: 参数错误
+        '402':
+          description: 余额不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsufficientBalance'
+        '403':
+          description: forbidden
+  /api/internal/taskbill/gitlab-traffic-gate/:
+    post:
+      summary: GitLab 出站流量闸门（GitAccess 调用；只读判定）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: string
+                project_path:
+                  type: string
+                  description: tenant-{id}/repo
+                region:
+                  type: string
+                is_intranet:
+                  type: boolean
+                from_ci:
+                  type: boolean
+      responses:
+        '200':
+          description: allowed 与 code
+        '403':
+          description: forbidden
+    get:
+      summary: GitLab 出站流量闸门（查询参数）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: tenant_id
+        in: query
+        schema:
+          type: string
+      - name: project_path
+        in: query
+        schema:
+          type: string
+      - name: region
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: allowed 与 code
+        '403':
+          description: forbidden
+  /api/internal/taskbill/report-gitlab-disk-usage/:
+    post:
+      summary: 上报租户系统内建 GitLab 已用磁盘
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tenant_id
+              - disk_used_bytes
+              properties:
+                tenant_id:
+                  type: string
+                disk_used_bytes:
+                  type: integer
+                  format: int64
+                  minimum: 0
+      responses:
+        '200':
+          description: 上报成功
+        '400':
+          description: 参数错误
+        '403':
+          description: forbidden
+  /api/internal/taskbill/gitlab-resources/:
+    get:
+      summary: 列出已有 GitLab 资源配额行的租户
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: results 数组
+        '403':
+          description: forbidden
+  /api/internal/taskbill/sync-gitlab-disk-quotas/:
+    post:
+      summary: 同步磁盘已用量（返回 enforce 计划）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: string
+                tenant_ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: synced / enforce 明细
+        '403':
+          description: forbidden
+  /api/internal/taskbill/consume-task-post-quota/:
+    post:
+      summary: 消耗任务帖预购配额并记录消费流水
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tenant_id
+              - task_id
+              properties:
+                tenant_id:
+                  type: string
+                task_id:
+                  type: string
+                workspace_id:
+                  type: string
+                user_id:
+                  type: string
+                project_id:
+                  type: string
+                idempotency_key:
+                  type: string
+      responses:
+        '200':
+          description: 配额消耗成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  transaction_id:
+                    type: string
+                  account_id:
+                    type: string
+                  cost_cents:
+                    type: integer
+                  quota_consumed:
+                    type: integer
+        '402':
+          description: 任务帖配额不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsufficientBalance'
+        '403':
+          description: Internal Secret 无效
+  /api/internal/taskbill/consume-task-post-renewal/:
+    post:
+      summary: 续存任务帖 — 消耗 1 创建帖次数并记录消费流水（返回新到期时间）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tenant_id
+              - task_id
+              properties:
+                tenant_id:
+                  type: string
+                task_id:
+                  type: string
+                workspace_id:
+                  type: string
+                user_id:
+                  type: string
+                project_id:
+                  type: string
+                current_expires_at:
+                  type: string
+                  description: 当前到期时间（可为空；续存 = max(now, 当前到期日) + 12 个月）
+                idempotency_key:
+                  type: string
+      responses:
+        '200':
+          description: 续存成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  transaction_id:
+                    type: string
+                  account_id:
+                    type: string
+                  cost_cents:
+                    type: integer
+                  quota_consumed:
+                    type: integer
+                  expires_at:
+                    type: string
+                    description: 续存后的到期时间（max(now, current_expires_at) + 12 个月）
+        '402':
+          description: 创建帖次数不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsufficientBalance'
+        '403':
+          description: Internal Secret 无效
+  /api/internal/taskbill/check-server-start-balance/:
+    post:
+      summary: 校验启动服务器余额是否足够
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tenant_id
+              properties:
+                tenant_id:
+                  type: string
+      responses:
+        '200':
+          description: 余额足够
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+        '402':
+          description: 余额不足
+  /api/internal/taskbill/expire-resource-grants/:
+    post:
+      summary: 运维触发资源赠送到期清零
+      description: 2026-07-26 新增（资源订单系统 resource_grant 表到期处理）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: string
+      responses:
+        '200':
+          description: 已执行
+        '403':
+          description: forbidden
+  /api/internal/taskbill/admin-grant-resources/:
+    post:
+      summary: 管理员赠送资源配额
+      description: 2026-07-26 新增（资源订单系统管理员赠送入口）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: string
+                user_id:
+                  type: string
+                resource_type:
+                  type: string
+                amount:
+                  type: integer
+      responses:
+        '200':
+          description: 赠送成功
+        '403':
+          description: forbidden
+  /api/internal/taskbill/backfill-grant-orders/:
+    post:
+      summary: 补建已有赠送资源的订单记录
+      description: 幂等：为已有 billing_resource_grant 但缺少对应订单的租户补建 admin_grant 订单。2026-07-31 新增。
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: 补建结果（orders_created 为本次创建的订单数）
+        '403':
+          description: forbidden
+  /api/internal/taskbill/get-or-create-account/:
+    post:
+      summary: 获取或创建计费账户
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - tenant_id
+              properties:
+                tenant_id:
+                  type: string
+      responses:
+        '200':
+          description: 账户
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccountResponse'
+  /api/internal/taskbill/referral/consumption-monthly-totals/:
+    post:
+      summary: 按用户汇总本月消费（引荐分佣）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: 用户→积分合计
+  /api/internal/taskbill/referral/sync-edge/:
+    post:
+      summary: 同步一级引荐关系边（供消费计提）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [referrer_user_id, referred_user_id, referrer_tenant_id]
+              properties:
+                referrer_user_id:
+                  type: string
+                referred_user_id:
+                  type: string
+                referrer_tenant_id:
+                  type: string
+                bound_at:
+                  type: string
+      responses:
+        '200':
+          description: ok
+  /api/internal/taskbill/referral/disable-eligibility/:
+    post:
+      summary: 取消推荐人分成资格（边置 ineligible 并作废待结算计提）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [referrer_user_id]
+              properties:
+                referrer_user_id:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: ok
+        '400':
+          description: missing referrer_user_id or invalid json
+        '403':
+          description: missing internal secret
+        '405':
+          description: method not allowed
+  /api/internal/taskbill/referral/commission-rate/:
+    get:
+      summary: 查询推荐分成比例（只来自微信支付查询接口；非 200 返回 503，禁止 conf/本地百分比伪装）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: commission_rate / commission_rate_display / source=wechat_merchant_config
+        '403':
+          description: missing internal secret
+        '405':
+          description: method not allowed
+        '503':
+          description: wechat query unavailable; must not return 5% or 30% as success
+  /api/internal/taskbill/referral/commission-summary/:
+    post:
+      summary: 引荐人待结算/已结算积分汇总
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [referrer_user_id]
+              properties:
+                referrer_user_id:
+                  type: string
+      responses:
+        '200':
+          description: pending/settled points and items
+  /api/internal/taskbill/referral/settle-due/:
+    post:
+      summary: 结算到期的引荐分成（满 15 日）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                now:
+                  type: string
+      responses:
+        '200':
+          description: settled count
+  /api/internal/taskbill/profit-sharing/process-pending/:
+    post:
+      summary: 一次性扫描到达时机的待分账订单并发起微信分账（OPT-20260816-029）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: ok（微信未 live 时 skipped=true）
+  /api/internal/taskbill/profit-sharing/receivers/ensure/:
+    post:
+      summary: 将已获推荐资格用户登记为微信分账接收方（幂等）
+      description: |
+        调用微信 POST /v3/profitsharing/receivers/add（普通商户 APIv3）。
+        本地资格不等于商户平台接收方；本接口按 user_id 幂等登记。
+        PERSONAL_OPENID 使用 taskAuth wechat_identity 的 openid，appid 取该身份所属应用（须已绑定商户号）。
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id:
+                  type: string
+      responses:
+        '200':
+          description: registered / pending_openid / skipped_not_live / failed
+        '400':
+          description: user_id required
+        '403':
+          description: forbidden
+  /api/internal/taskbill/profit-sharing/receivers/delete/:
+    post:
+      summary: 取消分账资格后删除微信分账接收方（best-effort）
+      description: |
+        调用微信 POST /v3/profitsharing/receivers/delete 移除商户后台的接收方。
+        taskReferral 在 revoke 成功后调用；失败只打 warn 不阻断资格撤销。
+        无已登记接收方或未 live 时视为已处理（status=deleted）。
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id:
+                  type: string
+      responses:
+        '200':
+          description: deleted / failed（含 reason）
+        '400':
+          description: user_id required
+        '403':
+          description: forbidden
+  /api/internal/taskbill/referral/void/:
+    post:
+      summary: 作废待结算分录（结算前退款）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [source_txn_id]
+              properties:
+                source_txn_id:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: ok
+  /api/internal/taskbill/referral/config/:
+    get:
+      summary: 引荐佣金配置
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: 配置（settle_delay_days；分成比例固定 5%，不从库读取）
+    put:
+      summary: 更新引荐佣金配置
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                settle_delay_days:
+                  type: integer
+                  minimum: 8
+                referral_rate_percent:
+                  type: integer
+                  description: 已忽略；分成比例固定 5%，不从请求体或配置读取
+      responses:
+        '200':
+          description: 已更新
+  /api/internal/taskbill/accounts/{tenant_id}:
+    get:
+      summary: 内部 — 只读查询 BillingAccount
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: tenant_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 租户 ID（数字字符串）
+      responses:
+        '200':
+          description: 账户详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account: &id001
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      tenant:
+                        type: string
+                      points:
+                        type: integer
+                      created_at:
+                        type: string
+                      updated_at:
+                        type: string
+                  task_post_price:
+                    type: integer
+                  balance:
+                    type: integer
+        '400':
+          description: invalid tenant_id
+        '403':
+          description: forbidden
+        '404':
+          description: account not found
+  /api/internal/taskbill/resource-pricing/:
+    get:
+      summary: 当前资源定价
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: 定价信息
+    put:
+      summary: 更新资源定价
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 已更新
+  /api/internal/taskbill/admin/orders/:
+    get:
+      summary: 管理端订单列表（全量）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      parameters:
+      - name: order_number
+        in: query
+        description: 交易单号精确查询（展示号、主键或 payment_ref）
+        schema:
+          type: string
+          maxLength: 128
+      responses:
+        '200':
+          description: 订单列表
+  /api/internal/taskbill/membership/:
+    get:
+      summary: 查询租户会员等级（内部）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: 会员等级信息
+
+  /api/internal/taskbill/ensure-membership/:
+    post:
+      summary: 确保租户会员记录存在（幂等）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: 会员等级信息
+
+  /api/internal/taskbill/admin/user-recharge-consumption/:
+    get:
+      summary: 管理端用户充值消费记录
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: 充值消费列表
+  /api/internal/taskbill/gitlab-regions-admin/:
+    get:
+      summary: 内部 — GitLab 区域全量列表（含非活跃、剩余容量、部署路径 service_process/config_file/data_dir）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: 区域列表（含 deploy 字段）
+  /api/internal/taskbill/gitlab-regions/:
+    get:
+      summary: 内部 — GitLab 区域列表（仅活跃区域）
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: 区域列表
+    put:
+      summary: 内部 — 更新区域容量
+      tags:
+      - internal
+      security:
+      - internalSecret: []
+      responses:
+        '200':
+          description: 更新成功
+components:
+  securitySchemes:
+    internalSecret:
+      type: apiKey
+      in: header
+      name: X-Internal-Secret
+      description: 服务间内部密钥
+  schemas:
+    InsufficientBalance:
+      type: object
+      properties:
+        error:
+          type: string
+        balance_points:
+          type: integer
+          format: int64
+        required_points:
+          type: integer
+          format: int64
+    InternalAccountResponse:
+      type: object
+      properties:
+        account:
+          $ref: '#/components/schemas/BillingAccount'
+        created:
+          type: boolean
+        task_post_price:
+          type: integer
+          format: int64
+        balance:
+          type: integer
+          format: int64
+    BillingAccount: *id001

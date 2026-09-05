@@ -1,0 +1,5 @@
+# Deploy-host skeleton. Runtime: export DEPLOY_MODE=1 and CONF_ROOT.
+# Do not put secrets here. Host overlays stay in config.local.yaml (not Git).
+version: "1"
+use_proxy: false
+groups: []

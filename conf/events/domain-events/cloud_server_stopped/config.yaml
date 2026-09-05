@@ -1,0 +1,7 @@
+intents:
+  1_process_server_stop:
+    host: 0.0.0.0
+    port: 18035
+    groupId: task-events-cloud-server-stopped-1-process-server-stop
+    events:
+    - CLOUD_SERVER_STOPPED

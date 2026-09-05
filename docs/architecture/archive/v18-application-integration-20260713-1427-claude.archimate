@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v18-ai-20260713-1427">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v18 Target</name>
+  <documentation>auto_run 首指令与自动交付：task-detail 暴露 auto_run/repo_git_identities；onlineServiceJS 编排 createJob 与 commit/push/PR</documentation>
+
+  <folder name="Application" id="id-v18-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Vue Frontend" id="id-v18-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway APISIX" id="id-v18-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTaskService" id="id-v18-tts"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskCredentialService [MODIFIED v18]" id="id-v18-cred"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 onlineServiceJS [MODIFIED v18]" id="id-v18-osjs"/>
+    <element xsi:type="archimate:ApplicationComponent" name="gitOauth" id="id-v18-gitoauth"/>
+    <element xsi:type="archimate:ApplicationFunction" name="🟢 AutoRunFirstInstruction [NEW v18]" id="id-v18-fn-first"/>
+    <element xsi:type="archimate:ApplicationFunction" name="🟢 AutoRunDelivery [NEW v18]" id="id-v18-fn-del"/>
+  </folder>
+
+  <folder name="Relations" id="id-v18-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v18-flow-vue-gw" source="id-v18-vue" target="id-v18-gw" name="创建任务 auto_run"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v18-flow-gw-tts" source="id-v18-gw" target="id-v18-tts" name="persist / start-vm"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v18-flow-osjs-cred" source="id-v18-osjs" target="id-v18-cred" name="task-detail / oauth tokens"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v18-flow-cred-oauth" source="id-v18-cred" target="id-v18-gitoauth" name="access-for-user"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v18-srv-first" source="id-v18-fn-first" target="id-v18-osjs" name="编排"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v18-srv-del" source="id-v18-fn-del" target="id-v18-osjs" name="编排"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v18-rel-plat13-gap" source="id-v18-plat-v13" target="id-v18-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v18-rel-wp-gap" source="id-v18-wp" target="id-v18-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v18-rel-wp-plat17" source="id-v18-wp" target="id-v18-plat-v18"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v18-rel-plat17-osjs" source="id-v18-plat-v18" target="id-v18-osjs"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v18-rel-plat17-cred" source="id-v18-plat-v18" target="id-v18-cred"/>
+  </folder>
+
+  <folder name="Implementation" id="id-v18-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v13 — container exec hot-path" id="id-v18-plat-v13"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v18 — auto_run first instruction + delivery" id="id-v18-plat-v18"/>
+    <element xsi:type="archimate:Gap" name="Gap: bootstrap 后无首指令；完成后无自动 commit/push/PR" id="id-v18-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v18-auto-run-first-instruction-and-delivery" id="id-v18-wp"/>
+  </folder>
+
+  <folder name="Views" id="id-v18-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v13→v18 — auto_run 首指令与交付" id="id-v18-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-plat-v13" archimateElement="id-v18-plat-v13">
+        <bounds x="48" y="120" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v18-conn-plat13-gap"
+          source="id-v18-do-plat-v13" target="id-v18-do-gap"
+          archimateRelationship="id-v18-rel-plat13-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-gap" archimateElement="id-v18-gap"
+        targetConnections="id-v18-conn-plat13-gap id-v18-conn-wp-gap">
+        <bounds x="380" y="120" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-wp" archimateElement="id-v18-wp">
+        <bounds x="800" y="80" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v18-conn-wp-gap"
+          source="id-v18-do-wp" target="id-v18-do-gap"
+          archimateRelationship="id-v18-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v18-conn-wp-plat17"
+          source="id-v18-do-wp" target="id-v18-do-plat-v18"
+          archimateRelationship="id-v18-rel-wp-plat17"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-plat-v18" archimateElement="id-v18-plat-v18"
+        targetConnections="id-v18-conn-wp-plat17">
+        <bounds x="800" y="180" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v18-conn-plat17-osjs"
+          source="id-v18-do-plat-v18" target="id-v18-do-osjs-m"
+          archimateRelationship="id-v18-rel-plat17-osjs"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v18-conn-plat17-cred"
+          source="id-v18-do-plat-v18" target="id-v18-do-cred-m"
+          archimateRelationship="id-v18-rel-plat17-cred"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-osjs-m" archimateElement="id-v18-osjs"
+        targetConnections="id-v18-conn-plat17-osjs">
+        <bounds x="780" y="280" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-cred-m" archimateElement="id-v18-cred"
+        targetConnections="id-v18-conn-plat17-cred">
+        <bounds x="1000" y="280" width="200" height="50"/>
+      </child>
+    </element>
+
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v18 Target — auto_run 数据流" id="id-v18-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-vue" archimateElement="id-v18-vue">
+        <bounds x="48" y="120" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v18-conn-vue-gw"
+          source="id-v18-do-vue" target="id-v18-do-gw"
+          archimateRelationship="id-v18-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-gw" archimateElement="id-v18-gw"
+        targetConnections="id-v18-conn-vue-gw">
+        <bounds x="240" y="120" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v18-conn-gw-tts"
+          source="id-v18-do-gw" target="id-v18-do-tts"
+          archimateRelationship="id-v18-flow-gw-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-tts" archimateElement="id-v18-tts"
+        targetConnections="id-v18-conn-gw-tts">
+        <bounds x="430" y="120" width="150" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-osjs" archimateElement="id-v18-osjs">
+        <bounds x="240" y="240" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v18-conn-osjs-cred"
+          source="id-v18-do-osjs" target="id-v18-do-cred"
+          archimateRelationship="id-v18-flow-osjs-cred"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-cred" archimateElement="id-v18-cred"
+        targetConnections="id-v18-conn-osjs-cred">
+        <bounds x="460" y="240" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v18-conn-cred-oauth"
+          source="id-v18-do-cred" target="id-v18-do-oauth"
+          archimateRelationship="id-v18-flow-cred-oauth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-oauth" archimateElement="id-v18-gitoauth"
+        targetConnections="id-v18-conn-cred-oauth">
+        <bounds x="720" y="240" width="120" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-fn-first" archimateElement="id-v18-fn-first">
+        <bounds x="48" y="340" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v18-conn-srv-first"
+          source="id-v18-do-fn-first" target="id-v18-do-osjs"
+          archimateRelationship="id-v18-srv-first"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v18-do-fn-del" archimateElement="id-v18-fn-del">
+        <bounds x="300" y="340" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v18-conn-srv-del"
+          source="id-v18-do-fn-del" target="id-v18-do-osjs"
+          archimateRelationship="id-v18-srv-del"/>
+      </child>
+    </element>
+  </folder>
+
+</archimate:model>

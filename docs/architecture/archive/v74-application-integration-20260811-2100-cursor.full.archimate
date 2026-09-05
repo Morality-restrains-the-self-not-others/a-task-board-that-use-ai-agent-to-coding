@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="v74-invite-pending-grants-full" id="id-v74full01">
+  <folder name="Application" id="id-v74full-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="app-taskFE" name="taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="app-taskTenant" name="taskTenantService"/>
+    <element xsi:type="archimate:ApplicationComponent" id="app-taskAuth" name="taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" id="app-authz" name="shareLib/authz"/>
+    <element xsi:type="archimate:DataObject" id="do-inv" name="tenant_invitation"/>
+    <element xsi:type="archimate:DataObject" id="do-rrg" name="auth_role_resource_group"/>
+    <element xsi:type="archimate:DataObject" id="do-mrole" name="tenant_member_role"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v74full-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="pl-v73" name="Plateau v73"/>
+    <element xsi:type="archimate:Plateau" id="pl-v74" name="Plateau v74 [NEW]"/>
+    <element xsi:type="archimate:Gap" id="gap-v74" name="Gap: invite pending grants"/>
+    <element xsi:type="archimate:WorkPackage" id="wp-v74" name="WP: invite pending access grants"/>
+  </folder>
+  <folder name="Relations" id="id-v74full-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="rel-fe-tt" source="app-taskFE" target="app-taskTenant" name="invite/join API"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-tt-inv" source="app-taskTenant" target="do-inv" name="pending_grants"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-tt-auth" source="app-taskTenant" target="app-taskAuth" name="apply-member-grants"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-auth-rrg" source="app-taskAuth" target="do-rrg" name="bind"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-tt-mrole" source="app-taskTenant" target="do-mrole" name="ensureMemberRole"/>
+    <element xsi:type="archimate:ServingRelationship" id="rel-authz-auth" source="app-authz" target="app-taskAuth" name="RequireRegion"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-pl73-gap" source="pl-v73" target="gap-v74"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wp-v74" target="gap-v74"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-wp-pl74" source="wp-v74" target="pl-v74"/>
+  </folder>
+  <folder name="Views" id="id-v74full-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-full" name="v74 全量拓扑 — invite pending grants">
+      <child xsi:type="archimate:DiagramObject" id="d-fe" archimateElement="app-taskFE">
+        <bounds x="48" y="48" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-fe-tt" source="d-fe" target="d-tt" archimateRelationship="rel-fe-tt"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-tt" targetConnections="c-fe-tt" archimateElement="app-taskTenant">
+        <bounds x="220" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-tt-inv" source="d-tt" target="d-inv" archimateRelationship="rel-tt-inv"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-tt-auth" source="d-tt" target="d-auth" archimateRelationship="rel-tt-auth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-tt-mrole" source="d-tt" target="d-mrole" archimateRelationship="rel-tt-mrole"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-auth" targetConnections="c-tt-auth" archimateElement="app-taskAuth">
+        <bounds x="420" y="48" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-auth-rrg" source="d-auth" target="d-rrg" archimateRelationship="rel-auth-rrg"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-authz" archimateElement="app-authz">
+        <bounds x="420" y="160" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-authz-auth" source="d-authz" target="d-auth" archimateRelationship="rel-authz-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-inv" targetConnections="c-tt-inv" archimateElement="do-inv">
+        <bounds x="220" y="160" width="140" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-rrg" targetConnections="c-auth-rrg" archimateElement="do-rrg">
+        <bounds x="580" y="48" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-mrole" targetConnections="c-tt-mrole" archimateElement="do-mrole">
+        <bounds x="220" y="260" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-mig" name="架构变迁 v73→v74 — invite-pending-grants">
+      <child xsi:type="archimate:DiagramObject" id="do-pl73" archimateElement="pl-v73">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-pl73-gap" source="do-pl73" target="do-gap" archimateRelationship="rel-pl73-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap" targetConnections="conn-pl73-gap conn-wp-gap" archimateElement="gap-v74">
+        <bounds x="240" y="48" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp" archimateElement="wp-v74">
+        <bounds x="240" y="160" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wp" target="do-gap" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-pl74" source="do-wp" target="do-pl74" archimateRelationship="rel-wp-pl74"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-pl74" targetConnections="conn-wp-pl74" archimateElement="pl-v74">
+        <bounds x="480" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

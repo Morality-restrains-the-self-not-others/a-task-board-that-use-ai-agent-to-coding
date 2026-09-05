@@ -1,0 +1,35 @@
+---
+description: 业务服务禁止进程内轮询/循环；触发仅限 taskEvents 定时 worker 或 HTTP/Kafka/Webhook
+alwaysApply: true
+---
+
+# 业务服务禁止进程内轮询 / 循环（元规则）
+
+适用于整个 monorepo。细则见 `.ai/01_project_constraints/51_no_service_internal_poll_loop.md`；ADR-0011。
+
+## 强制要求
+
+1. **业务 HTTP/RPC 进程禁止**在 `main` / 启动路径用 `time.NewTicker`、`time.Tick`、`for { sleep; 扫表 }` 做周期工作
+2. **周期工作** → 专门定时服务：`taskEvents/internal/handlers/` 的 timer worker（独立 runAll 条目）HTTP 调用 owner 的**一次性** internal API
+3. **即时工作** → 外界触发：用户/网关 HTTP、Kafka 领域事件、Webhook、显式 CLI、9999 按钮
+4. **前端**禁止无用户操作、无 SSE 的后台 API `setInterval` 轮询（本地倒计时不算）
+5. **禁止**在业务服务文件上用注释自我豁免
+
+## 禁止 / 替代
+
+| 禁止 | 替代 |
+|------|------|
+| `taskBill`/`taskCloudService` 等 `go ticker` 对账/过期/回收 | `taskEvents` timer worker + 一次性 API |
+| SPA 5s/30s 盲打 Describe / runtime-status | 用户刷新、SSE/心跳、绑定 comment_id 的有限补偿 |
+| 新服务「顺便在 main 里扫一下」 | 先写一次性 handler，再注册独立 timer 进程 |
+
+## 允许
+
+- HTTP accept loop、`taskEvents` timer/Kafka worker、`taskEvents/broker` 协议恢复、`runAll` 监护、测试与第三方代码
+
+## 验收
+
+```bash
+python3 db/scripts/ci/test_check_no_service_internal_poll_loop.py
+python3 db/scripts/ci/check_no_service_internal_poll_loop.py
+```

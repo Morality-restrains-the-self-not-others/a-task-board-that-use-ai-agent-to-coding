@@ -1,0 +1,5 @@
+port: 8025
+host: "0.0.0.0"
+# 同节点调用 taskBill / taskTenantService；拆分时改 ${subdomains.xxx}
+billServiceUrl: http://127.0.0.1:8004
+tenantServiceUrl: http://127.0.0.1:8020

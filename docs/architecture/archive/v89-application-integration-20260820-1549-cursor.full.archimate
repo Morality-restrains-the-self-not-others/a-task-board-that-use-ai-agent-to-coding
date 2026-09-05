@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v89 全量 (post-change)" id="id-v89aifull01">
+  <folder name="Application" id="id-v89aif-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v89af-app-fe" name="taskFE [MODIFIED v89]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v89af-app-gw" name="API Gateway APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v89af-app-cloud" name="taskCloudService [MODIFIED v89]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v89af-app-sse" name="taskSSE"/>
+    <element xsi:type="archimate:DataObject" id="id-v89af-do-legacy" name="cloud_comment_container_binding_logs [DEPRECATED v88]"/>
+    <element xsi:type="archimate:DataObject" id="id-v89af-do-shards" name="cloud_comment_container_binding_logs_00..15"/>
+    <element xsi:type="archimate:DataObject" id="id-v89af-do-csc" name="cloud_server_configs"/>
+    <element xsi:type="archimate:DataObject" id="id-v89af-do-snap" name="cloud_layer_graph_snapshot [NEW v89]"/>
+    <element xsi:type="archimate:DataObject" id="id-v89af-do-job" name="cloud_job_execution_event"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v89af-ev-persisted" name="LayerGraphSnapshotPersisted [NEW v89]"/>
+  </folder>
+  <folder name="Technology" id="id-v89aif-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v89af-tech-mysql" name="MySQL task_cloud utf8mb4"/>
+    <element xsi:type="archimate:Node" id="id-v89af-tech-ctr" name="Comment-scoped container [MODIFIED v89]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v89aif-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v89af-pl-v88" name="Plateau v88"/>
+    <element xsi:type="archimate:Plateau" id="id-v89af-pl-v89" name="Plateau v89"/>
+    <element xsi:type="archimate:Gap" id="id-v89af-gap" name="Gap: 层图仅 SSE 不落库；关容器树空"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v89af-wp" name="WP-ztree-exec-log-server-persist"/>
+  </folder>
+  <folder name="Relations" id="id-v89aif-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v89af-rel-fe-gw" source="id-v89af-app-fe" target="id-v89af-app-gw" name="GET comment-container-bindings"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v89af-rel-gw-cloud" source="id-v89af-app-gw" target="id-v89af-app-cloud" name="X-Workspace-Id"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v89af-rel-cloud-shards" source="id-v89af-app-cloud" target="id-v89af-do-shards" name="INSERT/SELECT 按 workspace 选表"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v89af-rel-cloud-legacy" source="id-v89af-app-cloud" target="id-v89af-do-legacy" name="[DEPRECATED v88] 停止写入"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v89af-rel-cloud-csc" source="id-v89af-app-cloud" target="id-v89af-do-csc" name="解析 workspace_id"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v89af-rel-cloud-sse" source="id-v89af-app-cloud" target="id-v89af-app-sse" name="publishTaskSSE"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v89af-rel-mysql-shards" source="id-v89af-tech-mysql" target="id-v89af-do-shards" name="16 预创建物理表"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v89af-rel-mysql-legacy" source="id-v89af-tech-mysql" target="id-v89af-do-legacy" name="遗留单表"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v89af-rel-mysql-csc" source="id-v89af-tech-mysql" target="id-v89af-do-csc" name="CSC"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v89af-rel-mysql-snap" source="id-v89af-tech-mysql" target="id-v89af-do-snap" name="JSON 列 graph_json"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v89af-rel-mysql-job" source="id-v89af-tech-mysql" target="id-v89af-do-job" name="023 job 步骤"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v89af-rel-ctr-cloud" source="id-v89af-tech-ctr" target="id-v89af-app-cloud" name="layer-graph-push"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v89af-rel-cloud-snap" source="id-v89af-app-cloud" target="id-v89af-do-snap" name="UPSERT snapshot"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v89af-rel-cloud-ev" source="id-v89af-app-cloud" target="id-v89af-ev-persisted" name="落库后发布"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v89af-rel-sse-fe" source="id-v89af-app-sse" target="id-v89af-app-fe" name="直播"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v89af-rel-fe-hydrate" source="id-v89af-app-fe" target="id-v89af-app-cloud" name="GET hydrate 层图 + job 步骤"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v89af-rel-cloud-job" source="id-v89af-app-cloud" target="id-v89af-do-job" name="GET job-execution-log"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v89af-rel-pl88-gap" source="id-v89af-pl-v88" target="id-v89af-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v89af-rel-wp-gap" source="id-v89af-wp" target="id-v89af-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v89af-rel-wp-pl89" source="id-v89af-wp" target="id-v89af-pl-v89"/>
+  </folder>
+  <folder name="Views" id="id-v89aif-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v89af-view-mig" name="架构变迁 v88→v89 — ztree-exec-log-server-persist">
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-do-pl88" archimateElement="id-v89af-pl-v88">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-pl88-gap" source="id-v89af-do-pl88" target="id-v89af-do-gap" archimateRelationship="id-v89af-rel-pl88-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-do-gap" targetConnections="id-v89af-c-pl88-gap id-v89af-c-wp-gap" archimateElement="id-v89af-gap">
+        <bounds x="240" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-do-wp" archimateElement="id-v89af-wp">
+        <bounds x="240" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-wp-gap" source="id-v89af-do-wp" target="id-v89af-do-gap" archimateRelationship="id-v89af-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-wp-pl89" source="id-v89af-do-wp" target="id-v89af-do-pl89" archimateRelationship="id-v89af-rel-wp-pl89"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-do-pl89" targetConnections="id-v89af-c-wp-pl89" archimateElement="id-v89af-pl-v89">
+        <bounds x="620" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v89af-view-flow" name="v89 Full — CCB 分表 + 层图快照 hydrate">
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-d-fe" targetConnections="id-v89af-c-sse-fe" archimateElement="id-v89af-app-fe">
+        <bounds x="48" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-fe-gw" source="id-v89af-d-fe" target="id-v89af-d-gw" archimateRelationship="id-v89af-rel-fe-gw"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-fe-hydrate" source="id-v89af-d-fe" target="id-v89af-d-cloud" archimateRelationship="id-v89af-rel-fe-hydrate"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-d-gw" targetConnections="id-v89af-c-fe-gw" archimateElement="id-v89af-app-gw">
+        <bounds x="260" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-gw-cloud" source="id-v89af-d-gw" target="id-v89af-d-cloud" archimateRelationship="id-v89af-rel-gw-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-d-cloud" targetConnections="id-v89af-c-gw-cloud id-v89af-c-ctr-cloud id-v89af-c-fe-hydrate" archimateElement="id-v89af-app-cloud">
+        <bounds x="500" y="48" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-cloud-shards" source="id-v89af-d-cloud" target="id-v89af-d-shards" archimateRelationship="id-v89af-rel-cloud-shards"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-cloud-legacy" source="id-v89af-d-cloud" target="id-v89af-d-legacy" archimateRelationship="id-v89af-rel-cloud-legacy"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-cloud-csc" source="id-v89af-d-cloud" target="id-v89af-d-csc" archimateRelationship="id-v89af-rel-cloud-csc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-cloud-sse" source="id-v89af-d-cloud" target="id-v89af-d-sse" archimateRelationship="id-v89af-rel-cloud-sse"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-cloud-snap" source="id-v89af-d-cloud" target="id-v89af-d-snap" archimateRelationship="id-v89af-rel-cloud-snap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-cloud-ev" source="id-v89af-d-cloud" target="id-v89af-d-ev" archimateRelationship="id-v89af-rel-cloud-ev"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-cloud-job" source="id-v89af-d-cloud" target="id-v89af-d-job" archimateRelationship="id-v89af-rel-cloud-job"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-d-shards" targetConnections="id-v89af-c-cloud-shards id-v89af-c-mysql-shards" archimateElement="id-v89af-do-shards">
+        <bounds x="780" y="12" width="280" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-d-legacy" targetConnections="id-v89af-c-cloud-legacy id-v89af-c-mysql-legacy" archimateElement="id-v89af-do-legacy">
+        <bounds x="780" y="64" width="320" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-d-csc" targetConnections="id-v89af-c-cloud-csc id-v89af-c-mysql-csc" archimateElement="id-v89af-do-csc">
+        <bounds x="780" y="116" width="200" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-d-snap" targetConnections="id-v89af-c-cloud-snap id-v89af-c-mysql-snap" archimateElement="id-v89af-do-snap">
+        <bounds x="780" y="168" width="280" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-d-job" targetConnections="id-v89af-c-cloud-job id-v89af-c-mysql-job" archimateElement="id-v89af-do-job">
+        <bounds x="780" y="220" width="260" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-d-ev" targetConnections="id-v89af-c-cloud-ev" archimateElement="id-v89af-ev-persisted">
+        <bounds x="780" y="272" width="280" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-d-sse" targetConnections="id-v89af-c-cloud-sse" archimateElement="id-v89af-app-sse">
+        <bounds x="500" y="140" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-sse-fe" source="id-v89af-d-sse" target="id-v89af-d-fe" archimateRelationship="id-v89af-rel-sse-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-d-mysql" archimateElement="id-v89af-tech-mysql">
+        <bounds x="48" y="140" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-mysql-shards" source="id-v89af-d-mysql" target="id-v89af-d-shards" archimateRelationship="id-v89af-rel-mysql-shards"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-mysql-legacy" source="id-v89af-d-mysql" target="id-v89af-d-legacy" archimateRelationship="id-v89af-rel-mysql-legacy"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-mysql-csc" source="id-v89af-d-mysql" target="id-v89af-d-csc" archimateRelationship="id-v89af-rel-mysql-csc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-mysql-snap" source="id-v89af-d-mysql" target="id-v89af-d-snap" archimateRelationship="id-v89af-rel-mysql-snap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-mysql-job" source="id-v89af-d-mysql" target="id-v89af-d-job" archimateRelationship="id-v89af-rel-mysql-job"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v89af-d-ctr" archimateElement="id-v89af-tech-ctr">
+        <bounds x="48" y="230" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v89af-c-ctr-cloud" source="id-v89af-d-ctr" target="id-v89af-d-cloud" archimateRelationship="id-v89af-rel-ctr-cloud"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

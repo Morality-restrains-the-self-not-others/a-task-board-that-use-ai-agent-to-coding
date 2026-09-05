@@ -1,0 +1,38 @@
+' @title: Application Integration — gitService durable GITLAB_HOME
+' @view: application-integration
+' @status: current
+' @version: 53
+' @author: claude
+' @based_on: v52 (v52-application-integration-20260722-1910-claude.puml)
+' @updated: 2026-07-22 22:55
+' @description: GitLab 数据卷迁出 tmpfs worktree，使用宿主机 durable GITLAB_HOME
+' @iteration: gitservice-durable-gitlab-home
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v53 — Durable GitLab Home (2026-07-22 22:55)
+
+Application_Component(git_service, "gitService\n(run.sh + compose)")
+Technology_Node(gitlab_ce, "GitLab CE\ncontainer")
+Technology_Artifact(gitlab_home_store, "GitLabHomeDurableStore\n($GITLAB_HOME)")
+Application_Component(task_git_oauth, "taskGitOauth")
+Application_Component(task_project, "taskProjectService")
+
+Rel_Serving(git_service, gitlab_ce)
+Rel_Access_w(gitlab_ce, gitlab_home_store)
+Rel_Flow(task_git_oauth, gitlab_ce, "OAuth/API")
+Rel_Flow(task_project, gitlab_ce, "repos")
+
+note right of gitlab_home_store
+  Default: $HOME/.local/share/daydaymoney/gitService
+  Reject tmpfs unless ALLOW_TMPFS=1
+  Auto-migrate from ./gitlab_home
+end note
+
+note top of git_service
+  export GITLAB_HOME;
+  compose volumes use ${GITLAB_HOME}
+end note
+
+@enduml

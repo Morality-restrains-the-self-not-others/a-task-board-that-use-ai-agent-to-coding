@@ -1,0 +1,6 @@
+# Faq.test.js
+
+- **目标**：`/faq/` 常见问题页纵向铺开 `src/faq/*.md`，无侧边栏导航；「账号与登录」与「知识产权处理方法」已下线；联系邮箱来自 `conf/frontend/vue/config.yaml` 的 `contactEmail`（`{{contactEmail}}` 占位符），不得写死在 markdown。
+- **关键断言**：无 `[data-testid=faq-doc-nav]` / `aside`；有 `faq-doc-panel-usage` 与 `faq-doc-panel-billing`；无 `faq-doc-panel-account`；正文含 `VITE_CONTACT_EMAIL`、不含 `{{contactEmail}}`；源 md 无裸邮箱；返回首页链接指向 `home`。
+- **破坏信号**：重新加入 `src/faq/account.md` 或知识产权文档；恢复侧栏；markdown 写回 `author@example.com`；Vite 不再注入 `VITE_CONTACT_EMAIL`。
+- **回归**：改 `Faq.vue` / `src/faq/*.md` / `vue.contactEmail` 后跑本文件。

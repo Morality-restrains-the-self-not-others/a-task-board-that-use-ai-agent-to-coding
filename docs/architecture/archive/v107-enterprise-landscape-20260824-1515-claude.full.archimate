@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v107 全量 (post-change)" id="id-v107elfull01">
+  <folder name="Business" id="id-v107el-full-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v107-biz-dev" name="开发者 / 外部用户"/>
+    <element xsi:type="archimate:BusinessService" id="id-v107-biz-task" name="创建/编辑任务并绑定镜像技能 [MODIFIED v107]"/>
+  </folder>
+  <folder name="Application" id="id-v107el-full-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v107-app-fe" name="taskFE SPA [MODIFIED v107]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v107-app-tts" name="taskTaskService [MODIFIED v107]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v107-app-cloud" name="taskCloudService [MODIFIED v107]"/>
+  </folder>
+  <folder name="Technology" id="id-v107el-full-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v107-node-mysql" name="MySQL (task/cloud 库)"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v107el-full-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v107-pl-v106" name="Plateau v106"/>
+    <element xsi:type="archimate:Plateau" id="id-v107-pl-v107" name="Plateau v107 镜像/技能存储 ID 化"/>
+    <element xsi:type="archimate:Gap" id="id-v107-gap" name="Gap: 技能无 ID、任务仅存镜像 ID、名↔ID 映射未持久化"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v107-wp" name="WP-image-skill-id-mapping"/>
+  </folder>
+  <folder name="Relations" id="id-v107el-full-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v107-rel-dev-task" source="id-v107-biz-dev" target="id-v107-biz-task"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v107-rel-tts-task" source="id-v107-app-tts" target="id-v107-biz-task" name="任务 CRUD + 镜像/技能绑定"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v107-rel-fe-tts" source="id-v107-app-fe" target="id-v107-app-tts" name="create/update task"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v107-rel-tts-cloud" source="id-v107-app-tts" target="id-v107-app-cloud" name="image_skills 校验/反解"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v107-rel-mysql-tts" source="id-v107-node-mysql" target="id-v107-app-tts" name="task_tasks 持久化"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v107-rel-mysql-cloud" source="id-v107-node-mysql" target="id-v107-app-cloud" name="installed_images 持久化"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v107-rel-pl106-gap" source="id-v107-pl-v106" target="id-v107-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v107-rel-wp-gap" source="id-v107-wp" target="id-v107-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v107-rel-wp-pl107" source="id-v107-wp" target="id-v107-pl-v107"/>
+  </folder>
+  <folder name="Views" id="id-v107el-full-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v107-view-full-topo" name="v107 全量拓扑 — 镜像/技能 mention 存储 ID 化">
+      <child xsi:type="archimate:DiagramObject" id="id-v107-do-dev" archimateElement="id-v107-biz-dev">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v107-c-dev-task" source="id-v107-do-dev" target="id-v107-do-task" archimateRelationship="id-v107-rel-dev-task"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v107-do-task" targetConnections="id-v107-c-dev-task id-v107-c-tts-task" archimateElement="id-v107-biz-task">
+        <bounds x="280" y="48" width="220" height="60"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v107-do-fe" archimateElement="id-v107-app-fe">
+        <bounds x="48" y="200" width="160" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v107-c-fe-tts" source="id-v107-do-fe" target="id-v107-do-tts" archimateRelationship="id-v107-rel-fe-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v107-do-tts" targetConnections="id-v107-c-fe-tts id-v107-c-mysql-tts" archimateElement="id-v107-app-tts">
+        <bounds x="300" y="200" width="180" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v107-c-tts-task" source="id-v107-do-tts" target="id-v107-do-task" archimateRelationship="id-v107-rel-tts-task"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v107-c-tts-cloud" source="id-v107-do-tts" target="id-v107-do-cloud" archimateRelationship="id-v107-rel-tts-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v107-do-cloud" targetConnections="id-v107-c-tts-cloud id-v107-c-mysql-cloud" archimateElement="id-v107-app-cloud">
+        <bounds x="560" y="200" width="180" height="60"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v107-do-mysql" archimateElement="id-v107-node-mysql">
+        <bounds x="280" y="320" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v107-c-mysql-tts" source="id-v107-do-mysql" target="id-v107-do-tts" archimateRelationship="id-v107-rel-mysql-tts"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v107-c-mysql-cloud" source="id-v107-do-mysql" target="id-v107-do-cloud" archimateRelationship="id-v107-rel-mysql-cloud"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v107-view-full-mig" name="架构变迁 v106→v107 — image-skill-id-mapping-store">
+      <child xsi:type="archimate:DiagramObject" id="id-v107-do-pl106" archimateElement="id-v107-pl-v106">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v107-c-pl106-gap" source="id-v107-do-pl106" target="id-v107-do-gap" archimateRelationship="id-v107-rel-pl106-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v107-do-gap" targetConnections="id-v107-c-pl106-gap id-v107-c-wp-gap" archimateElement="id-v107-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v107-do-wp" archimateElement="id-v107-wp">
+        <bounds x="240" y="160" width="400" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v107-c-wp-gap" source="id-v107-do-wp" target="id-v107-do-gap" archimateRelationship="id-v107-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v107-c-wp-pl107" source="id-v107-do-wp" target="id-v107-do-pl107" archimateRelationship="id-v107-rel-wp-pl107"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v107-do-pl107" targetConnections="id-v107-c-wp-pl107" archimateElement="id-v107-pl-v107">
+        <bounds x="680" y="160" width="200" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

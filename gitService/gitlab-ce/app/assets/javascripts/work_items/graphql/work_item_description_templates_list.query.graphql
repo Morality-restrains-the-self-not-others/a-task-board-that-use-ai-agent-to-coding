@@ -1,0 +1,13 @@
+query workItemDescriptionTemplatesList($fullPath: ID!) {
+  namespace(fullPath: $fullPath) {
+    id
+    workItemDescriptionTemplates {
+      __typename
+      nodes {
+        name
+        projectId
+        category
+      }
+    }
+  }
+}

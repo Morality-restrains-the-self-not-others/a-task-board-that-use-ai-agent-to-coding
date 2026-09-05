@@ -1,0 +1,7 @@
+# 测试意图：评论启动中 + 评论级 CSC 双面板对齐 E2E
+
+| ID | 场景 | 期望 |
+|----|------|------|
+| E1 | mock server-runtime-status 返回 Starting + 云实例创建中 + 评论级 CSC 无 instance | 「服务器运行状态」Tab 中 lifecycle=`server-lifecycle-status`=启动中；runtime 文案=`server-runtime-status-message` 含「云实例创建中」，不含「未找到服务器配置记录」/「未创建」 |
+
+对应测例：`TaskDetail.comment-starting-csc-align.playwright.test.js`

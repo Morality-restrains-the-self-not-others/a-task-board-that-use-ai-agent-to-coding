@@ -1,0 +1,98 @@
+' @title: 多区域镜像仓库副本（应用集成）
+' @view: application-integration
+' @status: target
+' @version: 119
+' @iteration: multi-region-image-registry-replicas
+' @author: cursor
+' @based_on: v118 (v118-application-integration-20260829-1832-cursor.puml)
+' @updated: 2026-08-29 21:24
+' @description: 副本表与 CSI 同键；安装快照；start-vm 解析地域后选 pull URL；relay 仍用规范公网
+
+@startuml
+!include <archimate/Archimate>
+
+title v119 Target — 多区域镜像仓库副本 2026-08-29 21:24
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v119 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v119 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(portal, "厂商门户 Vue")
+note right of portal
+  [MODIFIED v119] 区域运行环境填公网仓库
+  只读展示推导内网
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(aip, "taskAiProvider")
+note right of aip
+  [MODIFIED v119] RejectPrivateRegistry 仍拒 VPC
+  SuggestIntranetRegistryRef 写 intranet_url
+end note
+
+Application_Component(cloud, "taskCloudService")
+note right of cloud
+  [MODIFIED v119] 先 resolve CSI 地域
+  再 selectContainerImagePullRef
+end note
+
+Application_Component(ev, "taskEvents")
+Application_Component(fe, "taskFE SPA")
+note right of fe
+  评论启机仍不传 container_image_url
+end note
+
+Application_DataObject(img, "vendorcontainerimage.image_url")
+note right of img
+  规范公网；控制面抽取 / relay pull
+end note
+
+Application_DataObject(assoc, "containercloudserverassociation")
+note right of assoc
+  已有多区域 CSI
+end note
+
+Application_DataObject(replica, "containerimage_registry_replica")
+note right of replica
+  [NEW v119] UNIQUE image+platform+region
+end note
+
+Application_DataObject(installed, "cloud_tenant_installed_images")
+note right of installed
+  [MODIFIED v119] registry_replicas_json 快照
+end note
+
+Business_Event(evR, "ContainerImageReplicasUpdated")
+note right of evR
+  [NEW v119] LogEventBus
+end note
+
+Business_Event(evS, "CLOUD_SERVER_STARTED")
+note right of evS
+  [MODIFIED v119] data.container_image_url = 选用副本或回退
+end note
+
+Rel_Flow(portal, gw, "association + registry_public_url 🟡")
+Rel_Flow(gw, aip, "vendor API")
+Rel_Access(aip, img, "canonical URL")
+Rel_Access(aip, assoc, "CSI upsert")
+Rel_Access(aip, replica, "replica upsert 🟢")
+Rel_Flow(aip, evR, "after replica write 🟢")
+Rel_Flow(fe, gw, "start-vm region_id")
+Rel_Flow(gw, cloud, "start-vm")
+Rel_Access(cloud, installed, "snapshot + select pull")
+Rel_Flow(aip, cloud, "catalog replica on install 🟡")
+Rel_Flow(cloud, evS, "after region resolve 🟡")
+Rel_Flow(cloud, ev, "publish Kafka")
+
+Implementation_Plateau(plateauV118, "Plateau v118 单 URL")
+Implementation_Plateau(plateauV119, "Plateau v119 区域副本")
+Implementation_Gap(gapPull, "Gap: 启机跨区拉规范仓库")
+Implementation_WorkPackage(wpRep, "WP-multi-region-image-replicas")
+Rel_Triggering(plateauV118, gapPull, "identifies")
+Rel_Realization(wpRep, gapPull, "closes")
+Rel_Realization(wpRep, plateauV119, "delivers")
+
+@enduml

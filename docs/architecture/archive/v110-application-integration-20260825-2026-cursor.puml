@@ -1,0 +1,83 @@
+' @title: 租户自建 GitLab 平台 OIDC SSO（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 110
+' @iteration: tenant-selfhosted-gitlab-oidc-sso
+' @author: cursor
+' @based_on: v109 (v109-application-integration-20260825-1930-cursor.puml)
+' @updated: 2026-08-25 21:10
+' @description: 链路 A 保持 taskGitOauth OAuth Application；链路 B 由 taskAuth 签发 gitlab-tenant-{tid} OIDC client，自建 GitLab OmniAuth 作为 RP，authorize 须租户成员闸门
+
+@startuml
+!include <archimate/Archimate>
+
+title v110 — 租户自建 GitLab OIDC SSO 2026-08-25 21:10
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  gitlab-connection：
+  链路 A 帮助文案 + 链路 B 启用/轮换/停用 SSO
+  @author: cursor @2026-08-25 21:10
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+note right of gw
+  /api/tenant/{tid}/gitlab-oidc-sso/*
+  @author: cursor @2026-08-25 21:10
+end note
+
+Application_Component(auth, "taskAuth")
+note right of auth
+  签发 gitlab-tenant-{tid}；
+  handleOidcAuthorize 租户成员闸门；
+  禁止套用 gitlab-git-service* 区域闸门
+  @author: cursor @2026-08-25 21:10
+end note
+
+Application_Component(gitoauth, "taskGitOauth")
+note right of gitoauth
+  链路 A 不变：租户 GitLab Application CRUD + /oauth/authorize
+end note
+
+Application_Component(tenantSvc, "taskTenantService")
+Application_Component(gitService, "gitService 平台 GitLab")
+Application_Component(selfGl, "租户自建 GitLab")
+note top of selfGl
+  OmniAuth openid_connect RP
+  （客户侧 gitlab.rb，平台不代写）
+  @author: cursor @2026-08-25 21:10
+end note
+
+Application_DataObject(oidcClient, "auth_oidc_client")
+note bottom of oidcClient
+  +owner_company_id +purpose
+  +managed_by=tenant
+  @author: cursor @2026-08-25 21:10
+end note
+
+Application_DataObject(tenantConn, "git_oauth_tenant_gitlab_oauth_connections")
+Business_Event(evEnabled, "TenantGitLabOidcSsoEnabled")
+note right of evEnabled
+  另有 Rotated / Disabled
+  @author: cursor @2026-08-25 21:10
+end note
+
+Rel_Flow(taskFE, gw, "链路 A CRUD / 链路 B SSO 签发")
+Rel_Flow(gw, gitoauth, "tenant-connection OAuth App")
+Rel_Flow(gw, auth, "gitlab-oidc-sso + /api/oidc/*")
+Rel_Flow(selfGl, gw, "OmniAuth authorize/token/jwks")
+Rel_Flow(auth, tenantSvc, "members/resolve 闸门")
+Rel_Access(auth, oidcClient, "read/write")
+Rel_Access(gitoauth, tenantConn, "read/write")
+Rel_Flow(auth, evEnabled, "发布")
+Rel_Flow(gitService, gw, "平台 GitLab SSO（既有 gitlab-git-service*）")
+
+Implementation_Plateau(plateauV109, "Plateau v109")
+Implementation_Plateau(plateauV110, "Plateau v110 租户自建 GitLab OIDC SSO")
+Implementation_Gap(gapSso, "Gap: 自建 GitLab 不能用平台账号 Web 登录")
+Implementation_WorkPackage(wpSso, "WP-tenant-selfhosted-gitlab-oidc-sso")
+Rel_Triggering(plateauV109, gapSso, "identifies")
+Rel_Realization(wpSso, gapSso, "closes")
+Rel_Realization(wpSso, plateauV110, "delivers")
+
+@enduml

@@ -1,0 +1,28 @@
+---
+description: 行数门禁触发后须自动将目标文件削减到阈值以下（默认 500 行）
+alwaysApply: true
+---
+
+# 行数门禁触发后自动削减（元规则）
+
+适用于整个 monorepo **所有**源代码文件。细则见 `.ai/01_project_constraints/27_source_file_line_limit_auto_reduce.md`；阈值与总则见 `.ai/01_project_constraints/00_project_constraints.md` 第 20 条。
+
+## 强制要求
+
+- 单源文件物理行数默认上限 **500**；超过即视为行数门禁触发。
+- **触发后必须立即自动削减**（拆分子模块/组件/composable/工具文件等），使每个被点名的目标文件回落到 **≤ 阈值**；禁止只写「后续拆分」、禁止询问是否拆分、禁止继续向超标文件堆功能。
+- CI/pre-commit 的遗留净增长容差（如 `TASK2APP_FRONTEND_LEGACY_GROWTH_GRACE`）**不免除**削文件义务。
+- 削减完成后须复跑门禁或 `wc -l` 验收，再继续原任务。
+
+## 触发（任一）
+
+- `wc -l`（或等价）> 阈值
+- `task2app/scripts/ci/check_frontend_component_line_limit.py` 等行数门禁失败并点名路径
+- 用户/评审明确指出超标文件
+
+## 验收
+
+```bash
+wc -l <target>   # 须 ≤ 500（或门禁声明的上限）
+python3 task2app/scripts/ci/check_frontend_component_line_limit.py --staged
+```

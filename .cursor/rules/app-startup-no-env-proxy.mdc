@@ -1,0 +1,33 @@
+---
+description: 应用启动禁止继承环境 Proxy；HTTP(S)_PROXY 仅开发机网络加速
+alwaysApply: true
+---
+
+# 应用启动与环境 Proxy（元规则）
+
+适用于整个 monorepo **所有**业务/基础设施进程及其出站 HTTP 客户端。细则见 `.ai/01_project_constraints/23_app_startup_no_env_proxy.md`；根摘要见 `.ai.md`。
+
+## 强制要求
+
+- **应用程序**（runAll 子进程、`*/run.sh`、部署拉起的服务）**不得**使用环境变量 `http_proxy` / `https_proxy` / `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 做出站代理。
+- 环境 Proxy **仅**供开发者本机工具（curl、包管理器、浏览器等）做网络加速；禁止「服务跟着 shell 代理走」。
+- `conf/runAll.yaml` 的 **`use_proxy` 必须为 `false`**（默认）；禁止为方便翻墙改全局 true 并提交。
+- 服务启动脚本应在 exec 前 `unset` 上述变量；访问 registry/公有云的 HTTP Client 应显式直连（如 Go `Transport.Proxy = nil`）。
+
+## 落地要点
+
+- 各服务 `run.sh`/`start.sh`：exec 前 `unset` 代理变量
+- Go：`tracelog.Init` → `disableDefaultEnvProxy()`；或用 `tracelog.DirectClient`
+- Python：`Session.trust_env = False` / `core.utils.http_client` / `urlopen_direct`
+- Aliyun Tea：`apply_direct_network(Config)` + **仅** `direct_runtime_options()`（禁止手写 `RuntimeOptions()`）
+- 腾讯云 Python：`direct_http_profile` + `apply_direct_client`（SDK 空 proxy 仍读 env）
+- 华为云 / AWS：`huawei.direct_http_config` / `aws.direct_botocore_config`（首次接入即强制）
+- CI：`check_aliyun_tea_direct_runtime.py`、`check_cloud_sdk_direct_network.py`
+
+## 验收
+
+```bash
+rg -n '^use_proxy:' conf/runAll.yaml   # false
+tr '\0' '\n' < /proc/<pid>/environ | rg -i '^(https?|all)_proxy=' || echo ok
+python3 db/scripts/ci/check_aliyun_tea_direct_runtime.py
+```

@@ -1,0 +1,13 @@
+@startuml
+title Chrome插件-任务描述按标签页隔离
+|普通用户|
+start
+:在标签页 A 打开浮窗并填写任务描述;
+:切换到标签页 B 的浮窗;
+:标签页 B 描述保持本页内容（不覆盖）;
+note right
+  测试：taskChromePlugin/test/sync-description-removed.test.js
+  意图：frontend/task_chrome_plugin_no_cross_page_desc_sync
+end note
+stop
+@enduml

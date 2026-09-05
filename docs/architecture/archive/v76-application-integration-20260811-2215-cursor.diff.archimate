@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="v76-billing-order-comments-diff" id="id-v76diff01">
+  <folder name="Application" id="id-v76diff-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="app-taskFE-orders" name="taskFE BillingOrders"/>
+    <element xsi:type="archimate:ApplicationComponent" id="app-taskFE-admin" name="taskFE SystemAdminOrderRecords"/>
+    <element xsi:type="archimate:ApplicationComponent" id="app-oct" name="OrderCommentThread [NEW]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="app-taskBill" name="taskBill"/>
+    <element xsi:type="archimate:DataObject" id="do-boc" name="billing_order_comment [NEW]"/>
+    <element xsi:type="archimate:DataObject" id="do-bro" name="billing_resource_order"/>
+  </folder>
+  <folder name="Technology" id="id-v76diff-tech" type="technology">
+    <element xsi:type="archimate:TechnologyEvent" id="ev-boc" name="BILLING_ORDER_COMMENT_CREATED [NEW]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v76diff-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="pl-v75" name="Plateau v75"/>
+    <element xsi:type="archimate:Plateau" id="pl-v76" name="Plateau v76"/>
+    <element xsi:type="archimate:Gap" id="gap-v76" name="Gap: order comments thread"/>
+    <element xsi:type="archimate:WorkPackage" id="wp-v76" name="WP: billing order comments"/>
+  </folder>
+  <folder name="Relations" id="id-v76diff-rel" type="relations">
+    <element xsi:type="archimate:ServingRelationship" id="rel-oct-bo" source="app-oct" target="app-taskFE-orders" name="embed"/>
+    <element xsi:type="archimate:ServingRelationship" id="rel-oct-sa" source="app-oct" target="app-taskFE-admin" name="embed"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-bo-tb" source="app-taskFE-orders" target="app-taskBill" name="tenant comments"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-sa-tb" source="app-taskFE-admin" target="app-taskBill" name="admin comments"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-tb-boc" source="app-taskBill" target="do-boc" name="R/W"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-tb-bro" source="app-taskBill" target="do-bro" name="validate"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-tb-ev" source="app-taskBill" target="ev-boc" name="publish"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-pl75-gap" source="pl-v75" target="gap-v76"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wp-v76" target="gap-v76"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-wp-pl76" source="wp-v76" target="pl-v76"/>
+  </folder>
+  <folder name="Views" id="id-v76diff-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-mig" name="架构变迁 v75→v76 — billing-order-comments">
+      <child xsi:type="archimate:DiagramObject" id="do-pl75" archimateElement="pl-v75">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-pl75-gap" source="do-pl75" target="do-gap" archimateRelationship="rel-pl75-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap" targetConnections="conn-pl75-gap conn-wp-gap" archimateElement="gap-v76">
+        <bounds x="240" y="48" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp" archimateElement="wp-v76">
+        <bounds x="240" y="160" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wp" target="do-gap" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-pl76" source="do-wp" target="do-pl76" archimateRelationship="rel-wp-pl76"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-pl76" targetConnections="conn-wp-pl76" archimateElement="pl-v76">
+        <bounds x="500" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-flow" name="v76 Target — order comments flow">
+      <child xsi:type="archimate:DiagramObject" id="d-bo" archimateElement="app-taskFE-orders">
+        <bounds x="48" y="48" width="150" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-bo-tb" source="d-bo" target="d-tb" archimateRelationship="rel-bo-tb"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-sa" archimateElement="app-taskFE-admin">
+        <bounds x="48" y="140" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-sa-tb" source="d-sa" target="d-tb" archimateRelationship="rel-sa-tb"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-oct" archimateElement="app-oct">
+        <bounds x="48" y="240" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-oct-bo" source="d-oct" target="d-bo" archimateRelationship="rel-oct-bo"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-oct-sa" source="d-oct" target="d-sa" archimateRelationship="rel-oct-sa"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-tb" targetConnections="c-bo-tb c-sa-tb" archimateElement="app-taskBill">
+        <bounds x="280" y="90" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-tb-boc" source="d-tb" target="d-boc" archimateRelationship="rel-tb-boc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-tb-bro" source="d-tb" target="d-bro" archimateRelationship="rel-tb-bro"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-tb-ev" source="d-tb" target="d-ev" archimateRelationship="rel-tb-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-boc" targetConnections="c-tb-boc" archimateElement="do-boc">
+        <bounds x="460" y="48" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-bro" targetConnections="c-tb-bro" archimateElement="do-bro">
+        <bounds x="460" y="140" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-ev" targetConnections="c-tb-ev" archimateElement="ev-boc">
+        <bounds x="460" y="230" width="220" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

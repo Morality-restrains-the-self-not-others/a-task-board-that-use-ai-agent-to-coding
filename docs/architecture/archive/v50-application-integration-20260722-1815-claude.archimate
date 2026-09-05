@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v50-idle-reuse-boot-guard-20260722-1815">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v50 Target (idle-reuse-boot-guard-orphan-cross-check)</name>
+  <purpose>Idle reuse requires idle_since (boot guard); orphan delete skips instances owned by any workspace CSC</purpose>
+
+  <folder name="Motivation" id="id-v50-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="Constraint 变更落 Go taskCloudService" id="id-v50-constraint"/>
+    <element xsi:type="archimate:Principle" name="Principle 启动中不可当闲置复用" id="id-v50-principle-a"/>
+    <element xsi:type="archimate:Principle" name="Principle 他任务持有实例不可孤儿删除" id="id-v50-principle-c"/>
+  </folder>
+  <folder name="Application" id="id-v50-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="taskTaskService auto_run" id="id-v50-tts"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskCloudService boot-guard + orphan cross-check [MODIFIED v50]" id="id-v50-tcs"/>
+    <element xsi:type="archimate:DataObject" name="🟡 cloud_server_configs idle_since" id="id-v50-csc"/>
+    <element xsi:type="archimate:DataObject" name="workspace_machine_policies" id="id-v50-policy"/>
+  </folder>
+  <folder name="Technology" id="id-v50-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="Aliyun ECS" id="id-v50-ecs"/>
+  </folder>
+  <folder name="Relations" id="id-v50-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v50-flow-tts-tcs" source="id-v50-tts" target="id-v50-tcs" name="start-vm-auto"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v50-acc-tcs-csc" source="id-v50-tcs" target="id-v50-csc" name="R/W bind/unbind"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v50-acc-tcs-policy" source="id-v50-tcs" target="id-v50-policy" name="R prefer_idle_reuse"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v50-flow-tcs-ecs" source="id-v50-tcs" target="id-v50-ecs" name="Describe/Delete orphan"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v50-inf-c" source="id-v50-constraint" target="id-v50-tcs" name="落点"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v50-inf-a" source="id-v50-principle-a" target="id-v50-tcs" name="A"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v50-inf-p" source="id-v50-principle-c" target="id-v50-tcs" name="C"/>
+  </folder>
+  <folder name="Implementation" id="id-v50-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v48 — current" id="id-v50-plat-v48"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v50 — idle-reuse-boot-guard (target)" id="id-v50-plat-v50"/>
+    <element xsi:type="archimate:Gap" name="Gap: boot 误闲置 + orphan 误删已复用实例" id="id-v50-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v50-idle-reuse-boot-guard-orphan-cross-check" id="id-v50-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v50-rel-plat48-gap" source="id-v50-plat-v48" target="id-v50-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v50-rel-wp-gap" source="id-v50-wp" target="id-v50-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v50-rel-wp-plat50" source="id-v50-wp" target="id-v50-plat-v50"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v50-rel-plat50-tcs" source="id-v50-plat-v50" target="id-v50-tcs"/>
+  </folder>
+  <folder name="Views" id="id-v50-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v48→v50 — idle-reuse-boot-guard" id="id-v50-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v50-do-plat48" archimateElement="id-v50-plat-v48">
+        <bounds x="48" y="100" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v50-conn-plat48-gap"
+          source="id-v50-do-plat48" target="id-v50-do-gap"
+          archimateRelationship="id-v50-rel-plat48-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v50-do-gap" archimateElement="id-v50-gap"
+        targetConnections="id-v50-conn-plat48-gap id-v50-conn-wp-gap">
+        <bounds x="380" y="100" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v50-do-wp" archimateElement="id-v50-wp">
+        <bounds x="820" y="60" width="360" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v50-conn-wp-gap"
+          source="id-v50-do-wp" target="id-v50-do-gap"
+          archimateRelationship="id-v50-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v50-conn-wp-plat50"
+          source="id-v50-do-wp" target="id-v50-do-plat50"
+          archimateRelationship="id-v50-rel-wp-plat50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v50-do-plat50" archimateElement="id-v50-plat-v50"
+        targetConnections="id-v50-conn-wp-plat50">
+        <bounds x="820" y="160" width="360" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v50-conn-plat50-tcs"
+          source="id-v50-do-plat50" target="id-v50-do-tcs-m"
+          archimateRelationship="id-v50-rel-plat50-tcs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v50-do-tcs-m" archimateElement="id-v50-tcs"
+        targetConnections="id-v50-conn-plat50-tcs">
+        <bounds x="820" y="250" width="360" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v50 Target — idle/orphan 数据流" id="id-v50-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v50-do-tts" archimateElement="id-v50-tts">
+        <bounds x="40" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v50-conn-tts-tcs"
+          source="id-v50-do-tts" target="id-v50-do-tcs"
+          archimateRelationship="id-v50-flow-tts-tcs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v50-do-tcs" archimateElement="id-v50-tcs"
+        targetConnections="id-v50-conn-tts-tcs id-v50-conn-inf-c id-v50-conn-inf-a id-v50-conn-inf-p">
+        <bounds x="300" y="80" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v50-conn-tcs-csc"
+          source="id-v50-do-tcs" target="id-v50-do-csc"
+          archimateRelationship="id-v50-acc-tcs-csc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v50-conn-tcs-policy"
+          source="id-v50-do-tcs" target="id-v50-do-policy"
+          archimateRelationship="id-v50-acc-tcs-policy"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v50-conn-tcs-ecs"
+          source="id-v50-do-tcs" target="id-v50-do-ecs"
+          archimateRelationship="id-v50-flow-tcs-ecs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v50-do-csc" archimateElement="id-v50-csc"
+        targetConnections="id-v50-conn-tcs-csc">
+        <bounds x="300" y="200" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v50-do-policy" archimateElement="id-v50-policy"
+        targetConnections="id-v50-conn-tcs-policy">
+        <bounds x="520" y="200" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v50-do-ecs" archimateElement="id-v50-ecs"
+        targetConnections="id-v50-conn-tcs-ecs">
+        <bounds x="680" y="80" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v50-do-constraint" archimateElement="id-v50-constraint">
+        <bounds x="40" y="280" width="220" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v50-conn-inf-c"
+          source="id-v50-do-constraint" target="id-v50-do-tcs"
+          archimateRelationship="id-v50-inf-c"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v50-do-principle-a" archimateElement="id-v50-principle-a">
+        <bounds x="280" y="280" width="220" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v50-conn-inf-a"
+          source="id-v50-do-principle-a" target="id-v50-do-tcs"
+          archimateRelationship="id-v50-inf-a"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v50-do-principle-c" archimateElement="id-v50-principle-c">
+        <bounds x="520" y="280" width="260" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v50-conn-inf-p"
+          source="id-v50-do-principle-c" target="id-v50-do-tcs"
+          archimateRelationship="id-v50-inf-p"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

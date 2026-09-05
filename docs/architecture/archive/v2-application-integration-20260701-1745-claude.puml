@@ -1,0 +1,99 @@
+' @title: AI Dev Platform — Application Component Architecture
+' @view: application-integration
+' @status: target
+' @version: 2
+' @iteration: taskAIEndPoint 使用说明撰写 & token 验证迁移至 taskCredentialService
+' @author: claude
+' @based_on: v1 (v1-application-integration-20260701-1630-claude.puml)
+' @updated: 2026-07-01 17:45
+' @description: 新增 taskAIEndPoint → taskCredentialService → Django 内部 API 调用链路；标注上游 LLM 外部系统
+
+@startuml
+title AI Dev Platform — Application Component Architecture v2 Target (2026-07-01 17:45)
+
+' ═══════════════════════════════════════════════════════════
+' Change Legend — v2 变更图例
+' ═══════════════════════════════════════════════════════════
+legend right
+  |<#LightGreen> | [NEW v2] 本次新增关系/标注 |
+  |<#White>      | v1 已有组件（未变） |
+endlegend
+
+' ── Groups (logical layers) ──
+component "Frontend Layer" as FL #LightYellow
+component "Gateway Layer" as GL #LightBlue
+component "Platform Services" as PS #LightGreen
+component "Container Stack" as CS #LightCoral
+component "Domain Events (18 Consumers)" as DE #LightPink
+component "Dev Tools" as DT #LightGray
+
+' ── Frontend ──
+component "Vue Frontend\n(:4000)" as VUE #Yellow
+
+' ── Gateway ──
+component "task-gateway\nAPISIX (:18081)" as GW #Blue
+
+' ── Platform ──
+component "saas-backend\nDjango (:8001)" as BE #Green
+component "ai-provider\nDjango (:8010)" as AI #Green
+component "task-auth\nGo (:8003)" as AUTH #Green
+component "git-oauth\nDjango (:8002)" as GOAUTH #Green
+component "task-bill\nGo (:8009)" as BILL #Green
+component "task-sse\nNode.js (:8007)" as SSE #Green
+component "task-agent-support\nGo (:8011)" as AGT #Green
+component "task-ai-endpoint\nGo (:8013)" as AIEP #Green
+
+' ── Container Stack ──
+component "task-container-gateway\nGo (:8014)" as CGW #Coral
+component "task-credential-service\nGo (:8015)" as CRED #Coral
+component "go-relay\nGo (:8797)" as RELAY #Coral
+component "go-run-container\nGo" as RUN #Coral
+
+' ── Domain Events ──
+component "Registration Chain\nUSER→COMPANY→WORKSPACE\n(:18025-30)" as DE_REG #Pink
+component "Billing + SSE\n(:18020-21)" as DE_BILL #Pink
+component "Notifications\nEMAIL+INVITE+ACTIVATE\n(:18022-26)" as DE_NOTIF #Pink
+component "Company Fan-out\n(:18027-29)" as DE_COMP #Pink
+component "Cloud + AI Reply\n(:18030-37)" as DE_CLOUD #Pink
+
+' ── Dev Tools ──
+component "valueStream\nGo (:9998)" as VS #Gray
+
+' ── External ──
+component "Upstream LLM\n(DeepSeek / OpenAI)" as LLM #White
+
+' ── Composition ──
+FL --> VUE
+GL --> GW
+PS --> BE
+PS --> AI
+PS --> AUTH
+PS --> GOAUTH
+PS --> BILL
+PS --> SSE
+PS --> AGT
+PS --> AIEP
+CS --> CGW
+CS --> CRED
+CS --> RELAY
+CS --> RUN
+DE --> DE_REG
+DE --> DE_BILL
+DE --> DE_NOTIF
+DE --> DE_COMP
+DE --> DE_CLOUD
+DT --> VS
+
+' ── v2 新增数据流 ──
+AIEP -[#Green]-> BE : "[NEW v2] internal API\n(token验证/路由/预算/凭证)"
+AIEP -[#Green]-> CRED : "[NEW v2] /v1/token/validate\n(proxy token SSOT)"
+AIEP -[#Green]-> LLM : "[NEW v2] Chat Completions\n(SSE streaming)"
+CRED -[#Green]-> BE : "[NEW v2] scope lookup\n(CloudServerConfig)"
+note top of LLM
+  [NEW v2] 上游 LLM Provider
+  taskAIEndPoint 是唯一出口
+  容器不持有 master API key
+  @author: claude @2026-07-01 17:45
+end note
+
+@enduml

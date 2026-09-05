@@ -1,0 +1,23 @@
+---
+description: 会话结束须将优化建议编号写入 .learnings/OPTIMIZATION_TODOS.md，完成后标记 completed。全会话 alwaysApply，不限制 globs。
+alwaysApply: true
+---
+
+# 会话结束优化建议 Todo（元规则）
+
+适用于整个 monorepo。详细条文见 `.ai/01_project_constraints/25_session_end_optimization_todo.md`。
+
+## 强制要求
+
+- **会话收尾**时：把可执行、非阻塞的优化建议追加到 **`.learnings/OPTIMIZATION_TODOS.md`**，使用编号 `OPT-YYYYMMDD-NNN`，初始 `Status: pending`。
+- **禁止**只在聊天末尾写优化建议而不落盘（无实质建议时可声明「本会话无新增」）。
+- **某条已落地验证**时：将该 `OPT-*` 标记为 `completed`，填写 `Completed` 与 `Completion-Note`；禁止删除历史条目；完成后移至 **`.learnings/OPTIMIZATION_TODOS_COMPLETED.md`**，开放清单仅保留 `pending`。
+- 与 `.learnings/LEARNINGS.md` 分工：LEARNINGS = 经验；OPTIMIZATION_TODOS = 可执行待办；已完成归档 = `OPTIMIZATION_TODOS_COMPLETED.md`。
+
+## 触发
+
+任务完成最终答复、`/goal` Final Overview、ship 收尾、用户明确结束会话且有可沉淀建议。中途进度汇报不触发。
+
+## 质量
+
+可执行、非阻塞、去重；单会话通常 0～5 条。

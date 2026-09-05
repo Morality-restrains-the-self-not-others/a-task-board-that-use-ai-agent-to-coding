@@ -1,0 +1,233 @@
+.h1 {
+  font-size: 1.35rem;
+  margin: 0 0 0.35rem;
+}
+.h2 {
+  font-size: 1.1rem;
+  margin: 0 0 1rem;
+}
+.sub {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+.lbl {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0.5rem 0 0.25rem;
+}
+.inp {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text);
+}
+.inp.sm {
+  width: auto;
+  min-width: 8rem;
+}
+.inp.area {
+  width: 100%;
+  margin: 0.5rem 0 1rem;
+}
+.row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+.row.gap {
+  margin-top: 1rem;
+}
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.msg {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  white-space: normal;
+}
+.btn.sm {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+}
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+.modal {
+  width: 100%;
+  max-width: 420px;
+}
+code {
+  font-size: 0.85rem;
+  background: #f1f5f9;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+.platform-group {
+  margin-bottom: 1.5rem;
+}
+.platform-title {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+  color: var(--text);
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.version-cell {
+  font-weight: 600;
+  color: var(--accent);
+}
+.history-cell {
+  max-width: 300px;
+}
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.history-item {
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.history-date {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.history-note {
+  color: var(--text);
+}
+.history-reviewer {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.name-cell {
+  font-weight: 600;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.desc-cell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.runtime-cell {
+  font-size: 0.8rem;
+}
+.runtime-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.runtime-item {
+  background: #f1f5f9;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.empty-msg {
+  text-align: center;
+  padding: 2rem;
+}
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.tab-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.tab-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+/* 厂商审核徽标（OPT-20260806-065 审核流） */
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.badge-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+.badge-ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+.badge-warn {
+  background: #fee2e2;
+  color: #991b1b;
+}
+/* 同一镜像组仅允许一个激活版本：组内已有激活版本时的提示 */
+.group-active-hint {
+  display: inline-block;
+  margin-left: 0.5rem;
+  color: #92400e;
+  font-size: 0.75rem;
+  border: 1px dashed #f59e0b;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+}
+.group-active-hint + button,
+button + .group-active-hint {
+  margin-left: 0.5rem;
+}
+button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* 审核列表镜像组图标（OPT-20260828-014）：36px 缩略图，缺省占位块 */
+.group-icon-sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+  vertical-align: middle;
+  margin-right: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.group-icon-sm.group-icon-placeholder {
+  display: inline-block;
+  background: #e2e8f0;
+}

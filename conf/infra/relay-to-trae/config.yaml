@@ -1,0 +1,15 @@
+# 0.0.0.0：供边缘 nginx（LAN IP:8797）反代；同机 TCG 走 loopback
+host: 0.0.0.0
+port: 8797
+logging:
+  log_file: logs/go-relay/relay.log
+secret: ""
+# 浏览器可达公网 Origin（scheme://host）；docker 启动时用于改写 loopback BUSINESS_API / TRAE_PUBLIC_IP
+publicIp: ${scheme}://${subdomains.businessapi}
+businessApiOrigin: ${scheme}://${subdomains.businessapi}
+timeouts:
+  resetSec: 45
+  pushSec: 20
+  procTermSec: 12
+  procKillSec: 5
+  portProbeSec: 0.35

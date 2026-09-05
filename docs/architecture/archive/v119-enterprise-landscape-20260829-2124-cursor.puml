@@ -1,0 +1,81 @@
+' @title: 多区域镜像仓库副本（企业景观）
+' @view: enterprise-landscape
+' @status: target
+' @version: 119
+' @iteration: multi-region-image-registry-replicas
+' @author: cursor
+' @based_on: v118 (v118-enterprise-landscape-20260829-1832-cursor.puml)
+' @updated: 2026-08-29 21:24
+' @description: 厂商按 CSI 区域登记公网仓库副本；平台推导内网；评论启机同区优先拉取
+
+@startuml
+!include <archimate/Archimate>
+
+title v119 Target — 多区域镜像仓库副本 2026-08-29 21:24
+
+' ═══════════════════════════════════════
+' Change Legend — v119 变更图例
+' ═══════════════════════════════════════
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v119 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v119 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v119 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Business_Actor(vendor, "镜像厂商")
+note right of vendor
+  [NEW v119] 各区仓库自推或 ACR 跨地域复制
+  @author: cursor @2026-08-29 21:24
+end note
+
+Business_Actor(commenter, "发评 / 自动运行")
+note right of commenter
+  启机选云区域后 docker pull 走同区副本
+end note
+
+Business_Process(declareReplica, "按区域登记公网仓库")
+note right of declareReplica
+  [NEW v119] 与 CSI 同键 (platform, region)
+end note
+
+Business_Process(startVm, "评论启动云服务器")
+note right of startVm
+  [MODIFIED v119] 同区内网 → 同区公网 → 规范 URL
+end note
+
+Application_Component(portal, "厂商门户")
+Application_Component(aip, "taskAiProvider")
+note right of aip
+  [MODIFIED v119] 副本表 + catalog 附带 replica
+end note
+
+Application_Component(cloud, "taskCloudService")
+note right of cloud
+  [MODIFIED v119] 安装快照 + start-vm 选址
+end note
+
+Technology_Node(regPub, "区域公网 Registry")
+Technology_Node(regVpc, "区域内网 Registry")
+note right of regVpc
+  [NEW v119] 由公网 host 推导；控制面不探测
+end note
+
+Rel_Assignment(vendor, declareReplica)
+Rel_Assignment(commenter, startVm)
+Rel_Flow(vendor, portal, "registry_public_url")
+Rel_Flow(portal, aip, "association + replica upsert")
+Rel_Flow(commenter, cloud, "start-vm region_id")
+Rel_Flow(cloud, aip, "catalog runtime + replica 安装时")
+Rel_Serving(regPub, aip, "控制面验 digest")
+Rel_Serving(regVpc, startVm, "VM docker pull 优先")
+
+Implementation_Plateau(p118, "Plateau v118")
+Implementation_Plateau(p119, "Plateau v119")
+Implementation_Gap(g, "Gap: 单 image_url 跨区拉取")
+Implementation_WorkPackage(wp, "WP-multi-region-image-replicas")
+Rel_Triggering(p118, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p119, "delivers")
+
+@enduml

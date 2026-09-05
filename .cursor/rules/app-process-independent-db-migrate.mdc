@@ -1,0 +1,31 @@
+---
+description: 应用进程独立于数据库迁移 — 业务进程禁止跑 dataMigrate；统一由 9999 初始化数据库管理
+alwaysApply: true
+---
+
+# 应用进程独立于数据库迁移（元规则）
+
+适用于整个 monorepo。细则见 `.ai/01_project_constraints/40_app_process_independent_of_db_migrate.md`；目录规范见 `34_data_migrate_directory_standard.md`；注册表见 `38_database_init_registry_mandate.md`。
+
+## 强制要求
+
+1. **DDL/seed 仅放** `dataMigrate/<service>/`
+2. **迁移编排入口**：`http://<host>:9999/`（如 `http://10.2.150.68:9999/`）「初始化全部数据库」→ `InitAllDatabases` → `db/registry.yaml` → `migrate.sh`（推荐 `apply_datamigrate.sh`）
+3. **业务应用进程禁止执行迁移**：`openDB` / 默认 `main` / worker 启动路径 **不得** 调用 `runDataMigrate`、`runDataMigrateFromDir`、`EnsureSchema`、`RunGoDataMigrate` 或内嵌 DDL
+4. **允许**：显式 `migrate` CLI、`bootstrap-*` 运维命令、测试夹具、9999/`migrate.sh`
+
+## 禁止
+
+| 禁止 | 替代 |
+|------|------|
+| server 启动时自动 `runDataMigrate` | 先 9999 init，再启进程 |
+| `openDB` 内调用迁移 | 连接与迁移分离 |
+| 「重启服务即迁移」的文档/假设 | 文档写明须走 9999 |
+| 业务路径 `CREATE TABLE` 安全网 | 补全 dataMigrate + 9999 |
+
+## 验收
+
+```bash
+python3 dataMigrate/check_no_startup_migrate.py
+rg -n 'migrate_script:' db/registry.yaml
+```

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v28-ai-20260715-1140">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v28 Target</name>
+  <purpose>Multi-account switch isolation: Token&gt;Session, clear sessionid, leave tenant URL</purpose>
+
+  <folder name="Application" id="id-v28-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue Frontend activate+resolveSwitchHref" id="id-v28-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway Token&gt;Cookie" id="id-v28-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 saas-backend Token&gt;Session" id="id-v28-django"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskAuth activate-session" id="id-v28-auth"/>
+    <element xsi:type="archimate:DataObject" name="sessionid cleared on switch" id="id-v28-session"/>
+    <element xsi:type="archimate:DataObject" name="authToken + userId" id="id-v28-creds"/>
+  </folder>
+  <folder name="Motivation" id="id-v28-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="🟢 Token precedence over Session" id="id-v28-constraint"/>
+  </folder>
+  <folder name="Relations" id="id-v28-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v28-flow-vue-gw" source="id-v28-vue" target="id-v28-gw" name="API + activate-session"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v28-flow-gw-django" source="id-v28-gw" target="id-v28-django" name="business API"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v28-flow-gw-auth" source="id-v28-gw" target="id-v28-auth" name="activate-session"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v28-acc-vue-session" source="id-v28-vue" target="id-v28-session" name="clear on switch"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v28-acc-vue-creds" source="id-v28-vue" target="id-v28-creds" name="RW active"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v28-assoc-c-django" source="id-v28-constraint" target="id-v28-django" name="enforces"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v28-assoc-c-gw" source="id-v28-constraint" target="id-v28-gw" name="aligned"/>
+  </folder>
+  <folder name="Implementation" id="id-v28-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v27 — current baseline" id="id-v28-plat-v27"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v28 — multi-account isolation" id="id-v28-plat-v28"/>
+    <element xsi:type="archimate:Gap" name="Gap: Session overrides Token; tenant URL leak" id="id-v28-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v28-multi-account-isolation" id="id-v28-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v28-rel-plat27-gap" source="id-v28-plat-v27" target="id-v28-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v28-rel-wp-gap" source="id-v28-wp" target="id-v28-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v28-rel-wp-plat28" source="id-v28-wp" target="id-v28-plat-v28"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v28-rel-plat28-django" source="id-v28-plat-v28" target="id-v28-django"/>
+  </folder>
+  <folder name="Views" id="id-v28-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v27→v28 — isolation" id="id-v28-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-plat27" archimateElement="id-v28-plat-v27">
+        <bounds x="48" y="120" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-plat27-gap"
+          source="id-v28-do-plat27" target="id-v28-do-gap"
+          archimateRelationship="id-v28-rel-plat27-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-gap" archimateElement="id-v28-gap"
+        targetConnections="id-v28-conn-plat27-gap id-v28-conn-wp-gap">
+        <bounds x="380" y="120" width="340" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-wp" archimateElement="id-v28-wp">
+        <bounds x="780" y="80" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-wp-gap"
+          source="id-v28-do-wp" target="id-v28-do-gap"
+          archimateRelationship="id-v28-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-wp-plat28"
+          source="id-v28-do-wp" target="id-v28-do-plat28"
+          archimateRelationship="id-v28-rel-wp-plat28"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-plat28" archimateElement="id-v28-plat-v28"
+        targetConnections="id-v28-conn-wp-plat28">
+        <bounds x="780" y="180" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-plat28-django"
+          source="id-v28-do-plat28" target="id-v28-do-django-m"
+          archimateRelationship="id-v28-rel-plat28-django"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-django-m" archimateElement="id-v28-django"
+        targetConnections="id-v28-conn-plat28-django">
+        <bounds x="780" y="260" width="280" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v28 Target — isolation 数据流" id="id-v28-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-vue" archimateElement="id-v28-vue">
+        <bounds x="40" y="80" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-vue-gw"
+          source="id-v28-do-vue" target="id-v28-do-gw"
+          archimateRelationship="id-v28-flow-vue-gw"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-vue-session"
+          source="id-v28-do-vue" target="id-v28-do-session"
+          archimateRelationship="id-v28-acc-vue-session"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-vue-creds"
+          source="id-v28-do-vue" target="id-v28-do-creds"
+          archimateRelationship="id-v28-acc-vue-creds"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-session" archimateElement="id-v28-session"
+        targetConnections="id-v28-conn-vue-session">
+        <bounds x="40" y="200" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-creds" archimateElement="id-v28-creds"
+        targetConnections="id-v28-conn-vue-creds">
+        <bounds x="40" y="280" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-gw" archimateElement="id-v28-gw"
+        targetConnections="id-v28-conn-vue-gw id-v28-conn-c-gw">
+        <bounds x="300" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-gw-django"
+          source="id-v28-do-gw" target="id-v28-do-django"
+          archimateRelationship="id-v28-flow-gw-django"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-gw-auth"
+          source="id-v28-do-gw" target="id-v28-do-auth"
+          archimateRelationship="id-v28-flow-gw-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-django" archimateElement="id-v28-django"
+        targetConnections="id-v28-conn-gw-django id-v28-conn-c-django">
+        <bounds x="520" y="40" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-auth" archimateElement="id-v28-auth"
+        targetConnections="id-v28-conn-gw-auth">
+        <bounds x="520" y="140" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v28-do-constraint" archimateElement="id-v28-constraint">
+        <bounds x="300" y="240" width="240" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-c-django"
+          source="id-v28-do-constraint" target="id-v28-do-django"
+          archimateRelationship="id-v28-assoc-c-django"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v28-conn-c-gw"
+          source="id-v28-do-constraint" target="id-v28-do-gw"
+          archimateRelationship="id-v28-assoc-c-gw"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

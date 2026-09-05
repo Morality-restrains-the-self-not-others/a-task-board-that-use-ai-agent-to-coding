@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# HOOK_VERSION 1.1.0
+# Meta-repo 子仓库优先提交 — pre-push 门禁
+# v1.1.0: 弃用 git submodule foreach（index 中未登记 gitlink 会 fatal 中途退出，
+#         导致 conf 之后的仓库全部漏检），改为按 .gitmodules 登记 path 逐仓检查
+# 检测未推送的提交，有则阻断 root push。
+# 细则：.ai/01_project_constraints/32_submodule_commit_order.md
+set -euo pipefail
+
+echo "▸ [hook:pre-push v1.1.0]"
+
+ROOT="$(cd "$(git rev-parse --git-common-dir 2>/dev/null || echo "${GIT_DIR:-.git}")/.." && pwd)"
+
+# .gitmodules 是子仓登记 SSOT：只检查登记路径，未登记 gitlink（如 *-wt）不参与
+SUBMODULES=()
+while IFS= read -r sub; do
+  [ -z "$sub" ] && continue
+  SUBMODULES+=("$sub")
+done < <(git config --file "$ROOT/.gitmodules" --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}')
+
+UNPUSHED_REPOS=()
+for sub in "${SUBMODULES[@]}"; do
+  if [ ! -d "$ROOT/$sub/.git" ] && [ ! -f "$ROOT/$sub/.git" ]; then
+    continue  # 子仓未克隆，跳过
+  fi
+  upstream=$(git -C "$ROOT/$sub" rev-parse --abbrev-ref @{u} 2>/dev/null || true)
+  if [ -n "$upstream" ]; then
+    count=$(git -C "$ROOT/$sub" rev-list --count @{u}..HEAD 2>/dev/null || echo 0)
+  else
+    count=$(git -C "$ROOT/$sub" rev-list --count HEAD 2>/dev/null || echo 0)
+  fi
+  if [ "${count:-0}" -gt 0 ]; then
+    UNPUSHED_REPOS+=("$sub ($count commits ahead)")
+  fi
+done
+
+if [ ${#UNPUSHED_REPOS[@]} -gt 0 ]; then
+  echo ""
+  echo "╔══════════════════════════════════════════════════════════════╗"
+  echo "║  ⛔ 子仓库优先提交门禁：检测到未推送的子仓库提交              ║"
+  echo "╠══════════════════════════════════════════════════════════════╣"
+  echo "║  请先推送以下子仓库，再推送主仓库：                           ║"
+  for repo in "${UNPUSHED_REPOS[@]}"; do
+    printf "║    • %-54s ║\n" "$repo"
+  done
+  echo "╠══════════════════════════════════════════════════════════════╣"
+  echo "║  快捷修复：                                                   ║"
+  echo "║    python3 runAll/scripts/commit_with_submodules.py --apply  ║"
+  echo "╚══════════════════════════════════════════════════════════════╝"
+  echo ""
+  exit 1
+fi
+
+exit 0

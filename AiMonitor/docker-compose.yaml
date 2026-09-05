@@ -1,0 +1,200 @@
+services:
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    container_name: aimonitor-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+      - --web.enable-remote-write-receiver
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/blackbox.yml:/etc/prometheus/blackbox.yml:ro
+      - ./prometheus/file_sd:/etc/prometheus/file_sd:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: "no"
+    networks:
+      - aimonitor
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    container_name: aimonitor-blackbox-exporter
+    command:
+      - --config.file=/etc/blackbox_exporter/config.yml
+    ports:
+      - "9115:9115"
+    volumes:
+      - ./prometheus/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: "no"
+    networks:
+      - aimonitor
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: aimonitor-node-exporter
+    command:
+      - --path.rootfs=/host
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/containerd/.+)($|/)
+      - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
+      # textfile collector（OPT-20260823-066）：disk_capacity_reporter.py 宿主 cron 写指标
+      - --collector.textfile.directory=/var/lib/prometheus/node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/rootfs:ro
+      - ${TEXTFILE_DIR:-/home/ljy/ramwork-recovery/node-exporter-textfiles}:/var/lib/prometheus/node-exporter:ro
+    restart: "no"
+    networks:
+      - aimonitor
+
+  # MySQL Exporter — 采集 MySQL 实例指标（表大小、连接数、查询性能等）
+  # 用于冷热分离归档监控（data_archive_log 状态 + 各表行数趋势）
+  # 多 MySQL 实例场景下可启动多个容器（每个指向不同 target）
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.16.0
+    container_name: aimonitor-mysqld-exporter
+    command:
+      # v0.16 defaults to ./.my.cnf and exits if that file is missing (no --mysqld.password).
+      - --config.my-cnf=/etc/mysqld-exporter/my.cnf
+      - --collect.info_schema.tables
+      - --collect.info_schema.tables.databases=task_bill,task_cloud,task_auth,task_task,task_project,task_budget,task_tenant,ai_provider,git_oauth,container,task_referral
+      - --collect.info_schema.processlist
+      - --collect.info_schema.userstats
+      - --collect.perf_schema.eventsstatements
+      - --collect.perf_schema.file_events
+      - --collect.perf_schema.tablelocks
+    ports:
+      - "9104:9104"
+    environment:
+      DATA_SOURCE_NAME: "${MYSQL_EXPORTER_USER:-root}:${MYSQL_EXPORTER_PASSWORD:-root123456}@(${MYSQL_EXPORTER_HOST:-host.docker.internal}:${MYSQL_EXPORTER_PORT:-3306})/"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./mysqld-exporter/my.cnf:/etc/mysqld-exporter/my.cnf:ro
+    restart: "no"
+    networks:
+      - aimonitor
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    container_name: aimonitor-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: daydaymoney-grafana-app
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../DaydaymoneyGrafana/dist:/var/lib/grafana/plugins/daydaymoney-grafana-app:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+      - otel-collector
+    restart: "no"
+    networks:
+      - aimonitor
+
+  tempo:
+    image: grafana/tempo:2.10.4
+    container_name: aimonitor-tempo
+    command: ["-config.file=/etc/tempo/tempo-config.yaml"]
+    ports:
+      - "3200:3200"
+    volumes:
+      - ./tempo/tempo-config.yaml:/etc/tempo/tempo-config.yaml:ro
+      - tempo_data:/var/tempo
+    restart: "no"
+    networks:
+      - aimonitor
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.120.0
+    container_name: aimonitor-otel-collector
+    command: ["--config=/etc/otel-collector/otel-collector.yaml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./otel-collector/otel-collector.yaml:/etc/otel-collector/otel-collector.yaml:ro
+    depends_on:
+      - tempo
+    restart: "no"
+    networks:
+      - aimonitor
+
+  loki:
+    image: grafana/loki:3.4.2
+    container_name: aimonitor-loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    restart: "no"
+    networks:
+      - aimonitor
+
+  promtail:
+    image: grafana/promtail:3.4.2
+    container_name: aimonitor-promtail
+    command:
+      - -config.file=/etc/promtail/promtail-local.yaml
+      - -config.expand-env=true
+    environment:
+      LOKI_PUSH_URL: ${LOKI_PUSH_URL:-http://aimonitor-loki:3100/loki/api/v1/push}
+    volumes:
+      - ./promtail/promtail-local.yaml:/etc/promtail/promtail-local.yaml:ro
+      - ${RUNALL_LOG_ROOT:-../logs}:/var/log/runall:ro
+      # APISIX file-logger / error.log（微信登录 502 等网关本地错误不进 task-auth）
+      - ${APISIX_LOG_ROOT:-../taskGateway/logs}:/var/log/apisix:ro
+      - promtail_data:/var/lib/promtail
+    depends_on:
+      - loki
+    restart: unless-stopped
+    networks:
+      - aimonitor
+
+  log-collection-status-reporter:
+    image: python:3.12-slim
+    container_name: aimonitor-log-collection-status-reporter
+    command:
+      - python3
+      - /scripts/log_collection_status_reporter.py
+      - --loki
+      - http://aimonitor-loki:3100/loki/api/v1
+      - --interval
+      - "60"
+    volumes:
+      - ./scripts/log_collection_status_reporter.py:/scripts/log_collection_status_reporter.py:ro
+    depends_on:
+      - loki
+    restart: "no"
+    networks:
+      - aimonitor
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  tempo_data:
+  promtail_data:
+
+networks:
+  aimonitor:
+    driver: bridge

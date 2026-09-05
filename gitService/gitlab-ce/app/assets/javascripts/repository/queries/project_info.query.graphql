@@ -1,0 +1,11 @@
+query getProjectInfo($projectPath: ID!) {
+  project(fullPath: $projectPath) {
+    id
+    userPermissions {
+      pushCode
+      downloadCode
+      createMergeRequestIn
+      forkProject
+    }
+  }
+}

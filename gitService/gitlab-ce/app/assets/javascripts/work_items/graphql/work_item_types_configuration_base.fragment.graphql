@@ -1,0 +1,20 @@
+fragment WorkItemTypesConfigurationBase on WorkItemType {
+  id
+  name
+  archived
+  enabled
+  canPromoteToObjective
+  canUserCreateItems
+  iconName
+  isConfigurable
+  isFilterableBoardView
+  isFilterableListView
+  isGroupWorkItemType
+  isIncidentManagement
+  isServiceDesk
+  showProjectSelector
+  supportsMoveAction
+  supportsRoadmapView
+  useIssueView
+  visibleInSettings
+}

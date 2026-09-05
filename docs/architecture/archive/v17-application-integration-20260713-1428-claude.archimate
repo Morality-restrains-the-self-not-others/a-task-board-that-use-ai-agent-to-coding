@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v17-ai-20260713-1428">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v17 Target</name>
+  <purpose>taskTaskService emits TASK_STATUS_CHANGED; taskEvents releases servers on terminal status</purpose>
+
+  <folder name="Application" id="id-v17-f-app" type="application"/>
+  <folder name="Technology" id="id-v17-f-tech" type="technology"/>
+  <folder name="Relations" id="id-v17-f-rel" type="relations"/>
+  <folder name="Implementation" id="id-v17-f-impl" type="implementation_migration"/>
+
+  <element xsi:type="archimate:ApplicationComponent" name="Vue TaskDetail / WorkPanel" id="id-v17-vue"/>
+  <element xsi:type="archimate:ApplicationComponent" name="task-gateway APISIX" id="id-v17-gw"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 taskTaskService [MODIFIED v17]" id="id-v17-tts"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟢 taskEvents release_servers [NEW v17]" id="id-v17-tev"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskCloudService" id="id-v17-tcs"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskContainerGateway" id="id-v17-cgw"/>
+  <element xsi:type="archimate:ApplicationComponent" name="cloudserverstopped handler" id="id-v17-css"/>
+
+  <element xsi:type="archimate:Node" name="🟢 Kafka task-status-changed [NEW v17]" id="id-v17-kafka"/>
+  <element xsi:type="archimate:Node" name="Kafka cloud-server-stopped" id="id-v17-kafka-stop"/>
+
+  <element xsi:type="archimate:FlowRelationship" id="id-v17-flow-vue-gw" source="id-v17-vue" target="id-v17-gw" name="PATCH todos"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v17-flow-gw-tts" source="id-v17-gw" target="id-v17-tts" name="更新 progress_column"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v17-flow-tts-kafka" source="id-v17-tts" target="id-v17-kafka" name="TASK_STATUS_CHANGED"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v17-flow-kafka-tev" source="id-v17-kafka" target="id-v17-tev" name="consume"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v17-flow-tev-tcs" source="id-v17-tev" target="id-v17-tcs" name="load config"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v17-flow-tev-kstop" source="id-v17-tev" target="id-v17-kafka-stop" name="CLOUD_SERVER_STOPPED"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v17-flow-kstop-css" source="id-v17-kafka-stop" target="id-v17-css" name="DeleteInstance + clear"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v17-flow-tev-cgw" source="id-v17-tev" target="id-v17-cgw" name="relay/mock stop"/>
+
+  <element xsi:type="archimate:Plateau" name="Plateau v16 — multi-entry same-origin API" id="id-v17-plat-v16"/>
+  <element xsi:type="archimate:Plateau" name="🎯 Plateau v17 — task terminal release servers" id="id-v17-plat-v17"/>
+  <element xsi:type="archimate:Gap" name="Gap: 任务终态不发事件、不释放服务器" id="id-v17-gap"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-v17-task-status-release-servers" id="id-v17-wp"/>
+  <element xsi:type="archimate:AssociationRelationship" id="id-v17-rel-plat16-gap" source="id-v17-plat-v16" target="id-v17-gap"/>
+  <element xsi:type="archimate:RealizationRelationship" id="id-v17-rel-wp-gap" source="id-v17-wp" target="id-v17-gap"/>
+  <element xsi:type="archimate:RealizationRelationship" id="id-v17-rel-wp-plat17" source="id-v17-wp" target="id-v17-plat-v17"/>
+  <element xsi:type="archimate:CompositionRelationship" id="id-v17-rel-plat17-tts" source="id-v17-plat-v17" target="id-v17-tts"/>
+  <element xsi:type="archimate:CompositionRelationship" id="id-v17-rel-plat17-tev" source="id-v17-plat-v17" target="id-v17-tev"/>
+
+  <folder name="Views" id="id-v17-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v16→v17 — 任务终态释放服务器" id="id-v17-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-plat-v16" archimateElement="id-v17-plat-v16">
+        <bounds x="48" y="120" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v17-conn-plat16-gap"
+          source="id-v17-do-plat-v16" target="id-v17-do-gap"
+          archimateRelationship="id-v17-rel-plat16-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-gap" archimateElement="id-v17-gap"
+        targetConnections="id-v17-conn-plat16-gap id-v17-conn-wp-gap">
+        <bounds x="380" y="120" width="300" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-wp" archimateElement="id-v17-wp">
+        <bounds x="740" y="80" width="300" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v17-conn-wp-gap"
+          source="id-v17-do-wp" target="id-v17-do-gap"
+          archimateRelationship="id-v17-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v17-conn-wp-plat17"
+          source="id-v17-do-wp" target="id-v17-do-plat-v17"
+          archimateRelationship="id-v17-rel-wp-plat17"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-plat-v17" archimateElement="id-v17-plat-v17"
+        targetConnections="id-v17-conn-wp-plat17">
+        <bounds x="740" y="180" width="300" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v17-conn-plat17-tts"
+          source="id-v17-do-plat-v17" target="id-v17-do-tts-m"
+          archimateRelationship="id-v17-rel-plat17-tts"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v17-conn-plat17-tev"
+          source="id-v17-do-plat-v17" target="id-v17-do-tev-m"
+          archimateRelationship="id-v17-rel-plat17-tev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-tts-m" archimateElement="id-v17-tts"
+        targetConnections="id-v17-conn-plat17-tts">
+        <bounds x="740" y="280" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-tev-m" archimateElement="id-v17-tev"
+        targetConnections="id-v17-conn-plat17-tev">
+        <bounds x="900" y="280" width="160" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v17 Target — 状态变更释放数据流" id="id-v17-view-flow">
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-vue" archimateElement="id-v17-vue">
+        <bounds x="40" y="40" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v17-conn-vue-gw"
+          source="id-v17-do-vue" target="id-v17-do-gw"
+          archimateRelationship="id-v17-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-gw" archimateElement="id-v17-gw"
+        targetConnections="id-v17-conn-vue-gw">
+        <bounds x="220" y="40" width="120" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v17-conn-gw-tts"
+          source="id-v17-do-gw" target="id-v17-do-tts"
+          archimateRelationship="id-v17-flow-gw-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-tts" archimateElement="id-v17-tts"
+        targetConnections="id-v17-conn-gw-tts">
+        <bounds x="380" y="40" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v17-conn-tts-kafka"
+          source="id-v17-do-tts" target="id-v17-do-kafka"
+          archimateRelationship="id-v17-flow-tts-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-kafka" archimateElement="id-v17-kafka"
+        targetConnections="id-v17-conn-tts-kafka">
+        <bounds x="560" y="40" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v17-conn-kafka-tev"
+          source="id-v17-do-kafka" target="id-v17-do-tev"
+          archimateRelationship="id-v17-flow-kafka-tev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-tev" archimateElement="id-v17-tev"
+        targetConnections="id-v17-conn-kafka-tev">
+        <bounds x="760" y="40" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v17-conn-tev-tcs"
+          source="id-v17-do-tev" target="id-v17-do-tcs"
+          archimateRelationship="id-v17-flow-tev-tcs"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v17-conn-tev-kstop"
+          source="id-v17-do-tev" target="id-v17-do-kstop"
+          archimateRelationship="id-v17-flow-tev-kstop"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v17-conn-tev-cgw"
+          source="id-v17-do-tev" target="id-v17-do-cgw"
+          archimateRelationship="id-v17-flow-tev-cgw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-tcs" archimateElement="id-v17-tcs"
+        targetConnections="id-v17-conn-tev-tcs">
+        <bounds x="760" y="140" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-kstop" archimateElement="id-v17-kafka-stop"
+        targetConnections="id-v17-conn-tev-kstop">
+        <bounds x="960" y="40" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v17-conn-kstop-css"
+          source="id-v17-do-kstop" target="id-v17-do-css"
+          archimateRelationship="id-v17-flow-kstop-css"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-css" archimateElement="id-v17-css"
+        targetConnections="id-v17-conn-kstop-css">
+        <bounds x="1160" y="40" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v17-do-cgw" archimateElement="id-v17-cgw"
+        targetConnections="id-v17-conn-tev-cgw">
+        <bounds x="960" y="140" width="160" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

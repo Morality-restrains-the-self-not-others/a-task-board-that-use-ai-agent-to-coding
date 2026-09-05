@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v15-el-20260807-1920">
+
+  <name xml:lang="en">daydaymoney Enterprise Landscape v15 Target</name>
+  <purpose>任务帖定价模型重构 — 0.33元/帖/12个月存续期 + 单帖独立到期；创建帖次数替代执行配额；服务器启动扣费剥离(charge-server-start no-op)；续存=消耗1创建帖次数延展12个月；task_tasks.post_expires_at；TASK_POST_RENEWED/EXPIRED 事件 + 到期扫描</purpose>
+
+  <folder name="Business" id="f-biz" type="business"/>
+  <folder name="Application" id="f-app" type="application"/>
+  <folder name="Technology" id="f-tech" type="technology"/>
+  <folder name="Implementation" id="f-impl" type="implementation_migration"/>
+  <folder name="Relations" id="f-rel" type="relations"/>
+
+  <!-- Application Layer — v15 任务帖存续期相关组件 -->
+  <element xsi:type="archimate:ApplicationComponent" name="API Gateway (APISIX :18081)" id="gateway"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskBill (Go :8004) [创建帖/续存计费]" id="billSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskTaskService (Go :8017) [帖子存续期 + 续存接口]" id="taskTaskSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskCloudService (Go :8018) [chargeServerStart 退役]" id="taskCloudSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskEvents (Kafka intents)" id="eventsSvc"/>
+  <element xsi:type="archimate:ApplicationDataObject" name="taskTask DB (+post_expires_at)" id="taskDB"/>
+  <element xsi:type="archimate:ApplicationDataObject" name="taskBill DB" id="billDB"/>
+  <element xsi:type="archimate:ApplicationDataObject" name="taskCloud DB" id="cloudDB"/>
+
+  <!-- Technology Layer -->
+  <element xsi:type="archimate:TechnologyService" name="Kafka" id="kafka"/>
+
+  <!-- Implementation & Migration — v15 架构变迁 -->
+  <element xsi:type="archimate:Plateau" name="Plateau v14 — 多会话互知 (2026-08-06)" id="plateauV14"/>
+  <element xsi:type="archimate:Plateau" name="Plateau v15 — 任务帖存续期 (2026-08-07)" id="plateauV15"/>
+  <element xsi:type="archimate:Gap" name="Gap: 帖子无存续期概念、执行按次扣费、无续存入口" id="gapPost"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-post-lifecycle (P1 DB迁移+存量回填 → P2 taskBill 计费改造 → P3 taskTask 存续期/renew → P4 events/扫描 → P5 FE)" id="wpPost"/>
+
+  <!-- Relationships -->
+  <element xsi:type="archimate:FlowRelationship" id="rel-gw-task" source="gateway" target="taskTaskSvc"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-gw-bill" source="gateway" target="billSvc"/>
+  <element xsi:type="archimate:AccessRelationship" id="rel-task-db" source="taskTaskSvc" target="taskDB" accessType="write"/>
+  <element xsi:type="archimate:AccessRelationship" id="rel-bill-db" source="billSvc" target="billDB" accessType="write"/>
+  <element xsi:type="archimate:AccessRelationship" id="rel-cloud-db" source="taskCloudSvc" target="cloudDB" accessType="write"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel-evt-kafka" source="eventsSvc" target="kafka"/>
+  <element xsi:type="archimate:TriggeringRelationship" id="rel-trigger" source="plateauV14" target="gapPost"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wpPost" target="gapPost"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-plat" source="wpPost" target="plateauV15"/>
+
+  <folder name="Views" id="f-views" type="diagrams">
+    <!-- 视图 1: 架构变迁 v14→v15 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v14→v15 — 任务帖存续期" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV14" archimateElement="plateauV14">
+        <bounds x="48" y="120" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v14-gap" source="do-plateauV14" target="do-gapPost" archimateRelationship="rel-trigger"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gapPost" archimateElement="gapPost" targetConnections="conn-v14-gap conn-wp-gap">
+        <bounds x="300" y="120" width="300" height="60"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wpPost" archimateElement="wpPost">
+        <bounds x="640" y="80" width="300" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wpPost" target="do-gapPost" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-v15" source="do-wpPost" target="do-plateauV15" archimateRelationship="rel-wp-plat"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV15" archimateElement="plateauV15" targetConnections="conn-wp-v15">
+        <bounds x="640" y="180" width="300" height="50"/>
+      </child>
+    </element>
+
+    <!-- 视图 2: 目标拓扑 v15 — 帖子存续期与续存入口 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="目标拓扑 v15 — 帖子存续期与续存入口" id="view-topology">
+      <child xsi:type="archimate:DiagramObject" id="do-gateway" archimateElement="gateway">
+        <bounds x="40" y="60" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-task" source="do-gateway" target="do-taskTaskSvc" archimateRelationship="rel-gw-task"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-bill" source="do-gateway" target="do-billSvc" archimateRelationship="rel-gw-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-taskTaskSvc" archimateElement="taskTaskSvc" targetConnections="conn-gw-task">
+        <bounds x="330" y="60" width="240" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-task-db" source="do-taskTaskSvc" target="do-taskDB" archimateRelationship="rel-task-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-billSvc" archimateElement="billSvc" targetConnections="conn-gw-bill">
+        <bounds x="330" y="160" width="240" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-bill-db" source="do-billSvc" target="do-billDB" archimateRelationship="rel-bill-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-taskCloudSvc" archimateElement="taskCloudSvc">
+        <bounds x="40" y="160" width="220" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cloud-db" source="do-taskCloudSvc" target="do-cloudDB" archimateRelationship="rel-cloud-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-eventsSvc" archimateElement="eventsSvc">
+        <bounds x="40" y="260" width="220" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-evt-kafka" source="do-eventsSvc" target="do-kafka" archimateRelationship="rel-evt-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-taskDB" archimateElement="taskDB" targetConnections="conn-task-db">
+        <bounds x="330" y="260" width="240" height="60"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-billDB" archimateElement="billDB" targetConnections="conn-bill-db">
+        <bounds x="330" y="380" width="240" height="60"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-cloudDB" archimateElement="cloudDB" targetConnections="conn-cloud-db">
+        <bounds x="40" y="380" width="220" height="60"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-kafka" archimateElement="kafka" targetConnections="conn-evt-kafka">
+        <bounds x="40" y="480" width="220" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

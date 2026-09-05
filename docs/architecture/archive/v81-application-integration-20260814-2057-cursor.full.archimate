@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v81 全量 (post-change)" id="id-v81full01">
+  <folder name="Application" id="id-v81full-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v81f-app-fe" name="taskFE WorkPanel / TaskDetail [MOD v81]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v81f-app-task" name="taskTaskService [MOD v81]"/>
+    <element xsi:type="archimate:DataObject" id="id-v81f-do-pk" name="task_tasks.id technical PK"/>
+    <element xsi:type="archimate:DataObject" id="id-v81f-do-seq" name="task_tasks.workspace_seq [NEW v81]"/>
+    <element xsi:type="archimate:DataObject" id="id-v81f-do-alloc" name="task_workspace_seq [NEW v81]"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v81f-ev-created" name="TASK_CREATED [MOD v81]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v81full-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v81f-pl-v80" name="Plateau v80"/>
+    <element xsi:type="archimate:Plateau" id="id-v81f-pl-v81" name="Plateau v81"/>
+    <element xsi:type="archimate:Gap" id="id-v81f-gap" name="Gap: human task number is last-6 of technical id"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v81f-wp" name="WP: workspace-task-display-seq"/>
+  </folder>
+  <folder name="Relations" id="id-v81full-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v81f-rel-req" source="id-v81f-app-fe" target="id-v81f-app-task" name="create / list / search"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v81f-rel-resp" source="id-v81f-app-task" target="id-v81f-app-fe" name="id + workspace_seq → #N"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v81f-rel-alloc" source="id-v81f-app-task" target="id-v81f-do-alloc" name="allocate FOR UPDATE"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v81f-rel-seq" source="id-v81f-app-task" target="id-v81f-do-seq" name="insert seq"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v81f-rel-pk" source="id-v81f-app-task" target="id-v81f-do-pk" name="write technical id"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v81f-rel-evt" source="id-v81f-app-task" target="id-v81f-ev-created" name="publish + seq"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v81f-rel-pl80-gap" source="id-v81f-pl-v80" target="id-v81f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v81f-rel-wp-gap" source="id-v81f-wp" target="id-v81f-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v81f-rel-wp-pl81" source="id-v81f-wp" target="id-v81f-pl-v81"/>
+  </folder>
+  <folder name="Views" id="id-v81full-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v81f-view-topo" name="v81 全量拓扑 — workspace task display seq">
+      <child xsi:type="archimate:DiagramObject" id="id-v81f-d-fe" archimateElement="id-v81f-app-fe">
+        <bounds x="48" y="48" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v81f-c-req" source="id-v81f-d-fe" target="id-v81f-d-task" archimateRelationship="id-v81f-rel-req"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v81f-d-task" targetConnections="id-v81f-c-req" archimateElement="id-v81f-app-task">
+        <bounds x="320" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v81f-c-resp" source="id-v81f-d-task" target="id-v81f-d-fe" archimateRelationship="id-v81f-rel-resp"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v81f-c-alloc" source="id-v81f-d-task" target="id-v81f-d-alloc" archimateRelationship="id-v81f-rel-alloc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v81f-c-seq" source="id-v81f-d-task" target="id-v81f-d-seq" archimateRelationship="id-v81f-rel-seq"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v81f-c-pk" source="id-v81f-d-task" target="id-v81f-d-pk" archimateRelationship="id-v81f-rel-pk"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v81f-c-evt" source="id-v81f-d-task" target="id-v81f-d-evt" archimateRelationship="id-v81f-rel-evt"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v81f-d-alloc" targetConnections="id-v81f-c-alloc" archimateElement="id-v81f-do-alloc">
+        <bounds x="48" y="160" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v81f-d-seq" targetConnections="id-v81f-c-seq" archimateElement="id-v81f-do-seq">
+        <bounds x="268" y="160" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v81f-d-pk" targetConnections="id-v81f-c-pk" archimateElement="id-v81f-do-pk">
+        <bounds x="508" y="160" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v81f-d-evt" targetConnections="id-v81f-c-evt" archimateElement="id-v81f-ev-created">
+        <bounds x="728" y="160" width="180" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v81f-view-mig" name="架构变迁 v80→v81 — workspace-task-display-seq">
+      <child xsi:type="archimate:DiagramObject" id="id-v81f-do-pl80" archimateElement="id-v81f-pl-v80">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v81f-conn-pl80-gap" source="id-v81f-do-pl80" target="id-v81f-do-gap" archimateRelationship="id-v81f-rel-pl80-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v81f-do-gap" targetConnections="id-v81f-conn-pl80-gap id-v81f-conn-wp-gap" archimateElement="id-v81f-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v81f-do-wp" archimateElement="id-v81f-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v81f-conn-wp-gap" source="id-v81f-do-wp" target="id-v81f-do-gap" archimateRelationship="id-v81f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v81f-conn-wp-pl81" source="id-v81f-do-wp" target="id-v81f-do-pl81" archimateRelationship="id-v81f-rel-wp-pl81"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v81f-do-pl81" targetConnections="id-v81f-conn-wp-pl81" archimateElement="id-v81f-pl-v81">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

@@ -1,0 +1,761 @@
+openapi: 3.0.3
+info:
+  title: taskCloudService API
+  description: '云平台服务 (:8018) 公开与厂商 API 摘要。
+
+    租户 CPA / Aliyun 查询路径见 v10 设计；本文件补充 v11 厂商测试密钥端点。
+
+    浏览器经 ai-provider (:8010) 同源反代访问 `/api/vendor/cloud-platform-credentials/`。
+
+    **Phase 3i compute**：任务工作区下 `cloud/compute/*` 读写接口由 taskCloudService 原生实现，经 taskGateway
+    (:18081) 访问。
+
+
+    内部路径 `/api/internal/*` 见运维规范 `openapi-internal.yaml`（`/api/swagger-internal/`），不混入本门户文档。'
+  version: 1.4.0
+servers:
+- url: http://127.0.0.1:8018
+  description: taskCloudService 直连（开发）
+- url: http://127.0.0.1:8010
+  description: ai-provider 同源反代（厂商门户推荐）
+paths:
+  /api/vendor/cloud-server-images/:
+    get:
+      summary: endpoint (/api/vendor/cloud-server-images/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/system-admin/sub-token-providers/:
+    get:
+      summary: endpoint (/api/system-admin/sub-token-providers/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/system-admin/recommended-llm-providers/:
+    get:
+      summary: endpoint (/api/system-admin/recommended-llm-providers/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/system-admin/step-full-cos/:
+    get:
+      summary: 读取 step_full.json COS 配置（不回显密钥）
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+    patch:
+      summary: 更新 step_full.json COS 配置（平台员工）
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/system-admin/cloud/:
+    get:
+      summary: endpoint (/api/system-admin/cloud/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/sub-token-providers/:
+    get:
+      summary: endpoint (/api/sub-token-providers/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/recommended-llm-providers/:
+    get:
+      summary: endpoint (/api/recommended-llm-providers/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/personal/:
+    get:
+      summary: endpoint (/api/personal/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/cloud/:
+    get:
+      summary: endpoint (/api/cloud/)
+      tags: [api]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/health/:
+    get:
+      summary: 健康检查
+      tags:
+      - meta
+      responses:
+        '200':
+          description: OK
+  /api/vendor/cloud-platform-credentials/:
+    get:
+      summary: 列出当前厂商云平台测试凭证（脱敏）
+      tags:
+      - vendor-cloud-credentials
+      security:
+      - vendorBearer: []
+      responses:
+        '200':
+          description: 凭证数组
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VendorCloudCredentialMasked'
+        '401':
+          description: Vendor JWT 无效或缺失
+    post:
+      summary: 创建厂商云平台测试凭证
+      tags:
+      - vendor-cloud-credentials
+      security:
+      - vendorBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorCloudCredentialCreate'
+      responses:
+        '201':
+          description: 已创建（响应脱敏）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VendorCloudCredentialMasked'
+        '400':
+          description: 校验失败或 platform 已存在
+        '401':
+          description: 未认证
+components:
+  securitySchemes:
+    vendorBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: iss=saas-ai-provider, typ=vendor
+  parameters:
+    CredentialId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    TenantId:
+      name: tenant_id
+      in: path
+      required: true
+      schema:
+        type: string
+    WorkspaceId:
+      name: workspace_id
+      in: path
+      required: true
+      schema:
+        type: string
+    TaskIdQuery:
+      name: task_id
+      in: query
+      required: true
+      schema:
+        type: string
+      description: 任务 ID
+    TaskIdPath:
+      name: task_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 任务 ID（路径参数）
+  schemas:
+    VendorCloudCredentialCreate:
+      type: object
+      required:
+      - platform_type
+      - secret_id
+      - secret_key
+      properties:
+        platform_type:
+          type: string
+          enum:
+          - aliyun
+        secret_id:
+          type: string
+        secret_key:
+          type: string
+          writeOnly: true
+        remark:
+          type: string
+    VendorCloudCredentialUpdate:
+      type: object
+      properties:
+        secret_id:
+          type: string
+        secret_key:
+          type: string
+          writeOnly: true
+        remark:
+          type: string
+        is_active:
+          type: boolean
+    VendorCloudCredentialMasked:
+      type: object
+      properties:
+        id:
+          type: string
+        vendor_id:
+          type: string
+        platform_type:
+          type: string
+        secret_id:
+          type: string
+          description: 脱敏展示
+        secret_key:
+          type: string
+          description: 恒为脱敏占位
+        remark:
+          type: string
+        last_verified_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+    VerifyCredentialResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        detail:
+          type: string
+        caller_identity:
+          type: object
+          additionalProperties:
+            type: string
+    WorkbenchLinkResponse:
+      type: object
+      required:
+      - status
+      - workbench_url
+      - platform
+      - instance_id
+      - region
+      properties:
+        status:
+          type: string
+          enum:
+          - success
+        workbench_url:
+          type: string
+          format: uri
+          example: https://ecs-workbench.aliyun.com/?from=ecs.console&type=ecs&regionId=cn-hongkong&instanceId=i-xxx
+        platform:
+          type: string
+          example: aliyun
+        instance_id:
+          type: string
+        region:
+          type: string
+          example: cn-hongkong
+    ComputeErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - error
+        message:
+          type: string
+        mock:
+          type: boolean
+          description: mock 实例拒绝时附带
+        instance_id:
+          type: string
+    StartVmHardwareConfig:
+      type: object
+      properties:
+        cpu_cores:
+          type: string
+        memory_gb:
+          type: string
+        storage_gb:
+          type: string
+        instance_type:
+          type: string
+        spot_strategy:
+          type: string
+        spot_duration:
+          type: integer
+        instance_charge_type:
+          type: string
+        system_disk_category:
+          type: string
+        internet_max_bandwidth_out:
+          type: integer
+    StartVmAutoRequest:
+      type: object
+      required:
+      - task_id
+      - region_id
+      - authorization_id
+      properties:
+        task_id:
+          type: string
+        container_image_id:
+          type: string
+        cloud_server_image_id:
+          type: string
+        hardware_config:
+          $ref: '#/components/schemas/StartVmHardwareConfig'
+        region_id:
+          type: string
+        zone_id:
+          type: string
+        vpc_id:
+          type: string
+          nullable: true
+        vswitch_id:
+          type: string
+          nullable: true
+        auto_create_vswitch:
+          type: boolean
+        cloud_platform_id:
+          type: string
+        authorization_id:
+          type: string
+        filter_options:
+          type: object
+          additionalProperties: true
+        selected_instance:
+          type: string
+        security_group_id:
+          type: string
+          nullable: true
+        auto_create_security_group:
+          type: boolean
+          description: 为 true 时自动创建入网白名单安全组（仅用户公网 IP + 服务器公网 IP）
+        client_public_ip:
+          type: string
+          description: 可选；用户公网 IP。缺省时由服务端从 X-Forwarded-For（跳过 RFC1918）/ X-Real-IP / RemoteAddr
+            解析；前端创建自动 SG 时会强制查询并传入
+        extra_ingress_cidrs:
+          type: array
+          items:
+            type: string
+          description: 可选；额外允许的入站 CIDR（平台探测等）。也可由环境变量 TASK2APP_SG_EXTRA_INGRESS_CIDRS
+            提供
+        bandwidth:
+          type: integer
+        bandwidth_charging_mode:
+          type: string
+        auto_release_enabled:
+          type: boolean
+        auto_release_minutes:
+          type: integer
+    StartVmRequest:
+      allOf:
+      - $ref: '#/components/schemas/StartVmAutoRequest'
+      - type: object
+        required:
+        - vpc_id
+        - vswitch_id
+        - security_group_id
+        properties:
+          vpc_id:
+            type: string
+          vswitch_id:
+            type: string
+          security_group_id:
+            type: string
+          auto_create_vswitch:
+            type: boolean
+            default: false
+          auto_create_security_group:
+            type: boolean
+            default: false
+    StopVmRequest:
+      type: object
+      required:
+      - task_id
+      properties:
+        task_id:
+          type: string
+    StartVmAcceptedResponse:
+      type: object
+      required:
+      - status
+      - message
+      - event_id
+      properties:
+        status:
+          type: string
+          enum:
+          - success
+        message:
+          type: string
+        event_id:
+          type: string
+    StopVmResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - success
+        message:
+          type: string
+        vm_info:
+          type: object
+          properties:
+            instance_id:
+              type: string
+            region:
+              type: string
+    InsufficientBalanceResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - error
+        message:
+          type: string
+        code:
+          type: string
+          enum:
+          - INSUFFICIENT_BALANCE
+        balance_points:
+          type: number
+        required_points:
+          type: number
+    WorkspaceRuntimeIndicatorsResponse:
+      type: object
+      required:
+      - status
+      - indicators
+      - count
+      properties:
+        status:
+          type: string
+          enum:
+          - success
+        count:
+          type: integer
+        indicators:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceRuntimeIndicatorItem'
+    WorkspaceRuntimeIndicatorItem:
+      type: object
+      required:
+      - task_id
+      - machine_running
+      - container_running
+      properties:
+        task_id:
+          type: string
+        machine_running:
+          type: boolean
+          description: 机器真正运行中（last_runtime_status=Running 或 mock-* 实例）
+        machine_starting:
+          type: boolean
+          description: 机器启动中（Starting/Pending/Initializing）；不计入已启动过滤
+        container_running:
+          type: boolean
+          description: 机器已启动且容器已 register-reachability（server_url 非空）；停机/释放后残留 server_url
+            不计为运行中
+    WorkspaceMachinePolicyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - success
+        idle_recycle_minutes:
+          type: integer
+          minimum: 0
+          default: 5
+          description: 无策略行时默认 5 分钟；0 表示关闭自动回收
+        enabled_authorization_ids:
+          type: array
+          items:
+            type: string
+    WorkspaceMachinePolicyUpdate:
+      type: object
+      properties:
+        idle_recycle_minutes:
+          type: integer
+          minimum: 0
+        enabled_authorization_ids:
+          type: array
+          items:
+            type: string
+    WorkspaceMachineSummaryResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - success
+        started_count:
+          type: integer
+          description: 真正 Running（或 mock）的机器节点数（按 instance_id 去重）
+        starting_count:
+          type: integer
+          description: Starting/Pending/Initializing 过渡态机器数（不计入 started）
+        idle_count:
+          type: integer
+        busy_count:
+          type: integer
+        idle_recycle_minutes:
+          type: integer
+    ServerRuntimeStatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - success
+        runtime_status:
+          type: string
+          nullable: true
+          description: Running / Stopped / Released 等
+        instance_id:
+          type: string
+          nullable: true
+        platform:
+          type: string
+        region:
+          type: string
+        mock:
+          type: boolean
+        released:
+          type: boolean
+        message:
+          type: string
+        server_started_at:
+          type: string
+          format: date-time
+        auto_release_time:
+          type: string
+          format: date-time
+          description: '按量实例预计自动释放时间（UTC ISO8601，来自阿里云 DescribeInstances.AutoReleaseTime）。
+
+            未配置自动释放时省略该字段。
+
+            '
+        container_running:
+          type: boolean
+          description: 当前任务 CSC 的 server_url 非空时为 true（镜像容器已登记可达）
+        machine_owner_task_ids:
+          type: array
+          items:
+            type: string
+          description: '同 instance_id 上未 terminal_released 的绑定任务 ID 列表（机器节点所属任务）。
+
+            '
+        machine_bound_tasks:
+          type: array
+          items:
+            type: object
+            properties:
+              task_id:
+                type: string
+              has_container:
+                type: boolean
+              terminal_released:
+                type: boolean
+          description: 同实例全部 CSC 绑定明细（含已终态释放标记）
+        instance_attribute:
+          type: object
+          additionalProperties: true
+          description: 'body 内含 DescribeInstances 映射字段，含 AutoReleaseTime（若已设置）。
+
+            '
+    ServerStartHistoryResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - success
+        message:
+          type: string
+        total:
+          type: integer
+        records:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    PreviousServerConfigResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - success
+        message:
+          type: string
+        server_config:
+          type: object
+          nullable: true
+          additionalProperties: true
+    ContainerTaskUIContextResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - success
+        has_server_config:
+          type: boolean
+        container_endpoint_registered:
+          type: boolean
+        container_page_url:
+          type: string
+        container_vscode_url:
+          type: string
+    ServerStartupStatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        progress:
+          type: integer
+        event_id:
+          type: string
+    ServerContentResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - success
+        target_url:
+          type: string
+        http_status:
+          type: integer
+        content_type:
+          type: string
+        content:
+          type: string
+        truncated:
+          type: boolean
+    GithubCredentialStatusResponse:
+      type: object
+      properties:
+        approved_for_task:
+          type: boolean
+        github_app_connected:
+          type: boolean
+        github_login:
+          type: string
+        github_connections:
+          type: array
+          items:
+            type: object
+            properties:
+              connected:
+                type: boolean
+              github_user_id:
+                type: string
+                nullable: true
+              github_login:
+                type: string
+                nullable: true
+              scope:
+                type: string
+                nullable: true
+        repo_bindings:
+          type: array
+          items:
+            type: object
+            properties:
+              repo_url:
+                type: string
+              repo_slug:
+                type: string
+              selected_github_user_id:
+                type: string
+                nullable: true
+              selected_github_login:
+                type: string
+        all_repo_bound:
+          type: boolean
+    GithubCredentialApproveRequest:
+      type: object
+      required:
+      - github_user_id
+      properties:
+        repo_url:
+          type: string
+        repo_slug:
+          type: string
+        github_user_id:
+          type: string
+    GithubCredentialApproveResponse:
+      type: object
+      properties:
+        approved:
+          type: boolean
+        repo_slug:
+          type: string
+        github_user_id:
+          type: string
+        github_login:
+          type: string

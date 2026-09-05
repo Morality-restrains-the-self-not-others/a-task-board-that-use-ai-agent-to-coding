@@ -1,0 +1,13 @@
+# 0.0.0.0：供 APISIX（Docker → 宿主机 IP:8011）转发容器 inbound；勿仅绑 127.0.0.1
+host: 0.0.0.0
+port: 8011
+logging:
+  log_file: logs/task-agent-support/agent.log
+enabled: true
+internalSecret: ""
+timeouts:
+  # 须覆盖 Cloud 下行 probe（~2.5s）+ Kafka SSE；过短会导致心跳 502 且前端永久 idle
+  heartbeatSec: 15
+  exchangeRefreshSec: 15
+  refreshAccessSec: 15
+  defaultSec: 30

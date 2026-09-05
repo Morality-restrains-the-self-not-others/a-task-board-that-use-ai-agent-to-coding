@@ -1,0 +1,38 @@
+' @title: 邮件邀请退订（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 116
+' @iteration: email-invite-unsubscribe
+' @author: cursor
+' @based_on: v115 (v115-enterprise-landscape-20260828-0720-cursor.puml)
+' @updated: 2026-08-29 10:10
+' @description: 收件人退订邀请邮件；邀请人改为复制链接
+
+@startuml
+!include <archimate/Archimate>
+
+title v116 — 企业景观 邮件邀请退订 2026-08-29 09:40
+
+Business_Actor(invitee, "被邀请邮箱持有人")
+Business_Actor(inviter, "邀请人")
+Business_Process(clickUnsub, "点击邮件退订")
+Business_Process(copyLink, "复制邀请链接给对方")
+
+Application_Component(fe, "taskFE")
+Application_Component(auth, "taskAuth")
+
+Rel_Assignment(invitee, clickUnsub)
+Rel_Assignment(inviter, copyLink)
+Rel_Flow(invitee, fe, "unsubscribe confirm")
+Rel_Flow(fe, auth, "public email-unsubscribe")
+Rel_Flow(inviter, fe, "people / admin invite")
+
+Implementation_Plateau(p115, "Plateau v115")
+Implementation_Plateau(p116, "Plateau v116")
+Implementation_Gap(g, "Gap: 无法退订邀请邮件")
+Implementation_WorkPackage(wp, "WP-email-invite-unsubscribe")
+Rel_Triggering(p115, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p116, "delivers")
+
+@enduml

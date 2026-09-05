@@ -1,0 +1,70 @@
+groups:
+  - name: oidc
+    interval: 30s
+    rules:
+      # Fires when the OIDC issuer URL is invalid, contains unresolved
+      # ${subdomains.xxx} templates, or is unreachable.
+      - alert: OidcIssuerInvalid
+        expr: taskauth_oidc_issuer_valid == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: taskauth-oidc
+          category: sso
+        annotations:
+          summary: "OIDC issuer URL is invalid"
+          description: >
+            taskAuth OIDC issuer URL is malformed, empty, or contains unresolved
+            template variables (${subdomains.xxx}). All GitLab SSO logins will fail.
+            Check conf/auth/task-auth/config.yaml for unresolved templates and
+            verify conf/base.yaml is readable by the taskAuth process.
+            Run: curl http://localhost:8003/api/health/oidc
+
+      # Fires when the OIDC signing key is missing (required for JWT id_token
+      # and access_token signing). Without this, token exchange fails.
+      - alert: OidcSigningKeyMissing
+        expr: taskauth_oidc_signing_key_valid == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: taskauth-oidc
+          category: sso
+        annotations:
+          summary: "OIDC signing key not initialized"
+          description: >
+            taskAuth OIDC RSA signing key is missing. Token exchange
+            (authorization_code → id_token) will fail for all clients.
+            This typically happens on first startup if the key file path is
+            misconfigured. Check taskAuth startup logs for signing key errors.
+
+      # Warns when the OIDC metrics endpoint is unreachable (probe failure
+      # indicates taskAuth itself may be down or unreachable from Prometheus).
+      - alert: OidcMetricsDown
+        expr: up{job="taskauth-metrics"} == 0
+        for: 3m
+        labels:
+          severity: warning
+          component: taskauth-oidc
+          category: sso
+        annotations:
+          summary: "taskAuth metrics endpoint unreachable"
+          description: >
+            Prometheus could not scrape taskAuth /metrics for 3 minutes.
+            The taskAuth service may be down or the Docker network is
+            preventing access. Verify: curl http://localhost:8003/metrics
+
+      # Zero registered OIDC clients means no service can authenticate via
+      # SSO — GitLab, AI Provider, etc. will all fail.
+      - alert: OidcNoClients
+        expr: taskauth_oidc_bootstrap_clients == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: taskauth-oidc
+          category: sso
+        annotations:
+          summary: "No OIDC bootstrap clients registered"
+          description: >
+            taskAuth has zero registered OIDC clients. Bootstrap seeding may
+            have failed. No service can use OIDC SSO.
+            Check: conf/auth/task-auth/config.yaml bootstrapClients config.

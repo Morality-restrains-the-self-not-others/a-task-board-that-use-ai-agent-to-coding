@@ -1,0 +1,14 @@
+#!/bin/bash
+# 无测例仓库占位 pre-commit：提示无测试资产，允许提交。
+# 若后续添加测例，请用 scripts/deploy_repo_random_precommit.sh 替换为对应类型模板。
+
+set -u
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+# Session Hub 提交锁校验（v1.1.0，可选 — 二进制缺失时放行）
+SES_LIB="$(cd "$(dirname "$0")" && pwd)/lib/session_lock_check.sh"
+if [ -f "$SES_LIB" ]; then source "$SES_LIB"; session_hub_lock_check; fi
+
+echo "Pre-commit: $(basename "$(pwd)") 当前无自动化单元测例，跳过随机单测门禁。"
+echo "Commit can proceed."

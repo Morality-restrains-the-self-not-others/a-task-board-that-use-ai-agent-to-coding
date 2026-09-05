@@ -1,0 +1,39 @@
+2024-01-25 Version: 1.0.96
+- Generated python 2021-09-08 for aliyunape.
+
+2022-02-12 Version: 1.0.95
+- For Aliyunape20210922.
+
+2021-12-14 Version: 1.0.9
+- For Aliyunape20210922.
+
+2021-12-14 Version: 1.0.82
+- For Aliyunape20210922.
+
+2021-11-16 Version: 1.0.81
+- For Aliyunape20210922.
+
+2021-11-16 Version: 1.0.8
+- For Aliyunape20210922.
+
+2021-11-02 Version: 1.0.7
+- For Aliyunape20210922.
+
+2021-10-25 Version: 1.0.6
+- For Aliyunape20210922.
+
+2021-10-21 Version: 1.0.4
+- For Aliyunape20210922.
+
+2021-10-18 Version: 1.0.5
+- For Aliyunape20210922.
+
+2021-10-18 Version: 1.0.3
+- For Aliyunape20210922.
+
+2021-10-15 Version: 1.0.2
+- For Aliyunape20210922.
+
+2021-10-14 Version: 1.0.0
+- For Aliyunape20210922.
+

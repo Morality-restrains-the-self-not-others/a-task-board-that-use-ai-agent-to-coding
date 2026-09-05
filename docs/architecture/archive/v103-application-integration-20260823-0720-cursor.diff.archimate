@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v103 变迁 (v102→v103)" id="id-v103aidiff01">
+  <folder name="Application" id="id-v103aid-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v103-app-fe" name="taskFE SPA"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v103-app-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v103-app-auth" name="taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v103-app-tl" name="shareLib/tracelog"/>
+    <element xsi:type="archimate:DataObject" id="id-v103-data-imp" name="auth_impersonation_session"/>
+    <element xsi:type="archimate:DataObject" id="id-v103-data-inbox" name="auth_user_inbox_message"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v103-ev-start" name="UserImpersonationStarted"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v103-ev-inbox" name="UserInboxMessageCreated"/>
+  </folder>
+  <folder name="Technology" id="id-v103aid-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v103-tech-kafka" name="Kafka"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v103aid-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v103-pl-v102" name="Plateau v102"/>
+    <element xsi:type="archimate:Plateau" id="id-v103-pl-v103" name="Plateau v103"/>
+    <element xsi:type="archimate:Gap" id="id-v103-gap" name="Gap: 日志无操作者标识、无理由通知"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v103-wp" name="WP-impersonation-audit-inbox"/>
+  </folder>
+  <folder name="Relations" id="id-v103aid-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v103-rel-fe-gw" source="id-v103-app-fe" target="id-v103-app-gw" name="POST impersonate + GET inbox"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v103-rel-gw-auth" source="id-v103-app-gw" target="id-v103-app-auth" name="token + headers"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v103-rel-auth-inbox" source="id-v103-app-auth" target="id-v103-data-inbox" name="write notice"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v103-rel-auth-ei" source="id-v103-app-auth" target="id-v103-ev-inbox" name="publish"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v103-rel-ei-k" source="id-v103-ev-inbox" target="id-v103-tech-kafka" name="user-inbox-message-created"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v103-rel-pl102-gap" source="id-v103-pl-v102" target="id-v103-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v103-rel-wp-gap" source="id-v103-wp" target="id-v103-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v103-rel-wp-pl103" source="id-v103-wp" target="id-v103-pl-v103"/>
+  </folder>
+  <folder name="Views" id="id-v103aid-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v103-view-mig" name="架构变迁 v102→v103 — impersonation-audit-inbox">
+      <child xsi:type="archimate:DiagramObject" id="id-v103-do-pl102" archimateElement="id-v103-pl-v102">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v103-c-pl102-gap" source="id-v103-do-pl102" target="id-v103-do-gap" archimateRelationship="id-v103-rel-pl102-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v103-do-gap" targetConnections="id-v103-c-pl102-gap id-v103-c-wp-gap" archimateElement="id-v103-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v103-do-wp" archimateElement="id-v103-wp">
+        <bounds x="240" y="160" width="400" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v103-c-wp-gap" source="id-v103-do-wp" target="id-v103-do-gap" archimateRelationship="id-v103-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v103-c-wp-pl103" source="id-v103-do-wp" target="id-v103-do-pl103" archimateRelationship="id-v103-rel-wp-pl103"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v103-do-pl103" targetConnections="id-v103-c-wp-pl103" archimateElement="id-v103-pl-v103">
+        <bounds x="680" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

@@ -1,0 +1,45 @@
+host: 0.0.0.0
+port: 8016
+enabled: true
+logging:
+  log_file: logs/task-project-service/task-project-service.log
+
+# Inter-service dependencies (read by Go service's confload)
+services:
+  taskProjectService:
+    host: "0.0.0.0"
+    port: 8016
+  taskAuth:
+    host: "127.0.0.1"
+    port: 8003
+  taskTaskService:
+    host: "127.0.0.1"
+    port: 8017
+  taskTenantService:
+    host: "127.0.0.1"
+    port: 8020
+shared:
+  # MUST be Django loopback — NEVER public gateway (${subdomains.api}). Public /api/internal/* → APISIX deny-internal 403.
+  internalSecret: ""
+# OPT-20260806-057: fanyi_agent 从 conf/core/django/config.yaml 迁出（Django 目录退役）
+# OPT-20260901-027: max_tokens 仅服务标题翻译，Go 侧 fanyiRequestMaxTokens 封顶 128；
+# max_retries/parallel_tool_calls/top_k 未被读取，删除以免误导后续改配置的人。
+# 2026-09-04: deepseek-v4-flash 默认 thinking；Go 请求固定 thinking.type=disabled，
+# 否则短 max_tokens 会被 reasoning 占满 → HTTP 200 + 空 content。
+ai_agent_config:
+  fanyi_agent:
+    # OPT-20260901-026: api_key 已抽空 —— 机密只放 conf-local/taskProjectService/config.yaml
+    api_key: ""
+    base_url: https://api.deepseek.com
+    model: deepseek-v4-flash
+    max_tokens: ''
+    temperature: 0.1
+    top_p: 1
+gitoauth_base: "${scheme}://${subdomains.gitoauth}"
+# 文档性预算（与 gitHTTPClient.Timeout=25s 对齐）；access-for-user Refresh 含 dial 重试。
+gitoauth_timeout_seconds: 25
+# Git OAuth 换票桥接密钥：SSOT 同源 conf/core/sso/config.yaml ssoJwtSecret（OPT-20260807-071）。
+# 优先级 env GITOAUTH_BRIDGE_JWT_SECRET → env TASK2APP_SSO_JWT_SECRET → 此处 conf → dev 兜底。
+# 须与 taskGitOauth BridgeJWTSecret（conf/auth/git-oauth/django.yaml ssoJwtSecret）一致，
+# 否则 access-for-user 401 → 项目页「授权异常」（token_error）。
+gitoauth_bridge_secret: ""

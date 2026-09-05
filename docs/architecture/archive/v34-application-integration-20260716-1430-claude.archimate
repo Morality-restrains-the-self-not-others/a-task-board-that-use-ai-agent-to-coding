@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v34-disk-size-20260716-1430">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v34 Target (internal repo disk size)</name>
+  <purpose>Project detail enrich disk_size_bytes for gitlab-local only; no new public path</purpose>
+
+  <folder name="Motivation" id="id-v34-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="🟢 仅 gitlab-local 查/展大小 [NEW v34]" id="id-v34-constraint"/>
+  </folder>
+  <folder name="Application" id="id-v34-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue ProjectDetail GitReposSection disk badge [MODIFIED v34]" id="id-v34-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway JWT tenant" id="id-v34-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskProjectService enrich disk_size_bytes [MODIFIED v34]" id="id-v34-project"/>
+    <element xsi:type="archimate:ApplicationComponent" name="gitoauth fetchGitAccessToken" id="id-v34-gitoauth"/>
+    <element xsi:type="archimate:DataObject" name="project_repos 只读引用" id="id-v34-project-repos"/>
+  </folder>
+  <folder name="Technology" id="id-v34-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="🟢 GitLab ?statistics=true [NEW v34]" id="id-v34-gitlab"/>
+  </folder>
+  <folder name="Relations" id="id-v34-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v34-flow-vue-gw" source="id-v34-vue" target="id-v34-gw" name="GET project detail"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v34-flow-gw-project" source="id-v34-gw" target="id-v34-project" name="tenant + user auth"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v34-acc-project-repos" source="id-v34-project" target="id-v34-project-repos" name="R"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v34-flow-project-gitoauth" source="id-v34-project" target="id-v34-gitoauth" name="当前用户 token"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v34-flow-project-gitlab" source="id-v34-project" target="id-v34-gitlab" name="statistics"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v34-inf-c-project" source="id-v34-constraint" target="id-v34-project" name="仅内部仓"/>
+  </folder>
+  <folder name="Implementation" id="id-v34-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v33 — terminal-graceful-container-shutdown (current)" id="id-v34-plat-v33"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v34 — project-internal-repo-disk-size" id="id-v34-plat-v34"/>
+    <element xsi:type="archimate:Gap" name="Gap: 详情页不展示内部仓磁盘占用；外部仓不应展示" id="id-v34-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v34-project-internal-repo-disk-size" id="id-v34-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v34-rel-plat33-gap" source="id-v34-plat-v33" target="id-v34-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v34-rel-wp-gap" source="id-v34-wp" target="id-v34-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v34-rel-wp-plat34" source="id-v34-wp" target="id-v34-plat-v34"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v34-rel-plat34-project" source="id-v34-plat-v34" target="id-v34-project"/>
+  </folder>
+  <folder name="Views" id="id-v34-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v33→v34 — internal repo disk size" id="id-v34-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v34-do-plat33" archimateElement="id-v34-plat-v33">
+        <bounds x="48" y="100" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v34-conn-plat33-gap"
+          source="id-v34-do-plat33" target="id-v34-do-gap"
+          archimateRelationship="id-v34-rel-plat33-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v34-do-gap" archimateElement="id-v34-gap"
+        targetConnections="id-v34-conn-plat33-gap id-v34-conn-wp-gap">
+        <bounds x="420" y="100" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v34-do-wp" archimateElement="id-v34-wp">
+        <bounds x="880" y="60" width="360" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v34-conn-wp-gap"
+          source="id-v34-do-wp" target="id-v34-do-gap"
+          archimateRelationship="id-v34-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v34-conn-wp-plat34"
+          source="id-v34-do-wp" target="id-v34-do-plat34"
+          archimateRelationship="id-v34-rel-wp-plat34"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v34-do-plat34" archimateElement="id-v34-plat-v34"
+        targetConnections="id-v34-conn-wp-plat34">
+        <bounds x="880" y="160" width="360" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v34-conn-plat34-project"
+          source="id-v34-do-plat34" target="id-v34-do-project-m"
+          archimateRelationship="id-v34-rel-plat34-project"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v34-do-project-m" archimateElement="id-v34-project"
+        targetConnections="id-v34-conn-plat34-project">
+        <bounds x="880" y="250" width="360" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v34 Target — 内部仓磁盘占用 enrich" id="id-v34-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v34-do-vue" archimateElement="id-v34-vue">
+        <bounds x="40" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v34-conn-vue-gw"
+          source="id-v34-do-vue" target="id-v34-do-gw"
+          archimateRelationship="id-v34-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v34-do-gw" archimateElement="id-v34-gw"
+        targetConnections="id-v34-conn-vue-gw">
+        <bounds x="280" y="80" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v34-conn-gw-project"
+          source="id-v34-do-gw" target="id-v34-do-project"
+          archimateRelationship="id-v34-flow-gw-project"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v34-do-project" archimateElement="id-v34-project"
+        targetConnections="id-v34-conn-gw-project id-v34-conn-c-project">
+        <bounds x="460" y="80" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v34-conn-project-repos"
+          source="id-v34-do-project" target="id-v34-do-repos"
+          archimateRelationship="id-v34-acc-project-repos"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v34-conn-project-gitoauth"
+          source="id-v34-do-project" target="id-v34-do-gitoauth"
+          archimateRelationship="id-v34-flow-project-gitoauth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v34-conn-project-gitlab"
+          source="id-v34-do-project" target="id-v34-do-gitlab"
+          archimateRelationship="id-v34-flow-project-gitlab"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v34-do-repos" archimateElement="id-v34-project-repos"
+        targetConnections="id-v34-conn-project-repos">
+        <bounds x="460" y="180" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v34-do-gitoauth" archimateElement="id-v34-gitoauth"
+        targetConnections="id-v34-conn-project-gitoauth">
+        <bounds x="740" y="40" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v34-do-gitlab" archimateElement="id-v34-gitlab"
+        targetConnections="id-v34-conn-project-gitlab">
+        <bounds x="740" y="120" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v34-do-c" archimateElement="id-v34-constraint">
+        <bounds x="40" y="200" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v34-conn-c-project"
+          source="id-v34-do-c" target="id-v34-do-project"
+          archimateRelationship="id-v34-inf-c-project"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

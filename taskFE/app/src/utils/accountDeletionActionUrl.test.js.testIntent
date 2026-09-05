@@ -1,0 +1,14 @@
+# accountDeletionActionUrl 单元测试意图
+
+## 测试范围
+注销阻断项「前往处理」链接的 action_url 必须落到 taskFE 已注册路由，避免 catch-all 踢回首页。
+
+## 被测试函数
+- **resolveAccountDeletionActionUrl**: 将后端可能下发的错误路径改写为真实页面
+
+## 测试场景
+1. `/tenant/:id/billing/gitlab-resources/` → `/tenant/:id/settings/gitlab-connection/`
+2. `/tenant/:id/settings/members/` → `/tenant/:id/people/manage/`
+3. `/tenant/:id/workspace/:ws/task/:task/` → `/tenant/:id/workspace/:ws/task-detail/:task/`
+4. `BILLING_PAYMENT_PENDING` 且 `action_url=/profile/` → `/tenant/:tid/billing/`
+5. 已正确的 `/billing/orders/` 原样返回

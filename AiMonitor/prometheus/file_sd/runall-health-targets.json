@@ -1,0 +1,560 @@
+[
+  {
+    "labels": {
+      "group": "infrastructure",
+      "service": "docker-portainer"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:9000/api/status"
+    ]
+  },
+  {
+    "labels": {
+      "group": "infrastructure",
+      "service": "ai-monitor"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:3000/api/health"
+    ]
+  },
+  {
+    "labels": {
+      "group": "infrastructure",
+      "service": "promtail-local"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:3100/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "gitlab-regions",
+      "service": "git-service"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:8012/users/sign_in"
+    ]
+  },
+  {
+    "labels": {
+      "group": "gitlab-regions",
+      "service": "git-service-tencent-sh-1"
+    },
+    "targets": [
+      "http://1.117.67.121:8014/users/sign_in"
+    ]
+  },
+  {
+    "labels": {
+      "group": "platform",
+      "service": "task-git-oauth"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:8002/api/health/"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-billing-transaction-created-1-process-billing-transaction"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18020/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-billing-transaction-created-2-mark-user-tenant"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18053/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-sse-message-1-send-sse-message"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18021/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-sse-message-2-persist-job-execution-event"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18062/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-email-sent-1-send-email"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18022/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-invitation-created-1-send-invitation-email"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18023/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-user-activated-1-send-welcome-notification"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18024/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-user-created-0-create-company"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18025/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-user-created-1-send-welcome-email"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18026/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-user-created-2-sync-user-profile"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18038/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-company-created-1-set-default-deliverable-system"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18027/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-company-created-2-set-default-progress-system"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18028/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-company-created-3-create-default-workspace"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18029/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-company-created-5-init-tenant-feature-params"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18054/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-company-created-6-grant-initial-resources"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18055/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-workspace-created-1-process-workspace-creation"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18030/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-project-updated-1-process-project-update"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18031/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-task-completed-1-process-task-completion"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18032/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-task-status-changed-1-release-servers-on-terminal"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18043/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-task-status-changed-2-fanout-work-panel-sse"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18048/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-workspace-machine-idle-1-recycle-idle-nodes"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18044/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-cloud-csc-reconcile-1-sweep"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18063/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-queued-auto-run-scan-1-dispatch"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18065/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-task-comment-image-mentioned-1-start-vm-for-at-mention"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18045/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-container-migrate-await-ready-1-await-running-heartbeat"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18046/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-task-graceful-shutdown-await-1-hard-release-on-timeout"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18047/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-wechat-identity-conflict-1-audit-alert"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18056/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-registration-invite-1-observability"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18049/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-ai-assistant-reply-completed-1-persist-assistant-reply"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18033/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-cloud-server-started-1-process-server-start"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18034/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-cloud-server-stopped-1-process-server-stop"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18035/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-cloud-server-start-auto-1-process-server-start-auto"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18036/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-cloud-platform-authorization-created-1-process-cloud-platform-authorization"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18037/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-task-post-renewed-1-notify"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18057/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-task-post-expired-1-notify"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18058/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-task-post-expiry-scan-1-expire-posts"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18059/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-billing-referral-settle-scan-1-settle-due"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18067/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-referral-code-expiry-scan-1-expire"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18066/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-user-account-deletion-execute-scan-1-execute-due"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18068/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-oidc-sso-idempotency-cleanup-1-cleanup"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18069/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-wechat-mp-cleanup-1-cleanup"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18070/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-email-invite-expiry-scan-1-expire"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18071/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-task-revision-recorded-1-observe"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18072/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-project-revision-recorded-1-observe"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18073/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-project-deleted-1-detach-task-projects"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18074/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-billing-profit-sharing-scan-1-process-pending"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18064/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-member-joined-1-create-default-git-identity"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18060/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-billing-order-comment-created-1-notify-other-side"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18061/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-relay-lifecycle-1-append-token-audit"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18039/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-relay-lifecycle-2-open-runtime-session"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18040/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-relay-lifecycle-3-clear-reachability"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18041/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-relay-lifecycle-4-relay-workflow-update"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18042/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-task-created-1-fanout-work-panel-sse"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18050/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-task-created-2-create-task-post"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18052/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "domain-events-intents",
+      "service": "task-events-task-deleted-1-fanout-work-panel-sse"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:18051/api/health/ready"
+    ]
+  },
+  {
+    "labels": {
+      "group": "value-stream",
+      "service": "value-stream"
+    },
+    "targets": [
+      "http://${INFRA_HOST}:9998"
+    ]
+  }
+]

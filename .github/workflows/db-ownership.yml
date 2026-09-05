@@ -1,0 +1,106 @@
+# DB ownership + registry compliance + Go OpenAPI route drift CI
+name: DB Ownership Compliance
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  schedule:
+    # 与 ownership 静态扫描同轨的 nightly（UTC 19:00 ≈ 北京 03:00）
+    - cron: '0 19 * * *'
+  workflow_dispatch:
+
+jobs:
+  registry-compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 根仓大量 CI 步骤依赖子模块内容（db/scripts/ci/*、runAll/scripts/*、conf/）
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Verify all database keys are registered in db/registry.yaml
+        run: python3 db/scripts/ci/check_database_registry_compliance.py
+
+  ownership:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 根仓大量 CI 步骤依赖子模块内容（db/scripts/ci/*、runAll/scripts/*、conf/）
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Scan multi-service production DB access
+        run: python3 db/scripts/ci/check_single_service_db_ownership.py
+
+      - name: Smoke tests (pass + unregistered violation)
+        run: python3 db/scripts/ci/test_check_single_service_db_ownership.py
+
+  go-openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 根仓大量 CI 步骤依赖子模块内容（db/scripts/ci/*、runAll/scripts/*、conf/）
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Go services mountRoutes ↔ openapi.yaml (fail on stale docs)
+        run: python3 db/scripts/ci/check_go_openapi_routes.py --fail-on-extra --no-warn-extra
+
+      - name: Smoke tests (multi-service + fail-on-extra modes)
+        run: python3 db/scripts/ci/test_check_go_openapi_routes.py
+
+  aliyun-tea-direct-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 根仓大量 CI 步骤依赖子模块内容（db/scripts/ci/*、runAll/scripts/*、conf/）
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Forbid hand-written Aliyun Tea RuntimeOptions()
+        run: python3 db/scripts/ci/check_aliyun_tea_direct_runtime.py
+
+      - name: Smoke tests (pass + injected violation)
+        run: python3 db/scripts/ci/test_check_aliyun_tea_direct_runtime.py
+
+      - name: Require AWS/Huawei/Tencent SDK direct_network helpers
+        run: python3 db/scripts/ci/check_cloud_sdk_direct_network.py
+
+      - name: Smoke tests (cloud SDK direct_network)
+        run: python3 db/scripts/ci/test_check_cloud_sdk_direct_network.py
+
+      - name: Require entry HTML trae-service meta
+        run: python3 db/scripts/ci/check_frontend_head_trae_service.py
+
+      - name: Smoke tests (frontend head trae-service)
+        run: python3 db/scripts/ci/test_check_frontend_head_trae_service.py

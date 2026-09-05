@@ -1,0 +1,172 @@
+' @title: daydaymoney Enterprise Landscape
+' @view: enterprise-landscape
+' @status: target
+' @version: 3
+' @iteration: claude-agent Go 重写 — sidecar CLI
+' @author: claude
+' @based_on: v2 (v2-enterprise-landscape-20260701-1745-claude.puml)
+' @updated: 2026-07-02 15:00
+' @description: claude-agent Python → Go 重写；Technology Layer Python Runtime 移除 claude-agent 依赖；Dev Tools 组新增 claude-agent Go CLI sidecar
+
+@startuml
+!include <archimate/Archimate>
+
+title daydaymoney Platform — Enterprise Landscape v3 Target (2026-07-02 15:00)
+
+legend right
+  |<#LightGreen>  </> | 🟢 [NEW v3] 本次新增 |
+  |<#LightYellow> </> | 🟡 [MODIFIED v3] 本次修改 |
+  |<#LightPink>   </> | 🔴 [DEPRECATED v3] 本次废弃 |
+  |<#White>       </> | 无标记 — 已有组件（v1-v2） |
+endlegend
+
+' ═══════════════════════════════════════════════════════════
+' Business Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Business" {
+  Business_Actor(developer, "Developer")
+  Business_Actor(admin, "Platform Admin")
+  Business_Actor(enterprise, "Enterprise Customer")
+
+  Business_Service(ideSvc, "IDE Workspace Service")
+  Business_Service(taskMgmt, "Task Management Service")
+  Business_Service(cloudRes, "Cloud Resource Service")
+  Business_Service(billingSvc, "Billing & License Service")
+  Business_Service(llmSvc, "LLM AI Service")
+  note right of llmSvc
+    [NEW v2] LLM 预算管控 + 代理网关
+    author: claude 2026-07-01 17:45
+  end note
+
+  Business_Process(devFlow, "Development Workflow")
+  Business_Process(projOnboard, "Project Onboarding")
+
+  Business_Object(project, "Project")
+  Business_Object(workspace, "Workspace")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Application Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Application" {
+  Application_Component(gateway, "API Gateway (APISIX)")
+  Application_Component(djangoApp, "Django SaaS Platform")
+  Application_Component(authSvc, "Auth Service")
+  Application_Component(gitOauthSvc, "Git OAuth Service")
+  Application_Component(providerSvc, "Provider Service")
+  Application_Component(gitSvc, "Git Service")
+  Application_Component(ciCdSvc, "CI/CD Runner Service")
+  Application_Component(sseSvc, "Task SSE Service")
+  Application_Component(taskAIEndPoint, "taskAIEndPoint (Go LLM Gateway :8013)")
+  note right of taskAIEndPoint
+    [NEW v2] LLM API 代理网关
+    budget gate + sub-token auth
+    author: claude 2026-07-01 17:45
+  end note
+  Application_Component(taskCredential, "taskCredentialService (Go Token SSOT :8015)")
+  note right of taskCredential
+    [NEW v2] 容器 token SSOT
+    validate_proxy_token 已迁移至此
+    author: claude 2026-07-01 17:45
+  end note
+  Application_Component(claudeAgent, "claude-agent (Go CLI Sidecar)")
+  note right of claudeAgent
+    🟢 [NEW v3] Claude Code CLI sidecar
+    Go 静态二进制, 零运行时依赖
+    替代 Python 版本
+    @author: claude @2026-07-02 15:00
+  end note
+
+  Application_Service(authAPI, "Authentication API")
+  Application_Service(projectAPI, "Project Management API")
+  Application_Service(credAPI, "Credential Management API")
+  Application_Service(billingAPI, "Billing API")
+  Application_Service(llmProxyAPI, "LLM Proxy API")
+  note right of llmProxyAPI
+    [NEW v2] OpenAI-compatible Chat Completions
+    POST /api/tenant/../llm/provider/v1/..
+    author: claude 2026-07-01 17:45
+  end note
+
+  Application_Interface(restAPI, "REST API")
+  Application_Interface(webSocket, "WebSocket / SSE")
+
+  Application_DataObject(userDB, "User & Auth Data")
+  Application_DataObject(projectDB, "Project Data")
+  Application_DataObject(billingDB, "Billing Data")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Technology Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Technology" {
+  Technology_Device(lb, "Load Balancer")
+  Technology_Node(appNode, "Application Host")
+  Technology_Node(dbNode, "Database Host")
+  Technology_Node(cacheNode, "Cache Host")
+
+  Technology_SystemSoftware(docker, "Docker Engine")
+  Technology_SystemSoftware(nginx, "Nginx")
+  Technology_SystemSoftware(djangoRuntime, "Django (Python)")
+  Technology_SystemSoftware(goRuntime, "Go Runtime")
+  note right of goRuntime
+    🟡 [MODIFIED v3] taskAIEndPoint + taskCredentialService
+    + claude-agent (新增)
+    @author: claude @2026-07-02 15:00
+  end note
+
+  Technology_Service(postgres, "PostgreSQL")
+  Technology_Service(redis, "Redis")
+  Technology_Service(kafka, "Kafka")
+  Technology_Service(gitlabInstance, "GitLab Instance")
+  Technology_Service(upstreamLLM, "Upstream LLM (DeepSeek / OpenAI)")
+  note right of upstreamLLM
+    [NEW v2] 上游 LLM Provider
+    author: claude 2026-07-01 17:45
+  end note
+
+  Technology_Artifact(dockerImg, "Docker Images")
+  Technology_Artifact(staticAssets, "Static Assets")
+
+  Technology_CommunicationNetwork(internalNet, "Internal Network (Docker Bridge)")
+  Technology_CommunicationNetwork(externalNet, "External Network")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Cross-Layer Relationships
+' ═══════════════════════════════════════════════════════════
+Rel_Serving(gateway, restAPI, "routes")
+Rel_Realization(djangoApp, projectAPI, "serves")
+Rel_Realization(djangoApp, billingAPI, "serves")
+Rel_Realization(authSvc, authAPI, "serves")
+Rel_Realization(gitSvc, credAPI, "serves")
+Rel_Realization(taskAIEndPoint, llmProxyAPI, "serves")
+
+Rel_Assignment(appNode, djangoApp, "hosts")
+Rel_Assignment(appNode, authSvc, "hosts")
+Rel_Assignment(appNode, gateway, "hosts")
+Rel_Assignment(appNode, taskAIEndPoint, "hosts")
+Rel_Assignment(appNode, taskCredential, "hosts")
+Rel_Assignment(appNode, claudeAgent, "hosts")
+Rel_Assignment(dbNode, postgres, "runs")
+Rel_Assignment(cacheNode, redis, "runs")
+
+Rel_Composition(docker, djangoApp, "containerized")
+Rel_Composition(docker, taskAIEndPoint, "containerized")
+Rel_Composition(docker, taskCredential, "containerized")
+Rel_Composition(docker, claudeAgent, "containerized")
+Rel_Serving(postgres, djangoApp, "stores")
+Rel_Serving(redis, djangoApp, "caches")
+Rel_Serving(kafka, djangoApp, "events")
+
+' v2: new data flows
+Rel_Serving(taskAIEndPoint, upstreamLLM, "forwards LLM requests")
+Rel_Serving(taskAIEndPoint, djangoApp, "internal API (token/route/budget/cred)")
+Rel_Serving(taskAIEndPoint, taskCredential, "validate proxy token")
+
+Rel_Flow(developer, devFlow, "triggers")
+Rel_Serving(projectAPI, taskMgmt, "enables")
+Rel_Serving(authAPI, developer, "authenticates")
+Rel_Serving(llmProxyAPI, llmSvc, "enables")
+
+@enduml

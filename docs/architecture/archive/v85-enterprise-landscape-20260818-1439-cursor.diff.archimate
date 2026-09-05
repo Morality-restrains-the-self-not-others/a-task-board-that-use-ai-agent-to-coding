@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v85 变迁 (v84→v85)" id="id-v85els-diff01">
+  <folder name="Application" id="id-v85elsd-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v85elsd-fe" name="taskFE [MOD]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v85elsd-bill" name="taskBill [MOD]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v85elsd-auth" name="taskAuth [MOD]"/>
+    <element xsi:type="archimate:DataObject" id="id-v85elsd-billdb" name="taskBill DB [MOD]"/>
+  </folder>
+  <folder name="Technology" id="id-v85elsd-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v85elsd-edge" name="SH Edge nginx [MOD]"/>
+    <element xsi:type="archimate:TechnologyService" id="id-v85elsd-gl-old" name="GitLab CE 现网 :8012"/>
+    <element xsi:type="archimate:TechnologyService" id="id-v85elsd-gl-sh1" name="GitLab CE SH-1 :8014 [NEW]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v85elsd-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v85elsd-pl84" name="Plateau v84"/>
+    <element xsi:type="archimate:Plateau" id="id-v85elsd-pl85" name="Plateau v85"/>
+    <element xsi:type="archimate:Gap" id="id-v85elsd-gap" name="Gap: 单实例隐形默认 + 开通不按 region 路由"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v85elsd-wp" name="WP-pluggable-multi-region-gitservice"/>
+  </folder>
+  <folder name="Relations" id="id-v85elsd-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v85elsd-rel-fe-bill" source="id-v85elsd-fe" target="id-v85elsd-bill" name="选购 region"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v85elsd-rel-bill-db" source="id-v85elsd-bill" target="id-v85elsd-billdb" name="region 注册表"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v85elsd-rel-bill-old" source="id-v85elsd-bill" target="id-v85elsd-gl-old" name="Admin API region=A"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v85elsd-rel-bill-sh1" source="id-v85elsd-bill" target="id-v85elsd-gl-sh1" name="Admin API region=sh-1"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v85elsd-rel-edge-old" source="id-v85elsd-edge" target="id-v85elsd-gl-old" name="gitlab.${baseDomain}"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v85elsd-rel-edge-sh1" source="id-v85elsd-edge" target="id-v85elsd-gl-sh1" name="gitlab-tencent-sh-1"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v85elsd-rel-auth-old" source="id-v85elsd-auth" target="id-v85elsd-gl-old" name="OIDC"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v85elsd-rel-auth-sh1" source="id-v85elsd-auth" target="id-v85elsd-gl-sh1" name="OIDC client 独立"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v85elsd-rel-pl84-gap" source="id-v85elsd-pl84" target="id-v85elsd-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v85elsd-rel-wp-gap" source="id-v85elsd-wp" target="id-v85elsd-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v85elsd-rel-wp-pl85" source="id-v85elsd-wp" target="id-v85elsd-pl85"/>
+  </folder>
+  <folder name="Views" id="id-v85elsd-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v85elsd-view-mig" name="架构变迁 v84→v85 — pluggable-multi-region-gitservice">
+      <child xsi:type="archimate:DiagramObject" id="id-v85elsd-do-pl84" archimateElement="id-v85elsd-pl84">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v85elsd-c-pl84-gap" source="id-v85elsd-do-pl84" target="id-v85elsd-do-gap" archimateRelationship="id-v85elsd-rel-pl84-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v85elsd-do-gap" targetConnections="id-v85elsd-c-pl84-gap id-v85elsd-c-wp-gap" archimateElement="id-v85elsd-gap">
+        <bounds x="240" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v85elsd-do-wp" archimateElement="id-v85elsd-wp">
+        <bounds x="240" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v85elsd-c-wp-gap" source="id-v85elsd-do-wp" target="id-v85elsd-do-gap" archimateRelationship="id-v85elsd-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v85elsd-c-wp-pl85" source="id-v85elsd-do-wp" target="id-v85elsd-do-pl85" archimateRelationship="id-v85elsd-rel-wp-pl85"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v85elsd-do-pl85" targetConnections="id-v85elsd-c-wp-pl85" archimateElement="id-v85elsd-pl85">
+        <bounds x="620" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v85elsd-view-flow" name="v85 Target — 双 GitLab 实例可插拔">
+      <child xsi:type="archimate:DiagramObject" id="id-v85elsd-d-fe" archimateElement="id-v85elsd-fe">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v85elsd-c-fe-bill" source="id-v85elsd-d-fe" target="id-v85elsd-d-bill" archimateRelationship="id-v85elsd-rel-fe-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v85elsd-d-bill" targetConnections="id-v85elsd-c-fe-bill" archimateElement="id-v85elsd-bill">
+        <bounds x="240" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v85elsd-c-bill-db" source="id-v85elsd-d-bill" target="id-v85elsd-d-billdb" archimateRelationship="id-v85elsd-rel-bill-db"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v85elsd-c-bill-old" source="id-v85elsd-d-bill" target="id-v85elsd-d-gl-old" archimateRelationship="id-v85elsd-rel-bill-old"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v85elsd-c-bill-sh1" source="id-v85elsd-d-bill" target="id-v85elsd-d-gl-sh1" archimateRelationship="id-v85elsd-rel-bill-sh1"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v85elsd-d-billdb" targetConnections="id-v85elsd-c-bill-db" archimateElement="id-v85elsd-billdb">
+        <bounds x="430" y="48" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v85elsd-d-edge" archimateElement="id-v85elsd-edge">
+        <bounds x="48" y="180" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v85elsd-c-edge-old" source="id-v85elsd-d-edge" target="id-v85elsd-d-gl-old" archimateRelationship="id-v85elsd-rel-edge-old"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v85elsd-c-edge-sh1" source="id-v85elsd-d-edge" target="id-v85elsd-d-gl-sh1" archimateRelationship="id-v85elsd-rel-edge-sh1"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v85elsd-d-gl-old" targetConnections="id-v85elsd-c-bill-old id-v85elsd-c-edge-old id-v85elsd-c-auth-old" archimateElement="id-v85elsd-gl-old">
+        <bounds x="240" y="160" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v85elsd-d-gl-sh1" targetConnections="id-v85elsd-c-bill-sh1 id-v85elsd-c-edge-sh1 id-v85elsd-c-auth-sh1" archimateElement="id-v85elsd-gl-sh1">
+        <bounds x="240" y="240" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v85elsd-d-auth" archimateElement="id-v85elsd-auth">
+        <bounds x="48" y="280" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v85elsd-c-auth-old" source="id-v85elsd-d-auth" target="id-v85elsd-d-gl-old" archimateRelationship="id-v85elsd-rel-auth-old"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v85elsd-c-auth-sh1" source="id-v85elsd-d-auth" target="id-v85elsd-d-gl-sh1" archimateRelationship="id-v85elsd-rel-auth-sh1"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

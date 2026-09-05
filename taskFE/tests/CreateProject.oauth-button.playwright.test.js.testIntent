@@ -1,0 +1,33 @@
+# CreateProject.oauth-button.playwright.test.js
+
+## 意图
+验证 CreateProject 页面在 Git 仓库不可访问时显示 OAuth 授权按钮，并验证按钮完整交互行为（含超时和错误恢复）。
+
+## 被测功能
+1. GitHub 私有仓库不可访问时：显示错误消息 +「是否现在去授权」+ "OAuth 授权" 按钮
+2. GitLab 私有仓库不可访问时：显示错误消息 +「是否现在去授权」+ "OAuth 授权" 按钮
+3. 未知 Git 站点（非 github/gitlab）不可访问时：仅显示错误消息，不显示 OAuth 按钮/引导文案
+4. 仓库可访问时：不显示错误消息和 OAuth 按钮/引导文案
+5. 点击 OAuth 按钮：调用 /api/accounts/github/app/start/ API 并跳转
+6. 按钮加载态：点击后显示"跳转中..."并禁用
+7. 多仓库行：添加/移除仓库行时 OAuth 按钮正确更新
+8. **OAuth API 超时（10s）**：显示超时错误消息 + 按钮恢复可用
+9. **超时后重试**：按钮恢复后可再次点击发起请求
+10. **API 返回错误**：显示后端错误消息 + 按钮恢复
+11. **网络错误**：显示通用错误 + 按钮恢复
+
+## 前置条件
+- 前端服务运行中 (Vite dev server on port from port_config.json)
+- 后端服务运行中 (Django)
+- 测试账号已存在且有可用租户 (850256677331562496)
+- 租户下至少有一个工作空间
+- validate-git-repo 和 github/app/start/ API 通过 page.route() mock
+
+## 测试环境变量
+- `PLAYWRIGHT_TEST_EMAIL` (默认: contact@daydaymoney.com)
+- `PLAYWRIGHT_TEST_PASSWORD` (默认: <env:PLAYWRIGHT_TEST_PASSWORD>)
+- `TEST_TENANT_ID` (默认: 850256677331562496)
+- `BASE_URL` (默认: from port_config.json)
+
+## 预期结果
+所有 11 个测试通过，OAuth 按钮在正确条件下显示/隐藏，超时和错误场景正确恢复。

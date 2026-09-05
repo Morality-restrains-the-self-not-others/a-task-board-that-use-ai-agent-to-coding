@@ -1,0 +1,43 @@
+' @title: 登录历史记录（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 111
+' @iteration: login-history
+' @author: cursor
+' @based_on: v110 (v110-enterprise-landscape-20260825-2026-cursor.puml)
+' @updated: 2026-08-25 22:49
+' @description: 用户在账号中心查看自己的登录 IP；超管查看任意用户；客户入口与管理员入口分别记 entry
+
+@startuml
+!include <archimate/Archimate>
+
+title v111 — 企业景观 登录历史 2026-08-25 22:49
+
+Business_Actor(user, "登录用户")
+Business_Actor(admin, "平台超管")
+Business_Process(loginCust, "用户入口登录")
+Business_Process(loginAdm, "管理员入口登录")
+Business_Process(viewSelf, "查看自己的登录历史")
+Business_Process(viewOther, "查看指定用户登录历史")
+Application_Component(fe, "taskFE 账号中心 / 超管用户表")
+Application_Component(auth, "taskAuth")
+Application_DataObject(hist, "auth_login_history")
+
+Rel_Assignment(user, loginCust)
+Rel_Assignment(admin, loginAdm)
+Rel_Assignment(user, viewSelf)
+Rel_Assignment(admin, viewOther)
+Rel_Flow(user, fe, "打开登录历史")
+Rel_Flow(admin, fe, "打开用户登录历史")
+Rel_Flow(fe, auth, "GET login-history")
+Rel_Access(auth, hist, "read/write")
+
+Implementation_Plateau(p110, "Plateau v110")
+Implementation_Plateau(p111, "Plateau v111")
+Implementation_Gap(g, "Gap: 用户看不到登录 IP 历史")
+Implementation_WorkPackage(wp, "WP-login-history")
+Rel_Triggering(p110, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p111, "delivers")
+
+@enduml

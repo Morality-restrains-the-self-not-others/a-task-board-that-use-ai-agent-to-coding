@@ -1,0 +1,23 @@
+host: 0.0.0.0
+port: 8004
+logging:
+  log_file: logs/task-bill/task-bill.log
+internalSecret: ""
+# gatewayInternalSecret 不再在此文件中配置；taskBill 通过 gatewayauth.LoadGatewayInternalSecret()
+# 从 TASK_GATEWAY_INTERNAL_SECRET 环境变量或 conf/gateway/task-gateway/config.yaml 读取。
+# taskAuth KYC recharge-gate（限额执行）；可用 TASKAUTH_BASE_URL / TASKAUTH_INTERNAL_SECRET / TASKBILL_KYC_GATE 覆盖
+taskAuthBaseUrl: http://127.0.0.1:8003
+taskAuthInternalSecret: ""
+# 同节点调用 taskReferral 现查支付时刻推荐资格；拆分时改 ${subdomains.xxx}
+taskReferralBaseUrl: http://127.0.0.1:8025
+taskReferralInternalSecret: ""
+kycGateMode: live
+taskProjectServiceBase: http://127.0.0.1:8016
+gitlabApiBase: http://127.0.0.1:8012
+# Optional; sync 脚本也会写入 gitService/gitlab_home/.taskbill_admin_pat
+# gitlabAdminPrivateToken: ""
+# OPT-20260823-013: 未映射 tenant-{id} 组的 Git 仓 fail-open → 可配置拒绝。
+# 默认 false 保持 fail-open（个人命名空间不受影响）；完成各区域租户仓盘点+迁组后置 true，
+# 仍无法映射的项目将返回 UNMAPPED_PROJECT 拒绝（公网克隆被阻断）。可用
+# TASKBILL_TRAFFIC_GATE_UNMAPPED_REJECT=1 环境变量覆盖。
+trafficGateUnmappedReject: false

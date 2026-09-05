@@ -1,0 +1,188 @@
+# Repo quality gates (skills, traceId fixtures, git-oauth, task-detail SSOT)
+name: Repo Quality Gates
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 根仓大量 CI 步骤依赖子模块内容（db/scripts/ci/*、runAll/scripts/*、conf/）
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Claude skill SKILL.md metadata
+        run: python3 db/scripts/ci/check_claude_skill_metadata.py
+
+      - name: DESIGN.md visual SSOT
+        run: |
+          python3 db/scripts/ci/check_design_md.py
+          python3 db/scripts/ci/test_check_design_md.py
+
+      - name: traceId case-insensitive fixtures
+        run: python3 db/scripts/ci/check_trace_id_detection_fixtures.py
+
+      - name: traceid-log-first skill cross-refs
+        run: |
+          python3 db/scripts/ci/check_traceid_log_first_skill_refs.py
+          python3 db/scripts/ci/test_check_traceid_log_first_skill_refs.py
+
+      - name: git-oauth provider consistency
+        run: python3 db/scripts/ci/check_git_oauth_provider_consistency.py
+
+      - name: task-detail resolveTaskRouteIds SSOT
+        run: python3 db/scripts/ci/check_task_detail_route_ids.py
+
+      - name: taskChromePlugin USER_GUIDE sync
+        run: python3 db/scripts/ci/check_task_chrome_plugin_user_guide.py
+
+      - name: FE URL trailing slash vs backend HasSuffix (OPT-20260807-036)
+        run: |
+          python3 db/scripts/ci/check_fe_url_trailing_slash.py
+          python3 db/scripts/ci/test_check_fe_url_trailing_slash.py
+
+      - name: FE URL prefix covered by gateway routes (OPT-20260807-037)
+        run: |
+          python3 db/scripts/ci/check_fe_url_vs_gateway_routes.py
+          python3 db/scripts/ci/test_check_fe_url_vs_gateway_routes.py
+
+      - name: service URL/API catalog up to date
+        run: |
+          python3 db/scripts/ci/test_build_service_url_api_catalog.py
+          python3 db/scripts/ci/build_service_url_api_catalog.py --check
+
+      - name: frontend error data-traceId scan (optional)
+        run: python3 db/scripts/ci/check_frontend_error_data_trace_id.py
+
+      - name: subrepo random pre-commit hooks present
+        run: |
+          python3 db/scripts/ci/test_check_subrepo_random_precommit_hooks.py
+          python3 db/scripts/ci/check_subrepo_random_precommit_hooks.py
+
+      - name: conf.git tracked allowlist
+        run: |
+          python3 db/scripts/ci/test_check_conf_tracked_allowlist.py
+          python3 db/scripts/ci/check_conf_tracked_allowlist.py
+
+      - name: conf/ matches conf-sync-all output (worktree-clean, OPT-20260901-024)
+        run: |
+          bash db/scripts/ci/test_check_conf_sync.sh
+          bash db/scripts/ci/check_conf_sync.sh
+
+      - name: shared random_test_runner.sh self-test (v65 nightly sweep)
+        run: bash db/scripts/lib/random_test_runner.sh self-test
+
+      - name: bug-fix unit-test gate self-tests
+        run: python3 db/scripts/ci/test_check_bug_fix_unit_tests.py
+
+      - name: bug-fix unit-test gate bash template self-tests (subrepo hooks)
+        run: bash scripts/hooks/templates/check_bug_fix_commit_msg.sh --self-test
+
+      - name: internal-apis listening offline regression
+        run: bash db/scripts/ci/test_internal_apis_live_listening.sh
+
+      - name: Vite dynamic import static analysis (source scan)
+        run: bash task2app/front_project/app/scripts/check-vite-dynamic-imports.sh --source-only
+
+      - name: Django migration dependency integrity
+        run: python3 dataMigrate/check_migration_integrity.py
+
+      - name: Inline DDL check (CREATE TABLE in Go app code)
+        run: bash dataMigrate/check_inline_ddl.sh
+      - name: No startup dataMigrate in business openDB/main
+        run: python3 dataMigrate/check_no_startup_migrate.py
+      - name: check_no_startup_migrate unit tests
+        run: python3 dataMigrate/test_check_no_startup_migrate.py
+      - name: No business-service internal ticker/poll loop (ADR-0011)
+        run: |
+          python3 db/scripts/ci/check_no_service_internal_poll_loop.py
+          python3 db/scripts/ci/test_check_no_service_internal_poll_loop.py
+      - name: Event consumers must be idempotent (ADR-0015)
+        run: |
+          python3 db/scripts/ci/check_event_consumer_idempotency.py
+          python3 db/scripts/ci/test_check_event_consumer_idempotency.py
+      - name: GitLab SSO-only, no self-signup (ADR-0016)
+        run: |
+          python3 db/scripts/ci/check_gitlab_sso_only_no_self_signup.py
+          python3 db/scripts/ci/test_check_gitlab_sso_only_no_self_signup.py
+      - name: no production conf in source (ADR-0052)
+        run: |
+          python3 db/scripts/ci/test_check_no_prod_conf_in_source.py
+          python3 db/scripts/ci/check_no_prod_conf_in_source.py
+          python3 db/scripts/ci/test_seed_daydaymoney_deploy.py
+      - name: task-events runAll health ports match domain-events SSOT (ADR-0012)
+        run: |
+          python3 db/scripts/ci/check_task_events_runall_health_ports.py
+          python3 db/scripts/ci/test_check_task_events_runall_health_ports.py
+
+  runall-disk-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 根仓大量 CI 步骤依赖子模块内容（db/scripts/ci/*、runAll/scripts/*、conf/）
+          submodules: recursive
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: runAll disk preflight unit tests
+        working-directory: runAll
+        run: go test ./src -run 'TestFormatBuildDiskPreflightError|TestCheckBuildDiskSpace' -count=1
+
+  taskevents-intent-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: taskEvents AllIntents ↔ run.sh / domain-events YAML 三方同步（OPT-20260812-031）
+        working-directory: taskEvents
+        run: go test ./config -run 'TestRunShIntentPathsMatchAllIntents|TestDomainEventYAMLPortsMatchAllIntents' -count=1
+
+  vite-dynamic-import-build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 根仓大量 CI 步骤依赖子模块内容（db/scripts/ci/*、runAll/scripts/*、conf/）
+          submodules: recursive
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: task2app/front_project/app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: task2app/front_project/app
+        run: npm ci
+
+      - name: Vite build
+        working-directory: task2app/front_project/app
+        run: npm run build:vite
+
+      - name: Vite dynamic import check (source + artifacts)
+        run: bash task2app/front_project/app/scripts/check-vite-dynamic-imports.sh

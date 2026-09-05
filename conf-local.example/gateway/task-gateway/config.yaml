@@ -1,0 +1,3 @@
+gatewayInternalSecret: ''
+auth:
+  taskauthInternalSecret: ''

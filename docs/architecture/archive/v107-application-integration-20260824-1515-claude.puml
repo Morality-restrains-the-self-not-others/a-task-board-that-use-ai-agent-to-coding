@@ -1,0 +1,62 @@
+' @title: 镜像/技能 mention 存储 ID 化 + 名↔ID 映射持久化（应用集成）
+' @view: application-integration
+' @status: target
+' @version: 107
+' @iteration: image-skill-id-mapping-store
+' @author: claude
+' @based_on: v106 (v106-application-integration-20260824-0854-claude.puml)
+' @updated: 2026-08-24 15:15
+' @description: 创建任务链路镜像/技能存储 ID 化：taskCloudService image_skills_json 技能附派生 id；taskTaskService 任务新增 image_skill_id + container_image_snapshot 名↔ID 映射快照；taskFE 提交携带 container_image_skill_id
+
+@startuml
+!include <archimate/Archimate>
+
+title v107 — 镜像/技能 mention 存储 ID 化 2026-08-24 15:15
+
+' ═══════════════════════════════════════
+' Change Legend — v107 变更图例
+' ═══════════════════════════════════════
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v107 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v107 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  [MODIFIED v107] 提交携带 container_image_skill_id；
+  编辑回填优先快照反解显示（$镜像名 /技能名 可读文本不变）
+  @author: claude @2026-08-24 15:15
+end note
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(tts, "taskTaskService")
+note right of tts
+  [MODIFIED v107] task_tasks 新增 image_skill_id +
+  container_image_snapshot（{image_id,image_name,skill_id,skill_name}）；
+  创建/更新 API 校验 container_image_skill_id 属于该镜像（fail-closed）
+  @author: claude @2026-08-24 15:15
+end note
+Application_Component(cloud, "taskCloudService")
+note right of cloud
+  [MODIFIED v107] image_skills_json 技能附派生稳定 id
+  （D1=B 服务端派生，镜像作者零改动）；迁移回填存量
+  @author: claude @2026-08-24 15:15
+end note
+Application_DataObject(ttData, "task_tasks: image_skill_id / container_image_snapshot 🟡")
+Application_DataObject(cloudData, "cloud_tenant_installed_images: image_skills_json(技能 id) 🟡")
+
+Rel_Flow(gw, taskFE, "SPA catch-all")
+Rel_Flow(gw, tts, "create/update task + container_image_skill_id 🟡")
+Rel_Flow(tts, cloud, "校验/反解 image_skills（lookupInstalledImageFn）🟡")
+Rel_Access(tts, ttData, "write 🟡")
+Rel_Access(cloud, cloudData, "read/write 🟡")
+
+Implementation_Plateau(plateauV106, "Plateau v106")
+Implementation_Plateau(plateauV107, "Plateau v107 镜像/技能存储 ID 化")
+Implementation_Gap(gapId, "Gap: 技能无 ID、任务仅存镜像 ID、名↔ID 映射未持久化")
+Implementation_WorkPackage(wpId, "WP-image-skill-id-mapping")
+Rel_Triggering(plateauV106, gapId, "identifies")
+Rel_Realization(wpId, gapId, "closes")
+Rel_Realization(wpId, plateauV107, "delivers")
+
+@enduml

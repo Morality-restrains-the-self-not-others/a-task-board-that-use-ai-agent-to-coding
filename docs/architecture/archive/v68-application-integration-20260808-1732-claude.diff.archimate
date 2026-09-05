@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v68-ai-20260808-1732">
+
+  <name xml:lang="en">v68 浏览器插件 OIDC 白名单管理</name>
+  <purpose>插件 ID 由 conf 硬编码改为管理员后台可配置 — taskFE SystemAdmin「浏览器插件」页 → APISIX /api/system-admin/oidc-extension/* → taskAuth 管理端点 (GET/PUT, requireSuperuser) → auth_oidc_client.managed_by (bootstrap|admin, admin 行 seed INSERT-only 不覆盖) redirect_uris 写库；OIDC authorize 按白名单放行插件登录</purpose>
+
+  <folder name="Business" id="f-biz" type="business"/>
+  <folder name="Application" id="f-app" type="application"/>
+  <folder name="Technology" id="f-tech" type="technology"/>
+  <folder name="Implementation" id="f-impl" type="implementation_migration"/>
+  <folder name="Relations" id="f-rel" type="relations"/>
+
+  <!-- Application Layer — v68 插件 OIDC 白名单管理相关组件 -->
+  <element xsi:type="archimate:ApplicationComponent" name="APISIX Gateway (:18081) [MODIFIED v68: +/api/system-admin/oidc-extension/* 路由]" id="gateway"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskFE (SPA) [MODIFIED v68: SystemAdmin「浏览器插件」页 +/system-admin/oidc-extension/ 路由]" id="taskFE"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskAuth (:8003) [MODIFIED v68: +GET/PUT /api/system-admin/oidc-extension/ +seed managed_by='admin' 行 INSERT-only]" id="taskAuth"/>
+  <element xsi:type="archimate:ApplicationDataObject" name="taskAuth DB (+auth_oidc_client.managed_by 🆕 redirect_uris 写库)" id="taskAuthDB"/>
+
+  <!-- Implementation & Migration — v68 架构变迁 -->
+  <element xsi:type="archimate:Plateau" name="Plateau v67 — 任务帖存续期 (2026-08-07)" id="plateauV67"/>
+  <element xsi:type="archimate:Plateau" name="Plateau v68 — 插件 OIDC 白名单管理 (2026-08-08)" id="plateauV68"/>
+  <element xsi:type="archimate:Gap" name="Gap: 插件 ID 硬编码 conf + bootstrap 自愈覆盖管理员改库 → 不可运维" id="gapExt"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-oidc-extension-admin (P1 migration 031+seed 语义 → P2 taskAuth 管理端点 → P3 gateway 路由+FE 页 → P4 部署验证+OPT-024 联动)" id="wpExt"/>
+
+  <!-- Relationships -->
+  <element xsi:type="archimate:FlowRelationship" id="rel-fe-gw" source="taskFE" target="gateway"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-gw-auth" source="gateway" target="taskAuth"/>
+  <element xsi:type="archimate:AccessRelationship" id="rel-auth-db" source="taskAuth" target="taskAuthDB" accessType="write"/>
+  <element xsi:type="archimate:TriggeringRelationship" id="rel-trigger" source="plateauV67" target="gapExt"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wpExt" target="gapExt"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-plat" source="wpExt" target="plateauV68"/>
+
+  <folder name="Views" id="f-views" type="diagrams">
+    <!-- 视图 1: 架构变迁 v67→v68 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v67→v68 — 插件 OIDC 白名单管理" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV67" archimateElement="plateauV67">
+        <bounds x="48" y="120" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v67-gap" source="do-plateauV67" target="do-gapExt" archimateRelationship="rel-trigger"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gapExt" archimateElement="gapExt" targetConnections="conn-v67-gap conn-wp-gap">
+        <bounds x="300" y="120" width="320" height="60"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wpExt" archimateElement="wpExt">
+        <bounds x="660" y="80" width="320" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wpExt" target="do-gapExt" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-v68" source="do-wpExt" target="do-plateauV68" archimateRelationship="rel-wp-plat"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV68" archimateElement="plateauV68" targetConnections="conn-wp-v68">
+        <bounds x="660" y="180" width="320" height="50"/>
+      </child>
+    </element>
+
+    <!-- 视图 2: v68 Target — 插件 ID 白名单管理链 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v68 Target — 插件 ID 白名单管理链" id="view-topology">
+      <child xsi:type="archimate:DiagramObject" id="do-taskFE" archimateElement="taskFE">
+        <bounds x="40" y="60" width="200" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-fe-gw" source="do-taskFE" target="do-gateway" archimateRelationship="rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gateway" archimateElement="gateway" targetConnections="conn-fe-gw">
+        <bounds x="300" y="60" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-auth" source="do-gateway" target="do-taskAuth" archimateRelationship="rel-gw-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-taskAuth" archimateElement="taskAuth" targetConnections="conn-gw-auth">
+        <bounds x="560" y="60" width="220" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-db" source="do-taskAuth" target="do-taskAuthDB" archimateRelationship="rel-auth-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-taskAuthDB" archimateElement="taskAuthDB" targetConnections="conn-auth-db">
+        <bounds x="560" y="180" width="220" height="60"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

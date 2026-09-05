@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "app",
+  "name": "Daydaymoney Grafana Error Reporter",
+  "id": "daydaymoney-grafana-app",
+  "preload": true,
+  "info": {
+    "keywords": ["app", "errors", "monitoring"],
+    "description": "Grafana 报警捕获插件：登录 task2app、配置捕获规则、自动创建任务。",
+    "author": {
+      "name": "Myorg"
+    },
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "includes": [
+    {
+      "type": "page",
+      "name": "Home",
+      "path": "/a/%PLUGIN_ID%",
+      "addToNav": false,
+      "defaultNav": false
+    },
+    {
+      "type": "page",
+      "icon": "cog",
+      "name": "Daydaymoney 控制台",
+      "path": "/plugins/%PLUGIN_ID%",
+      "role": "Admin",
+      "addToNav": true,
+      "defaultNav": true
+    }
+  ],
+  "dependencies": {
+    "grafanaDependency": ">=11.5.0",
+    "plugins": []
+  }
+}

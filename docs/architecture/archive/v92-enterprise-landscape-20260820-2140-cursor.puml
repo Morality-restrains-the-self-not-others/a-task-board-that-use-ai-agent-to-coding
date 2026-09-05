@@ -1,0 +1,38 @@
+' @title: 多渠道推荐码与分渠道分账
+' @view: enterprise-landscape
+' @status: archived
+' @version: 92
+' @iteration: referral-channel-codes
+' @author: cursor
+' @based_on: v91 (v91-enterprise-landscape-20260820-1910-cursor.puml)
+' @updated: 2026-08-20 21:40
+' @description: 用户可按渠道发码并查看人数与分账
+
+@startuml
+!include <archimate/Archimate>
+
+title v92 Current — 推荐渠道可见性 2026-08-20 21:40
+
+Business_Service(refShare, "用户推荐")
+note right of refShare
+  多渠道链接
+  分渠道人数/分账
+end note
+
+Application_Component(fe, "taskFE")
+Application_Component(ref, "taskReferral")
+Application_Component(bill, "taskBill")
+
+Rel_Serving(fe, refShare, "SPA /profile/referral/")
+Rel_Serving(ref, fe, "channels/stats API")
+Rel_Serving(bill, ref, "edge/accrual")
+
+Implementation_Plateau(plateauV91, "Plateau v91")
+Implementation_Plateau(plateauV92, "Plateau v92")
+Implementation_Gap(gapCh, "Gap: 推荐无法按渠道拆分")
+Implementation_WorkPackage(wpCh, "WP-referral-channel-codes")
+Rel_Triggering(plateauV91, gapCh, "identifies")
+Rel_Realization(wpCh, gapCh, "closes")
+Rel_Realization(wpCh, plateauV92, "delivers")
+
+@enduml

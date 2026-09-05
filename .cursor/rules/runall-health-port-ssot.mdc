@@ -1,0 +1,22 @@
+---
+description: runAll 健康检查端口必须等于进程监听 SSOT；禁止复制相邻服务 health_check URL
+alwaysApply: true
+---
+
+# runAll 健康检查端口 = 监听 SSOT（元规则）
+
+细则：`.ai/01_project_constraints/52_runall_health_port_ssot.md`；ADR-0012；约束索引第 47 条。
+
+## 强制要求
+
+- **task-events**：端口只在 `conf/events/domain-events/<event>/config.yaml` 的 `intents.<intent>.port` 定义；`intent_registry.go`、`conf/runAll.yaml` health/liveness、Prometheus file_sd **必须抄同一数字**。
+- **禁止**复制相邻 `task-events-*` 的 `health_check` 后只改 `name`。
+- 平台服务用 `conf_app` + `health_path`，不要再手写端口。
+- 新 `groupId` 必须有 runAll 条目（存量缺口不得扩大）。
+
+## 验收
+
+```bash
+python3 db/scripts/ci/test_check_task_events_runall_health_ports.py
+python3 db/scripts/ci/check_task_events_runall_health_ports.py
+```

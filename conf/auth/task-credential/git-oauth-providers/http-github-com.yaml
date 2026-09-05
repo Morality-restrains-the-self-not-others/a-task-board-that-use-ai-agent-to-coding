@@ -1,0 +1,19 @@
+provider: github
+service_provider: github-official-daydaymoney
+target:
+  website: https://github.com
+  client_id: ''
+  client_secret: ""
+  # 与 git-oauth SSOT 的 redirect_uri 保持一致（GitHub App callback 白名单已注册）：
+  # https://daydaymoney.com/redirect/gitsite/github.com/oauth/callback/
+  # 该路径由前端落地页承接（taskFE /redirect/gitsite/），解析参数后转服务端交换。
+  redirect_uri: ${scheme}://${subdomains.base}/redirect/gitsite/github.com/oauth/callback/
+  scope: repo read:user
+service:
+  allowedHost: ${scheme}://${subdomains.base}
+  # gitoauth_base：taskProjectService 换票桥接的内网地址（显式字段优先于
+  # allowedHost；allowedHost 是公网域名，误用会导致 access-for-user 走公网
+  # 被网关 deny-internal 拦截 → token_error。见 OPT-20260807-071）。
+  gitoauth_base: http://127.0.0.1:8002
+  host: 0.0.0.0
+  port: 8002

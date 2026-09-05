@@ -1,0 +1,7 @@
+intents:
+  1_cleanup:
+    host: 0.0.0.0
+    port: 18070
+    groupId: task-events-wechat-mp-cleanup-1-cleanup
+    events:
+    - WECHAT_MP_CLEANUP

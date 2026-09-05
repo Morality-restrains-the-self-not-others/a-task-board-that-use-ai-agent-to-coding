@@ -1,0 +1,37 @@
+@import 'mixins_and_variables_and_functions';
+
+.observability-container {
+  height: $calc-application-viewport-height;
+  min-height: 600px;
+  padding: $gl-spacing-scale-4;
+  border-radius: $gl-border-radius-lg;
+}
+
+@mixin icon-styles($color) {
+  fill: $color;
+}
+
+.observability-performance-icon {
+  @include icon-styles($gl-color-blue-500);
+}
+
+.observability-health-icon {
+  @include icon-styles($gl-color-green-500);
+}
+
+.observability-log-icon {
+  @include icon-styles($gl-color-purple-500);
+}
+
+.observability-alert-icon,
+.observability-important-information-icon {
+  @include icon-styles($gl-color-orange-500);
+}
+
+.observability-exception-icon {
+  @include icon-styles($gl-color-red-500);
+}
+
+.observability-kubernetes-icon {
+  @include icon-styles($gl-color-neutral-500);
+}

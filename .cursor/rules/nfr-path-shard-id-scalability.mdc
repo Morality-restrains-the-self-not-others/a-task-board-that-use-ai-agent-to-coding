@@ -1,0 +1,28 @@
+---
+description: 执行 /5-nfr 时：无分片ID路径须评估可伸缩性；有分片ID路径须判定分片键是否合适
+alwaysApply: true
+---
+
+# NFR 路径分片键与可伸缩性（元规则）
+
+适用于整个 monorepo 的 NFR 澄清（`/5-nfr`）与产出 `*-nfr-clarification.md`。细则见 `.ai/01_project_constraints/48_nfr_path_shard_id_scalability.md`；约束索引第 43 条；技能附录 `.claude/skills/5-nfr/references/path-shard-id-scalability.md`。
+
+## 强制要求
+
+- 枚举增量内全部相关路径（HTTP/API、前端路由、消息路由键等）。
+- **路径未携带可分片 ID** → **必须**评估可伸缩性需求（L0–L4）；L0 须写理由 + 升级触发；≥L1 须写补键/动作。
+- **路径已携带分片 ID** → **必须**判定该 ID 是否为合适分片键；不适配则记录纠正动作并进入领域模型影响。
+- NFR 文档须含「路径分片键审视」表；未通过则禁止进入 `/6-ddd`。
+
+## 触发
+
+- 调用 `/5-nfr` 或编写/修改 `docs/superpowers/plans/*-nfr-clarification.md`
+- 设计/价值流增量引入新 API、路由或 Kafka 消费键
+- 评审发现路径缺少 `tenantId` 等分片键却声称「无可伸缩性需求」
+
+## 验收
+
+```bash
+test -f .claude/skills/5-nfr/references/path-shard-id-scalability.md
+rg -n '路径分片键强制审视' .claude/skills/5-nfr/SKILL.md
+```

@@ -1,0 +1,31 @@
+name: Task Chrome Plugin Tests
+
+on:
+  pull_request:
+    paths:
+      - 'taskChromePlugin/**'
+  push:
+    branches: [main, master]
+    paths:
+      - 'taskChromePlugin/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: taskChromePlugin
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 根仓大量 CI 步骤依赖子模块内容（db/scripts/ci/*、runAll/scripts/*、conf/）
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run unit tests
+        run: npm test

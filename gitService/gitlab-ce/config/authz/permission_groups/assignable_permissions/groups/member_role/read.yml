@@ -1,0 +1,8 @@
+---
+name: read_member_role
+description: Grants the ability to read member roles
+boundaries:
+  - group
+  - instance
+permissions:
+  - read_member_role

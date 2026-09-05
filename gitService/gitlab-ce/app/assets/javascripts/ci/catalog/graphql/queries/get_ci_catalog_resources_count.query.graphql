@@ -1,0 +1,15 @@
+query getCatalogResourcesCount($searchTerm: String) {
+  all: ciCatalogResources(scope: ALL, search: $searchTerm) {
+    count
+  }
+  namespaces: ciCatalogResources(scope: NAMESPACES, search: $searchTerm) {
+    count
+  }
+  analytics: ciCatalogResources(
+    scope: NAMESPACES
+    minAccessLevel: MAINTAINER
+    search: $searchTerm
+  ) {
+    count
+  }
+}

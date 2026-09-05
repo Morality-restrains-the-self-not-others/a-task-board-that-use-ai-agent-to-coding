@@ -1,0 +1,17 @@
+transport: kafka
+internalSecret: ""
+# ── 跨服务内部密钥约定 ───────────────────────────────────────────
+# 开发环境绝大多数服务 internalSecret 为空（免认证），仅 taskBill 有非空密钥。
+# taskEvents → 下游服务密钥解析优先级：
+#   taskBill:      TASK_BILL_INTERNAL_SECRET > SHARED_INTERNAL_SECRET > 此处 internalSecret > TASK_EVENTS_INTERNAL_SECRET
+#   taskCloud:     SHARED_INTERNAL_SECRET > TASK_CLOUD_INTERNAL_SECRET > 此处 internalSecret > TASK_EVENTS_INTERNAL_SECRET
+#   taskTenant:    TENANT_SERVICE_INTERNAL_SECRET（默认空）
+#   taskAuth:      此处 internalSecret > TASK_EVENTS_INTERNAL_SECRET
+#   taskProject:   X-Auth-User-Id: internal（无需密钥）
+# 生产环境建议统一使用 SHARED_INTERNAL_SECRET 环境变量。
+redis:
+  db: 0
+  streamKeyPrefix: 'domain-events:'
+_doc_ports: 'G5/v4 intent consumers: 18020-18037; legacy 8005-8012 and flat 8020-8034
+  removed'
+_doc_infra: 'redis.host / kafka.bootstrapServers come from conf/events/domain-events/docker-infra.yaml (sync from docker-infra)'

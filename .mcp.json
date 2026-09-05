@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "archimate": {
+      "command": "npx",
+      "args": ["-y", "@null-pointer/mcp-archimate@1.0.1"]
+    },
+    "chrome-devtools": {
+      "command": "/tmp/ram-work/scripts/mcp-chrome-debug.sh",
+      "args": []
+    },
+    "code-review-graph": {
+      "type": "stdio",
+      "command": "code-review-graph",
+      "args": ["serve"],
+      "cwd": "/tmp/ram-work"
+    },
+    "codegraph": {
+      "type": "stdio",
+      "command": "codegraph",
+      "args": ["serve", "--mcp"]
+    }
+  }
+}

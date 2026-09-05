@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    name="application-integration v71 全量 (post-change)"
+    id="model-v71-ai-20260811-0222-full">
+  <folder name="Application" id="f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="taskFE [MODIFIED v71]" id="app-taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" name="APISIX Gateway [MODIFIED v71]" id="app-gateway"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskAuth [MODIFIED v71]" id="app-taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="runAll InitAllDatabases [MODIFIED v71]" id="app-runAll"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Promtail [MODIFIED v71]" id="app-promtail"/>
+    <element xsi:type="archimate:DataObject" name="Loki" id="data-loki"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v70" id="plateauV70"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v71" id="plateauV71"/>
+    <element xsi:type="archimate:Gap" name="Gap: 清库后 auth 未拉起；APISIX 502 无 Loki；裸 502 页" id="gap502"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-wechat-login-apisix-502" id="wp502"/>
+  </folder>
+  <folder name="Relations" id="f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="rel-fe-gw" source="app-taskFE" target="app-gateway"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-auth" source="app-gateway" target="app-taskAuth"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-run-auth" source="app-runAll" target="app-taskAuth"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-run-gw" source="app-runAll" target="app-gateway"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-run-fe" source="app-runAll" target="app-taskFE"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-pt" source="app-gateway" target="app-promtail"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-pt-loki" source="app-promtail" target="data-loki"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-p70-gap" source="plateauV70" target="gap502"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wp502" target="gap502"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp-p71" source="wp502" target="plateauV71"/>
+  </folder>
+  <folder name="Views" id="f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v71 全量拓扑 — wechat login resilience" id="view-full">
+      <child xsi:type="archimate:DiagramObject" id="do-fe" archimateElement="app-taskFE" targetConnections="conn-run-fe">
+        <bounds x="48" y="80" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-fe-gw" source="do-fe" target="do-gw" archimateRelationship="rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gw" archimateElement="app-gateway" targetConnections="conn-fe-gw conn-run-gw">
+        <bounds x="240" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-auth" source="do-gw" target="do-auth" archimateRelationship="rel-gw-auth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-pt" source="do-gw" target="do-pt" archimateRelationship="rel-gw-pt"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-auth" archimateElement="app-taskAuth" targetConnections="conn-gw-auth conn-run-auth">
+        <bounds x="460" y="80" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-run" archimateElement="app-runAll">
+        <bounds x="240" y="200" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-run-auth" source="do-run" target="do-auth" archimateRelationship="rel-run-auth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-run-gw" source="do-run" target="do-gw" archimateRelationship="rel-run-gw"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-run-fe" source="do-run" target="do-fe" archimateRelationship="rel-run-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-pt" archimateElement="app-promtail" targetConnections="conn-gw-pt">
+        <bounds x="48" y="200" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-pt-loki" source="do-pt" target="do-loki" archimateRelationship="rel-pt-loki"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-loki" archimateElement="data-loki" targetConnections="conn-pt-loki">
+        <bounds x="48" y="300" width="140" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v70→v71 — wechat-login-apisix-502" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-p70" archimateElement="plateauV70">
+        <bounds x="48" y="120" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-p70-gap" source="do-p70" target="do-gap" archimateRelationship="rel-p70-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap" archimateElement="gap502" targetConnections="conn-p70-gap conn-wp-gap">
+        <bounds x="280" y="110" width="320" height="70"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp" archimateElement="wp502">
+        <bounds x="660" y="80" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wp" target="do-gap" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-p71" source="do-wp" target="do-p71" archimateRelationship="rel-wp-p71"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-p71" archimateElement="plateauV71" targetConnections="conn-wp-p71">
+        <bounds x="660" y="180" width="240" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

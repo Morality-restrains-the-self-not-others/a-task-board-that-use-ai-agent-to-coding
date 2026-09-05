@@ -1,0 +1,238 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [
+    {
+      "icon": "doc",
+      "tags": [],
+      "title": "Trace Log Journey",
+      "type": "link",
+      "url": "/d/trace-log-journey/trace-log-journey?var-trace_id=${trace_id}&var-tempo_trace_id=${tempo_trace_id}&var-span_id=${span_id}"
+    },
+    {
+      "icon": "external link",
+      "tags": [],
+      "title": "Explore span drill-down",
+      "type": "link",
+      "url": "/explore?schemaVersion=1&panes=%7B%22trace%22:%7B%22datasource%22:%22tempo%22,%22queries%22:%5B%7B%22queryType%22:%22traceId%22,%22query%22:%22${tempo_trace_id}%22%7D%5D%7D%7D&orgId=1"
+    }
+  ],
+  "panels": [
+    {
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 16,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "description": "Tempo 瀑布图即 span 树。面板内 spanFilters 依赖 Grafana ≥10.4；若 UI 未显示过滤器，请用顶部「Explore span drill-down」链接，或在此瀑布图中点击 span 行跳转关联日志。",
+      "options": {
+        "showSpanFilters": true,
+        "spanFilters": {
+          "serviceNameOperator": "=",
+          "spanNameOperator": "=",
+          "fromOperator": ">",
+          "toOperator": "<",
+          "query": "",
+          "queryType": "custom",
+          "filters": [
+            {
+              "id": "span-id-filter",
+              "operator": "=",
+              "scope": "span",
+              "tag": "span_id",
+              "value": ["$span_id"],
+              "valueType": "string"
+            }
+          ]
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "queryType": "traceId",
+          "query": "$tempo_trace_id",
+          "refId": "A"
+        }
+      ],
+      "title": "Tempo trace waterfall (span tree)",
+      "type": "traces"
+    },
+    {
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "nodes": {}
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "queryType": "serviceMap",
+          "refId": "A"
+        }
+      ],
+      "title": "Service map",
+      "type": "nodeGraph"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 4,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Ascending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "{job=~\".+\"} |~ \"$trace_id|$tempo_trace_id\" | json | __error__=\"\" | span_id != \"\" | line_format \"{{.service}} | span={{.span_id}} parent={{.parent_span_id}} | {{.msg}}\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Loki span hierarchy (logs)",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "id": 2,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Ascending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "{job=~\".+\"} |~ \"$trace_id|$tempo_trace_id\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Correlated logs",
+      "type": "logs"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 39,
+  "tags": ["runall", "trace", "tempo"],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "description": "原始 X-Trace-Id（Loki 日志检索）",
+        "label": "trace_id",
+        "name": "trace_id",
+        "options": [],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "description": "Tempo 瀑布图用 32 位 hex（runAll 深链自动填充；UUID 请去连字符）",
+        "label": "tempo_trace_id",
+        "name": "tempo_trace_id",
+        "options": [],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "description": "可选：按 span_id 过滤 Tempo/Loki（16 位 hex）。面板 spanFilters 不可用时，请用 Explore 链接或在 Tempo 瀑布图点击 span 验证联动。",
+        "label": "span_id",
+        "name": "span_id",
+        "options": [],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Distributed Trace View",
+  "uid": "distributed-trace-view",
+  "version": 2
+}

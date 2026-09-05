@@ -1,0 +1,42 @@
+# TaskDetail.start-vm-auto-cold-start.playwright.test.js
+
+## 意图
+
+**冷启动**专用全链路：使用无 `instance_id` 的独立任务，经 `POST start-vm-auto` 触发 Kafka 链，在 12 分钟内得到 `instance_id` 并验证 `workbench-link`。
+
+与 `TaskDetail.start-vm-auto-server-start.playwright.test.js`（warm 任务、支持已有实例快速路径）分离，避免 nightly 误跳过启动链。
+
+## 默认环境变量
+
+| 变量 | 默认值 | 说明 |
+|---|---|---|
+| `PLAYWRIGHT_COLD_START_TASK_ID` | `860371538948571136` | 无云实例的专用任务 |
+| `PLAYWRIGHT_COLD_START_WORKSPACE_ID` | `857903329669984256` | 与冷启动任务匹配的工作区 |
+| `PLAYWRIGHT_CONTAINER_IMAGE_ID` | `862588024964280320` | 租户已安装镜像 |
+| `PLAYWRIGHT_INSTANCE_TYPE` | `ecs.g6.large` | x86 规格，与镜像架构匹配 |
+
+## 前置
+
+- 真实阿里云 authorization、账户后付费余额充足
+- `task-events-cloud-server-start-auto` / `cloud-server-started` healthy，`transport=kafka`
+- 冷启动任务**不得**已有 `instance_id`（默认先 `stop-vm` 清空；设 `PLAYWRIGHT_COLD_START_SKIP_CLEANUP=1` 则改为 skip）
+
+## 断言
+
+- 预检 `server-runtime-status`：`instance_id` 为空
+- `POST start-vm-auto` 200 + `event_id`
+- 12 分钟内 poll 得到非空 `instance_id`
+- `GET workbench-link` 200，`workbench_url` 有效且 `instance_id` 一致
+
+## CI
+
+- GitHub Actions：`.github/workflows/start-vm-auto-cold-start-nightly.yml`（cron 每日 02:00 UTC+8）
+
+## 运行
+
+```bash
+PLAYWRIGHT_SITE_ORIGIN=http://183.250.1.132:4000 \
+PLAYWRIGHT_GATEWAY_ORIGIN=http://183.250.1.132:18081 \
+npx playwright test tests/TaskDetail.start-vm-auto-cold-start.playwright.test.js \
+  --config=playwright.config.chromium.js
+```

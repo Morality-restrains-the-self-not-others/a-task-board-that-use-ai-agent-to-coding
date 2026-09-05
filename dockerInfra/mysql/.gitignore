@@ -1,0 +1,4 @@
+data/
+data.corrupt-*
+__pycache__/
+*.pyc

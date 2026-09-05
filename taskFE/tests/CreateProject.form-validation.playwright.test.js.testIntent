@@ -1,0 +1,27 @@
+# CreateProject.form-validation.playwright.test.js
+
+## 意图
+验证 CreateProject 页面的表单验证逻辑正确性，确保用户在填写所有必填字段后能正常提交创建项目。
+
+## 被测功能
+1. 表单初始状态：按钮禁用，提示缺少必填字段
+2. 逐字段填写后按钮状态正确过渡
+3. 工作空间选择器正确加载数据
+4. Git 仓库无效 URL 阻止提交
+5. 键盘导航用户可正常完成表单
+6. 完整提交流程：填写 → 点击创建 → 跳转项目列表
+
+## 前置条件
+- 前端服务运行中 (Vite dev server on port from port_config.json)
+- 后端服务运行中 (Django)
+- 测试账号已存在且有可用租户 (850256677331562496)
+- 租户下至少有一个工作空间
+
+## 测试环境变量
+- `PLAYWRIGHT_TEST_EMAIL` (默认: contact@daydaymoney.com)
+- `PLAYWRIGHT_TEST_PASSWORD` (默认: <env:PLAYWRIGHT_TEST_PASSWORD>)
+- `TEST_TENANT_ID` (默认: 850256677331562496)
+- `BASE_URL` (默认: from port_config.json)
+
+## 预期结果
+所有测试通过，创建项目表单在各种交互模式下行为正确。

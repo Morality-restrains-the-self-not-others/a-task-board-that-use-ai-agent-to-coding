@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v35-create-task-field-settings-20260718-0100">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v35 Target (create-task-field-settings)</name>
+  <purpose>Workspace toggles for optional create-task form fields; default all true</purpose>
+
+  <folder name="Motivation" id="id-v35-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="🟢 无记录默认全 true [NEW v35]" id="id-v35-constraint"/>
+  </folder>
+  <folder name="Application" id="id-v35-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue WorkspaceSettings CreateTaskFieldSettingsModal [MODIFIED v35]" id="id-v35-vue-settings"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue WorkPanel CreateTaskModal fieldSettings [MODIFIED v35]" id="id-v35-vue-work"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway JWT tenant" id="id-v35-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskProjectService create-task-field-settings [MODIFIED v35]" id="id-v35-project"/>
+    <element xsi:type="archimate:DataObject" name="🟢 workspace_create_task_field_settings [NEW v35]" id="id-v35-tbl"/>
+  </folder>
+  <folder name="Relations" id="id-v35-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v35-flow-settings-gw" source="id-v35-vue-settings" target="id-v35-gw" name="GET/PUT field-settings"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v35-flow-work-gw" source="id-v35-vue-work" target="id-v35-gw" name="GET field-settings"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v35-flow-gw-project" source="id-v35-gw" target="id-v35-project" name="tenant + user auth"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v35-acc-project-tbl" source="id-v35-project" target="id-v35-tbl" name="R/W"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v35-inf-c-project" source="id-v35-constraint" target="id-v35-project" name="缺省全开"/>
+  </folder>
+  <folder name="Implementation" id="id-v35-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v34 — project-internal-repo-disk-size (current)" id="id-v35-plat-v34"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v35 — create-task-field-settings" id="id-v35-plat-v35"/>
+    <element xsi:type="archimate:Gap" name="Gap: 创建任务可选字段无法按工作区显隐" id="id-v35-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v35-create-task-field-settings" id="id-v35-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v35-rel-plat34-gap" source="id-v35-plat-v34" target="id-v35-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v35-rel-wp-gap" source="id-v35-wp" target="id-v35-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v35-rel-wp-plat35" source="id-v35-wp" target="id-v35-plat-v35"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v35-rel-plat35-project" source="id-v35-plat-v35" target="id-v35-project"/>
+  </folder>
+  <folder name="Views" id="id-v35-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v34→v35 — create-task-field-settings" id="id-v35-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v35-do-plat34" archimateElement="id-v35-plat-v34">
+        <bounds x="48" y="100" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v35-conn-plat34-gap"
+          source="id-v35-do-plat34" target="id-v35-do-gap"
+          archimateRelationship="id-v35-rel-plat34-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v35-do-gap" archimateElement="id-v35-gap"
+        targetConnections="id-v35-conn-plat34-gap id-v35-conn-wp-gap">
+        <bounds x="420" y="100" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v35-do-wp" archimateElement="id-v35-wp">
+        <bounds x="880" y="60" width="360" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v35-conn-wp-gap"
+          source="id-v35-do-wp" target="id-v35-do-gap"
+          archimateRelationship="id-v35-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v35-conn-wp-plat35"
+          source="id-v35-do-wp" target="id-v35-do-plat35"
+          archimateRelationship="id-v35-rel-wp-plat35"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v35-do-plat35" archimateElement="id-v35-plat-v35"
+        targetConnections="id-v35-conn-wp-plat35">
+        <bounds x="880" y="160" width="360" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v35-conn-plat35-project"
+          source="id-v35-do-plat35" target="id-v35-do-project-m"
+          archimateRelationship="id-v35-rel-plat35-project"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v35-do-project-m" archimateElement="id-v35-project"
+        targetConnections="id-v35-conn-plat35-project">
+        <bounds x="880" y="250" width="360" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v35 Target — 创建任务字段显隐配置流" id="id-v35-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v35-do-settings" archimateElement="id-v35-vue-settings">
+        <bounds x="40" y="40" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v35-conn-settings-gw"
+          source="id-v35-do-settings" target="id-v35-do-gw"
+          archimateRelationship="id-v35-flow-settings-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v35-do-work" archimateElement="id-v35-vue-work">
+        <bounds x="40" y="140" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v35-conn-work-gw"
+          source="id-v35-do-work" target="id-v35-do-gw"
+          archimateRelationship="id-v35-flow-work-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v35-do-gw" archimateElement="id-v35-gw"
+        targetConnections="id-v35-conn-settings-gw id-v35-conn-work-gw">
+        <bounds x="300" y="90" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v35-conn-gw-project"
+          source="id-v35-do-gw" target="id-v35-do-project"
+          archimateRelationship="id-v35-flow-gw-project"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v35-do-project" archimateElement="id-v35-project"
+        targetConnections="id-v35-conn-gw-project id-v35-conn-c-project">
+        <bounds x="500" y="90" width="260" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v35-conn-project-tbl"
+          source="id-v35-do-project" target="id-v35-do-tbl"
+          archimateRelationship="id-v35-acc-project-tbl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v35-do-tbl" archimateElement="id-v35-tbl"
+        targetConnections="id-v35-conn-project-tbl">
+        <bounds x="500" y="200" width="260" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v35-do-c" archimateElement="id-v35-constraint">
+        <bounds x="40" y="240" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v35-conn-c-project"
+          source="id-v35-do-c" target="id-v35-do-project"
+          archimateRelationship="id-v35-inf-c-project"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

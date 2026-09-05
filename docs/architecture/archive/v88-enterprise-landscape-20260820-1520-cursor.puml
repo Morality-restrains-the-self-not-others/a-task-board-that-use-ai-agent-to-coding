@@ -1,0 +1,37 @@
+' @title: 评论启动日志按 workspace_id 哈希分表（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 88
+' @iteration: ccb-logs-workspace-shard-v88
+' @author: cursor
+' @based_on: v85 (v85-enterprise-landscape-20260818-1439-cursor.puml)
+' @updated: 2026-08-20 15:30
+' @description: 工作空间作为启动日志伸缩要素；物理表名由 workspace_id 哈希导出
+
+@startuml
+!include <archimate/Archimate>
+
+title v88 Current — 启动日志 workspace 分片企业景观 2026-08-20 15:30
+
+Business_Actor(user, "租户用户")
+Business_Process(viewLogs, "查看评论启动日志")
+Application_Component(cloud, "taskCloudService")
+Application_DataObject(shards, "CCB logs shards 00-15")
+Motivation_Constraint(c1, "表名由 workspace_id 分片")
+Motivation_Principle(p1, "预分 16 片；禁止 AUTO_INCREMENT PK")
+
+Rel_Triggering(user, viewLogs, "打开任务详情")
+Rel_Flow(viewLogs, cloud, "workspace 作用域")
+Rel_Access(cloud, shards, "R/W")
+Rel_Association(shards, c1, "ADR-0023")
+Rel_Association(cloud, p1, "选片 CRC32")
+
+Implementation_Plateau(p85, "Plateau v85")
+Implementation_Gap(gap, "Gap: 单表混存")
+Implementation_WorkPackage(wp, "WP-ccb-logs-workspace-shard")
+Implementation_Plateau(p88, "Plateau v88")
+Rel_Triggering(p85, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p88, "delivers")
+
+@enduml

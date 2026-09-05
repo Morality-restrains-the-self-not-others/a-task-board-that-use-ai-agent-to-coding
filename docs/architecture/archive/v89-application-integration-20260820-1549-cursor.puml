@@ -1,0 +1,89 @@
+' @title: ztree 执行日志服务端持久化
+' @view: application-integration
+' @status: target
+' @version: 89
+' @iteration: ztree-exec-log-server-persist
+' @author: cursor
+' @based_on: v88 (v88-application-integration-20260820-1520-cursor.puml)
+' @updated: 2026-08-20 15:49
+' @description: 层图快照落 Cloud MySQL；关容器后 GET hydrate；不存克隆日志；job 步骤沿用 023
+
+@startuml
+!include <archimate/Archimate>
+
+title v89 Target — ztree 执行日志服务端持久化 2026-08-20 15:49
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v89 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v89 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v89 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(fe, "taskFE ztree Tab")
+note right of fe
+  🟡 [MODIFIED v89]
+  关容器仍 GET 层图快照与 job 步骤
+  克隆区允许空白
+  @author: cursor @2026-08-20 15:49
+end note
+
+Application_Component(cloud, "taskCloudService (Go :8018)")
+note right of cloud
+  🟡 [MODIFIED v89]
+  layer-graph-push UPSERT 快照
+  GET container-layer-graph hydrate
+  job-execution-log 仍读 023
+  @author: cursor @2026-08-20 15:49
+end note
+
+Application_Component(sse, "taskSSE")
+note right of sse
+  无标记 — 直播仍走 SSE_MESSAGE
+end note
+
+Application_DataObject(snap, "cloud_layer_graph_snapshot")
+note right of snap
+  🟢 [NEW v89]
+  JSON 列 graph_json
+  键 workspace_id + task_id + comment_id
+  非宿主机 JSON 文件
+  @author: cursor @2026-08-20 15:49
+end note
+
+Application_DataObject(jobEv, "cloud_job_execution_event")
+note right of jobEv
+  无标记 — 023 已有
+end note
+
+Application_Event(persisted, "LayerGraphSnapshotPersisted")
+note right of persisted
+  🟢 [NEW v89]
+end note
+
+Technology_Node(ctr, "Comment-scoped container")
+note right of ctr
+  🟡 [MODIFIED v89]
+  layer-graph-push 后 Cloud 落库
+  clone-log 仍仅容器内存（用户锁定不存）
+  @author: cursor @2026-08-20 15:49
+end note
+
+Rel_Flow(ctr, cloud, "🟢 layer-graph-push")
+Rel_Access_w(cloud, snap, "🟢 UPSERT snapshot")
+Rel_Flow(cloud, persisted, "🟢 落库后发布")
+Rel_Flow(cloud, sse, "SSE container_layer_graph")
+Rel_Flow(sse, fe, "直播")
+Rel_Flow(fe, cloud, "🟡 GET hydrate 层图")
+Rel_Access_r(cloud, jobEv, "GET job-execution-log")
+Rel_Flow(fe, cloud, "GET job 步骤")
+
+Implementation_Plateau(plateauV88, "Plateau v88 current")
+Implementation_Plateau(plateauV89, "Plateau v89 layer-graph snapshot")
+Implementation_Gap(gapMem, "Gap: 层图仅 SSE 不落库；关容器树空")
+Implementation_WorkPackage(wpSnap, "WP-ztree-exec-log-server-persist")
+Rel_Triggering(plateauV88, gapMem, "identifies")
+Rel_Realization(wpSnap, gapMem, "closes")
+Rel_Realization(wpSnap, plateauV89, "delivers")
+
+@enduml

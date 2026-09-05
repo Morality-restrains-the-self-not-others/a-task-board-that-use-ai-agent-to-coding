@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -e
+
+source "$(dirname "$0")/utils.sh"
+
+section_start "install-deps" "Installing required dependencies"
+bundle_install_script
+yarn_install_script
+section_end "install-deps"
+
+section_start "assets-compile" "Compiling frontend assets"
+
+if [[ -s "${GLCI_GITLAB_ASSETS_HASH_FILE}" ]]; then
+  echo "Cached assets found, skipping asset compilation!"
+else
+  if [[ -z "${SKIP_INFECTION_SCANNER}" ]]; then
+    node scripts/frontend/infection_scanner/infection_scanner.mjs
+  fi
+  bin/rake gitlab:assets:compile
+  echo -n "${GLCI_GITLAB_ASSETS_HASH}" >"${GLCI_GITLAB_ASSETS_HASH_FILE}"
+fi
+
+section_end "assets-compile"

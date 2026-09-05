@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="AI Dev Platform Architecture v5 Target" id="model-v5-app-integration-20260705" version="5.0.0">
+  <folder name="Strategy" id="id-folder-strategy-v5" type="strategy"/>
+  <folder name="Business" id="id-folder-business-v5" type="business">
+    <element xsi:type="archimate:BusinessService" name="在云平台运行容器服务" id="bs-cloud-run-container-v5"/>
+    <element xsi:type="archimate:BusinessService" name="Relay 容器启停与可达性" id="bs-relay-lifecycle-v5"/>
+  </folder>
+  <folder name="Application" id="id-folder-application-v5" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Vue Frontend (:4000)" id="app-vue-frontend-v5"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway APISIX (:18081)" id="app-gateway-v5"/>
+    <element xsi:type="archimate:ApplicationComponent" name="saas-backend Django (:8001) [CRUD+internal 真源]" id="app-saas-backend-v5"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-container-gateway Go (:8014) [relay 编排+outbound SSOT]" id="app-container-gw-v5"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-credential-service Go (:8015) [audit SSOT]" id="app-credential-svc-v5"/>
+    <element xsi:type="archimate:ApplicationComponent" name="go-relay Go (:8797)" id="app-go-relay-v5"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskEvents relay-lifecycle (:18039-18042)" id="app-task-events-relay-v5"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Kafka relay-lifecycle topic" id="app-kafka-relay-v5"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-sse Node.js (:8007)" id="app-task-sse-v5"/>
+    <element xsi:type="archimate:ApplicationComponent" name="[DEPRECATED v5] relay_to_trae_proxy (Django 公网)" id="app-deprecated-relay-proxy-v5"/>
+    <element xsi:type="archimate:ApplicationService" name="Relay Lifecycle API (公网经 tcg)" id="svc-relay-lifecycle-v5"/>
+    <element xsi:type="archimate:ApplicationService" name="Relay Lifecycle Internal API" id="svc-relay-internal-v5"/>
+    <element xsi:type="archimate:ApplicationService" name="Container Token Audit API" id="svc-audit-v5"/>
+  </folder>
+  <folder name="Technology &amp; Physical" id="id-folder-technology-v5" type="technology">
+    <element xsi:type="archimate:TechnologyService" name="Kafka Domain Events" id="tech-kafka-v5"/>
+  </folder>
+  <folder name="Motivation" id="id-folder-motivation-v5" type="motivation">
+    <element xsi:type="archimate:Driver" name="Django relay 同步副作用阻塞" id="drv-django-relay-sidefx-v5"/>
+    <element xsi:type="archimate:Goal" name="relay 公网绕 Django + 副作用事件化" id="goal-relay-eventize-v5"/>
+    <element xsi:type="archimate:Requirement" name="stop 后 3s 内清空 server_url" id="req-clear-reachability-v5"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-folder-implementation-v5" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v4 — Target (lifecycle 仍 Django proxy)" id="plateau-v4-v5"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v5 — Target (relay 事件消费者)" id="plateau-v5"/>
+    <element xsi:type="archimate:Gap" name="Gap: Django 同步 ORM/audit/SSE 于 relay 路径" id="gap-django-relay-sync-v5"/>
+    <element xsi:type="archimate:WorkPackage" name="WP Inc 1 — tcg 路由+410 stub+audit consumer" id="wp-inc1-v5"/>
+    <element xsi:type="archimate:WorkPackage" name="WP Inc 2 — session/reachability consumer+internal API" id="wp-inc2-v5"/>
+    <element xsi:type="archimate:WorkPackage" name="WP Inc 3 — workflow consumer+tcg SSE internal" id="wp-inc3-v5"/>
+    <element xsi:type="archimate:WorkPackage" name="WP Inc 4 — 关闭 Django audit 双写" id="wp-inc4-v5"/>
+    <element xsi:type="archimate:Deliverable" name="Deliverable: v5 application-integration 架构文件" id="deliv-v5-arch"/>
+  </folder>
+  <folder name="Other" id="id-folder-other-v5" type="other"/>
+  <folder name="Relations" id="id-folder-relations-v5" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="rel-v5-gw-cgw" source="app-gateway-v5" target="app-container-gw-v5"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v5-cgw-relay" source="app-container-gw-v5" target="app-go-relay-v5"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v5-cgw-kafka" source="app-container-gw-v5" target="app-kafka-relay-v5"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v5-kafka-te" source="app-kafka-relay-v5" target="app-task-events-relay-v5"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v5-te-be" source="app-task-events-relay-v5" target="app-saas-backend-v5"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v5-te-cred" source="app-task-events-relay-v5" target="app-credential-svc-v5"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v5-cgw-be-sse" source="app-container-gw-v5" target="app-saas-backend-v5"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-v5-be-sse" source="app-saas-backend-v5" target="app-task-sse-v5"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-v5-cgw-svc" source="app-container-gw-v5" target="svc-relay-lifecycle-v5"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-v5-be-svc-int" source="app-saas-backend-v5" target="svc-relay-internal-v5"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-v5-cred-svc" source="app-credential-svc-v5" target="svc-audit-v5"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-v5-svc-relay-bs" source="svc-relay-lifecycle-v5" target="bs-relay-lifecycle-v5"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-plateau-v4-gap" source="plateau-v4-v5" target="gap-django-relay-sync-v5"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp1-gap" source="wp-inc1-v5" target="gap-django-relay-sync-v5"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp2-gap" source="wp-inc2-v5" target="gap-django-relay-sync-v5"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp3-gap" source="wp-inc3-v5" target="gap-django-relay-sync-v5"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp4-gap" source="wp-inc4-v5" target="gap-django-relay-sync-v5"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp4-plateau" source="wp-inc4-v5" target="plateau-v5"/>
+    <element xsi:type="archimate:CompositionRelationship" id="rel-plateau-v5-cgw" source="plateau-v5" target="app-container-gw-v5"/>
+    <element xsi:type="archimate:CompositionRelationship" id="rel-plateau-v5-te" source="plateau-v5" target="app-task-events-relay-v5"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-drv-goal-v5" source="drv-django-relay-sidefx-v5" target="goal-relay-eventize-v5"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="rel-goal-req-v5" source="goal-relay-eventize-v5" target="req-clear-reachability-v5"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp4-deliv" source="wp-inc4-v5" target="deliv-v5-arch"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-dep-relay-be" source="app-saas-backend-v5" target="app-deprecated-relay-proxy-v5"/>
+  </folder>
+  <folder name="Views" id="id-folder-views-v5" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v4→v5 — relay lifecycle 事件消费者" id="diagram-v5-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-p4" archimateElement="plateau-v4-v5">
+        <bounds x="310" y="84" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-p4-gap" source="do-p4" target="do-gap" archimateRelationship="rel-plateau-v4-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-p5" targetConnections="conn-wp4-p5" archimateElement="plateau-v5">
+        <bounds x="948" y="84" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap" targetConnections="conn-p4-gap conn-wp1-gap conn-wp2-gap conn-wp3-gap conn-wp4-gap" archimateElement="gap-django-relay-sync-v5">
+        <bounds x="600" y="168" width="260" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp1" archimateElement="wp-inc1-v5">
+        <bounds x="240" y="312" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp1-gap" source="do-wp1" target="do-gap" archimateRelationship="rel-wp1-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp2" archimateElement="wp-inc2-v5">
+        <bounds x="480" y="312" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp2-gap" source="do-wp2" target="do-gap" archimateRelationship="rel-wp2-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp3" archimateElement="wp-inc3-v5">
+        <bounds x="720" y="312" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp3-gap" source="do-wp3" target="do-gap" archimateRelationship="rel-wp3-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp4" archimateElement="wp-inc4-v5">
+        <bounds x="960" y="312" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp4-gap" source="do-wp4" target="do-gap" archimateRelationship="rel-wp4-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp4-p5" source="do-wp4" target="do-p5" archimateRelationship="rel-wp4-plateau"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-cgw" archimateElement="app-container-gw-v5">
+        <bounds x="360" y="456" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cgw-relay" source="do-cgw" target="do-relay" archimateRelationship="rel-v5-cgw-relay"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cgw-kafka" source="do-cgw" target="do-kafka" archimateRelationship="rel-v5-cgw-kafka"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cgw-be" source="do-cgw" target="do-be" archimateRelationship="rel-v5-cgw-be-sse"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-relay" targetConnections="conn-cgw-relay" archimateElement="app-go-relay-v5">
+        <bounds x="679" y="456" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-kafka" targetConnections="conn-cgw-kafka" archimateElement="app-kafka-relay-v5">
+        <bounds x="360" y="576" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-kafka-te" source="do-kafka" target="do-te" archimateRelationship="rel-v5-kafka-te"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-te" targetConnections="conn-kafka-te" archimateElement="app-task-events-relay-v5">
+        <bounds x="540" y="576" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-te-be" source="do-te" target="do-be" archimateRelationship="rel-v5-te-be"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-te-cred" source="do-te" target="do-cred" archimateRelationship="rel-v5-te-cred"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-be" targetConnections="conn-te-be conn-cgw-be conn-dep" archimateElement="app-saas-backend-v5">
+        <bounds x="780" y="576" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-be-sse" source="do-be" target="do-sse" archimateRelationship="rel-v5-be-sse"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-dep" source="do-be" target="do-dep" archimateRelationship="rel-dep-relay-be"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-cred" targetConnections="conn-te-cred" archimateElement="app-credential-svc-v5">
+        <bounds x="540" y="684" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-sse" targetConnections="conn-be-sse" archimateElement="app-task-sse-v5">
+        <bounds x="780" y="684" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-dep" targetConnections="conn-dep" archimateElement="app-deprecated-relay-proxy-v5">
+        <bounds x="1044" y="576" width="220" height="55"/>
+      </child>
+      <documentation>v5：relay register/start/stop 公网经 tcg→go_relay；RELAY_* 事件经 taskEvents 回调 Django internal 与 CRED audit。</documentation>
+    </element>
+  </folder>
+</archimate:model>

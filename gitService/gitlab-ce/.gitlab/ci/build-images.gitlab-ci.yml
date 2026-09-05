@@ -1,0 +1,43 @@
+.base-image-build-buildx:
+  extends: .use-buildx
+  variables:
+    GIT_LFS_SKIP_SMUDGE: 1 # disable pulling objects from lfs
+  retry: 2
+
+# This image is used by:
+# - The `e2e:test-on-omnibus-ee` child pipeline test stage jobs
+# See https://docs.gitlab.com/development/testing_guide/end_to_end/#testing-code-in-merge-requests for more details.
+build-qa-image:
+  extends:
+    - .base-image-build-buildx
+    - .build-images:rules:build-qa-image
+  stage: build-images
+  needs: []
+  script:
+    - scripts/build_qa_image
+
+build-qa-image as-if-foss:
+  extends:
+    - build-qa-image
+    - .as-if-foss
+    - .qa:rules:test-on-omnibus-ce:follow-up
+
+build-gdk-image:
+  extends:
+    - .base-image-build-buildx
+    - .assets-compile-cache-pull
+    - .qa:rules:e2e:test-on-gdk
+  tags:
+    - $GITLAB_LARGE_RUNNER_OPTIONAL
+  stage: build-images
+  needs:
+    - job: cache:assets-hash
+    - job: e2e-test-pipeline-generate
+      artifacts: true
+  script:
+    - |
+      if grep -q "^no-op:" "${CI_PROJECT_DIR}/qa/tmp/test-on-gdk-pipeline.yml" 2>/dev/null; then
+        echo "Skipping GDK image build - no-op pipeline detected"
+        exit 0
+      fi
+    - scripts/build_gdk_image

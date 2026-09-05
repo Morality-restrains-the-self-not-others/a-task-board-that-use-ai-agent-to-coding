@@ -1,0 +1,79 @@
+' @title: 评论级仓库身份
+' @view: application-integration
+' @status: target
+' @version: 83
+' @iteration: comment-level-repo-identity-v83
+' @author: cursor
+' @based_on: v81 (v81-application-integration-20260814-2057-cursor.puml)
+' @updated: 2026-08-16 01:35
+' @description: 运行身份随评论 JSON；关联项目只读展示；snapshot 按 comment_id
+
+@startuml
+!include <archimate/Archimate>
+
+title v83 — Comment-level repo identity Target 2026-08-16 01:35
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v83 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v83 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v83 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(taskFE, "taskFE TaskDetail")
+note right of taskFE
+  🟡 [MODIFIED v83]
+  关联项目只读展示
+  composer 选择本次身份
+  @author: cursor @2026-08-16 01:35
+end note
+
+Application_Component(taskTask, "taskTaskService (Go :8017)")
+note right of taskTask
+  🟡 [MODIFIED v83]
+  comment POST 持久化 JSON
+  snapshot?comment_id=
+  @author: cursor @2026-08-16 01:35
+end note
+
+Application_Component(taskCloud, "taskCloudService")
+note right of taskCloud
+  🟡 [MODIFIED v83]
+  克隆/启动读评论身份
+  停用 approve 作运行真源
+end note
+
+Application_Component(taskEvents, "taskEvents")
+note right of taskEvents
+  🟡 [MODIFIED v83]
+  IMAGE_MENTIONED 带 identities
+end note
+
+Application_DataObject(commentIdent, "task_comments.repo_identities_json")
+note right of commentIdent
+  🟢 [NEW v83]
+  per-comment repo identities
+end note
+
+Application_DataObject(taskIdent, "task_repo_identities")
+note right of taskIdent
+  🔴 [DEPRECATED v83 UI write]
+  仅旧评论 snapshot 回退
+end note
+
+Application_Event(mentioned, "TASK_COMMENT_IMAGE_MENTIONED")
+note right of mentioned
+  🟡 [MODIFIED v83]
+  payload + repo_identities
+end note
+
+Rel_Flow(taskFE, taskTask, "🟡 POST comment + identities")
+Rel_Access_W(taskTask, commentIdent, "🟢 persist JSON")
+Rel_Flow(taskTask, mentioned, "🟡 publish + identities")
+Rel_Flow(mentioned, taskEvents, "🟡 consume")
+Rel_Flow(taskEvents, taskCloud, "🟡 start-vm with identities")
+Rel_Flow(taskCloud, taskTask, "🟡 snapshot?comment_id=")
+Rel_Access_R(taskTask, commentIdent, "🟢 prefer comment")
+Rel_Access_R(taskTask, taskIdent, "🔴 fallback only")
+
+@enduml

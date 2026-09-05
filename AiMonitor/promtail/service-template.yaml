@@ -1,0 +1,43 @@
+# Promtail 独立部署模板
+# 用法: 复制此文件, 修改 SERVICE_NAME 和 LOG_FILE_PATH
+#
+#   cp conf/logs/promtail-service-template.yaml /etc/promtail/config.yaml
+#   # 编辑 SERVICE_NAME 和 LOG_FILE_PATH
+#   promtail -config.file=/etc/promtail/config.yaml
+#
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+clients:
+  - url: ${LOKI_PUSH_URL:?set LOKI_PUSH_URL}
+
+positions:
+  filename: /var/lib/promtail/positions.yaml
+
+scrape_configs:
+  - job_name: ${SERVICE_NAME:task-auth}
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: ${SERVICE_NAME:task-auth}
+          service: ${SERVICE_NAME:task-auth}
+          __path__: ${LOG_FILE_PATH:logs/task-auth/task-auth.log}
+    pipeline_stages:
+      - regex:
+          expression: '^\S+ (?:\w+) (?P<payload>.*)$'
+      - json:
+          expressions:
+            trace_id: trace_id
+            traceId: traceId
+            level: level
+            service: service
+            msg: msg
+      - labels:
+          trace_id:
+          level:
+          service:
+      - structured_metadata:
+          msg:
+      - output:
+          source: payload

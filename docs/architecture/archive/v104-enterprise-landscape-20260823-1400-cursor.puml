@@ -1,0 +1,40 @@
+' @title: ztree step_full COS 归档（企业景观）
+' @view: enterprise-landscape
+' @status: current
+' @version: 104
+' @iteration: ztree-step-full-cos-archive
+' @author: cursor
+' @based_on: v103 (v103-enterprise-landscape-20260823-0720-cursor.puml)
+' @updated: 2026-08-23 14:00
+' @description: 开发者刷新仍可复查执行日志；平台管理员配置 COS
+
+@startuml
+!include <archimate/Archimate>
+
+title v104 landscape — ztree step_full COS 2026-08-23 14:00
+
+Business_Actor(dev, "开发者")
+Business_Actor(admin, "平台管理员")
+Business_Service(reviewSvc, "关容器后复查执行日志 🟢")
+Business_Service(cfgSvc, "配置执行日志 COS 🟢")
+
+Application_Component(taskFE, "taskFE")
+Application_Component(cloud, "taskCloudService")
+Technology_Node(cos, "Tencent COS")
+
+Rel_Assignment(dev, reviewSvc)
+Rel_Assignment(admin, cfgSvc)
+Rel_Serving(taskFE, reviewSvc)
+Rel_Serving(taskFE, cfgSvc)
+Rel_Serving(cloud, reviewSvc)
+Rel_Flow(cloud, cos, "archive step_full")
+
+Implementation_Plateau(p103, "v103")
+Implementation_Plateau(p104, "v104")
+Implementation_Gap(g, "容器释放后无法复查全文")
+Implementation_WorkPackage(wp, "WP-ztree-step-full-cos")
+Rel_Triggering(p103, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p104, "delivers")
+
+@enduml

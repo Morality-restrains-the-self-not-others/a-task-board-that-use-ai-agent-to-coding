@@ -1,0 +1,154 @@
+' @title: daydaymoney Enterprise Landscape
+' @view: enterprise-landscape
+' @status: target
+' @version: 11
+' @iteration: Vendor Cloud Test Credentials SSOT
+' @author: claude
+' @based_on: v10 (v10-enterprise-landscape-20260707-1016-claude.puml)
+' @updated: 2026-07-07 22:41
+' @description: 镜像厂商自管云平台测试密钥 — taskCloudService SSOT + ai-provider 消费
+
+@startuml
+!include <archimate/Archimate>
+
+title daydaymoney Platform — Enterprise Landscape v11 Target (2026-07-07 22:41)
+
+legend right
+  |<#LightGreen>  </> | 🟢 [NEW v11] 本次新增 |
+  |<#LightYellow> </> | 🟡 [MODIFIED v11] 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED v11] 本次废弃/已删除 |
+  |<#White>       </> | 无标记 — v10 及更早 |
+endlegend
+
+' ═══════════════════════════════════════════════════════════
+' Business Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Business" {
+  Business_Actor(developer, "Developer")
+  Business_Actor(admin, "Platform Admin")
+  Business_Actor(enterprise, "Enterprise Customer")
+  Business_Actor(vendor, "Marketplace Vendor")
+
+  Business_Service(ideSvc, "IDE Workspace Service")
+  Business_Service(taskMgmt, "Task Management Service")
+  Business_Service(cloudRes, "Cloud Resource Service")
+  Business_Service(billingSvc, "Billing & License Service")
+  Business_Service(llmSvc, "LLM AI Service")
+  Business_Service(projMgmt, "Project Management Service")
+  Business_Service(imageMarket, "Image Marketplace Service")
+
+  Business_Process(devFlow, "Development Workflow")
+  Business_Process(vendorOnboard, "Vendor Image Onboarding")
+
+  Business_Object(project, "Project")
+  Business_Object(workspace, "Workspace")
+  Business_Object(vendorCred, "Vendor Cloud Test Credential")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Application Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Application" {
+  Application_Component(gateway, "API Gateway (APISIX)")
+  Application_Component(djangoApp, "Django SaaS Platform\n(internal 真源 only)")
+  Application_Component(aiProvider, "ai-provider Django (:8010)\n[VendorPortal + Cloud SDK]")
+  Application_Component(authSvc, "taskAuth (Go :8003)")
+  Application_Component(gitOauthSvc, "Git OAuth Service")
+  Application_Component(taskProjectSvc, "taskProjectService (Go :8016)")
+  Application_Component(taskTaskSvc, "taskTaskService (Go :8017)")
+  Application_Component(taskCloudSvc, "taskCloudService (Go :8018)\n[CPA + Vendor Credential SSOT]")
+
+  Application_Service(authAPI, "Authentication API")
+  Application_Service(projectAPI, "Project Management API")
+  Application_Service(taskAPI, "Task Management API")
+  Application_Service(cloudAPI, "Cloud Resource API")
+  Application_Service(vendorCredAPI, "Vendor Cloud Credential API")
+  Application_Service(imageMarketAPI, "Image Marketplace API")
+
+  Application_DataObject(userDB, "User & Auth Data")
+  Application_DataObject(projectDB, "Project/Workspace Data")
+  Application_DataObject(taskDB, "Task/Comment Data")
+  Application_DataObject(cloudDB, "Cloud Auth/Instance Data")
+  Application_DataObject(vendorCredDB, "vendor_cloud_platform_credentials")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Technology Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Technology" {
+  Technology_Node(appNode, "Application Host")
+  Technology_SystemSoftware(goRuntime, "Go Runtime")
+  Technology_SystemSoftware(djangoRuntime, "Django (Python)")
+
+  Technology_Service(postgres, "PostgreSQL")
+  Technology_Service(upstreamCloud, "Aliyun ECS/STS API")
+
+  Technology_Artifact(sqliteCloudDB, "SQLite task_cloud.db")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Implementation & Migration
+' ═══════════════════════════════════════════════════════════
+rectangle "Implementation & Migration" {
+  Implementation_Plateau(plateauV10, "Plateau v10 — Cloud CPA + Aliyun Query SSOT")
+  Implementation_Plateau(plateauV11, "Plateau v11 — Vendor Cloud Test Credentials")
+  Implementation_Gap(gapVendorCred, "Gap: 厂商无法自配云测试密钥")
+  Implementation_WorkPackage(wpV11, "WP-v11-vendor-cloud-credentials")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Cross-Layer Relationships
+' ═══════════════════════════════════════════════════════════
+Rel_Serving(gateway, cloudAPI, "tenant cloud routes")
+Rel_Realization(taskCloudSvc, cloudAPI, "serves")
+Rel_Realization(taskCloudSvc, vendorCredAPI, "serves")
+Rel_Realization(aiProvider, imageMarketAPI, "serves")
+Rel_Realization(taskProjectSvc, projectAPI, "serves")
+Rel_Realization(taskTaskSvc, taskAPI, "serves")
+
+Rel_Serving(vendorCredAPI, imageMarket, "enables vendor CSI onboarding")
+Rel_Serving(imageMarketAPI, imageMarket, "enables")
+Rel_Serving(cloudAPI, cloudRes, "enables")
+
+Rel_Assignment(appNode, taskCloudSvc, "hosts")
+Rel_Assignment(appNode, aiProvider, "hosts")
+
+Rel_Serving(sqliteCloudDB, cloudDB, "CPA + instances")
+Rel_Serving(sqliteCloudDB, vendorCredDB, "vendor credentials SSOT")
+Rel_Access(taskCloudSvc, vendorCredDB, "reads/writes")
+Rel_Access(taskCloudSvc, cloudDB, "reads/writes")
+
+Rel_Serving(aiProvider, taskCloudSvc, "credential proxy + internal lookup")
+Rel_Serving(aiProvider, upstreamCloud, "CloudSDKProxy (vendor AK)")
+
+Rel_Assignment(vendor, vendorOnboard, "performs")
+Rel_Access(vendorOnboard, vendorCred, "creates/verifies")
+
+' 架构变迁
+Rel_Triggering(plateauV10, gapVendorCred, "identifies")
+Rel_Realization(wpV11, gapVendorCred, "closes")
+Rel_Realization(wpV11, plateauV11, "delivers")
+Rel_Composition(plateauV11, taskCloudSvc, "extends vendor credential SSOT")
+Rel_Composition(plateauV11, aiProvider, "VendorPortal Tab + lookup")
+
+note right of taskCloudSvc
+  🟡 [MODIFIED v11] taskCloudService
+  vendor_cloud_platform_credentials
+  Vendor JWT API + internal lookup
+  @author: claude @2026-07-07 22:41
+end note
+
+note right of aiProvider
+  🟡 [MODIFIED v11] ai-provider (:8010)
+  同源反代 + resolve_vendor_cloud_credentials
+  VendorPortal「云平台测试密钥」
+  @author: claude @2026-07-07 22:41
+end note
+
+note bottom of plateauV11
+  🎯 v11 Target — Vendor Cloud Test Credentials
+  厂商自管 AK → TCS SQLite → ai-provider lookup
+  @author: claude @2026-07-07 22:41
+end note
+
+@enduml

@@ -1,0 +1,42 @@
+---
+description: fix 类提交必须携带与被修源码对应的回归单元测试，缺失阻断提交
+alwaysApply: true
+---
+
+# Bug 修复必须携带对应回归单元测试（元规则）
+
+适用于整个 monorepo。细则见 `.ai/01_project_constraints/41_bug_fix_unit_test_required.md`；约束索引第 39 条；根摘要 `.ai.md`。
+
+## 强制要求
+
+- **fix 提交必须携带对应回归单元测试**：commit message 判定为 bug 修复（`fix:`/`hotfix:`/`bugfix:` 前缀、中文「修复/修正」前缀、首行含 fix/bug 关键词）时，暂存区**必须**包含与被修源码**对应**的单元测试文件变更（Go `*_test.go`、Python `test_*.py`/`*_test.py`、前端 `*.unit.test.js|ts`/`*.test.js|ts` 等）。
+- **对应性**：测试须与被修源码**同目录 / 同包 / `tests` 镜像目录**，或文件名含被修文件 stem（如 `parser.go` ↔ `parser_test.go`、`models.py` ↔ `tests/test_models.py`、`Button.tsx` ↔ `Button.unit.test.ts`）。无关测试不能凑数。
+- **测试须真实复现缺陷**：断言修复前失败、修复后通过的用例；提交前本地跑通（暂存测试运行与 100% 通过由第 29 条随机单测门禁强制执行）。
+- **同一次提交携带源码 + 测试**；禁止 `--no-verify` 跳过门禁（第 6 条）。
+
+## 例外（放行）
+
+1. commit message 含 `no-test: <具体理由>`（如 `no-test: infra-only`）
+2. 纯文档/配置/脚本/CI 修复，无业务源码（Go/Python/JS/TS/Vue）变更
+3. 仅测试类提交（补测试、修测试）
+4. `revert` 类提交不触发
+
+## 门禁
+
+- **commit-msg 权威门禁**：`.githooks/commit-msg`（git 传入最终 message 文件；commit-msg 是唯一可靠检测点——`-m` 提交时 pre-commit 阶段的 COMMIT_EDITMSG 是上次成功提交的陈旧内容，读它会误拦截）
+- pre-commit 框架注册：`.pre-commit-config.yaml`（`stages: [commit-msg]`；需 `pre-commit install --hook-type commit-msg`）
+- 脚本：`python3 db/scripts/ci/check_bug_fix_unit_tests.py`
+- 自测：`python3 db/scripts/ci/test_check_bug_fix_unit_tests.py`（必须全绿）
+
+## 触发
+
+- Agent 识别到正在修复 bug（含用户描述「修复/挂了/报错/异常」等）
+- 门禁输出 `VIOLATION (rule ...41_bug_fix_unit_test_required.md)`
+- 准备提交 `fix:`/`hotfix:` 类型 commit
+
+## 验收
+
+```bash
+python3 db/scripts/ci/test_check_bug_fix_unit_tests.py
+python3 db/scripts/ci/check_bug_fix_unit_tests.py --message "fix: x" --staged-files "app/parser.go"
+```

@@ -1,0 +1,30 @@
+# 微信支付配置（公钥验签模式）
+# 文档: https://pay.weixin.qq.com/doc/v3/partner/4012925323
+# SDK: github.com/wechatpay-apiv3/wechatpay-go — WithWechatPayPublicKeyAuthCipher
+#
+# mode: live — 真实 Native 预下单。商户序列号 / APIv3 密钥 / 私钥禁止提交仓库。
+# 仓库内没有 config.local.yaml：从 config.local.yaml.example 复制后填写，
+# 或设环境变量 WECHAT_PAY_MERCHANT_SERIAL_NO / WECHAT_PAY_API_V3_KEY /
+# WECHAT_PAY_PRIVATE_KEY_PATH。缺凭证时启动失败则禁用支付，不再回退 mock。
+
+mode: live
+mchid: ''
+appid: ''
+merchant_serial_no: ""
+api_v3_key: ""
+merchant_private_key_path: ''
+pub_key_id: ''
+pub_key_path: pub_key.pem
+notify_url: "${scheme}://${subdomains.www}/api/billing/wechat/notify/"
+description_prefix: "平台资源购买"
+# 电子发票（普通商户 /v3/new-tax-control-fapiao）。enabled 默认 false，开通税控与卡券模板后再开。
+# tax_rate 单位万分之一（600 = 6%）。tax_code 须与微信商户平台已配置的税收分类编码一致。
+fapiao:
+  enabled: false
+  tax_code: "3040201990000000000"
+  tax_rate: 600
+  goods_name: "平台资源服务"
+  goods_category: "现代服务"
+  notify_url: "${scheme}://${subdomains.www}/api/billing/wechat/fapiao/notify/"
+# 已删除 profit_sharing_max_ratio_percent（死配置，OPT-20260822-017）。
+# 分成比例只从微信支付 GET /v3/profitsharing/merchant-configs/{mchid} 读取；禁止再添加本键。

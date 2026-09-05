@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v104 变迁 (v103→v104)" id="id-v104eldiff01">
+  <folder name="Business" id="id-v104eld-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v104-biz-dev" name="开发者"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v104-biz-admin" name="平台管理员"/>
+    <element xsi:type="archimate:BusinessService" id="id-v104-biz-review" name="关容器后复查执行日志"/>
+    <element xsi:type="archimate:BusinessService" id="id-v104-biz-cfg" name="配置执行日志 COS"/>
+  </folder>
+  <folder name="Application" id="id-v104eld-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v104-el-fe" name="taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v104-el-cloud" name="taskCloudService"/>
+  </folder>
+  <folder name="Technology" id="id-v104eld-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v104-el-cos" name="Tencent COS"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v104eld-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v104-el-pl103" name="Plateau v103"/>
+    <element xsi:type="archimate:Plateau" id="id-v104-el-pl104" name="Plateau v104"/>
+    <element xsi:type="archimate:Gap" id="id-v104-el-gap" name="Gap: 容器释放后无法复查全文"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v104-el-wp" name="WP-ztree-step-full-cos"/>
+  </folder>
+  <folder name="Relations" id="id-v104eld-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v104-el-rel-dev-rev" source="id-v104-biz-dev" target="id-v104-biz-review"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v104-el-rel-adm-cfg" source="id-v104-biz-admin" target="id-v104-biz-cfg"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v104-el-rel-fe-rev" source="id-v104-el-fe" target="id-v104-biz-review"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v104-el-rel-fe-cfg" source="id-v104-el-fe" target="id-v104-biz-cfg"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v104-el-rel-cloud-cos" source="id-v104-el-cloud" target="id-v104-el-cos"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v104-el-rel-pl103-gap" source="id-v104-el-pl103" target="id-v104-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v104-el-rel-wp-gap" source="id-v104-el-wp" target="id-v104-el-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v104-el-rel-wp-pl104" source="id-v104-el-wp" target="id-v104-el-pl104"/>
+  </folder>
+  <folder name="Views" id="id-v104eld-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v104-el-view-mig" name="架构变迁 v103→v104 — landscape">
+      <child xsi:type="archimate:DiagramObject" id="id-v104-el-do-pl103" archimateElement="id-v104-el-pl103">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-el-c-pl-gap" source="id-v104-el-do-pl103" target="id-v104-el-do-gap" archimateRelationship="id-v104-el-rel-pl103-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-el-do-gap" targetConnections="id-v104-el-c-pl-gap id-v104-el-c-wp-gap" archimateElement="id-v104-el-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-el-do-wp" archimateElement="id-v104-el-wp">
+        <bounds x="240" y="160" width="400" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-el-c-wp-gap" source="id-v104-el-do-wp" target="id-v104-el-do-gap" archimateRelationship="id-v104-el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-el-c-wp-pl104" source="id-v104-el-do-wp" target="id-v104-el-do-pl104" archimateRelationship="id-v104-el-rel-wp-pl104"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-el-do-pl104" targetConnections="id-v104-el-c-wp-pl104" archimateElement="id-v104-el-pl104">
+        <bounds x="680" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v104-el-view-topo" name="v104 Target — 复查与 COS 配置">
+      <child xsi:type="archimate:DiagramObject" id="id-v104-el-do-dev" archimateElement="id-v104-biz-dev">
+        <bounds x="48" y="48" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-el-c-dev-rev" source="id-v104-el-do-dev" target="id-v104-el-do-rev" archimateRelationship="id-v104-el-rel-dev-rev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-el-do-admin" archimateElement="id-v104-biz-admin">
+        <bounds x="48" y="160" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-el-c-adm-cfg" source="id-v104-el-do-admin" target="id-v104-el-do-cfg" archimateRelationship="id-v104-el-rel-adm-cfg"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-el-do-rev" targetConnections="id-v104-el-c-dev-rev" archimateElement="id-v104-biz-review">
+        <bounds x="240" y="48" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-el-do-cfg" targetConnections="id-v104-el-c-adm-cfg" archimateElement="id-v104-biz-cfg">
+        <bounds x="240" y="160" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-el-do-fe" archimateElement="id-v104-el-fe">
+        <bounds x="500" y="96" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-el-c-fe-rev" source="id-v104-el-do-fe" target="id-v104-el-do-rev" archimateRelationship="id-v104-el-rel-fe-rev"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-el-c-fe-cfg" source="id-v104-el-do-fe" target="id-v104-el-do-cfg" archimateRelationship="id-v104-el-rel-fe-cfg"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-el-do-cloud" archimateElement="id-v104-el-cloud">
+        <bounds x="680" y="96" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104-el-c-cloud-cos" source="id-v104-el-do-cloud" target="id-v104-el-do-cos" archimateRelationship="id-v104-el-rel-cloud-cos"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104-el-do-cos" targetConnections="id-v104-el-c-cloud-cos" archimateElement="id-v104-el-cos">
+        <bounds x="900" y="96" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

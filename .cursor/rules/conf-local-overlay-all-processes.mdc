@@ -1,0 +1,29 @@
+---
+description: 所有进程加载 conf YAML 必须深合并 conf-local，禁止只读 tracked conf
+alwaysApply: true
+---
+
+# 所有进程加载 conf 必须叠加 conf-local（元规则）
+
+适用于整个 monorepo 全部业务/基础设施进程及其配置加载脚本。细则见 `.ai/01_project_constraints/64_conf_local_overlay_all_processes.md`；约束索引第 59 条；ADR-0054。
+
+## 强制要求
+
+- 运行时读 `conf/<rel>` 必须深合并 `conf-local/<rel>`
+- 走 SSOT：Go `confload`（`ReadAppConfig` / `UnmarshalYAMLMerged` / `MergeYAMLAtPath` / `ResolveBaseYaml` 等）或 Python `overlay_conf_file` / `merge_conf_local`
+- **禁止** `os.ReadFile` / `yaml.safe_load` / `readFileSync` 只读 tracked `conf/**/*.yaml`
+- **禁止**加载 `config.local.yaml`
+- 自定义合并须 `Conf-Local-Overlay-OK:` 并限期迁到 SSOT
+
+## 触发
+
+- 新增/修改 `loadConfig`、`config.go`、进程启动读 YAML
+- 改 `confload`、`conf_loader.py`、`conf_local.py`
+- 评审发现直读 `conf/` YAML
+
+## 验收
+
+```bash
+python3 db/scripts/ci/test_check_conf_local_overlay.py
+python3 db/scripts/ci/check_conf_local_overlay.py
+```

@@ -1,0 +1,35 @@
+host: 0.0.0.0
+port: 8017
+enabled: true
+logging:
+  log_file: logs/task-task-service/task-task-service.log
+
+services:
+  taskTaskService:
+    host: "0.0.0.0"
+    port: 8017
+  taskAuth:
+    host: "127.0.0.1"
+    port: 8003
+  taskProjectService:
+    host: "127.0.0.1"
+    port: 8016
+  taskBill:
+    host: "127.0.0.1"
+    port: 8004
+  taskCloudService:
+    host: "127.0.0.1"
+    port: 8018
+  # 同节点调用 task-ai-comment 内部 API（创建 @mention pending Agent）；拆分时改 ${subdomains.xxx}
+  taskAIComment:
+    host: "127.0.0.1"
+    port: 8019
+  taskTenantService:
+    host: "127.0.0.1"
+    port: 8020
+  # 同节点调用 taskGitOauth user-app-connection（创建 @镜像 评论前校验 Git OAuth 绑定，OPT-20260821-036）
+  taskGitOauth:
+    host: "127.0.0.1"
+    port: 8002
+shared:
+  internalSecret: ""

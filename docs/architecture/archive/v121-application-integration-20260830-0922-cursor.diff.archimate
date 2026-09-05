@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v121 变迁 (v120→v121)" id="id-v121aidiff01">
+  <folder name="Application" id="id-v121ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v121-app-fe" name="taskFE SPA"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v121-app-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v121-app-bill" name="taskBill"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v121-app-ev" name="taskEvents"/>
+    <element xsi:type="archimate:DataObject" id="id-v121-data-grp" name="billing_feedback_link_group"/>
+    <element xsi:type="archimate:DataObject" id="id-v121-data-thr" name="billing_feedback_link_threshold"/>
+    <element xsi:type="archimate:DataObject" id="id-v121-data-lnk" name="billing_feedback_link"/>
+    <element xsi:type="archimate:DataObject" id="id-v121-data-kind" name="billing_feedback_resource_kind"/>
+    <element xsi:type="archimate:DataObject" id="id-v121-data-usage" name="billing grant/usage/account"/>
+  </folder>
+  <folder name="Business" id="id-v121ai-biz" type="business">
+    <element xsi:type="archimate:BusinessEvent" id="id-v121-ev-c" name="FEEDBACK_LINK_GROUP_CREATED"/>
+    <element xsi:type="archimate:BusinessEvent" id="id-v121-ev-u" name="FEEDBACK_LINK_GROUP_UPDATED"/>
+    <element xsi:type="archimate:BusinessEvent" id="id-v121-ev-d" name="FEEDBACK_LINK_GROUP_DELETED"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v121ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v121-pl-v119" name="Plateau v120 任务项目修订"/>
+    <element xsi:type="archimate:Plateau" id="id-v121-pl-v120" name="Plateau v121 消耗门槛链接"/>
+    <element xsi:type="archimate:Gap" id="id-v121-gap" name="Gap: 侧栏无法按租户消耗分层展示外链"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v121-wp" name="WP-tenant-feedback-links"/>
+  </folder>
+  <folder name="Relations" id="id-v121ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v121-rel-fe-gw" source="id-v121-app-fe" target="id-v121-app-gw" name="超管 CRUD / 租户 GET"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v121-rel-gw-bill" source="id-v121-app-gw" target="id-v121-app-bill" name="system-admin + tenant billing"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v121-rel-bill-grp" source="id-v121-app-bill" target="id-v121-data-grp" name="R/W"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v121-rel-bill-thr" source="id-v121-app-bill" target="id-v121-data-thr" name="R/W"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v121-rel-bill-lnk" source="id-v121-app-bill" target="id-v121-data-lnk" name="R/W"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v121-rel-bill-kind" source="id-v121-app-bill" target="id-v121-data-kind" name="R"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v121-rel-bill-usage" source="id-v121-app-bill" target="id-v121-data-usage" name="R 求值"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v121-rel-bill-evc" source="id-v121-app-bill" target="id-v121-ev-c" name="after POST"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v121-rel-bill-evu" source="id-v121-app-bill" target="id-v121-ev-u" name="after PUT"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v121-rel-bill-evd" source="id-v121-app-bill" target="id-v121-ev-d" name="after DELETE"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v121-rel-bill-ev" source="id-v121-app-bill" target="id-v121-app-ev" name="publish Kafka"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v121-rel-pl-gap" source="id-v121-pl-v119" target="id-v121-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v121-rel-wp-gap" source="id-v121-wp" target="id-v121-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v121-rel-wp-pl" source="id-v121-wp" target="id-v121-pl-v120"/>
+  </folder>
+  <folder name="Views" id="id-v121ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v121-view-mig" name="架构变迁 v120→v121 — tenant-feedback-links-by-consumption">
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-pl119" archimateElement="id-v121-pl-v119">
+        <bounds x="48" y="48" width="240" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-pl-gap" source="id-v121-do-pl119" target="id-v121-do-gap" archimateRelationship="id-v121-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-gap" targetConnections="id-v121-c-pl-gap id-v121-c-wp-gap" archimateElement="id-v121-gap">
+        <bounds x="320" y="48" width="420" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-wp" archimateElement="id-v121-wp">
+        <bounds x="320" y="140" width="420" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-wp-gap" source="id-v121-do-wp" target="id-v121-do-gap" archimateRelationship="id-v121-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-wp-pl" source="id-v121-do-wp" target="id-v121-do-pl120" archimateRelationship="id-v121-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-pl120" targetConnections="id-v121-c-wp-pl" archimateElement="id-v121-pl-v120">
+        <bounds x="780" y="140" width="240" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v121-view-topo" name="v121 Target — 意见与建议链接">
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-fe" archimateElement="id-v121-app-fe">
+        <bounds x="48" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-fe-gw" source="id-v121-do-fe" target="id-v121-do-gw" archimateRelationship="id-v121-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-gw" targetConnections="id-v121-c-fe-gw" archimateElement="id-v121-app-gw">
+        <bounds x="240" y="80" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-gw-bill" source="id-v121-do-gw" target="id-v121-do-bill" archimateRelationship="id-v121-rel-gw-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-bill" targetConnections="id-v121-c-gw-bill" archimateElement="id-v121-app-bill">
+        <bounds x="460" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-bill-grp" source="id-v121-do-bill" target="id-v121-do-grp" archimateRelationship="id-v121-rel-bill-grp"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-bill-thr" source="id-v121-do-bill" target="id-v121-do-thr" archimateRelationship="id-v121-rel-bill-thr"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-bill-lnk" source="id-v121-do-bill" target="id-v121-do-lnk" archimateRelationship="id-v121-rel-bill-lnk"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-bill-kind" source="id-v121-do-bill" target="id-v121-do-kind" archimateRelationship="id-v121-rel-bill-kind"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-bill-usage" source="id-v121-do-bill" target="id-v121-do-usage" archimateRelationship="id-v121-rel-bill-usage"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-bill-evc" source="id-v121-do-bill" target="id-v121-do-evc" archimateRelationship="id-v121-rel-bill-evc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-bill-evu" source="id-v121-do-bill" target="id-v121-do-evu" archimateRelationship="id-v121-rel-bill-evu"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-bill-evd" source="id-v121-do-bill" target="id-v121-do-evd" archimateRelationship="id-v121-rel-bill-evd"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v121-c-bill-ev" source="id-v121-do-bill" target="id-v121-do-ev" archimateRelationship="id-v121-rel-bill-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-ev" targetConnections="id-v121-c-bill-ev" archimateElement="id-v121-app-ev">
+        <bounds x="460" y="200" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-grp" targetConnections="id-v121-c-bill-grp" archimateElement="id-v121-data-grp">
+        <bounds x="680" y="16" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-thr" targetConnections="id-v121-c-bill-thr" archimateElement="id-v121-data-thr">
+        <bounds x="680" y="64" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-lnk" targetConnections="id-v121-c-bill-lnk" archimateElement="id-v121-data-lnk">
+        <bounds x="680" y="112" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-kind" targetConnections="id-v121-c-bill-kind" archimateElement="id-v121-data-kind">
+        <bounds x="680" y="160" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-usage" targetConnections="id-v121-c-bill-usage" archimateElement="id-v121-data-usage">
+        <bounds x="680" y="208" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-evc" targetConnections="id-v121-c-bill-evc" archimateElement="id-v121-ev-c">
+        <bounds x="680" y="256" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-evu" targetConnections="id-v121-c-bill-evu" archimateElement="id-v121-ev-u">
+        <bounds x="680" y="304" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v121-do-evd" targetConnections="id-v121-c-bill-evd" archimateElement="id-v121-ev-d">
+        <bounds x="680" y="352" width="280" height="40"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

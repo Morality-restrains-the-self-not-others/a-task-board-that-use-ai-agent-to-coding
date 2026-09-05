@@ -1,0 +1,96 @@
+' @title: 逻辑资源组 RBAC（页面组 ⊃ UI 组件区域）
+' @view: application-integration
+' @status: target
+' @version: 72
+' @iteration: rbac-logical-resource-group-v72
+' @author: claude
+' @based_on: v71 (v71-application-integration-20260811-0222-claude.puml)
+' @updated: 2026-08-11 11:36
+' @description: 页面组为载体；UI 组件区域为资源组；ui/api 挂 Region；PDP 注入 region:*/page:*；前后端 Enforce
+
+@startuml
+!include <archimate/Archimate>
+
+title v72 — Logical Resource Group RBAC (Page ⊃ UI Region ⊃ ui/api) Target 2026-08-11 11:36
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v72 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v72 |
+  | <#White>       </> | 无标记 — 未变 |
+endlegend
+
+Application_Component(taskFE, "taskFE (Vue SPA)")
+note right of taskFE
+  🟡 [MODIFIED v72]
+  hasRegion / hasPage
+  访问管理：Region 树勾选
+  侧栏按 page:*（子 region 并集）
+end note
+
+Application_Component(gateway, "APISIX Gateway")
+note right of gateway
+  forward-auth 透传
+  X-Tenant-Perms（含 region:/page:）
+end note
+
+Application_Component(taskAuth, "taskAuth PDP + RBAC API")
+note right of taskAuth
+  🟡 [MODIFIED v72]
+  展开 Role→RG（page 展开子 region）
+  注入 region:<key> / page:<key>
+  无 legacy 粗码展开（B2）
+end note
+
+Application_Component(shareLib, "shareLib/authz")
+note right of shareLib
+  🟡 [MODIFIED v72]
+  RequireRegion / RequirePage
+  registry 反查 API→region
+end note
+
+Application_Component(tenantSvc, "taskTenantService")
+note right of tenantSvc
+  🟡 [MODIFIED v72]
+  多角色分配 API 语义保留
+  业务资源→组 表不变
+end note
+
+Application_Component(bizSvcs, "业务 Go 服务\n(Bill/Cloud/Project/…)")
+note right of bizSvcs
+  🟡 [MODIFIED v72]
+  关键 handler RequireRegion
+end note
+
+Application_DataObject(authRG, "auth_resource_group\n(page|ui_region)")
+note right of authRG
+  🟢 [NEW v72]
+  page=载体；ui_region=资源组
+end note
+
+Application_DataObject(authRM, "auth_resource_member\n(ui|api)")
+note right of authRM
+  🟢 [NEW v72]
+  仅挂 ui_region
+end note
+
+Application_DataObject(authRRG, "auth_role_resource_group")
+note right of authRRG
+  🟢 [NEW v72]
+  角色↔page 或 region
+end note
+
+Application_DataObject(authDB, "taskAuth DB (既有角色/码表)")
+
+Rel_Flow(taskFE, gateway, "HTTP + Cookie")
+Rel_Flow(gateway, taskAuth, "forward-auth / RBAC API")
+Rel_Flow(gateway, bizSvcs, "upstream + X-Tenant-Perms")
+Rel_Flow(gateway, tenantSvc, "member/group-role")
+Rel_Serving(taskAuth, shareLib, "PDP 码集合契约")
+Rel_Serving(shareLib, bizSvcs, "RequireRegion")
+Rel_Access_W(taskAuth, authRG, "CRUD 种子/目录")
+Rel_Access_W(taskAuth, authRM, "登记 ui/api")
+Rel_Access_W(taskAuth, authRRG, "角色绑定")
+Rel_Access_R(taskAuth, authDB, "角色/成员解析")
+Rel_Flow(tenantSvc, taskAuth, "authz-state / role-exists")
+
+@enduml

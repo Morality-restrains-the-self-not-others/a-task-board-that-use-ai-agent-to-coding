@@ -1,0 +1,19 @@
+{
+  "_comment": "Shared host classification cases. Single source of truth driving BOTH Go (shareLib/registryhost/registryhost_test.go) and JS (taskAiProvider/frontend/tests/privateRegistryHint.unit.test.js) tests, so the two implementations cannot silently drift. want_public_suggestion only applies to Aliyun ACR VPC/internal hosts; omit or use \"\" otherwise.",
+  "cases": [
+    { "registry": "registry-vpc.cn-qingdao.aliyuncs.com", "want_private": true, "want_public_suggestion": "registry.cn-qingdao.aliyuncs.com" },
+    { "registry": "registry-internal.cn-hangzhou.aliyuncs.com", "want_private": true, "want_public_suggestion": "registry.cn-hangzhou.aliyuncs.com" },
+    { "registry": "10.0.1.8:5000", "want_private": true },
+    { "registry": "192.168.1.10", "want_private": true },
+    { "registry": "123456.dkr.ecr.us-east-1.vpce.amazonaws.com", "want_private": true },
+    { "registry": "swr.cn-north-4.inner.myhuaweicloud.com", "want_private": true },
+    { "registry": "registry.cn-qingdao.aliyuncs.com", "want_private": false },
+    { "registry": "docker.io", "want_private": false },
+    { "registry": "ghcr.io", "want_private": false },
+    { "registry": "registry-1.docker.io", "want_private": false },
+    { "registry": "example.tencentcloudcr.com", "want_private": false },
+    { "registry": "123456.dkr.ecr.us-east-1.amazonaws.com", "want_private": false },
+    { "registry": "swr.cn-north-4.myhuaweicloud.com", "want_private": false },
+    { "registry": "127.0.0.1:1234", "want_private": false }
+  ]
+}

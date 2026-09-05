@@ -1,0 +1,7 @@
+intents:
+  1_observe:
+    host: 0.0.0.0
+    port: 18072
+    groupId: task-events-task-revision-recorded-1-observe
+    events:
+    - TASK_REVISION_RECORDED

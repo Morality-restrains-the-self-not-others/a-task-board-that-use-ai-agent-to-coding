@@ -1,0 +1,15 @@
+# SMS 配置真源（OPT-20260806-057：从 conf/core/django/config.yaml sms 块迁出）
+# 消费方：taskAuth 经 conf/auth/task-auth/sms.yaml sync 片段读取（conf-sync 同步）。
+# Aliyun access_key_* 放在本目录 config.local.yaml（gitignored），见 config.local.yaml.example。
+sms:
+  provider: aliyun
+  aliyun:
+    access_key_id: ""
+    access_key_secret: ""
+    region_id: cn-hangzhou
+    sign_name: ''
+    template_code_notification: ''
+  templates:
+    verification: ''
+    password_reset: ''
+    notification: ''

@@ -1,0 +1,34 @@
+{
+  "name": "online-service-js",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Trae 在线业务服务（Node.js / Express）：HTTP API 供容器与 SaaS 转发对接。",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "dev": "node src/server.mjs",
+    "test:unit": "node --test src/instructionIdle.test.mjs src/jobsRuntimeCloseSideEffects.test.mjs src/layerFlatFiles.test.mjs src/saasTaskCloud.taskApiPrefix.test.mjs src/gitRemote.test.mjs src/reachability.test.mjs src/layerGitOauthRefreshPush.test.mjs src/layerGitOauthPush.test.mjs src/bootstrap.cloneCredentials.test.mjs src/bootstrap.cloneFailureFooter.test.mjs src/bootstrap.agentConfig.test.mjs src/bootstrap.autoCloneNested.test.mjs src/jobsRuntimeSnapshot.empty-layer.test.mjs src/jobsRuntime.bootstrapBinding.test.mjs src/jobsRuntime.jobToApiDict.test.mjs src/otelTraceId.test.mjs src/traceId.test.mjs src/jsonLog.test.mjs src/uiAccessToken.test.mjs src/layerFs.gitRemoteCompareBranch.test.mjs src/layerFs.markRemoteTracking.test.mjs src/layerFs.currentBranch.test.mjs src/layerFs.gitWorktreeDirty.multiRepo.test.mjs src/postBootstrapAgentKickoff.test.mjs src/routesReposClone.test.mjs src/runtimeEventLog.test.mjs src/saasTaskCloudGitProgress.test.mjs test/formatConfigErrMsg.test.mjs test/ensureServiceConfig.test.mjs",
+    "test:e2e": "playwright test --project=api",
+    "test:e2e:browser": "playwright test --project=chromium",
+    "test:e2e:cdp": "playwright test --project=cdp9222"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.1"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.57.0",
+    "@opentelemetry/resources": "^1.27.0",
+    "@opentelemetry/sdk-trace-base": "^1.27.0",
+    "@opentelemetry/sdk-trace-node": "^1.27.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
+    "axios": "^1.15.2",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.2",
+    "sanitize-html": "^2.17.3",
+    "yaml": "^2.7.0"
+  }
+}

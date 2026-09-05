@@ -1,0 +1,6 @@
+apiVersion: 1
+
+# 勿在此 provisioning daydaymoney-grafana-app：Grafana 启动时会用本文件内容整体替换插件 jsonData，
+# 导致 UI 登录态、捕获规则等运行时配置在重启后丢失。
+# 环境默认值见 DaydaymoneyGrafana/src/components/AppConfig/AppConfig.tsx 与 README。
+apps: []

@@ -1,0 +1,50 @@
+' @title: 厂商申请入口收回镜像市场（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 125
+' @iteration: ImageMarket 恢复厂商申请入口
+' @author: cursor
+' @based_on: v124 (v124-enterprise-landscape-20260831-1817-cursor.puml)
+' @updated: 2026-09-01 14:30
+' @description: 租户成员在镜像市场申请认证；审核通过后 SSO 进门户；门户不再承载申请
+
+@startuml
+!include <archimate/Archimate>
+
+title 厂商申请入口 — v125 Current Architecture (2026-09-01 14:30)
+
+rectangle "Business" {
+  Business_Actor(member, "租户成员")
+  note right of member
+    须先入租户才能提交厂商申请
+  end note
+  Business_Process(apply, "镜像市场申请认证")
+  note right of apply
+    申请表单在 /tenant/{id}/image-market
+  end note
+  Business_Process(sso, "审核通过后 SSO 进门户")
+}
+
+rectangle "Application" {
+  Application_Component(fe, "taskFE ImageMarket")
+  Application_Component(aip, "taskAiProvider")
+  Application_Component(auth, "taskAuth")
+  Application_Component(portal, "provider SPA")
+}
+
+Rel_Assignment(member, apply)
+Rel_Flow(apply, fe, "填表")
+Rel_Flow(fe, aip, "vendor-application")
+Rel_Flow(sso, auth, "vendor_bridge")
+Rel_Flow(auth, aip, "exchange")
+Rel_Flow(sso, portal, "换票进门户")
+
+Implementation_Plateau(p124, "Plateau v124")
+Implementation_Plateau(p125, "Plateau v125 申请在镜像市场")
+Implementation_Gap(gap, "Gap closed: 申请在镜像市场")
+Implementation_WorkPackage(wp, "WP-imagemarket-vendor-apply-restore")
+Rel_Triggering(p124, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p125, "delivers")
+
+@enduml

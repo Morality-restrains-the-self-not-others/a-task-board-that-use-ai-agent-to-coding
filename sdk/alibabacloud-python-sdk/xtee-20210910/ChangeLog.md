@@ -1,0 +1,129 @@
+2026-01-19 Version: 2.2.1
+- Update API DescribeListPoc: add request parameters TaskName.
+- Update API DescribeListPoc: add request parameters TaskStatus.
+
+
+2025-12-01 Version: 2.2.0
+- Support API CompareRule.
+- Support API DescribeExpressionVariableVersionDetail.
+- Support API DescribeVariableVersionDetail.
+
+
+2025-10-30 Version: 2.1.2
+- Update API DescribeSafDeOrder: add response parameters Body.resultObject.regions.
+
+
+2025-09-22 Version: 2.1.1
+- Generated python 2021-09-10 for xtee.
+
+2025-09-19 Version: 2.1.0
+- Support API DescribeOperationLogMonitoring.
+- Support API DescribeVersionPageList.
+- Update API DescribeCustVariablePage: add request parameters status.
+- Update API DescribeCustVariablePage: add response parameters Body.resultObject.$.eventName.
+- Update API DescribeCustVariablePage: add response parameters Body.resultObject.$.ruleList.
+- Update API DescribeExpressionVariablePage: add response parameters Body.resultObject.$.name.
+- Update API DescribeExpressionVariablePage: add response parameters Body.resultObject.$.ruleList.
+- Update API DescribeOperationLogPageList: add request parameters operationSummary.
+- Update API DescribeOperationLogPageList: add request parameters userNameSearch.
+- Update API DescribeRuleSnapshot: add response parameters Body.resultObject.ruleBody.
+- Update API DescribeRuleSnapshot: add response parameters Body.resultObject.ruleType.
+
+
+2025-08-13 Version: 2.0.0
+- Support API AddSampleDataByCsv.
+- Support API AddSampleDataByText.
+- Support API BatchDeleteSampleData.
+- Support API CheckCopyRuleVariable.
+- Support API CompareCopyRuleVariable.
+- Support API CreateModel.
+- Support API CreateSampleBatch.
+- Support API DeepCopyRule.
+- Support API DeleteEventField.
+- Support API DeleteSampleBatchMeta.
+- Support API DeleteSelfBindVariable.
+- Support API DescribeInitDig.
+- Support API DescribeListModel.
+- Support API DescribeModelDetailsById.
+- Support API DescribeModelOssPolicy.
+- Support API DescribeRiskTagsLineChart.
+- Support API DescribeSampleBatchOssPolicy.
+- Support API DescribeSampleDataByBatchUUidPage.
+- Support API DescribeSampleDataPage.
+- Support API DescribeSamplebatchPage.
+- Support API DescribeScoreList.
+- Support API DescribeServiceCodeName.
+- Support API DownloadSmapleBatch.
+- Support API ImportField.
+- Support API ListVariableDefine.
+- Support API ModelDelete.
+- Support API ModelFileUpload.
+- Support API ModelIsUsing.
+- Support API ModelNameIsDuplication.
+- Support API ModelSampleDownload.
+- Support API PocCreateTask.
+- Support API PocGetDownloadUrl.
+- Support API PocGetToken.
+- Support API PocSendData.
+- Support API UploadFileCheck.
+- Delete API CheckPermission.
+- Delete API ClearNameList.
+- Delete API CreateAuthorizationUser.
+- Delete API CreateGroupSign.
+- Delete API CreateMonitorTask.
+- Delete API CreatePoc.
+- Delete API CreateReplenishTask.
+- Delete API CreateTask.
+- Delete API CreateTemplate.
+- Delete API DeleteAuthUser.
+- Delete API DeleteTask.
+- Delete API DescribeParamList.
+- Delete API DescribePocDetail.
+- Delete API DescribeServiceConsume.
+- Delete API DescribeServiceConsumeDownloadUrl.
+- Delete API DescribeTemplateBaseInfoByTemplateId.
+- Delete API ModifyPocTask.
+- Delete API ModifyTemplate.
+- Delete API ModifyTemplateStatus.
+- Delete API ModifyVariable.
+- Delete API QueryAuthUserName.
+- Delete API QueryAuthorizationUserList.
+- Delete API RemoveTemplate.
+- Delete API SubmitImportTask.
+- Delete API UploadSampleApi.
+- Update API CreateRule: add request parameters ruleBody.
+- Update API CreateRule: add request parameters ruleType.
+- Update API DescribeNameListPageList: add response parameters Body.resultObject.$.memo.
+- Update API DescribeRuleDetailByRuleId: add response parameters Body.resultObject.authType.
+- Update API DescribeRuleDetailByRuleId: add response parameters Body.resultObject.createType.
+- Update API DescribeRuleDetailByRuleId: add response parameters Body.resultObject.ruleAuthType.
+- Update API DescribeRuleDetailByRuleId: add response parameters Body.resultObject.ruleBody.
+- Update API DescribeRuleDetailByRuleId: add response parameters Body.resultObject.ruleType.
+- Update API DescribeRuleHit: add request parameters requestTime.
+- Update API DescribeRulePageList: add request parameters sort.
+- Update API DescribeRulePageList: add response parameters Body.resultObject.$.hasNewVersion.
+- Update API DescribeRulePageList: add response parameters Body.resultObject.$.ruleType.
+- Update API DescribeRuleVersionList: add request parameters currentPage.
+- Update API DescribeRuleVersionList: add request parameters pageSize.
+- Update API DescribeRuleVersionList: add response parameters Body.currentPage.
+- Update API DescribeRuleVersionList: add response parameters Body.pageSize.
+- Update API DescribeRuleVersionList: add response parameters Body.totalItem.
+- Update API DescribeRuleVersionList: add response parameters Body.totalPage.
+- Update API DescribeRuleVersionList: add response parameters Body.resultObject.$.ruleType.
+- Update API DescribeSafTagList: add request parameters TagName.
+- Update API DescribeSceneRulePageList: add response parameters Body.resultObject.$.ruleType.
+- Update API ImportNameList: add request parameters memo.
+- Update API ModifyEvent: add request parameters eventName.
+- Update API ModifyExpressionVariable: add request parameters name.
+- Update API QueryAuthRuleDetailByRuleId: add response parameters Body.resultObject.ruleType.
+- Update API UpdateRule: add request parameters ruleBody.
+- Update API UpdateRule: add request parameters ruleType.
+
+
+2024-07-02 Version: 1.0.1
+- Update API CreateSampleApi: update response param.
+
+
+2024-06-27 Version: 1.0.0
+- Generated python 2021-09-10 for xtee.
+

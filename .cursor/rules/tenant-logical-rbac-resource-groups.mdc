@@ -1,0 +1,37 @@
+# 租户逻辑资源组 RBAC（元规则）
+
+适用于整个 monorepo。细则见 `.ai/01_project_constraints/45_tenant_logical_rbac_resource_groups.md`；约束索引第 40 条；**ADR-0003** + **ADR-0004**（授予效果 view/operate）；设计 `docs/superpowers/specs/2026-08-11-rbac-page-resource-group-v72-design.md`、`docs/superpowers/specs/2026-08-11-rbac-resource-grant-effect-v73-design.md`。
+
+## 核心模型（禁止再等同）
+
+- **页面组 (page)** = 载体（侧栏/路由）
+- **UI 组件区域 (ui_region)** = 默认可授予的**资源组**
+- UI / API 叶子**只**挂在 ui_region 上
+- **授予效果**：`view`（可访问）/ `operate`（可编辑执行，蕴含 view）— `auth_role_resource_group.effect`
+- ≠ 业务表 `tenant_resource_group_assignment`
+
+## 强制要求（触发即执行）
+
+触及租户控制台页面/侧栏、租户域 API、访问管理、角色/成员授权、页内权限空态时：
+
+1. **种子**：新 page / ui_region / `auth_resource_member`（ui|api）写入 `dataMigrate/taskAuth/`
+2. **BE**：读路径 `RequireRegionView`；写/执行 `RequireRegionOperate`；过渡可用 `RequireRegion`（任意访问）
+3. **FE**：侧栏 `hasPage`；区块 `hasRegion` / `hasRegionView`；写按钮 `hasRegionOperate`
+4. **PDP**：`region:*` / `page:*` 及 `:view` / `:operate`（B2：不从 Region 展开旧粗码）
+5. **访问管理**：新 region 须出现在目录树；可分别授予「可访问 / 可编辑执行」
+
+## 禁止
+
+- 仅前端按菜单/粗码隐藏当作授权完成
+- 叶子直接挂 page、或「页面=资源组」
+- 用业务资源组表做页面 ACL
+- 平行 ACL 绕过 taskAuth PDP
+
+## 关键路径
+
+- `shareLib/authz` · `taskAuth/src/rbac_*.go` · `taskFE/.../tenantConsoleNav.js` · `PeopleAccess.vue` · `resourceGrantEffects.js`
+- Companion：`shareLib/authz/ai.md`
+
+## 验收自检
+
+见细则文末命令；PR/实现说明应勾选细则「强制检查清单」A–D。

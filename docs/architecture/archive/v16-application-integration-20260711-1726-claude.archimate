@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v16-ai-20260711-1726">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v16 Target</name>
+  <documentation>多入口同源 API：Edge nginx 分流；Vue API_BASE_URL 默认同源；Vite /api 代理；废弃 HTTPS→HTTP 绝对 gateway</documentation>
+
+  <folder name="Application" id="id-v16-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Browser" id="id-v16-browser"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue Frontend [MODIFIED v16]" id="id-v16-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway APISIX :18081" id="id-v16-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="saas-backend Django :8001" id="id-v16-be"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🔴 绝对 http://IP:18081 API 基址 [DEPRECATED v16]" id="id-v16-abs-api"/>
+  </folder>
+
+  <folder name="Technology" id="id-v16-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="🟢 Edge nginx (daydaymoney / IP / …) [NEW v16]" id="id-v16-edge"/>
+    <element xsi:type="archimate:Node" name="🟡 Vite :4000 + /api proxy [MODIFIED v16]" id="id-v16-vite"/>
+  </folder>
+
+  <folder name="Relations" id="id-v16-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v16-flow-browser-edge" source="id-v16-browser" target="id-v16-edge" name="HTTPS/HTTP 任意入口"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v16-flow-edge-vite" source="id-v16-edge" target="id-v16-vite" name="/ → Vue"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v16-flow-edge-gw" source="id-v16-edge" target="id-v16-gw" name="/api/ 同源反代"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v16-flow-vite-gw" source="id-v16-vite" target="id-v16-gw" name="dev proxy /api"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v16-flow-gw-be" source="id-v16-gw" target="id-v16-be" name="上游 API"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v16-flow-browser-abs" source="id-v16-browser" target="id-v16-abs-api" name="DEPRECATED Mixed Content"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v16-rel-plat15-gap" source="id-v16-plat-v15" target="id-v16-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v16-rel-wp-gap" source="id-v16-wp" target="id-v16-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v16-rel-wp-plat16" source="id-v16-wp" target="id-v16-plat-v16"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v16-rel-plat16-edge" source="id-v16-plat-v16" target="id-v16-edge"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v16-rel-plat16-vue" source="id-v16-plat-v16" target="id-v16-vue"/>
+  </folder>
+
+  <folder name="Implementation" id="id-v16-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v15 — relay selected image runtime" id="id-v16-plat-v15"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v16 — multi-entry same-origin API" id="id-v16-plat-v16"/>
+    <element xsi:type="archimate:Gap" name="Gap: HTTPS 入口仍用 HTTP 绝对 gateway → Mixed Content" id="id-v16-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v16-multi-entry-same-origin-api" id="id-v16-wp"/>
+  </folder>
+
+  <folder name="Views" id="id-v16-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v15→v16 — 多入口同源 API" id="id-v16-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v16-do-plat-v15" archimateElement="id-v16-plat-v15">
+        <bounds x="48" y="120" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v16-conn-plat15-gap"
+          source="id-v16-do-plat-v15" target="id-v16-do-gap"
+          archimateRelationship="id-v16-rel-plat15-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v16-do-gap" archimateElement="id-v16-gap"
+        targetConnections="id-v16-conn-plat15-gap id-v16-conn-wp-gap">
+        <bounds x="380" y="120" width="320" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v16-do-wp" archimateElement="id-v16-wp">
+        <bounds x="740" y="80" width="300" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v16-conn-wp-gap"
+          source="id-v16-do-wp" target="id-v16-do-gap"
+          archimateRelationship="id-v16-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v16-conn-wp-plat16"
+          source="id-v16-do-wp" target="id-v16-do-plat-v16"
+          archimateRelationship="id-v16-rel-wp-plat16"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v16-do-plat-v16" archimateElement="id-v16-plat-v16"
+        targetConnections="id-v16-conn-wp-plat16">
+        <bounds x="740" y="180" width="300" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v16-conn-plat16-edge"
+          source="id-v16-do-plat-v16" target="id-v16-do-edge-m"
+          archimateRelationship="id-v16-rel-plat16-edge"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v16-conn-plat16-vue"
+          source="id-v16-do-plat-v16" target="id-v16-do-vue-m"
+          archimateRelationship="id-v16-rel-plat16-vue"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v16-do-edge-m" archimateElement="id-v16-edge"
+        targetConnections="id-v16-conn-plat16-edge">
+        <bounds x="700" y="280" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v16-do-vue-m" archimateElement="id-v16-vue"
+        targetConnections="id-v16-conn-plat16-vue">
+        <bounds x="940" y="280" width="180" height="50"/>
+      </child>
+    </element>
+
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v16 Target — 多入口同源 API 数据流" id="id-v16-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v16-do-browser" archimateElement="id-v16-browser">
+        <bounds x="48" y="160" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v16-conn-browser-edge"
+          source="id-v16-do-browser" target="id-v16-do-edge"
+          archimateRelationship="id-v16-flow-browser-edge"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v16-conn-browser-abs"
+          source="id-v16-do-browser" target="id-v16-do-abs"
+          archimateRelationship="id-v16-flow-browser-abs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v16-do-edge" archimateElement="id-v16-edge"
+        targetConnections="id-v16-conn-browser-edge">
+        <bounds x="220" y="160" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v16-conn-edge-vite"
+          source="id-v16-do-edge" target="id-v16-do-vite"
+          archimateRelationship="id-v16-flow-edge-vite"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v16-conn-edge-gw"
+          source="id-v16-do-edge" target="id-v16-do-gw"
+          archimateRelationship="id-v16-flow-edge-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v16-do-vite" archimateElement="id-v16-vite"
+        targetConnections="id-v16-conn-edge-vite">
+        <bounds x="460" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v16-conn-vite-gw"
+          source="id-v16-do-vite" target="id-v16-do-gw"
+          archimateRelationship="id-v16-flow-vite-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v16-do-gw" archimateElement="id-v16-gw"
+        targetConnections="id-v16-conn-edge-gw id-v16-conn-vite-gw">
+        <bounds x="460" y="160" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v16-conn-gw-be"
+          source="id-v16-do-gw" target="id-v16-do-be"
+          archimateRelationship="id-v16-flow-gw-be"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v16-do-be" archimateElement="id-v16-be"
+        targetConnections="id-v16-conn-gw-be">
+        <bounds x="700" y="160" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v16-do-abs" archimateElement="id-v16-abs-api"
+        targetConnections="id-v16-conn-browser-abs">
+        <bounds x="220" y="280" width="220" height="55"/>
+      </child>
+    </element>
+  </folder>
+
+</archimate:model>

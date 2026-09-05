@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v106 变迁 (v104→v106)" id="id-v106eldiff01">
+  <folder name="Business" id="id-v106el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v106-biz-dev" name="开发者 / 外部用户"/>
+    <element xsi:type="archimate:BusinessService" id="id-v106-biz-sec" name="安全访问公网平台 [MODIFIED v106]"/>
+  </folder>
+  <folder name="Application" id="id-v106el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v106-app-edge" name="边缘 nginx (Host) [MODIFIED v106]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v106-app-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v106-app-fe" name="taskFE SPA"/>
+  </folder>
+  <folder name="Technology" id="id-v106el-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v106-tech-lets" name="Let's Encrypt wildcard *.daydaymoney.com [MODIFIED v106]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v106el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v106-pl-v104" name="Plateau v104"/>
+    <element xsi:type="archimate:Plateau" id="id-v106-pl-v106" name="Plateau v106 安全头+HTTPS 跳转"/>
+    <element xsi:type="archimate:Gap" id="id-v106-gap" name="Gap: 公网响应无安全头、无强制 HTTPS"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v106-wp" name="WP-security-headers-hsts"/>
+  </folder>
+  <folder name="Relations" id="id-v106el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v106-rel-dev-sec" source="id-v106-biz-dev" target="id-v106-biz-sec"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v106-rel-edge-sec" source="id-v106-app-edge" target="id-v106-biz-sec" name="HTTPS"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v106-rel-edge-gw" source="id-v106-app-edge" target="id-v106-app-gw" name="HTTPS"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v106-rel-gw-fe" source="id-v106-app-gw" target="id-v106-app-fe" name="SPA"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v106-rel-lets-edge" source="id-v106-tech-lets" target="id-v106-app-edge" name="TLS 证书"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v106-rel-pl104-gap" source="id-v106-pl-v104" target="id-v106-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v106-rel-wp-gap" source="id-v106-wp" target="id-v106-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v106-rel-wp-pl106" source="id-v106-wp" target="id-v106-pl-v106"/>
+  </folder>
+  <folder name="Views" id="id-v106el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v106-view-mig" name="架构变迁 v104→v106 — security-headers-hsts-https-redirect">
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-pl104" archimateElement="id-v106-pl-v104">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-pl104-gap" source="id-v106-do-pl104" target="id-v106-do-gap" archimateRelationship="id-v106-rel-pl104-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-gap" targetConnections="id-v106-c-pl104-gap id-v106-c-wp-gap" archimateElement="id-v106-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-wp" archimateElement="id-v106-wp">
+        <bounds x="240" y="160" width="400" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-wp-gap" source="id-v106-do-wp" target="id-v106-do-gap" archimateRelationship="id-v106-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-wp-pl106" source="id-v106-do-wp" target="id-v106-do-pl106" archimateRelationship="id-v106-rel-wp-pl106"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-pl106" targetConnections="id-v106-c-wp-pl106" archimateElement="id-v106-pl-v106">
+        <bounds x="680" y="160" width="160" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v106-view-topo" name="v106 Target — 公网安全入口">
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-dev" archimateElement="id-v106-biz-dev">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-dev-sec" source="id-v106-do-dev" target="id-v106-do-sec" archimateRelationship="id-v106-rel-dev-sec"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-sec" targetConnections="id-v106-c-dev-sec id-v106-c-edge-sec" archimateElement="id-v106-biz-sec">
+        <bounds x="260" y="48" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-edge" archimateElement="id-v106-app-edge">
+        <bounds x="48" y="160" width="160" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-edge-sec" source="id-v106-do-edge" target="id-v106-do-sec" archimateRelationship="id-v106-rel-edge-sec"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-edge-gw" source="id-v106-do-edge" target="id-v106-do-gw" archimateRelationship="id-v106-rel-edge-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-gw" targetConnections="id-v106-c-edge-gw" archimateElement="id-v106-app-gw">
+        <bounds x="260" y="160" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-gw-fe" source="id-v106-do-gw" target="id-v106-do-fe" archimateRelationship="id-v106-rel-gw-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-fe" targetConnections="id-v106-c-gw-fe" archimateElement="id-v106-app-fe">
+        <bounds x="480" y="160" width="140" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-lets" archimateElement="id-v106-tech-lets">
+        <bounds x="48" y="280" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-lets-edge" source="id-v106-do-lets" target="id-v106-do-edge" archimateRelationship="id-v106-rel-lets-edge"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

@@ -1,0 +1,71 @@
+apisix:
+  node_listen:
+    - port: 9080
+    - port: 9443
+      enable_ssl: true
+  enable_admin: true
+  enable_dev_mode: false
+  enable_reuseport: true
+  enable_ipv6: false
+
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+
+nginx_config:
+  error_log: logs/error.log
+  error_log_level: warn
+  # Docker published-port DNAT 把 $remote_addr 变成 taskgateway_default 网关 172.25.0.1。
+  # 边缘 nginx 已把真实客户端放进 X-Forwarded-For；覆盖默认 X-Real-IP / 仅 127.0.0.1。
+  # 必须走 nginx_config.http（模板已输出 real_ip_*），禁止再写 http_configuration_snippet
+  # 否则 nginx: [emerg] "real_ip_header" directive is duplicate。
+  http:
+    real_ip_header: X-Forwarded-For
+    real_ip_recursive: "on"
+    real_ip_from:
+      - "127.0.0.0/8"
+      - "10.0.0.0/8"
+      - "172.16.0.0/12"
+      - "192.168.0.0/16"
+  # OPT-20260825-018: 上游 connection-refused（connect() failed (111)）时 APISIX 默认返回
+  # HTML 502，前端 response.json() 解析失败只能落到无信息兜底。统一改写 502/503/504
+  # 为 JSON 错误体并保留请求 X-Trace-Id（错误发生在代理层，唯一可用的 trace 来源是请求头）。
+  http_server_configuration_snippet: |
+    error_page 502 503 504 = @gateway_error;
+    location @gateway_error {
+      default_type application/json;
+      add_header X-Trace-Id $http_x_trace_id;
+      return 502 '{"error":"服务暂时不可用，请稍后重试","trace_id":"$http_x_trace_id"}';
+    }
+
+plugins:
+  - forward-auth
+  - cors
+  - fault-injection
+  - transformer
+  - proxy-rewrite
+  - response-rewrite
+  - redirect
+  - mocking
+  - request-id
+  - serverless-pre-function
+  - limit-req
+  - file-logger
+  - prometheus
+
+# OPT-20260827-003: 让 prometheus 导出服务绑定 0.0.0.0 而非默认 127.0.0.1，
+# 供 AiMonitor Prometheus 经 docker-compose 发布的 127.0.0.1:19091 抓取网关指标。
+plugin_attr:
+  prometheus:
+    export_addr:
+      ip: 0.0.0.0
+      port: 9091
+
+ssl:
+  enable: true
+  listen:
+    - port: 9443
+      enable_http2: true
+  ssl_cert: /usr/local/apisix/conf/certs/dev-gateway.pem
+  ssl_cert_key: /usr/local/apisix/conf/certs/dev-gateway-key.pem

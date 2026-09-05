@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>验证码 - SaaS平台</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #7241F2; color: white; padding: 10px 20px; border-radius: 5px 5px 0 0; }
+        .content { background-color: #fff; padding: 20px; border: 1px solid #ddd; border-top: none; }
+        .code-box { background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0; }
+        .expire-note { color: #666; font-size: 14px; }
+        .footer { margin-top: 20px; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>SaaS平台验证码</h2>
+        </div>
+        <div class="content">
+            <p>尊敬的用户：</p>
+            <p>您的验证码是：</p>
+            <p class="code-box">{{.Code}}</p>
+            <p class="expire-note">该验证码有效期为5分钟，请不要将验证码透露给他人。</p>
+            <p>如果您没有请求此验证码，请忽略此邮件。</p>
+            <p>祝好！</p>
+            <p>SaaS平台团队</p>
+        </div>
+        <div class="footer">
+            <p>这是一封自动发送的邮件，请勿回复。</p>
+        </div>
+    </div>
+</body>
+</html>

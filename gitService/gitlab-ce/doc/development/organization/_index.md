@@ -1,0 +1,181 @@
+---
+stage: Tenant Scale
+group: Organizations
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see <https://handbook.gitlab.com/handbook/product/ux/technical-writing/#assignments>
+description: 'Development Guidelines: learn about organization when developing GitLab.'
+title: Organization
+---
+
+The [Organization initiative](../../user/organization/_index.md) focuses on reaching feature parity between
+GitLab.com and GitLab Self-Managed.
+
+## Current phase (FY27-Q1 and FY27-Q2): Feature parity
+
+The current development focus is achieving **feature parity** for organizations. This means ensuring that existing features work for groups inside organizations so users who transfer to an organization don't lose functionality.
+
+**Organizations is not yet ready for new features.** Any new features should continue to target:
+
+- **GitLab.com**: Top-level groups
+- **GitLab Self-Managed**: Instance level
+
+Guidance on building new features on organizations, or migrating existing features from top-level group to organizations, will come in the future.
+Please contact the team on Slack (`#g_organizations`) if you wish to informally discuss this.
+
+### Available and planned support for implementing organizations
+
+The Organizations team are implementing changes which will automatically include support for:
+
+- Application level Organization Isolation: There will be an ActiveRecord extension that will take care of [Organization Scoping](https://gitlab.com/groups/gitlab-org/-/work_items/19414). This is provisionally planned for availability and usage in early FY27-Q2.
+- Sidekiq: there is no need to pass `organization_id` to Sidekiq worker parameters: Sidekiq workers will inherit the Current Organization from the scheduling context
+- Events / Logging: similar to User, Project or Namespace, Organization will be included
+- Routing: Enabling / disabling organization based URL's (`/o/<organization>` prefix) will be available.
+- Organization availability in tests
+
+Teams do not need to implement these, unless there are specific reasons.
+
+## Database table design
+
+See the [sharding guidelines](sharding/_index.md).
+
+## Using `Current.organization`
+
+The application maps incoming requests to an organization through `Current.organization`. This context is automatically set in the request layer and should be used to ensure data is properly scoped to the current organization.
+
+### Where `Current.organization` is available
+
+`Current.organization` is available in the following contexts. Some are set up automatically, while others require you to call `set_current_organization` explicitly.
+
+Set automatically (platform-wide):
+
+- Controllers — `ApplicationController` includes a `before_action :set_current_organization` that runs for every request.
+- GraphQL — `GraphqlController` inherits from `ApplicationController`, so the same `before_action` applies automatically.
+- Sidekiq — set from the organization context captured when the job is enqueued.
+
+Requires developer setup:
+
+- Grape API endpoints — `Current.organization` is not set automatically. Call the `set_current_organization` helper in a `before` block for each API class that needs it:
+
+  ```ruby
+  before do
+    authenticate_non_get!
+    set_current_organization
+  end
+  ```
+
+### Passing organization context
+
+If there is application logic that needs the `Current.organization`, it should be passed from the request layer:
+
+```ruby
+# In controllers
+def create
+  @group = Groups::CreateService.new(
+    current_user,
+    group_params.with_defaults(organization_id: Current.organization.id)
+  ).execute
+end
+```
+
+### Scoping queries to organizations
+
+There will be a ActiveRecord extension that will provide Organization Scoping.
+
+## Organization routing
+
+Organization-scoped routes use the `/o/:organization_path/` pattern (for example, `/o/my-org/projects`).
+Always use regular, unscoped Rails URL helpers like `projects_path` and GitLab automatically routes based on `Current.organization`. This ensures switching between organization-scoped routes and global routes automatically.
+
+```ruby
+# Recommended: Use global route helpers
+projects_path                    # Automatically becomes /o/my-org/projects if Current.organization is set
+project_issues_path(@project)    # Automatically becomes /o/my-org/namespace/project/-/issues
+```
+
+### How it works
+
+The organization URL helper system is implemented in [`Routing::OrganizationsHelper::MappedHelpers`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/app/helpers/routing/organizations_helper.rb). When routes are loaded, the system:
+
+1. Scans all routes to find organization-scoped routes (those containing `/o/:organization_path`)
+1. Builds a mapping between global route names and organization route names
+1. Overrides standard Rails URL helpers (like `projects_path`, `groups_url`, etc.) to be organization-aware
+1. When `Current.organization` is present and the organization has scoped paths enabled, the helpers automatically use the organization-scoped version of the route
+1. Preserves the original `root_path` and `root_url` as `unscoped_root_path` and `unscoped_root_url`
+
+This approach preserves organization context throughout the request lifecycle. For example, `GET /o/my-org/projects` routes to `ProjectsController#index` (same as `/projects`) with the organization context available via `Current.organization`.
+
+Use explicit organization helpers only when you need to generate a URL for a specific organization that differs from `Current.organization`, or when working outside the request layer (services, workers, Rake tasks) where `Current.organization` is not available:
+
+```ruby
+# Explicit organization helpers
+organization_projects_path(organization_path: 'my-org')           # /o/my-org/projects
+organization_project_issues_path(@project, organization_path: 'my-org')  # /o/my-org/namespace/project/-/issues
+```
+
+### Routes not yet organization-scoped
+
+Some routes are not currently available under the organization scope:
+
+- **Devise OmniAuth callbacks** - Devise does not support scoping OmniAuth callbacks under a dynamic segment, so these remain at the global level
+- **API routes** - API endpoints are not yet organization-scoped
+
+## Testing organization isolation
+
+Enable the following feature flags to test organizations:
+
+- `ui_for_organizations`
+- `organization_switching`
+
+When making features organization-aware, pay special attention to areas where cross-organization data leakage could occur.
+Examples include:
+
+- Group and project member invites
+- User mentions in issues, merge requests, or comments
+- User search and autocomplete results
+- Issue, merge request, milestone, and label references across organizations
+- Finder classes scoping results to the current organization
+
+A helpful convention for manual testing in your development environment is to create an organization with an obvious
+name and prefix all its associated data. This makes it easy to visually confirm whether data from other organizations
+has accidentally been exposed.
+
+Create an Organization named `Secret Tanuki` and prefix all its associated data with this name:
+
+- Organization: `Secret Tanuki`
+- Users: `Secret Tanuki User Bob`, `Secret Tanuki User Alice`
+- Projects: `Secret Tanuki Project X`, `Secret Tanuki Project Y`
+- Issues: `Secret Tanuki Issue #42`, `Secret Tanuki Issue #99`
+- Groups: `Secret Tanuki Group`
+- Merge Requests: `Secret Tanuki MR: Add feature`
+
+When testing for data leaks, search your UI or API responses for `Secret Tanuki`. If you find it where it shouldn't be,
+you've discovered a cross-organization data leak. This is particularly useful when:
+
+- Testing search and autocomplete features
+- Verifying member invitations don't leak across organizations
+- Checking that mentions and references are properly scoped
+- Reviewing API responses for unintended data exposure
+
+### Automated testing
+
+For automated testing strategies, see [Testing with Organizations](../testing_guide/testing_with_organizations.md).
+
+## Frontend guidelines
+
+### REST API and GraphQL requests
+
+Providing the current organization context to REST API and GraphQL requests does not require any additional arguments. Behind the scenes the current organization is passed via the `X-GitLab-Organization-ID` header in [axios_utils.js#L15](https://gitlab.com/gitlab-org/gitlab/-/blob/3deab3ebc51cdbb14de4a593b35d3df2e26f34bc/app/assets/javascripts/lib/utils/axios_utils.js#L15) and [graphql.js#L183](https://gitlab.com/gitlab-org/gitlab/-/blob/3deab3ebc51cdbb14de4a593b35d3df2e26f34bc/app/assets/javascripts/lib/graphql.js#L183).
+
+### URLs
+
+Do not hardcode or construct URLs on the frontend as they will not support [organization routing](#organization-routing). See [URLs in GitLab](../urls_in_gitlab.md#frontend-guidelines) for guidelines on how to generate URLs on the frontend.
+
+### Accessing the current organization
+
+The current organization context is available on the frontend via `window.gon.current_organization`. Behind the scenes this is exposed to the frontend in [gon_helper.rb#L69](https://gitlab.com/gitlab-org/gitlab/-/blob/f8cdb7b281830854374686003edf7bb66b7a59fa/lib/gitlab/gon_helper.rb#L69).
+
+## Related topics
+
+- [Sharding guidelines](sharding/_index.md)
+- [Organization user documentation](../../user/organization/_index.md)
+- [Testing with Organizations](../testing_guide/testing_with_organizations.md)
+- [Consolidating groups and projects](https://handbook.gitlab.com/handbook/engineering/architecture/design-documents/consolidating_groups_and_projects/) architecture documentation

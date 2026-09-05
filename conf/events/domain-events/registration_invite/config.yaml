@@ -1,0 +1,9 @@
+intents:
+  1_observability:
+    host: 0.0.0.0
+    port: 18049
+    groupId: task-events-registration-invite-1-observability
+    events:
+    - REGISTRATION_INVITE_POLICY_UPDATED
+    - REGISTRATION_INVITE_CODE_ISSUED
+    - REGISTRATION_INVITE_CODE_REDEEMED

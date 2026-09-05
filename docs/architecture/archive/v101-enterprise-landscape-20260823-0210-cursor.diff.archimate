@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v101 变迁 (v100→v101)" id="id-v101eldiff01">
+  <folder name="Business" id="id-v101eld-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v101-biz-ops" name="本机操作员"/>
+    <element xsi:type="archimate:BusinessService" id="id-v101-biz-sup" name="进程监督 / Status UI [MODIFIED v101]"/>
+    <element xsi:type="archimate:BusinessService" id="id-v101-biz-cap" name="已启动业务能力"/>
+  </folder>
+  <folder name="Application" id="id-v101eld-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v101-el-runall" name="runAll :9999 [MODIFIED v101]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v101-el-stack" name="托管服务栈"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v101eld-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v101-el-pl100" name="Plateau v100"/>
+    <element xsi:type="archimate:Plateau" id="id-v101-el-pl101" name="Plateau v101"/>
+    <element xsi:type="archimate:Gap" id="id-v101-el-gap" name="Gap: 9999 挂掉则整栈不可用"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v101-el-wp" name="WP-runall-orchestrator-independence"/>
+  </folder>
+  <folder name="Relations" id="id-v101eld-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v101-el-rel-ops-sup" source="id-v101-biz-ops" target="id-v101-biz-sup"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v101-el-rel-ra-sup" source="id-v101-el-runall" target="id-v101-biz-sup"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v101-el-rel-stack-cap" source="id-v101-el-stack" target="id-v101-biz-cap"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v101-el-rel-sup-stack" source="id-v101-biz-sup" target="id-v101-el-stack" name="adopt / 显式 stop-all"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v101-el-rel-pl100-gap" source="id-v101-el-pl100" target="id-v101-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v101-el-rel-wp-gap" source="id-v101-el-wp" target="id-v101-el-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v101-el-rel-wp-pl101" source="id-v101-el-wp" target="id-v101-el-pl101"/>
+  </folder>
+  <folder name="Views" id="id-v101eld-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v101-el-view-mig" name="架构变迁 v100→v101 — orchestrator independence">
+      <child xsi:type="archimate:DiagramObject" id="id-v101-el-do-pl100" archimateElement="id-v101-el-pl100">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101-el-c-pl100-gap" source="id-v101-el-do-pl100" target="id-v101-el-do-gap" archimateRelationship="id-v101-el-rel-pl100-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v101-el-do-gap" targetConnections="id-v101-el-c-pl100-gap id-v101-el-c-wp-gap" archimateElement="id-v101-el-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v101-el-do-wp" archimateElement="id-v101-el-wp">
+        <bounds x="240" y="160" width="360" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101-el-c-wp-gap" source="id-v101-el-do-wp" target="id-v101-el-do-gap" archimateRelationship="id-v101-el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101-el-c-wp-pl101" source="id-v101-el-do-wp" target="id-v101-el-do-pl101" archimateRelationship="id-v101-el-rel-wp-pl101"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v101-el-do-pl101" targetConnections="id-v101-el-c-wp-pl101" archimateElement="id-v101-el-pl101">
+        <bounds x="640" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v101-el-view-flow" name="v101 Target — 监督器可消失业务面继续">
+      <child xsi:type="archimate:DiagramObject" id="id-v101-el-d-ops" archimateElement="id-v101-biz-ops">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101-el-c-ops-sup" source="id-v101-el-d-ops" target="id-v101-el-d-sup" archimateRelationship="id-v101-el-rel-ops-sup"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v101-el-d-sup" targetConnections="id-v101-el-c-ops-sup id-v101-el-c-ra-sup" archimateElement="id-v101-biz-sup">
+        <bounds x="240" y="48" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101-el-c-sup-stack" source="id-v101-el-d-sup" target="id-v101-el-d-stack" archimateRelationship="id-v101-el-rel-sup-stack"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v101-el-d-ra" archimateElement="id-v101-el-runall">
+        <bounds x="48" y="160" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101-el-c-ra-sup" source="id-v101-el-d-ra" target="id-v101-el-d-sup" archimateRelationship="id-v101-el-rel-ra-sup"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v101-el-d-stack" targetConnections="id-v101-el-c-sup-stack" archimateElement="id-v101-el-stack">
+        <bounds x="320" y="160" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v101-el-c-stack-cap" source="id-v101-el-d-stack" target="id-v101-el-d-cap" archimateRelationship="id-v101-el-rel-stack-cap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v101-el-d-cap" targetConnections="id-v101-el-c-stack-cap" archimateElement="id-v101-biz-cap">
+        <bounds x="520" y="160" width="180" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

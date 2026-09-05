@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="v31 Target — otp-go-full-native-sms" id="id-v31-model">
+  <folder name="Motivation" id="id-v31-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="Constraint Go-first OTP/SMS" id="id-v31-c-go"/>
+    <element xsi:type="archimate:Constraint" name="Constraint sms_verification_code → task-auth" id="id-v31-c-own"/>
+  </folder>
+  <folder name="Application" id="id-v31-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Vue Login/Reset/Recharge" id="id-v31-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v31-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟢 taskAuth native SMS + OTP login" id="id-v31-ta"/>
+    <element xsi:type="archimate:ApplicationComponent" name="saas-backend enrich-login" id="id-v31-django"/>
+    <element xsi:type="archimate:ApplicationComponent" name="[DEPRECATED v31] dispatch-sms / forward-login OTP" id="id-v31-dep"/>
+    <element xsi:type="archimate:DataObject" name="accounts_sms_verification_code" id="id-v31-vc"/>
+  </folder>
+  <folder name="Technology" id="id-v31-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="db/auth" id="id-v31-authdb"/>
+    <element xsi:type="archimate:Node" name="Aliyun Dysmsapi" id="id-v31-aliyun"/>
+    <element xsi:type="archimate:Node" name="Tencent SMS" id="id-v31-tencent"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v31-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v29 — taskGitOauth baseline" id="id-v31-plat29"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v31 — OTP native SMS" id="id-v31-plat31"/>
+    <element xsi:type="archimate:Gap" name="Gap: SMS via Django bridge + forward-login OTP" id="id-v31-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v31-otp-go-full-native-sms" id="id-v31-wp"/>
+  </folder>
+  <folder name="Relations" id="id-v31-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v31-flow-vue-gw" source="id-v31-vue" target="id-v31-gw" name="OTP APIs"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v31-flow-gw-ta" source="id-v31-gw" target="id-v31-ta" name="upstream"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v31-flow-ta-aliyun" source="id-v31-ta" target="id-v31-aliyun" name="SendSms"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v31-flow-ta-tencent" source="id-v31-ta" target="id-v31-tencent" name="SendSms"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v31-flow-ta-dj" source="id-v31-ta" target="id-v31-django" name="enrich-login"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v31-acc-ta-vc" source="id-v31-ta" target="id-v31-vc" name="W"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v31-srv-db-vc" source="id-v31-authdb" target="id-v31-vc"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v31-inf-go" source="id-v31-c-go" target="id-v31-ta"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v31-inf-own" source="id-v31-c-own" target="id-v31-ta"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v31-rel-plat29-gap" source="id-v31-plat29" target="id-v31-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v31-rel-wp-gap" source="id-v31-wp" target="id-v31-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v31-rel-wp-plat31" source="id-v31-wp" target="id-v31-plat31"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v31-rel-plat31-ta" source="id-v31-plat31" target="id-v31-ta"/>
+  </folder>
+  <folder name="Views" id="id-v31-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 → v31 OTP native SMS" id="id-v31-view-mig">
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-plat29" archimateElement="id-v31-plat29">
+        <bounds x="40" y="100" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v31-conn-plat29-gap" source="id-v31-do-plat29" target="id-v31-do-gap" archimateRelationship="id-v31-rel-plat29-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-gap" archimateElement="id-v31-gap" targetConnections="id-v31-conn-plat29-gap id-v31-conn-wp-gap">
+        <bounds x="360" y="100" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-wp" archimateElement="id-v31-wp">
+        <bounds x="760" y="60" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v31-conn-wp-gap" source="id-v31-do-wp" target="id-v31-do-gap" archimateRelationship="id-v31-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v31-conn-wp-plat31" source="id-v31-do-wp" target="id-v31-do-plat31" archimateRelationship="id-v31-rel-wp-plat31"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-plat31" archimateElement="id-v31-plat31" targetConnections="id-v31-conn-wp-plat31">
+        <bounds x="760" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v31-conn-plat31-ta" source="id-v31-do-plat31" target="id-v31-do-ta-m" archimateRelationship="id-v31-rel-plat31-ta"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-ta-m" archimateElement="id-v31-ta" targetConnections="id-v31-conn-plat31-ta">
+        <bounds x="760" y="250" width="320" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v31 Target — OTP native SMS 数据流" id="id-v31-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-vue" archimateElement="id-v31-vue">
+        <bounds x="40" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v31-c-vue-gw" source="id-v31-do-vue" target="id-v31-do-gw" archimateRelationship="id-v31-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-gw" archimateElement="id-v31-gw" targetConnections="id-v31-c-vue-gw">
+        <bounds x="240" y="80" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v31-c-gw-ta" source="id-v31-do-gw" target="id-v31-do-ta" archimateRelationship="id-v31-flow-gw-ta"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-ta" archimateElement="id-v31-ta" targetConnections="id-v31-c-gw-ta id-v31-c-inf-go id-v31-c-inf-own">
+        <bounds x="400" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v31-c-ta-aliyun" source="id-v31-do-ta" target="id-v31-do-aliyun" archimateRelationship="id-v31-flow-ta-aliyun"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v31-c-ta-tencent" source="id-v31-do-ta" target="id-v31-do-tencent" archimateRelationship="id-v31-flow-ta-tencent"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v31-c-ta-dj" source="id-v31-do-ta" target="id-v31-do-dj" archimateRelationship="id-v31-flow-ta-dj"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v31-c-ta-vc" source="id-v31-do-ta" target="id-v31-do-vc" archimateRelationship="id-v31-acc-ta-vc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-dj" archimateElement="id-v31-django" targetConnections="id-v31-c-ta-dj">
+        <bounds x="400" y="180" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-vc" archimateElement="id-v31-vc" targetConnections="id-v31-c-ta-vc id-v31-c-db-vc">
+        <bounds x="640" y="40" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-aliyun" archimateElement="id-v31-aliyun" targetConnections="id-v31-c-ta-aliyun">
+        <bounds x="640" y="120" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-tencent" archimateElement="id-v31-tencent" targetConnections="id-v31-c-ta-tencent">
+        <bounds x="640" y="200" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-db" archimateElement="id-v31-authdb">
+        <bounds x="880" y="40" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v31-c-db-vc" source="id-v31-do-db" target="id-v31-do-vc" archimateRelationship="id-v31-srv-db-vc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-cgo" archimateElement="id-v31-c-go">
+        <bounds x="40" y="280" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v31-c-inf-go" source="id-v31-do-cgo" target="id-v31-do-ta" archimateRelationship="id-v31-inf-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v31-do-cown" archimateElement="id-v31-c-own">
+        <bounds x="40" y="350" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v31-c-inf-own" source="id-v31-do-cown" target="id-v31-do-ta" archimateRelationship="id-v31-inf-own"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

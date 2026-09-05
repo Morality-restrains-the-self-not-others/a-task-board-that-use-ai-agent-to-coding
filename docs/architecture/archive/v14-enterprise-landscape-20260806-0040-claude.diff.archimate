@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v14-el-20260806-0040">
+
+  <name xml:lang="en">daydaymoney Enterprise Landscape v14 Target</name>
+  <purpose>多智能体会话互知与冲突防护 — Session Hub 注册表/仓库级锁(租约+心跳)/死锁检测 + 暂停恢复 + Shadow Edit(临时目录编辑原子拷回) + Claude Code 会话钩子分发(v13 分发器扩展) + pre-commit 提交锁校验；覆盖交互式/无头 claude-agent/夜间巡检/CI 四类会话</purpose>
+
+  <folder name="Business" id="f-biz" type="business"/>
+  <folder name="Application" id="f-app" type="application"/>
+  <folder name="Technology" id="f-tech" type="technology"/>
+  <folder name="Implementation" id="f-impl" type="implementation_migration"/>
+  <folder name="Relations" id="f-rel" type="relations"/>
+
+  <!-- Business Layer -->
+  <element xsi:type="archimate:BusinessActor" name="Developer" id="developer"/>
+
+  <!-- Technology Layer — v13 Git Hooks 工具链 -->
+  <element xsi:type="archimate:Artifact" name="Git Hooks 模板 SSOT (scripts/hooks/templates/)" id="hooksSSOT"/>
+  <element xsi:type="archimate:Artifact" name="Hooks 分发/校验器 (install-hooks-all.sh + --check/deploy, HOOK_VERSION) [MODIFIED v14: +settings.json 会话钩子 +pre-commit v1.1.0]" id="hooksDeploy"/>
+  <element xsi:type="archimate:Artifact" name=".githooks/ 入库真源 ×38 仓 (core.hooksPath)" id="repoGitHooks"/>
+  <element xsi:type="archimate:Artifact" name=".git/hooks/ 复制模式 (install_root_hooks.sh / install-arch-hooks.sh / db 副本) [DEPRECATED v13]" id="oldHookCopy"/>
+  <element xsi:type="archimate:TechnologyService" name="GitLab CE (:8012)" id="gitlab"/>
+
+  <!-- Technology Layer — v14 Session Hub 工具链 (NEW) -->
+  <element xsi:type="archimate:Artifact" name="Session Hub (logs/sessions/ — 注册表 registry/ + 仓库级锁 locks/ + TTL10min + 心跳30s + audit/)" id="sessionHub"/>
+  <element xsi:type="archimate:Artifact" name="claude-agent session CLI (Go: register/list/acquire/release/heartbeat/pause/resume/shadow-*) + scripts/lib/sessionctl.sh" id="sessionCLI"/>
+  <element xsi:type="archimate:Artifact" name="Claude Code 会话钩子 (SessionStart/End/UserPromptSubmit/PreToolUse/PreCompact + settings.json 分发)" id="ccHooks"/>
+  <element xsi:type="archimate:Artifact" name="Shadow Edit 工作区 (logs/sessions/shadow/ — 快照拷贝 + SHA-256 校验和 + 原子拷回 + 冲突报告)" id="shadowWS"/>
+  <element xsi:type="archimate:Artifact" name="开发子仓池 (40+ 子模块仓库 — 16 Go 服务 + taskFE + 基建仓)" id="submodulePool"/>
+
+  <!-- Implementation & Migration -->
+  <element xsi:type="archimate:Plateau" name="Plateau v13 — Git Hooks 入库 (2026-08-06)" id="plateauV13"/>
+  <element xsi:type="archimate:Plateau" name="Plateau v14 — 多会话互知 (2026-08-06)" id="plateauV14"/>
+  <element xsi:type="archimate:Gap" name="Gap: 多会话并发编辑无互知、无锁/租约；冲突只能事后 git 处理" id="gapSession"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-session-coordination (P0 CLI/注册表/锁 → P1 hooks 分发 → P2 sweep/CI → P3 pause/shadow → P4 交付)" id="wpSession"/>
+
+  <!-- Relationships -->
+  <element xsi:type="archimate:FlowRelationship" id="rel-ssot-deploy" source="hooksSSOT" target="hooksDeploy"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-deploy-repo" source="hooksDeploy" target="repoGitHooks"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-dev-deploy" source="developer" target="hooksDeploy"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-repo-gitlab" source="repoGitHooks" target="gitlab"/>
+  <element xsi:type="archimate:AssociationRelationship" id="rel-oldcopy" source="oldHookCopy" target="repoGitHooks"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-deploy-hooks" source="hooksDeploy" target="ccHooks"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel-cli-hub" source="sessionCLI" target="sessionHub"/>
+  <element xsi:type="archimate:ServingRelationship" id="rel-hooks-cli" source="ccHooks" target="sessionCLI"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-hooks-hub" source="ccHooks" target="sessionHub"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-cli-shadow" source="sessionCLI" target="shadowWS"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-hub-pool" source="sessionHub" target="submodulePool"/>
+  <element xsi:type="archimate:AssociationRelationship" id="rel-dev-hooks" source="developer" target="ccHooks"/>
+  <element xsi:type="archimate:TriggeringRelationship" id="rel-trigger" source="plateauV13" target="gapSession"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wpSession" target="gapSession"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-plat" source="wpSession" target="plateauV14"/>
+
+  <folder name="Views" id="f-views" type="diagrams">
+    <!-- 视图 1: 架构变迁 v13→v14 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v13→v14 — 多会话互知" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV13" archimateElement="plateauV13">
+        <bounds x="48" y="120" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v13-gap" source="do-plateauV13" target="do-gapSession" archimateRelationship="rel-trigger"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gapSession" archimateElement="gapSession" targetConnections="conn-v13-gap conn-wp-gap">
+        <bounds x="300" y="120" width="300" height="60"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wpSession" archimateElement="wpSession">
+        <bounds x="640" y="80" width="300" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wpSession" target="do-gapSession" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-v14" source="do-wpSession" target="do-plateauV14" archimateRelationship="rel-wp-plat"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV14" archimateElement="plateauV14" targetConnections="conn-wp-v14">
+        <bounds x="640" y="180" width="300" height="50"/>
+      </child>
+    </element>
+
+    <!-- 视图 2: 目标拓扑 v14 — Session Hub 部署流 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="目标拓扑 v14 — Session Hub 多会话互知" id="view-topology">
+      <child xsi:type="archimate:DiagramObject" id="do-developer" archimateElement="developer">
+        <bounds x="40" y="60" width="140" height="40"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-dev-hooks" source="do-developer" target="do-ccHooks" archimateRelationship="rel-dev-hooks"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-ccHooks" archimateElement="ccHooks" targetConnections="conn-dev-hooks conn-deploy-hooks">
+        <bounds x="40" y="150" width="240" height="70"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-hooks-cli" source="do-ccHooks" target="do-sessionCLI" archimateRelationship="rel-hooks-cli"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-hooks-hub" source="do-ccHooks" target="do-sessionHub" archimateRelationship="rel-hooks-hub"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-hooksDeploy" archimateElement="hooksDeploy">
+        <bounds x="330" y="60" width="260" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-deploy-hooks" source="do-hooksDeploy" target="do-ccHooks" archimateRelationship="rel-deploy-hooks"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-sessionCLI" archimateElement="sessionCLI" targetConnections="conn-hooks-cli">
+        <bounds x="330" y="160" width="260" height="70"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cli-hub" source="do-sessionCLI" target="do-sessionHub" archimateRelationship="rel-cli-hub"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-cli-shadow" source="do-sessionCLI" target="do-shadowWS" archimateRelationship="rel-cli-shadow"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-sessionHub" archimateElement="sessionHub" targetConnections="conn-hooks-hub conn-cli-hub">
+        <bounds x="330" y="270" width="260" height="70"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-hub-pool" source="do-sessionHub" target="do-submodulePool" archimateRelationship="rel-hub-pool"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-shadowWS" archimateElement="shadowWS" targetConnections="conn-cli-shadow">
+        <bounds x="40" y="270" width="240" height="70"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-submodulePool" archimateElement="submodulePool" targetConnections="conn-hub-pool">
+        <bounds x="330" y="380" width="260" height="60"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

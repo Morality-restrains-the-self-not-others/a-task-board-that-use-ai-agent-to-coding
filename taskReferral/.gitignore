@@ -1,0 +1,15 @@
+# 构建产物（watchdog/本地 build 生成）
+bin/
+
+# 密钥类资产防护（OPT-20260824-060 全量子仓巡检）
+*.pem
+*.key
+*.p12
+*.jks
+.env*
+# Secret env files (meta gitignore parity — OPT-20260827-017)
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template

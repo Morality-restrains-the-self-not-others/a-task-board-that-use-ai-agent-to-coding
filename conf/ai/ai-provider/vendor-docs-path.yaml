@@ -1,0 +1,2 @@
+keyPrefix: 供应商证件照
+pathRule: '{keyPrefix}/{userId}/{kind}_{id}{ext}'

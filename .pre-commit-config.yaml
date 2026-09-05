@@ -1,0 +1,220 @@
+repos:
+  - repo: local
+    hooks:
+      - id: check-claude-skill-metadata
+        name: Claude skill SKILL.md metadata
+        entry: python3 db/scripts/ci/check_claude_skill_metadata.py
+        language: system
+        pass_filenames: false
+      - id: check-design-md
+        name: DESIGN.md visual SSOT + design-md skill
+        entry: python3 db/scripts/ci/check_design_md.py
+        language: system
+        pass_filenames: false
+      - id: check-task-chrome-plugin-user-guide
+        name: taskChromePlugin USER_GUIDE sync
+        entry: python3 db/scripts/ci/check_task_chrome_plugin_user_guide.py
+        language: system
+        pass_filenames: false
+      - id: check-task-detail-route-ids
+        name: task-detail resolveTaskRouteIds SSOT
+        entry: python3 db/scripts/ci/check_task_detail_route_ids.py
+        language: system
+        pass_filenames: false
+      - id: check-trace-id-fixtures
+        name: traceId case-insensitive fixtures
+        entry: python3 db/scripts/ci/check_trace_id_detection_fixtures.py
+        language: system
+        pass_filenames: false
+      - id: check-git-oauth-provider-consistency
+        name: git-oauth provider consistency
+        entry: python3 db/scripts/ci/check_git_oauth_provider_consistency.py
+        language: system
+        pass_filenames: false
+      - id: check-git-oauth-client-id-live
+        name: git-oauth client_id live GitHub Apps API (OPT-20260807-041a)
+        entry: python3 db/scripts/ci/check_git_oauth_client_id_live.py --all
+        language: system
+        pass_filenames: false
+        stages: [manual]
+      - id: check-frontend-error-data-trace-id
+        name: frontend error data-traceId (optional scan)
+        entry: python3 db/scripts/ci/check_frontend_error_data_trace_id.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: check-fe-url-placeholder
+        name: FE URL template placeholder remnants (OPT-20260807-032)
+        entry: python3 db/scripts/ci/check_fe_url_placeholder.py
+        language: system
+        pass_filenames: false
+      - id: check-fe-url-trailing-slash
+        name: FE URL trailing slash vs backend HasSuffix (OPT-20260807-036)
+        entry: python3 db/scripts/ci/check_fe_url_trailing_slash.py
+        language: system
+        pass_filenames: false
+      - id: check-fe-url-vs-gateway-routes
+        name: FE URL prefix covered by gateway routes (OPT-20260807-037)
+        entry: python3 db/scripts/ci/check_fe_url_vs_gateway_routes.py
+        language: system
+        pass_filenames: false
+      - id: check-service-url-api-catalog
+        name: service URL/API catalog generated files up to date
+        entry: python3 db/scripts/ci/build_service_url_api_catalog.py --check
+        language: system
+        pass_filenames: false
+      - id: check-account-deletion-action-urls
+        name: account-deletion action_url hits registered Vue route (OPT-20260820-005)
+        entry: python3 db/scripts/ci/check_account_deletion_action_urls.py
+        language: system
+        pass_filenames: false
+      - id: check-vue-template-undefined-identifiers
+        name: Vue SFC template undefined identifiers (OPT-20260811-068)
+        entry: python3 db/scripts/ci/check_vue_template_undefined_identifiers.py
+        language: system
+        pass_filenames: false
+      - id: check-auth-region-api-members
+        name: auth region api members vs HandleFunc (OPT-20260811-032)
+        entry: python3 db/scripts/ci/check_auth_region_api_members.py
+        language: system
+        pass_filenames: false
+      - id: check-spa-static-assets
+        name: SPA static asset path gate (prevent /static/main-*.js 404)
+        entry: python3 db/scripts/ci/check_spa_static_assets.py
+        language: system
+        pass_filenames: false
+        stages: [manual]
+      - id: check-mysql-compat
+        name: SQLite→MySQL compatibility scan
+        entry: python3 dataMigrate/check_mysql_compat.py
+        language: system
+        pass_filenames: false
+      - id: check-go-build-integrity
+        name: Go build integrity (go mod tidy + go build)
+        entry: bash db/scripts/ci/check_go_build_integrity.sh
+        language: system
+        pass_filenames: false
+        stages: [manual]
+      - id: commit-random-unit-tests
+        name: commit random unit tests + 10% legacy debt fix
+        entry: python3 db/scripts/ci/run_commit_random_unit_tests.py
+        language: system
+        pass_filenames: false
+      - id: check-bug-fix-unit-tests
+        name: bug-fix commits must carry matching regression unit tests
+        entry: python3 db/scripts/ci/check_bug_fix_unit_tests.py
+        language: system
+        pass_filenames: false
+        # commit-msg 是唯一可靠检测点：pre-commit 阶段 COMMIT_EDITMSG 可能是
+        # 上次成功提交的陈旧内容，读它会误拦截（细则 41_bug_fix_unit_test_required.md）。
+        # 需 pre-commit install --hook-type commit-msg 安装 commit-msg 阶段。
+        stages: [commit-msg]
+      - id: check-auto-commit-selftest
+        name: auto-commit.sh self-test in scratch repos (OPT-20260810-018)
+        entry: bash scripts/lib/auto-commit_selftest.sh
+        language: system
+        pass_filenames: false
+        # 预期耗时 ~7s（scratch repo 自测）；临时目录用 mktemp 创建并 rm -rf 自清理，不污染工作区。
+      - id: check-trae-agent-docker-push-selftest
+        name: trae-agent-docker-push selftest in scratch repos (OPT-20260812-003)
+        entry: bash scripts/lib/trae-agent-docker-push_selftest.sh
+        language: system
+        pass_filenames: false
+        # 仅在改动相关脚本时触发；DRY_RUN 自测不触达 docker/registry，临时目录 mktemp 自清理。
+        files: ^scripts/lib/(trae-agent-docker-push.*\.sh|auto-commit\.sh)$
+      - id: check-no-service-internal-poll-loop
+        name: no business-service internal ticker/poll loop (ADR-0011)
+        entry: python3 db/scripts/ci/check_no_service_internal_poll_loop.py
+        language: system
+        pass_filenames: false
+      - id: check-event-consumer-idempotency
+        name: Kafka consumers must use idempotent dispatch (ADR-0015)
+        entry: python3 db/scripts/ci/check_event_consumer_idempotency.py
+        language: system
+        pass_filenames: false
+      - id: check-gitlab-sso-only-no-self-signup
+        name: GitLab SSO-only, no self-signup (ADR-0016)
+        entry: python3 db/scripts/ci/check_gitlab_sso_only_no_self_signup.py
+        language: system
+        pass_filenames: false
+      - id: check-wechatpay-go-sdk
+        name: WeChat Pay must use sdk/wechatpay-go (ADR-0032)
+        entry: python3 db/scripts/ci/check_wechatpay_go_sdk.py
+        language: system
+        pass_filenames: false
+      - id: check-no-hardcoded-secrets
+        name: no hardcoded secrets in first-party source (ADR-0046)
+        entry: python3 db/scripts/ci/check_no_hardcoded_secrets.py
+        language: system
+        pass_filenames: false
+      - id: check-conf-local-secrets
+        name: tracked conf YAML must not contain secret values (ADR-0054)
+        entry: python3 db/scripts/ci/check_conf_local_secrets.py
+        language: system
+        pass_filenames: false
+      - id: check-conf-tracked-allowlist
+        name: conf.git tracked files match config allowlist
+        entry: python3 db/scripts/ci/check_conf_tracked_allowlist.py
+        language: system
+        pass_filenames: false
+      - id: check-conf-local-overlay
+        name: process conf loaders must overlay conf-local (constraint 59)
+        entry: python3 db/scripts/ci/check_conf_local_overlay.py
+        language: system
+        pass_filenames: false
+      - id: check-archimate-full-inherits-views
+        name: .full.archimate must inherit prior Views (not slice≈diff)
+        entry: python3 db/scripts/ci/check_archimate_full_inherits_views.py
+        language: system
+        pass_filenames: false
+        files: '^docs/architecture/.*\.(full\.archimate|diff\.archimate)$'
+      - id: check-conf-sync
+        name: conf/ matches conf-sync-all output (worktree-clean, OPT-20260901-024)
+        entry: bash db/scripts/ci/check_conf_sync.sh
+        language: system
+        pass_filenames: false
+      - id: check-no-prod-conf-in-source
+        name: no production conf overlays in source (ADR-0052)
+        entry: python3 db/scripts/ci/check_no_prod_conf_in_source.py
+        language: system
+        pass_filenames: false
+      - id: check-copyright-ssot
+        name: first-party README copyright line SSOT (OPT-20260824-013)
+        entry: python3 db/scripts/ci/check_copyright_ssot.py
+        language: system
+        pass_filenames: false
+      - id: check-deployment-doc-paths
+        name: manual-full-deployment.md referenced paths exist (OPT-20260824-018)
+        entry: python3 db/scripts/ci/check_deployment_doc_paths.py
+        language: system
+        pass_filenames: false
+      - id: check-frontend-button-anti-replay
+        name: frontend button anti-replay artifacts (ADR-0020)
+        entry: python3 db/scripts/ci/check_frontend_button_anti_replay.py
+        language: system
+        pass_filenames: false
+      - id: check-logic-rollback-approval
+        name: logic rollback requires Logic-Rollback-OK (ADR-0021)
+        entry: python3 db/scripts/ci/check_logic_rollback_approval.py
+        language: system
+        pass_filenames: false
+        # commit-msg 才能读到最终 message 中的 Logic-Rollback-OK；
+        # 与 check-bug-fix-unit-tests 相同，需 hook-type commit-msg。
+        stages: [commit-msg]
+      - id: check-task-events-runall-health-ports
+        name: task-events runAll health ports match domain-events SSOT
+        entry: python3 db/scripts/ci/check_task_events_runall_health_ports.py
+        language: system
+        pass_filenames: false
+      - id: check-fe-relative-imports
+        name: taskFE relative import resolvability (OPT-20260811-089)
+        entry: python3 db/scripts/ci/check_fe_relative_imports.py
+        language: system
+        pass_filenames: false
+        # 静态校验 taskFE/app/src 相对导入均可解析（~1s），拦截 v75 漏提交模块致公网白屏一类回归。
+        # 每次提交都跑：子仓 gitlink 变更无法用 files: 精确匹配，且扫描开销可忽略。
+      - id: check-run-sh-start-no-implicit-build
+        name: run.sh start 分支不得隐式编译 (ADR-0027, OPT-20260822-008)
+        entry: python3 db/scripts/ci/check_run_sh_start_no_implicit_build.py
+        language: system
+        pass_filenames: false

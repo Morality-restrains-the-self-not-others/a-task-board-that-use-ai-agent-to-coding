@@ -1,0 +1,7 @@
+intents:
+  1_expire:
+    host: 0.0.0.0
+    port: 18066
+    groupId: task-events-referral-code-expiry-scan-1-expire
+    events:
+    - REFERRAL_CODE_EXPIRY_SCAN

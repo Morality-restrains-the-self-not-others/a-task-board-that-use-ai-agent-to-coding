@@ -1,0 +1,30 @@
+# Mac-only overlay: run with desktop-linux context on Mac to ship logs to remote Loki.
+# On Linux, promtail is integrated into the main docker-compose.yaml and starts automatically.
+#   bash scripts/runall-local-promtail.sh up
+services:
+  promtail:
+    image: grafana/promtail:3.4.2
+    container_name: aimonitor-promtail-local
+    command:
+      - -config.file=/etc/promtail/promtail-local.yaml
+      - -config.expand-env=true
+    environment:
+      LOKI_PUSH_URL: ${LOKI_PUSH_URL:?set LOKI_PUSH_URL e.g. http://10.2.150.119:3100/loki/api/v1/push}
+    volumes:
+      - ./promtail/promtail-local.yaml:/etc/promtail/promtail-local.yaml:ro
+      - ${RUNALL_LOG_ROOT:-../logs}:/var/log/runall:ro
+      - ${APISIX_LOG_ROOT:-../taskGateway/logs}:/var/log/apisix:ro
+      - promtail_local_data:/var/lib/promtail
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - aimonitor
+    restart: "no"
+
+networks:
+  aimonitor:
+    external: true
+    name: aimonitor_aimonitor
+
+volumes:
+  promtail_local_data:

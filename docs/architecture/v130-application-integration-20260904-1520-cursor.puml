@@ -1,0 +1,56 @@
+' @title: GitLab 同步来源选自已购买区域
+' @view: application-integration
+' @status: current
+' @version: 130
+' @iteration: gitlab-sync-purchased-region-select
+' @author: cursor
+' @based_on: v129 (v129-application-integration-20260903-0040-cursor.puml)
+' @updated: 2026-09-04 15:30
+' @description: 同步模态先拉 taskBill 已购 GitLab 列表，选中后再带 gitlab_host 调 remote-repos
+
+@startuml
+!include <archimate/Archimate>
+
+title GitLab 同步 — 已购区域选择 v130 Target (2026-09-04 15:20)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v130 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v130 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(fe, "taskFE Projects / GitlabSyncModal")
+note top of fe
+  [MODIFIED v130] openModal:
+  1) GET gitlab-resources
+  2) 用户选区域
+  3) GET gitlab-remote-repos?gitlab_host=
+  @author: cursor @2026-09-04 15:20
+end note
+
+Application_Component(bill, "taskBill")
+Application_Component(proj, "taskProjectService")
+Application_Component(oauth, "taskGitOauth")
+Application_Component(gl, "租户已购 GitLab 实例")
+
+Data_Object(res, "billing_tenant_gitlab_resource")
+note right of res
+  [NEW v130 消费面]
+  resources[].gitlab_web_url
+end note
+
+Rel_Flow(fe, bill, "🟡 GET /tenant/{tid}/billing/gitlab-resources/")
+Rel_Access_Read(bill, res, "list summaries")
+Rel_Flow(fe, proj, "🟡 GET gitlab-remote-repos?gitlab_host=")
+Rel_Flow(proj, oauth, "access-for-user by host")
+Rel_Flow(proj, gl, "API v4 projects membership")
+
+Implementation_Plateau(p129, "Plateau v129")
+Implementation_Plateau(p130, "Plateau v130")
+Implementation_Gap(gap, "Gap: 默认证默认 GitLab 站")
+Implementation_WorkPackage(wp, "WP-gitlab-sync-purchased-region-select")
+Rel_Triggering(p129, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p130, "delivers")
+
+@enduml

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v90 全量 (post-change)" id="id-v90elfull01">
+  <folder name="Business" id="id-v90elf-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v90elf-vendor" name="镜像厂商"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v90elf-publish" name="登记容器镜像"/>
+  </folder>
+  <folder name="Application" id="id-v90elf-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v90elf-aip" name="taskAiProvider [MODIFIED v90]"/>
+    <element xsi:type="archimate:DataObject" id="id-v90elf-img" name="vendorcontainerimage + skill version [MODIFIED v90]"/>
+  </folder>
+  <folder name="Motivation" id="id-v90elf-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" id="id-v90elf-c1" name="镜像必须声明已发布契约版本"/>
+    <element xsi:type="archimate:Principle" id="id-v90elf-p1" name="单活 HTTP 面；版本是标签不是 URL 分叉"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v90elf-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v90elf-pl88" name="Plateau v88"/>
+    <element xsi:type="archimate:Plateau" id="id-v90elf-pl90" name="Plateau v90"/>
+    <element xsi:type="archimate:Gap" id="id-v90elf-gap" name="Gap: skill 无版本"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v90elf-wp" name="WP-saas-inbound-skill-version"/>
+  </folder>
+  <folder name="Relations" id="id-v90elf-rel" type="relations">
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v90elf-rel-v-p" source="id-v90elf-vendor" target="id-v90elf-publish" name="添加镜像版本"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v90elf-rel-p-aip" source="id-v90elf-publish" target="id-v90elf-aip" name="saas_inbound_skill_version"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v90elf-rel-aip-img" source="id-v90elf-aip" target="id-v90elf-img" name="W"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v90elf-rel-img-c" source="id-v90elf-img" target="id-v90elf-c1"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v90elf-rel-aip-p" source="id-v90elf-aip" target="id-v90elf-p1"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v90elf-rel-pl88-gap" source="id-v90elf-pl88" target="id-v90elf-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v90elf-rel-wp-gap" source="id-v90elf-wp" target="id-v90elf-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v90elf-rel-wp-pl90" source="id-v90elf-wp" target="id-v90elf-pl90"/>
+  </folder>
+  <folder name="Views" id="id-v90elf-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v90elf-view-topo" name="v90 全量拓扑 — saas-inbound-skill-version">
+      <child xsi:type="archimate:DiagramObject" id="id-v90elf-d-vendor" archimateElement="id-v90elf-vendor">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v90elf-c-v-p" source="id-v90elf-d-vendor" target="id-v90elf-d-pub" archimateRelationship="id-v90elf-rel-v-p"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v90elf-d-pub" targetConnections="id-v90elf-c-v-p" archimateElement="id-v90elf-publish">
+        <bounds x="240" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v90elf-c-p-aip" source="id-v90elf-d-pub" target="id-v90elf-d-aip" archimateRelationship="id-v90elf-rel-p-aip"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v90elf-d-aip" targetConnections="id-v90elf-c-p-aip" archimateElement="id-v90elf-aip">
+        <bounds x="460" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v90elf-c-aip-img" source="id-v90elf-d-aip" target="id-v90elf-d-img" archimateRelationship="id-v90elf-rel-aip-img"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v90elf-c-aip-p1" source="id-v90elf-d-aip" target="id-v90elf-d-p1" archimateRelationship="id-v90elf-rel-aip-p"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v90elf-d-img" targetConnections="id-v90elf-c-aip-img" archimateElement="id-v90elf-img">
+        <bounds x="460" y="140" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v90elf-c-img-c" source="id-v90elf-d-img" target="id-v90elf-d-c1" archimateRelationship="id-v90elf-rel-img-c"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v90elf-d-c1" targetConnections="id-v90elf-c-img-c" archimateElement="id-v90elf-c1">
+        <bounds x="48" y="140" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v90elf-d-p1" targetConnections="id-v90elf-c-aip-p1" archimateElement="id-v90elf-p1">
+        <bounds x="48" y="220" width="360" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v90elf-view-mig" name="架构变迁 v88→v90 — saas-inbound-skill-version">
+      <child xsi:type="archimate:DiagramObject" id="id-v90elf-d-pl88" archimateElement="id-v90elf-pl88">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v90elf-c-pl88-gap" source="id-v90elf-d-pl88" target="id-v90elf-d-gap" archimateRelationship="id-v90elf-rel-pl88-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v90elf-d-gap" targetConnections="id-v90elf-c-pl88-gap id-v90elf-c-wp-gap" archimateElement="id-v90elf-gap">
+        <bounds x="240" y="48" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v90elf-d-wp" archimateElement="id-v90elf-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v90elf-c-wp-gap" source="id-v90elf-d-wp" target="id-v90elf-d-gap" archimateRelationship="id-v90elf-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v90elf-c-wp-pl90" source="id-v90elf-d-wp" target="id-v90elf-d-pl90" archimateRelationship="id-v90elf-rel-wp-pl90"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v90elf-d-pl90" targetConnections="id-v90elf-c-wp-pl90" archimateElement="id-v90elf-pl90">
+        <bounds x="560" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

@@ -1,0 +1,5 @@
+version: "1"
+fragments:
+  - from: ../../infra/docker-infra/config.yaml
+    to: docker-infra.yaml
+    pick: [redis, kafka]

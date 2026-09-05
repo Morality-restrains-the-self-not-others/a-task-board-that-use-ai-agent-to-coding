@@ -1,0 +1,26 @@
+# TaskDetail.start-vm-auto-routing.playwright.test.js
+
+## 测试目标
+
+任务详情页点击「启动服务器」触发 `POST .../cloud/compute/start-vm-auto/` 时，网关经 taskCloudService 代理至 Django，不得再返回 501 `compute action not yet ported`。
+
+## 关键业务断言
+
+- 登录后经网关直调 start-vm-auto：HTTP 状态非 501，body 不含路由缺失文案
+- UI 点击「启动服务器」：监听 start-vm-auto 响应，不得 501 / not yet ported
+
+## 典型破坏信号
+
+- taskCloudService `compute_handlers.go` 未将 start-vm-auto 列入 Django 代理白名单
+- Django internal API 未配置导致 502（可接受，但非 501）
+
+## 回归验证
+
+```bash
+PLAYWRIGHT_SITE_ORIGIN=http://183.250.1.132:4000 \
+PLAYWRIGHT_GATEWAY_ORIGIN=http://183.250.1.132:18081 \
+npx playwright test tests/TaskDetail.start-vm-auto-routing.playwright.test.js \
+  --config=playwright.config.chromium.js
+```
+
+业务/云厂商失败（400/500/502 等）不计入路由断言；仅拦截 501 路由未实现。

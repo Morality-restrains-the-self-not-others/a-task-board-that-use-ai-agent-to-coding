@@ -1,0 +1,45 @@
+@startuml
+title 导航栏多账号切换 — 价值流测试点
+
+|普通用户|
+start
+:已登录账号 A;
+:单击导航栏昵称展开下拉;
+note right
+  **TP-T6** 单击开 / 双击关
+end note
+:选择账号 B;
+:POST /api/accounts/users/activate-session/;
+note right
+  **TP-T3/T4/T5** Go 校验 Token
+end note
+if (Token 有效?) then (是)
+  :写入 userId + authToken;
+  :清除 sessionid;
+  note right
+    **TP-T12** 旧 Session 不得残留
+  end note
+  if (当前在 /tenant/?) then (是)
+    :跳转 /user/B/profile/;
+    note right
+      **TP-T10** 离开租户 URL / strip workspace_id
+    end note
+  else (否)
+    :替换 /user/{id}/ 后整页刷新;
+  endif
+  note right
+    **TP-T7** 激活凭据更新
+    **TP-T13** Token>Session
+    **TP-T14** me() path 校验
+  end note
+else (否)
+  :从槽移除 / 提示重新登录;
+  stop
+endif
+:添加账号 → 登录页 add_account=1;
+note right
+  **TP-T8/T9** upsert 槽且不丢旧槽
+end note
+stop
+
+@enduml

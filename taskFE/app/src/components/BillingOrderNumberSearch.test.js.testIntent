@@ -1,0 +1,17 @@
+# BillingOrderNumberSearch.test.js 测试意图
+
+## 测试范围
+租户订单列表单号查询子组件：空输入不 emit；交易单号/商户单号规范化后 emit `search`。
+
+## 关键业务断言
+- 空输入提示「请输入交易单号或商户单号」且不发 search
+- 交易单号 trim 后 emit
+- 商户单号剥离反引号后 emit
+- 两项都填以交易单号为准
+- 清空 emit clear
+
+## 破坏信号
+空输入仍 emit，或两项都填却发出商户单号。
+
+## 回归验证
+在 vitest 环境下运行本文件。

@@ -1,0 +1,48 @@
+' @title: 测试角色与 GitLab 区域访问模式（企业景观）
+' @view: enterprise-landscape
+' @status: target
+' @version: 105
+' @iteration: tester-role-gitlab-region-access-mode
+' @author: cursor
+' @based_on: v104 (v104-enterprise-landscape-20260823-1400-cursor.puml)
+' @updated: 2026-08-23 20:56
+' @description: 超管设置测试角色与区域模式；测试租户使用开发区；普通租户仅发布区
+
+@startuml
+!include <archimate/Archimate>
+
+title v105 landscape — tester + gitlab access_mode 2026-08-23 20:56
+
+Business_Actor(admin, "平台管理员")
+Business_Actor(tester, "测试角色账号 🟢")
+Business_Actor(tenant, "普通租户")
+Business_Service(setRole, "设置测试角色 🟢")
+Business_Service(setMode, "设置区域开发/发布模式 🟢")
+Business_Service(useDev, "使用开发模式 GitLab 区域 🟢")
+Business_Service(useRel, "使用发布模式 GitLab 区域")
+
+Application_Component(taskFE, "taskFE")
+Application_Component(auth, "taskAuth")
+Application_Component(bill, "taskBill")
+
+Rel_Assignment(admin, setRole)
+Rel_Assignment(admin, setMode)
+Rel_Assignment(tester, useDev)
+Rel_Assignment(tester, useRel)
+Rel_Assignment(tenant, useRel)
+Rel_Serving(taskFE, setRole)
+Rel_Serving(taskFE, setMode)
+Rel_Serving(auth, setRole)
+Rel_Serving(bill, setMode)
+Rel_Serving(bill, useDev)
+Rel_Serving(bill, useRel)
+
+Implementation_Plateau(p104, "v104")
+Implementation_Plateau(p105, "v105")
+Implementation_Gap(g, "无法把预发 GitLab 只开给测试账号")
+Implementation_WorkPackage(wp, "WP-tester-gitlab-access-mode")
+Rel_Triggering(p104, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p105, "delivers")
+
+@enduml

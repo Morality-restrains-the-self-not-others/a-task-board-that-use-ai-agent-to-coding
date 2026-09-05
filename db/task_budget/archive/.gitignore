@@ -1,0 +1,4 @@
+# Local dumps from archive_saas_legacy_usage.sh — do not commit
+*.sql
+*.csv
+!README.md

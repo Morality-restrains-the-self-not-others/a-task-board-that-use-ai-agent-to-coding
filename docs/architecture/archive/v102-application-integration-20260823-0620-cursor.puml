@@ -1,0 +1,54 @@
+' @title: 管理员模拟用户登录
+' @view: application-integration
+' @status: archived
+' @version: 102
+' @iteration: admin-user-impersonation
+' @author: cursor
+' @based_on: v101 (v101-application-integration-20260823-0210-cursor.puml)
+' @updated: 2026-08-23 06:50
+' @description: taskAuth 独立模拟会话；taskFE 编辑页按钮与退出横幅；Kafka 审计事件
+
+@startuml
+!include <archimate/Archimate>
+
+title v102 — admin user impersonation 2026-08-23 06:20
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  编辑用户按钮 + Navbar 模拟横幅
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(taskAuth, "taskAuth")
+note right of taskAuth
+  impersonate/stop/status
+  forward-auth 解析模拟 token
+end note
+
+Application_DataObject(impTable, "auth_impersonation_session")
+note right of impTable
+  独立模拟会话
+end note
+
+Application_Event(evStart, "UserImpersonationStarted")
+Application_Event(evStop, "UserImpersonationStopped")
+
+Technology_Node(kafka, "Kafka")
+
+Rel_Flow(taskFE, gw, "POST impersonate / stop")
+Rel_Flow(gw, taskAuth, "token + forward-auth")
+Rel_Access_w(taskAuth, impTable, "write session")
+Rel_Flow(taskAuth, evStart, "publish")
+Rel_Flow(taskAuth, evStop, "publish")
+Rel_Flow(evStart, kafka, "user-impersonation-started")
+Rel_Flow(evStop, kafka, "user-impersonation-stopped")
+
+Implementation_Plateau(plateauV101, "Plateau v101")
+Implementation_Plateau(plateauV102, "Plateau v102 impersonation")
+Implementation_Gap(gapQ, "Gap: user:impersonate 无执行点")
+Implementation_WorkPackage(wpQ, "WP-admin-user-impersonation")
+Rel_Triggering(plateauV101, gapQ, "identifies")
+Rel_Realization(wpQ, gapQ, "closes")
+Rel_Realization(wpQ, plateauV102, "delivers")
+
+@enduml

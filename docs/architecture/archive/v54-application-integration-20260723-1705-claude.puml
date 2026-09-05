@@ -1,0 +1,40 @@
+@startuml
+' @title: Application Integration — Comment Multi-CSC Parallel
+' @view: application-integration
+' @status: current
+' @version: v54
+' @author: claude
+' @based_on: v53
+' @updated: 2026-07-23 17:05
+' @description: OPT-019 评论级多 CSC；索引 workspace_id+task_id；UNIQUE(workspace,task,comment)
+
+!include <archimate/Archimate>
+
+title v54 Application Integration — Comment Multi-CSC Parallel
+
+rectangle "Plateau v53 (before)" as P53 #LightGray {
+  Application_Component(CCB53, "comment_container_bindings")
+  Application_DataObject(CSC53, "cloud_server_configs\nUNIQUE(company,task)")
+}
+
+Motivation_Gap(GapMulti, "Gap: independent 无法并行挂不同机器")
+
+rectangle "Plateau v54 (target)" as P54 #LightGreen {
+  Application_Component(CCB, "comment_container_bindings")
+  Application_Function(ENS, "ensureCommentCloudServerConfig")
+  Application_DataObject(CSC, "cloud_server_configs\nidx(workspace,task)\nUNIQUE(workspace,task,comment)")
+  Application_Component(MOCK, "go_run_container")
+  Application_Component(FE, "TaskDetailCommentsSection")
+}
+
+Motivation_WorkPackage(WP019, "WP: OPT-20260723-019")
+
+Rel_Triggering(P53, GapMulti)
+Rel_Realization(WP019, GapMulti)
+Rel_Realization(WP019, P54)
+Rel_Flow(CCB, ENS)
+Rel_Access_w(ENS, CSC)
+Rel_Flow(CCB, MOCK)
+Rel_Serving(FE, CCB)
+
+@enduml

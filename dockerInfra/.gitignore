@@ -1,0 +1,16 @@
+/bin/
+__pycache__/
+*.pyc
+
+# Host Redis reuse marker written by redis/run.sh (local machine only)
+redis/.reuse_host_redis
+# macOS Finder
+.DS_Store
+._.DS_Store
+._*
+# Secret env files (meta gitignore parity — OPT-20260827-017)
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template

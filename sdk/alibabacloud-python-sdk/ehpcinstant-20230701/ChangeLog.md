@@ -1,0 +1,186 @@
+2026-02-11 Version: 3.5.3
+- Update API CreateJob: add request parameters Tasks.$.TaskSpec.TaskExecutor.$.Container.ImageRegistryOptions.
+
+
+2026-01-30 Version: 3.5.2
+- Generated python 2023-07-01 for EhpcInstant.
+
+2026-01-22 Version: 3.5.0
+- Support API DescribeJobResults.
+
+
+2026-01-13 Version: 3.4.1
+- Update API CreateActionPlan: add request parameters IntervalMinutes.
+- Update API GetActionPlan: add response parameters Body.IntervalMinutes.
+- Update API UpdateActionPlan: add request parameters IntervalMinutes.
+
+
+2025-12-11 Version: 3.4.0
+- Support API ListExecutorEvents.
+
+
+2025-11-27 Version: 3.3.0
+- Support API DeleteJobRecords.
+- Update API ListExecutors: add request parameters Filter.VpcId.
+- Update API ListExecutors: add response parameters Body.Executors.$.VpcId.
+
+
+2025-09-28 Version: 3.2.1
+- Update API CreateJob: add request parameters Tasks.$.TaskSpec.Resource.EnableHT.
+- Update API CreateJob: add request parameters Tasks.$.TaskSpec.Resource.HostNamePrefix.
+- Update API GetJob: add response parameters Body.JobInfo.Tasks.$.TaskSpec.Resource.EnableHT.
+- Update API GetJob: add response parameters Body.JobInfo.Tasks.$.TaskSpec.Resource.HostNamePrefix.
+- Update API ListExecutors: add response parameters Body.Executors.$.AllocationSpec.
+- Update API ListJobExecutors: add response parameters Body.Executors.$.AllocationSpec.
+
+
+2025-08-21 Version: 3.2.0
+- Support API CreateActionPlan.
+- Support API DeleteActionPlan.
+- Support API GetActionPlan.
+- Support API ListActionPlanActivities.
+- Support API ListActionPlans.
+- Support API UpdateActionPlan.
+
+
+2025-08-11 Version: 3.1.0
+- Support API SynchronizeApp.
+
+
+2025-08-07 Version: 3.0.0
+- Update API GetJob: delete response parameters Body.JobInfo.Tasks.$.TaskSpec.TaskExecutor.$.VM.UserName.
+- Update API ListExecutors: add response parameters Body.Executors.$.Resource.InstanceType.
+- Update API ListJobExecutors: add response parameters Body.ExecutorStatus.Restarting.
+- Update API ListJobExecutors: add response parameters Body.ExecutorStatus.Suspended.
+
+
+2025-07-29 Version: 2.0.8
+- Update API CreateJob: add request parameters DependencyPolicy.
+- Update API CreateJob: add request parameters Tasks.$.TaskSpec.RetryPolicy.
+- Update API GetJob: add response parameters Body.JobInfo.DependencyPolicy.
+- Update API GetJob: add response parameters Body.JobInfo.Tasks.$.TaskSpec.RetryPolicy.
+
+
+2025-07-15 Version: 2.0.7
+- Update API ListExecutors: add response parameters Body.Executors.$.BlockDuration.
+- Update API ListExecutors: add response parameters Body.Executors.$.Preemptible.
+- Update API ListJobExecutors: add response parameters Body.Executors.$.BlockDuration.
+- Update API ListJobExecutors: add response parameters Body.Executors.$.Preemptible.
+
+
+2025-07-11 Version: 2.0.6
+- Update API ListExecutors: add request parameters Filter.Image.
+- Update API ListExecutors: add request parameters Filter.VswitchId.
+
+
+2025-07-04 Version: 2.0.5
+- Update API DeleteJobs: add request parameters JobScheduler.
+
+
+2025-07-03 Version: 2.0.4
+- Update API GetImage: add request parameters AdditionalRegionIds.
+- Update API GetImage: add response parameters Body.Image.AdditionalRegionsInfo.
+
+
+2025-06-12 Version: 2.0.3
+- Update API CreateJob: add request parameters DeploymentPolicy.Pool.
+- Update API CreateJob: add request parameters DeploymentPolicy.Priority.
+- Update API CreateJob: add request parameters Tasks.$.TaskSpec.Resource.InstanceTypes.
+- Update API CreateJob: add request parameters Tasks.$.TaskSpec.TaskExecutor.$.Container.Arg.
+- Update API CreateJob: add request parameters Tasks.$.TaskSpec.TaskExecutor.$.VM.Password.
+- Update API CreateJob: add request parameters Tasks.$.TaskSpec.VolumeMount.$.ReadOnly.
+- Update API GetJob: add response parameters Body.JobInfo.Tasks.$.TaskSpec.Resource.InstanceTypes.
+- Update API GetJob: add response parameters Body.JobInfo.Tasks.$.TaskSpec.TaskExecutor.$.VM.UserName.
+
+
+2025-05-09 Version: 2.0.2
+- Update API GetJob: add response parameters Body.JobInfo.AppExtraInfo.
+- Update API ListJobs: add response parameters Body.JobList.$.AppExtraInfo.
+
+
+2025-03-31 Version: 2.0.1
+- Update API CreateJob: add request parameters DeploymentPolicy.Level.
+- Update API GetJob: add response parameters Body.JobInfo.DeploymentPolicy.Level.
+- Update API GetJob: add response parameters Body.JobInfo.DeploymentPolicy.Network.EnableENIMapping.
+
+
+2025-02-12 Version: 2.0.0
+- Update API CreateJob: add param SecurityPolicy.
+- Update API ListExecutors: update param PageNumber.
+- Update API ListExecutors: update param PageSize.
+- Update API ListExecutors: update response param.
+- Update API ListJobExecutors: update param PageNumber.
+- Update API ListJobExecutors: update param PageSize.
+- Update API ListJobExecutors: update response param.
+- Update API ListJobs: update param PageNumber.
+- Update API ListJobs: update param PageSize.
+- Update API ListJobs: update response param.
+
+
+2024-12-20 Version: 1.2.0
+- Support API CreatePool.
+- Support API DeletePool.
+- Support API GetAppVersions.
+- Support API GetPool.
+- Support API ListPools.
+- Support API UpdatePool.
+- Update API CreateJob: update param Tasks.
+- Update API GetImage: update response param.
+- Update API ListImages: add param Mode.
+- Update API ListImages: update response param.
+
+
+2024-11-18 Version: 1.1.1
+- Update API ListImages: update response param.
+
+
+2024-11-13 Version: 1.1.0
+- Support API ListTagResources.
+- Support API TagResources.
+- Support API UnTagResources.
+- Update API AddImage: add param ImageType.
+- Update API CreateJob: update param DeploymentPolicy.
+- Update API GetJob: update response param.
+- Update API ListExecutors: update param Filter.
+- Update API ListExecutors: update response param.
+- Update API ListJobExecutors: update response param.
+- Update API ListJobs: update response param.
+- Update API RemoveImage: add param ImageType.
+
+
+2024-08-14 Version: 1.0.4
+- Update API ListExecutors: update response param.
+- Update API ListJobExecutors: update response param.
+
+
+2024-07-31 Version: 1.0.3
+- Update API CreateJob: add param JobScheduler.
+- Update API CreateJob: update param Tasks.
+- Update API CreateJob: update response param.
+- Update API GetImage: add param ImageCategory.
+- Update API GetImage: add param ImageType.
+- Update API GetImage: update response param.
+- Update API GetJob: update response param.
+- Update API ListImages: add param ImageCategory.
+- Update API ListImages: add param ImageType.
+- Update API ListImages: update response param.
+
+
+2024-05-15 Version: 1.0.2
+- Update API CreateJob: update param Tasks.
+- Update API CreateJob: update response param.
+- Update API GetImage: add param ImageCategory.
+- Update API GetImage: add param ImageType.
+- Update API GetImage: update response param.
+- Update API ListImages: add param ImageCategory.
+- Update API ListImages: add param ImageType.
+- Update API ListImages: update response param.
+
+
+2024-05-11 Version: 1.0.1
+- Update API CreateJob: update response param.
+
+
+2024-04-24 Version: 1.0.0
+- Generated python 2023-07-01 for EhpcInstant.
+

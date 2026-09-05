@@ -1,0 +1,15 @@
+# 已发布的容器 → SaaS inbound 契约版本目录（SSOT）
+# 镜像字段 saas_inbound_skill_version 必须是本文件 versions[].version 之一，且 status ≠ sunset。
+#
+# sunset 策略（OPT-20260820-027）：
+# - status=current / deprecated → 仍可写、可选用（写路径 ValidateSaasInboundSkillVersion 放行）
+# - status=sunset → 禁止新写/审批（提交与审批动作均拒绝）；已上架镜像若仍声明该版本，
+#   公开目录在过滤后不再展示，用户无法选用已下线实现；厂商编辑须改选仍支持的版本
+# - 发布新契约版本时：把旧版本 status 改为 sunset，新增新版本为 current（见 git 历史示例）
+current: "1"
+versions:
+  - version: "1"
+    status: current
+    released: "2026-08-16"
+    summary: "comment_id 必须出现在 path；禁止无 cid 的旧 TaskApiEndPoint"
+    doc: saas-machine-container.md

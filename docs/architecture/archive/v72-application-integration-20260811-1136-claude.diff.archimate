@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    name="application-integration v72 变迁 (v71→v72)"
+    id="model-v72-ai-20260811-1136-diff">
+  <folder name="Application" id="f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="taskFE [MODIFIED v72]" id="app-taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" name="APISIX Gateway" id="app-gateway"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskAuth PDP [MODIFIED v72]" id="app-taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="shareLib/authz [MODIFIED v72]" id="app-shareLib"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTenantService [MODIFIED v72]" id="app-tenant"/>
+    <element xsi:type="archimate:ApplicationComponent" name="业务 Go 服务 [MODIFIED v72]" id="app-biz"/>
+    <element xsi:type="archimate:DataObject" name="auth_resource_group [NEW v72]" id="data-rg"/>
+    <element xsi:type="archimate:DataObject" name="auth_resource_member [NEW v72]" id="data-rm"/>
+    <element xsi:type="archimate:DataObject" name="auth_role_resource_group [NEW v72]" id="data-rrg"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v71" id="plateauV71"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v72" id="plateauV72"/>
+    <element xsi:type="archimate:Gap" name="Gap: 页面≠资源组未建模；仅 FE 菜单隐藏可绕过；无 Region 级 Enforce" id="gapRG"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-rbac-logical-resource-group-v72" id="wpRG"/>
+  </folder>
+  <folder name="Relations" id="f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="rel-fe-gw" source="app-taskFE" target="app-gateway"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-auth" source="app-gateway" target="app-taskAuth"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-biz" source="app-gateway" target="app-biz"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-tenant" source="app-gateway" target="app-tenant"/>
+    <element xsi:type="archimate:ServingRelationship" id="rel-auth-share" source="app-taskAuth" target="app-shareLib"/>
+    <element xsi:type="archimate:ServingRelationship" id="rel-share-biz" source="app-shareLib" target="app-biz"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-auth-rg" source="app-taskAuth" target="data-rg"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-auth-rm" source="app-taskAuth" target="data-rm"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-auth-rrg" source="app-taskAuth" target="data-rrg"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-tenant-auth" source="app-tenant" target="app-taskAuth"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-p71-gap" source="plateauV71" target="gapRG"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wpRG" target="gapRG"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp-p72" source="wpRG" target="plateauV72"/>
+  </folder>
+  <folder name="Views" id="f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v71→v72 — logical-resource-group" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-p71" archimateElement="plateauV71">
+        <bounds x="48" y="120" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-p71-gap" source="do-p71" target="do-gap" archimateRelationship="rel-p71-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap" archimateElement="gapRG" targetConnections="conn-p71-gap conn-wp-gap">
+        <bounds x="260" y="100" width="360" height="80"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp" archimateElement="wpRG">
+        <bounds x="680" y="80" width="260" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wp" target="do-gap" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-p72" source="do-wp" target="do-p72" archimateRelationship="rel-wp-p72"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-p72" archimateElement="plateauV72" targetConnections="conn-wp-p72">
+        <bounds x="680" y="180" width="160" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v72 Target — Page⊃Region Enforce 数据流" id="view-target">
+      <child xsi:type="archimate:DiagramObject" id="do-fe" archimateElement="app-taskFE">
+        <bounds x="48" y="80" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-fe-gw" source="do-fe" target="do-gw" archimateRelationship="rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gw" archimateElement="app-gateway" targetConnections="conn-fe-gw">
+        <bounds x="240" y="80" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-auth" source="do-gw" target="do-auth" archimateRelationship="rel-gw-auth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-biz" source="do-gw" target="do-biz" archimateRelationship="rel-gw-biz"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-tenant" source="do-gw" target="do-tenant" archimateRelationship="rel-gw-tenant"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-auth" archimateElement="app-taskAuth" targetConnections="conn-gw-auth conn-tenant-auth">
+        <bounds x="440" y="40" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-share" source="do-auth" target="do-share" archimateRelationship="rel-auth-share"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-rg" source="do-auth" target="do-rg" archimateRelationship="rel-auth-rg"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-rm" source="do-auth" target="do-rm" archimateRelationship="rel-auth-rm"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-auth-rrg" source="do-auth" target="do-rrg" archimateRelationship="rel-auth-rrg"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-share" archimateElement="app-shareLib" targetConnections="conn-auth-share">
+        <bounds x="440" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-share-biz" source="do-share" target="do-biz" archimateRelationship="rel-share-biz"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-biz" archimateElement="app-biz" targetConnections="conn-gw-biz conn-share-biz">
+        <bounds x="680" y="100" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-tenant" archimateElement="app-tenant" targetConnections="conn-gw-tenant">
+        <bounds x="240" y="200" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tenant-auth" source="do-tenant" target="do-auth" archimateRelationship="rel-tenant-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-rg" archimateElement="data-rg" targetConnections="conn-auth-rg">
+        <bounds x="680" y="20" width="180" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-rm" archimateElement="data-rm" targetConnections="conn-auth-rm">
+        <bounds x="680" y="200" width="180" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-rrg" archimateElement="data-rrg" targetConnections="conn-auth-rrg">
+        <bounds x="680" y="260" width="180" height="45"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

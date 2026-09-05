@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v119 变迁 (v118→v119)" id="id-v119aidiff01">
+  <folder name="Application" id="id-v119ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v119-app-portal" name="厂商门户 Vue [MODIFIED v119]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v119-app-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v119-app-aip" name="taskAiProvider [MODIFIED v119]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v119-app-cloud" name="taskCloudService [MODIFIED v119]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v119-app-ev" name="taskEvents"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v119-app-fe" name="taskFE SPA"/>
+    <element xsi:type="archimate:DataObject" id="id-v119-data-img" name="vendorcontainerimage.image_url"/>
+    <element xsi:type="archimate:DataObject" id="id-v119-data-assoc" name="containercloudserverassociation"/>
+    <element xsi:type="archimate:DataObject" id="id-v119-data-replica" name="containerimage_registry_replica [NEW v119]"/>
+    <element xsi:type="archimate:DataObject" id="id-v119-data-installed" name="cloud_tenant_installed_images [MODIFIED v119]"/>
+  </folder>
+  <folder name="Business" id="id-v119ai-biz" type="business">
+    <element xsi:type="archimate:BusinessEvent" id="id-v119-ev-r" name="ContainerImageReplicasUpdated [NEW v119]"/>
+    <element xsi:type="archimate:BusinessEvent" id="id-v119-ev-s" name="CLOUD_SERVER_STARTED [MODIFIED v119]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v119ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v119-pl-v118" name="Plateau v118 单 URL"/>
+    <element xsi:type="archimate:Plateau" id="id-v119-pl-v119" name="Plateau v119 区域副本"/>
+    <element xsi:type="archimate:Gap" id="id-v119-gap" name="Gap: 启机跨区拉规范仓库"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v119-wp" name="WP-multi-region-image-replicas"/>
+  </folder>
+  <folder name="Relations" id="id-v119ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v119-rel-portal-gw" source="id-v119-app-portal" target="id-v119-app-gw" name="association + registry_public_url"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v119-rel-gw-aip" source="id-v119-app-gw" target="id-v119-app-aip" name="vendor API"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v119-rel-aip-img" source="id-v119-app-aip" target="id-v119-data-img" name="canonical URL"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v119-rel-aip-assoc" source="id-v119-app-aip" target="id-v119-data-assoc" name="CSI upsert"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v119-rel-aip-rep" source="id-v119-app-aip" target="id-v119-data-replica" name="replica upsert"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v119-rel-aip-evr" source="id-v119-app-aip" target="id-v119-ev-r" name="after replica write"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v119-rel-fe-gw" source="id-v119-app-fe" target="id-v119-app-gw" name="start-vm region_id"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v119-rel-gw-cloud" source="id-v119-app-gw" target="id-v119-app-cloud" name="start-vm"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v119-rel-cloud-inst" source="id-v119-app-cloud" target="id-v119-data-installed" name="snapshot + select pull"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v119-rel-aip-cloud" source="id-v119-app-aip" target="id-v119-app-cloud" name="catalog replica on install"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v119-rel-cloud-evs" source="id-v119-app-cloud" target="id-v119-ev-s" name="after region resolve"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v119-rel-cloud-ev" source="id-v119-app-cloud" target="id-v119-app-ev" name="publish Kafka"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v119-rel-pl-gap" source="id-v119-pl-v118" target="id-v119-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v119-rel-wp-gap" source="id-v119-wp" target="id-v119-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v119-rel-wp-pl" source="id-v119-wp" target="id-v119-pl-v119"/>
+  </folder>
+  <folder name="Views" id="id-v119ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v119-view-mig" name="架构变迁 v118→v119 — multi-region-image-registry-replicas">
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-pl118" archimateElement="id-v119-pl-v118">
+        <bounds x="48" y="48" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-pl-gap" source="id-v119-do-pl118" target="id-v119-do-gap" archimateRelationship="id-v119-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-gap" targetConnections="id-v119-c-pl-gap id-v119-c-wp-gap" archimateElement="id-v119-gap">
+        <bounds x="300" y="48" width="400" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-wp" archimateElement="id-v119-wp">
+        <bounds x="300" y="140" width="400" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-wp-gap" source="id-v119-do-wp" target="id-v119-do-gap" archimateRelationship="id-v119-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-wp-pl" source="id-v119-do-wp" target="id-v119-do-pl119" archimateRelationship="id-v119-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-pl119" targetConnections="id-v119-c-wp-pl" archimateElement="id-v119-pl-v119">
+        <bounds x="740" y="140" width="220" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v119-view-topo" name="v119 Target — 多区域镜像仓库副本">
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-portal" archimateElement="id-v119-app-portal">
+        <bounds x="48" y="48" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-portal-gw" source="id-v119-do-portal" target="id-v119-do-gw" archimateRelationship="id-v119-rel-portal-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-fe" archimateElement="id-v119-app-fe">
+        <bounds x="48" y="120" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-fe-gw" source="id-v119-do-fe" target="id-v119-do-gw" archimateRelationship="id-v119-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-gw" targetConnections="id-v119-c-portal-gw id-v119-c-fe-gw" archimateElement="id-v119-app-gw">
+        <bounds x="240" y="80" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-gw-aip" source="id-v119-do-gw" target="id-v119-do-aip" archimateRelationship="id-v119-rel-gw-aip"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-gw-cloud" source="id-v119-do-gw" target="id-v119-do-cloud" archimateRelationship="id-v119-rel-gw-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-aip" targetConnections="id-v119-c-gw-aip" archimateElement="id-v119-app-aip">
+        <bounds x="460" y="48" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-aip-img" source="id-v119-do-aip" target="id-v119-do-img" archimateRelationship="id-v119-rel-aip-img"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-aip-assoc" source="id-v119-do-aip" target="id-v119-do-assoc" archimateRelationship="id-v119-rel-aip-assoc"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-aip-rep" source="id-v119-do-aip" target="id-v119-do-rep" archimateRelationship="id-v119-rel-aip-rep"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-aip-evr" source="id-v119-do-aip" target="id-v119-do-evr" archimateRelationship="id-v119-rel-aip-evr"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-aip-cloud" source="id-v119-do-aip" target="id-v119-do-cloud" archimateRelationship="id-v119-rel-aip-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-cloud" targetConnections="id-v119-c-gw-cloud id-v119-c-aip-cloud" archimateElement="id-v119-app-cloud">
+        <bounds x="460" y="200" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-cloud-inst" source="id-v119-do-cloud" target="id-v119-do-inst" archimateRelationship="id-v119-rel-cloud-inst"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-cloud-evs" source="id-v119-do-cloud" target="id-v119-do-evs" archimateRelationship="id-v119-rel-cloud-evs"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-c-cloud-ev" source="id-v119-do-cloud" target="id-v119-do-ev" archimateRelationship="id-v119-rel-cloud-ev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-img" targetConnections="id-v119-c-aip-img" archimateElement="id-v119-data-img">
+        <bounds x="680" y="16" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-assoc" targetConnections="id-v119-c-aip-assoc" archimateElement="id-v119-data-assoc">
+        <bounds x="680" y="64" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-rep" targetConnections="id-v119-c-aip-rep" archimateElement="id-v119-data-replica">
+        <bounds x="680" y="112" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-evr" targetConnections="id-v119-c-aip-evr" archimateElement="id-v119-ev-r">
+        <bounds x="680" y="160" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-inst" targetConnections="id-v119-c-cloud-inst" archimateElement="id-v119-data-installed">
+        <bounds x="680" y="208" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-evs" targetConnections="id-v119-c-cloud-evs" archimateElement="id-v119-ev-s">
+        <bounds x="680" y="256" width="280" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-do-ev" targetConnections="id-v119-c-cloud-ev" archimateElement="id-v119-app-ev">
+        <bounds x="240" y="200" width="160" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

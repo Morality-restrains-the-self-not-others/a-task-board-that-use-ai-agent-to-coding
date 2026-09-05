@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>邀请加入 - SaaS平台</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #7241F2; color: white; padding: 10px 20px; border-radius: 5px 5px 0 0; }
+        .content { background-color: #fff; padding: 20px; border: 1px solid #ddd; border-top: none; }
+        .invitation-link { display: inline-block; background-color: #7241F2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 15px 0; }
+        .expire-note { color: #666; font-size: 14px; }
+        .footer { margin-top: 20px; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>SaaS平台邀请</h2>
+        </div>
+        <div class="content">
+            <p>尊敬的用户：</p>
+            <p>您收到了来自 <strong>{{.CompanyName}}</strong> 公司的邀请，邀请您加入他们的SaaS平台团队。</p>
+            <p>请点击以下按钮接受邀请：</p>
+            <p><a href="{{.InvitationURL}}" class="invitation-link">接受邀请</a></p>
+            <p class="expire-note">该链接将在 {{.ExpirationDays}} 天后失效。</p>
+            {{if .Message}}
+            <p><strong>邀请人留言：</strong></p>
+            <p>{{.Message}}</p>
+            {{end}}
+            <p>如果点击按钮无效，请复制以下链接到浏览器地址栏：</p>
+            <p>{{.InvitationURL}}</p>
+            <p>如果您没有收到此邀请，请忽略此邮件。</p>
+            <p>祝好！</p>
+            <p>SaaS平台团队</p>
+        </div>
+        <div class="footer">
+            <p>这是一封自动发送的邮件，请勿回复。</p>
+            {{if .UnsubscribeURL}}
+            <p><a href="{{.UnsubscribeURL}}" style="color:#666;">退订邮件邀请</a></p>
+            {{end}}
+        </div>
+    </div>
+</body>
+</html>

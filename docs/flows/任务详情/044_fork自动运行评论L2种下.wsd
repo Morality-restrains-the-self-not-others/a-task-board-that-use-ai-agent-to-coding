@@ -1,0 +1,24 @@
+@startuml
+title Fork 自动运行评论 Git OAuth L2 种下
+' 测试用户角色: 租户用户
+' T1 同用户源 L2 种下 / T2 他人不种 / T3 非 Fork 不种 / T7 snapshot 补种
+
+actor "操作者" as U
+participant "taskFE Fork" as FE
+participant "taskTaskService" as T
+database "task_comments" as C
+participant "taskCredentialService" as Cred
+
+U -> FE: 确认自动运行并派生
+FE -> T: POST todos auto_run + repo_identities\n(仅 git_identity_id)
+T -> T: prepareAutoRunRepoIdentities\nticket → 项目 L2 → 源评论 L2
+T -> C: INSERT 【自动运行】含 oauth_gitsite
+note right of T
+  COMMENT_GIT_OAUTH_GRANTED
+  via=fork_source_comment_l2_seed
+end note
+Cred -> T: GET container-snapshot?comment_id=
+T -> C: 若缺 L2 则同路径补种 UPDATE
+T --> Cred: identities 含 oauth_gitsite
+Cred --> U: 换票成功 / 不再 BINDING_MISSING
+@enduml

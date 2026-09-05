@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v83 全量 (post-change)" id="id-v83full01">
+  <folder name="Application" id="id-v83diff-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v83-app-fe" name="taskFE TaskDetail [MOD]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v83-app-task" name="taskTaskService [MOD]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v83-app-cloud" name="taskCloudService [MOD]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v83-app-events" name="taskEvents [MOD]"/>
+    <element xsi:type="archimate:DataObject" id="id-v83-do-json" name="task_comments.repo_identities_json [NEW]"/>
+    <element xsi:type="archimate:DataObject" id="id-v83-do-legacy" name="task_repo_identities [DEPRECATED write]"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v83-ev-mentioned" name="TASK_COMMENT_IMAGE_MENTIONED [MOD]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v83diff-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v83-pl-v81" name="Plateau v81"/>
+    <element xsi:type="archimate:Plateau" id="id-v83-pl-v83" name="Plateau v83"/>
+    <element xsi:type="archimate:Gap" id="id-v83-gap" name="Gap: run identity stored at task while container is comment-scoped"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v83-wp" name="WP: comment-level-repo-identity"/>
+  </folder>
+  <folder name="Relations" id="id-v83diff-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v83-rel-post" source="id-v83-app-fe" target="id-v83-app-task" name="POST comment + identities"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v83-rel-write" source="id-v83-app-task" target="id-v83-do-json" name="persist JSON"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v83-rel-pub" source="id-v83-app-task" target="id-v83-ev-mentioned" name="publish + identities"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v83-rel-con" source="id-v83-ev-mentioned" target="id-v83-app-events" name="consume"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v83-rel-start" source="id-v83-app-events" target="id-v83-app-cloud" name="start-vm with identities"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v83-rel-snap" source="id-v83-app-cloud" target="id-v83-app-task" name="snapshot?comment_id="/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v83-rel-pref" source="id-v83-app-task" target="id-v83-do-json" name="prefer comment"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v83-rel-fb" source="id-v83-app-task" target="id-v83-do-legacy" name="fallback only"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v83-rel-pl81-gap" source="id-v83-pl-v81" target="id-v83-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v83-rel-wp-gap" source="id-v83-wp" target="id-v83-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v83-rel-wp-pl83" source="id-v83-wp" target="id-v83-pl-v83"/>
+  </folder>
+  <folder name="Views" id="id-v83diff-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v83-view-mig" name="架构变迁 v81→v83 — comment-level-repo-identity">
+      <child xsi:type="archimate:DiagramObject" id="id-v83-do-pl81" archimateElement="id-v83-pl-v81">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83-conn-pl81-gap" source="id-v83-do-pl81" target="id-v83-do-gap" archimateRelationship="id-v83-rel-pl81-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83-do-gap" targetConnections="id-v83-conn-pl81-gap id-v83-conn-wp-gap" archimateElement="id-v83-gap">
+        <bounds x="240" y="48" width="480" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83-do-wp" archimateElement="id-v83-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83-conn-wp-gap" source="id-v83-do-wp" target="id-v83-do-gap" archimateRelationship="id-v83-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83-conn-wp-pl83" source="id-v83-do-wp" target="id-v83-do-pl83" archimateRelationship="id-v83-rel-wp-pl83"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83-do-pl83" targetConnections="id-v83-conn-wp-pl83" archimateElement="id-v83-pl-v83">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v83-view-flow" name="v83 Target — comment repo identity">
+      <child xsi:type="archimate:DiagramObject" id="id-v83-d-fe" archimateElement="id-v83-app-fe">
+        <bounds x="48" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83-c-post" source="id-v83-d-fe" target="id-v83-d-task" archimateRelationship="id-v83-rel-post"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83-d-task" targetConnections="id-v83-c-post id-v83-c-snap" archimateElement="id-v83-app-task">
+        <bounds x="280" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83-c-write" source="id-v83-d-task" target="id-v83-d-json" archimateRelationship="id-v83-rel-write"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83-c-pub" source="id-v83-d-task" target="id-v83-d-evt" archimateRelationship="id-v83-rel-pub"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83-c-pref" source="id-v83-d-task" target="id-v83-d-json" archimateRelationship="id-v83-rel-pref"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83-c-fb" source="id-v83-d-task" target="id-v83-d-legacy" archimateRelationship="id-v83-rel-fb"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83-d-json" targetConnections="id-v83-c-write id-v83-c-pref" archimateElement="id-v83-do-json">
+        <bounds x="48" y="160" width="260" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83-d-legacy" targetConnections="id-v83-c-fb" archimateElement="id-v83-do-legacy">
+        <bounds x="330" y="160" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83-d-evt" targetConnections="id-v83-c-pub" archimateElement="id-v83-ev-mentioned">
+        <bounds x="520" y="48" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83-c-con" source="id-v83-d-evt" target="id-v83-d-events" archimateRelationship="id-v83-rel-con"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83-d-events" targetConnections="id-v83-c-con" archimateElement="id-v83-app-events">
+        <bounds x="520" y="160" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83-c-start" source="id-v83-d-events" target="id-v83-d-cloud" archimateRelationship="id-v83-rel-start"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v83-d-cloud" targetConnections="id-v83-c-start" archimateElement="id-v83-app-cloud">
+        <bounds x="720" y="160" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v83-c-snap" source="id-v83-d-cloud" target="id-v83-d-task" archimateRelationship="id-v83-rel-snap"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

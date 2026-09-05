@@ -1,0 +1,13 @@
+---
+description: Trae/Cursor 提示词总索引（正文在 .ai/project_rules.md）
+alwaysApply: false
+---
+
+# Trae 提示词索引（重定向）
+
+**权威正文**：[`.ai/project_rules.md`](../../.ai/project_rules.md)
+
+本 `.mdc` 仅为 Cursor 规则目录中的入口桩，避免与 `.ai/` 双份维护。修改规则请只编辑 `.ai/` 下专文与 `project_rules.md`。
+
+- 细则 SSOT：[`../../.ai/README.md`](../../.ai/README.md)
+- 加载器：[`ai-rules-loader.mdc`](./ai-rules-loader.mdc)

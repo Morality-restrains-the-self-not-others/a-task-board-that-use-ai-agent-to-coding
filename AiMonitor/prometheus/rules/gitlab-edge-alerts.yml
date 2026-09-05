@@ -1,0 +1,20 @@
+groups:
+  - name: gitlab-edge
+    interval: 30s
+    rules:
+      # 公网 gitlab.daydaymoney.com 入口断链告警（OPT-20260807-007）。
+      # 2026-08-07 该域名 502 持续数小时无告警；黑盒探活期望 302 → /users/sign_in。
+      - alert: GitlabEdgeDown
+        expr: probe_success{job="gitlab-public"} == 0
+        for: 3m
+        labels:
+          severity: critical
+          component: gitlab-edge
+          category: infrastructure
+        annotations:
+          summary: "gitlab.daydaymoney.com 入口不可达"
+          description: >
+            Blackbox 探活 https://gitlab.daydaymoney.com/ 已失败 3 分钟（期望 302 →
+            /users/sign_in）。2026-08-07 曾出现 502 持续数小时无告警。
+            检查边缘 nginx / 隧道 / 上游 gitService（gitlab 容器健康）。
+            复现：curl -sI https://gitlab.daydaymoney.com/

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v22-ai-20260714-0230">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v22 Target</name>
+  <purpose>WeChat Pay Native recharge on billing page; Go taskBill prepay/notify/credit; Django thin SMS orchestration</purpose>
+
+  <folder name="Application" id="id-v22-f-app" type="application"/>
+  <folder name="Technology" id="id-v22-f-tech" type="technology"/>
+  <folder name="Relations" id="id-v22-f-rel" type="relations"/>
+  <folder name="Implementation" id="id-v22-f-impl" type="implementation_migration"/>
+
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue BillingRecharge [MODIFIED v22]" id="id-v22-vue"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 Django billing_bridge [MODIFIED v22]" id="id-v22-django"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 taskBill :8004 [MODIFIED v22]" id="id-v22-bill"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟢 WeChatPay [NEW v22]" id="id-v22-wechat"/>
+
+  <element xsi:type="archimate:DataObject" name="wechat_recharge_pending" id="id-v22-pending"/>
+  <element xsi:type="archimate:DataObject" name="billing_transaction user_recharge_wechat" id="id-v22-txn"/>
+
+  <element xsi:type="archimate:FlowRelationship" id="id-v22-flow-vue-django" source="id-v22-vue" target="id-v22-django" name="recharge_wechat_create/status"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v22-flow-django-bill" source="id-v22-django" target="id-v22-bill" name="delegate prepay/status"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v22-flow-bill-wechat" source="id-v22-bill" target="id-v22-wechat" name="Native prepay API"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v22-flow-wechat-bill" source="id-v22-wechat" target="id-v22-bill" name="POST notify 验签解密"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v22-flow-wechat-django" source="id-v22-wechat" target="id-v22-django" name="notify 代理路径"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v22-flow-django-bill-notify" source="id-v22-django" target="id-v22-bill" name="notify raw forward"/>
+  <element xsi:type="archimate:AccessRelationship" id="id-v22-acc-bill-pending" source="id-v22-bill" target="id-v22-pending" name="RW pending order"/>
+  <element xsi:type="archimate:AccessRelationship" id="id-v22-acc-bill-txn" source="id-v22-bill" target="id-v22-txn" name="RW credit-recharge"/>
+
+  <element xsi:type="archimate:Plateau" name="Plateau v21 — cloud events/IAM on task_cloud" id="id-v22-plat-v21"/>
+  <element xsi:type="archimate:Plateau" name="🎯 Plateau v22 — WeChat Pay Native 充值" id="id-v22-plat-v22"/>
+  <element xsi:type="archimate:Gap" name="Gap: 充值页仅 PayPal；无微信 Native 扫码通道" id="id-v22-gap"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-v22-wechat-pay-recharge" id="id-v22-wp"/>
+  <element xsi:type="archimate:AssociationRelationship" id="id-v22-rel-plat21-gap" source="id-v22-plat-v21" target="id-v22-gap"/>
+  <element xsi:type="archimate:RealizationRelationship" id="id-v22-rel-wp-gap" source="id-v22-wp" target="id-v22-gap"/>
+  <element xsi:type="archimate:RealizationRelationship" id="id-v22-rel-wp-plat22" source="id-v22-wp" target="id-v22-plat-v22"/>
+  <element xsi:type="archimate:CompositionRelationship" id="id-v22-rel-plat22-bill" source="id-v22-plat-v22" target="id-v22-bill"/>
+
+  <folder name="Views" id="id-v22-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v21→v22 — WeChat Pay 充值" id="id-v22-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v22-do-plat21" archimateElement="id-v22-plat-v21">
+        <bounds x="48" y="120" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v22-conn-plat21-gap"
+          source="id-v22-do-plat21" target="id-v22-do-gap"
+          archimateRelationship="id-v22-rel-plat21-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v22-do-gap" archimateElement="id-v22-gap"
+        targetConnections="id-v22-conn-plat21-gap id-v22-conn-wp-gap">
+        <bounds x="420" y="120" width="380" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v22-do-wp" archimateElement="id-v22-wp">
+        <bounds x="860" y="80" width="300" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v22-conn-wp-gap"
+          source="id-v22-do-wp" target="id-v22-do-gap"
+          archimateRelationship="id-v22-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v22-conn-wp-plat22"
+          source="id-v22-do-wp" target="id-v22-do-plat22"
+          archimateRelationship="id-v22-rel-wp-plat22"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v22-do-plat22" archimateElement="id-v22-plat-v22"
+        targetConnections="id-v22-conn-wp-plat22">
+        <bounds x="860" y="180" width="300" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v22-conn-plat22-bill"
+          source="id-v22-do-plat22" target="id-v22-do-bill-m"
+          archimateRelationship="id-v22-rel-plat22-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v22-do-bill-m" archimateElement="id-v22-bill"
+        targetConnections="id-v22-conn-plat22-bill">
+        <bounds x="920" y="280" width="180" height="50"/>
+      </child>
+    </element>
+
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v22 Target — WeChat Pay 充值拓扑" id="id-v22-view-flow">
+      <child xsi:type="archimate:DiagramObject" id="id-v22-do-vue" archimateElement="id-v22-vue">
+        <bounds x="40" y="80" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v22-conn-vue-django"
+          source="id-v22-do-vue" target="id-v22-do-django"
+          archimateRelationship="id-v22-flow-vue-django"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v22-do-django" archimateElement="id-v22-django"
+        targetConnections="id-v22-conn-vue-django id-v22-conn-wechat-django id-v22-conn-django-bill-notify">
+        <bounds x="280" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v22-conn-django-bill"
+          source="id-v22-do-django" target="id-v22-do-bill"
+          archimateRelationship="id-v22-flow-django-bill"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v22-conn-django-bill-notify"
+          source="id-v22-do-django" target="id-v22-do-bill"
+          archimateRelationship="id-v22-flow-django-bill-notify"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v22-do-bill" archimateElement="id-v22-bill"
+        targetConnections="id-v22-conn-django-bill id-v22-conn-wechat-bill id-v22-conn-django-bill-notify">
+        <bounds x="540" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v22-conn-bill-wechat"
+          source="id-v22-do-bill" target="id-v22-do-wechat"
+          archimateRelationship="id-v22-flow-bill-wechat"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v22-conn-bill-pending"
+          source="id-v22-do-bill" target="id-v22-do-pending"
+          archimateRelationship="id-v22-acc-bill-pending"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v22-conn-bill-txn"
+          source="id-v22-do-bill" target="id-v22-do-txn"
+          archimateRelationship="id-v22-acc-bill-txn"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v22-do-wechat" archimateElement="id-v22-wechat"
+        targetConnections="id-v22-conn-bill-wechat id-v22-conn-wechat-bill id-v22-conn-wechat-django">
+        <bounds x="800" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v22-conn-wechat-bill"
+          source="id-v22-do-wechat" target="id-v22-do-bill"
+          archimateRelationship="id-v22-flow-wechat-bill"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v22-conn-wechat-django"
+          source="id-v22-do-wechat" target="id-v22-do-django"
+          archimateRelationship="id-v22-flow-wechat-django"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v22-do-pending" archimateElement="id-v22-pending"
+        targetConnections="id-v22-conn-bill-pending">
+        <bounds x="540" y="180" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v22-do-txn" archimateElement="id-v22-txn"
+        targetConnections="id-v22-conn-bill-txn">
+        <bounds x="540" y="260" width="240" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

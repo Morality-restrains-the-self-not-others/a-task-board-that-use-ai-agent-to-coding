@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v69-ai-20260809-2225">
+
+  <name xml:lang="en">v69 移除本机容器模拟启动（v68→v69 变迁）</name>
+  <purpose>🔴 mock_run_container (Flask :8796) / go_run_container (Go :8796) 本机 Docker 模拟运行器删除；🔴 taskContainerGateway mock-run-container 代理面 (start/stop/status/env-defaults) 删除；🔴 taskCloudService /api/internal/mock-run/* (env-defaults / resolve-image) 删除；🔴 taskFE「模拟启动」面板删除；🟡 comment_csc_bootstrap mock/空平台分支改为报错拦截；容器启动统一走云端机器 (start-vm → CLOUD_SERVER_STARTED → ECS)</purpose>
+
+  <folder name="Business" id="f-biz" type="business"/>
+  <folder name="Application" id="f-app" type="application"/>
+  <folder name="Technology" id="f-tech" type="technology"/>
+  <folder name="Implementation" id="f-impl" type="implementation_migration"/>
+  <folder name="Relations" id="f-rel" type="relations"/>
+
+  <!-- Application Layer — v69 变更组件 -->
+  <element xsi:type="archimate:ApplicationComponent" name="APISIX Gateway (:18081) [MODIFIED v69: mock-run-container 代理面 (start/stop/status/env-defaults) 删除]" id="gateway"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskCloudService (Go :8018) [MODIFIED v69: /api/internal/mock-run/* 删除 + comment_csc_bootstrap mock/空平台报错拦截 + reconcile/provision 移除 mock-run]" id="taskCloud"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskFE (Vue SPA) [MODIFIED v69: 「模拟启动」面板删除]" id="taskFE"/>
+
+  <!-- Application Layer — v69 废弃面 -->
+  <element xsi:type="archimate:ApplicationComponent" name="🔴 mock-run-container 代理面 (start/stop/status/env-defaults) [DEPRECATED v69: 删除]" id="mockRunProxy"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🔴 /api/internal/mock-run/* (env-defaults / resolve-image) [DEPRECATED v69: 删除]" id="mockRunInternalAPI"/>
+
+  <!-- Technology Layer — v69 废弃运行器 -->
+  <element xsi:type="archimate:Artifact" name="🔴 mock_run_container (Python Flask :8796) [DEPRECATED v69: 本机 Docker 模拟运行器 — 删除]" id="mockRunSidecar"/>
+  <element xsi:type="archimate:Artifact" name="🔴 go_run_container (Go :8796) [DEPRECATED v69: mock_run_container Go 重写 — 删除]" id="goRunSidecar"/>
+
+  <!-- Implementation & Migration — v69 架构变迁 -->
+  <element xsi:type="archimate:Plateau" name="Plateau v68 — 插件 OIDC 白名单管理 (2026-08-08)" id="plateauV68"/>
+  <element xsi:type="archimate:Plateau" name="Plateau v69 — 移除本机模拟启动 (2026-08-09)" id="plateauV69"/>
+  <element xsi:type="archimate:Gap" name="Gap: 本机容器模拟启动与云端启动双轨并存 → 启动行为不统一、本机 Docker 依赖" id="gapMock"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-remove-local-mock-start (P1 删除运行器+编排 → P2 gateway/cloud 删除转发 → P3 FE 面板删除 → P4 comment bootstrap 报错拦截 → P5 测试清理+验证)" id="wpMock"/>
+
+  <!-- Relationships -->
+  <element xsi:type="archimate:FlowRelationship" id="rel-fe-sidecar" source="taskFE" target="mockRunSidecar"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-gw-proxy" source="gateway" target="mockRunProxy"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-proxy-sidecar" source="mockRunProxy" target="mockRunSidecar"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-proxy-internal" source="mockRunProxy" target="mockRunInternalAPI"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-internal-cloud" source="mockRunInternalAPI" target="taskCloud"/>
+  <element xsi:type="archimate:AssociationRelationship" id="rel-sidecar-gosidecar" source="mockRunSidecar" target="goRunSidecar"/>
+  <element xsi:type="archimate:TriggeringRelationship" id="rel-trigger" source="plateauV68" target="gapMock"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wpMock" target="gapMock"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-plat" source="wpMock" target="plateauV69"/>
+
+  <folder name="Views" id="f-views" type="diagrams">
+    <!-- 视图 1: 架构变迁 v68→v69 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v68→v69 — 移除本机模拟启动" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV68" archimateElement="plateauV68">
+        <bounds x="48" y="120" width="240" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v68-gap" source="do-plateauV68" target="do-gapMock" archimateRelationship="rel-trigger"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gapMock" archimateElement="gapMock" targetConnections="conn-v68-gap conn-wp-gap">
+        <bounds x="320" y="120" width="340" height="60"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wpMock" archimateElement="wpMock">
+        <bounds x="700" y="80" width="340" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wpMock" target="do-gapMock" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-v69" source="do-wpMock" target="do-plateauV69" archimateRelationship="rel-wp-plat"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV69" archimateElement="plateauV69" targetConnections="conn-wp-v69">
+        <bounds x="700" y="190" width="340" height="50"/>
+      </child>
+    </element>
+
+    <!-- 视图 2: v69 Target — 移除本机模拟启动链 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v69 Target — 移除本机模拟启动链" id="view-topology">
+      <child xsi:type="archimate:DiagramObject" id="do-taskFE" archimateElement="taskFE">
+        <bounds x="40" y="60" width="200" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-fe-sidecar" source="do-taskFE" target="do-mockRunSidecar" archimateRelationship="rel-fe-sidecar"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gateway" archimateElement="gateway">
+        <bounds x="40" y="180" width="200" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-proxy" source="do-gateway" target="do-mockRunProxy" archimateRelationship="rel-gw-proxy"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-mockRunProxy" archimateElement="mockRunProxy" targetConnections="conn-gw-proxy">
+        <bounds x="300" y="180" width="240" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-proxy-sidecar" source="do-mockRunProxy" target="do-mockRunSidecar" archimateRelationship="rel-proxy-sidecar"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-proxy-internal" source="do-mockRunProxy" target="do-mockRunInternalAPI" archimateRelationship="rel-proxy-internal"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-mockRunInternalAPI" archimateElement="mockRunInternalAPI" targetConnections="conn-proxy-internal">
+        <bounds x="300" y="300" width="240" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-internal-cloud" source="do-mockRunInternalAPI" target="do-taskCloud" archimateRelationship="rel-internal-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-taskCloud" archimateElement="taskCloud" targetConnections="conn-internal-cloud">
+        <bounds x="600" y="300" width="240" height="60"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-mockRunSidecar" archimateElement="mockRunSidecar" targetConnections="conn-fe-sidecar conn-proxy-sidecar">
+        <bounds x="600" y="90" width="240" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-sidecar-gosidecar" source="do-mockRunSidecar" target="do-goRunSidecar" archimateRelationship="rel-sidecar-gosidecar"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-goRunSidecar" archimateElement="goRunSidecar" targetConnections="conn-sidecar-gosidecar">
+        <bounds x="600" y="210" width="240" height="60"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

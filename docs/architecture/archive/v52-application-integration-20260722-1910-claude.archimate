@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v52-comment-runtime-server-tabs-20260722-1910">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v52 (comment-runtime-server-tabs)</name>
+  <documentation>ServerConfigCommentRuntimeTabs: per-comment tabs over shared task-level runtime panel</documentation>
+
+  <folder name="Application" id="id-v52-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 ServerConfig.logic [MODIFIED v52]" id="id-v52-server-config"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟢 ServerConfigCommentRuntimeTabs [NEW v52]" id="id-v52-runtime-tabs"/>
+    <element xsi:type="archimate:ApplicationComponent" name="ServerConfigServerRuntimePanel" id="id-v52-runtime-panel"/>
+    <element xsi:type="archimate:DataObject" name="🟢 CommentRuntimeServerTab[] [NEW v52]" id="id-v52-tab-data"/>
+    <element xsi:type="archimate:DataObject" name="CommentExecutionContext (v51)" id="id-v52-ctx"/>
+    <element xsi:type="archimate:ApplicationService" name="server-runtime-status / workbench / stop-vm" id="id-v52-cloud-api"/>
+  </folder>
+  <folder name="Relations" id="id-v52-f-rel" type="relations">
+    <element xsi:type="archimate:CompositionRelationship" id="id-v52-comp-sc-tabs" source="id-v52-server-config" target="id-v52-runtime-tabs" name="runtime section"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v52-serv-tabs-panel" source="id-v52-runtime-tabs" target="id-v52-runtime-panel" name="hosts"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v52-acc-tabs-data" source="id-v52-runtime-tabs" target="id-v52-tab-data" name="R"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v52-flow-ctx-data" source="id-v52-ctx" target="id-v52-tab-data" name="comment affinity"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v52-flow-panel-api" source="id-v52-runtime-panel" target="id-v52-cloud-api" name="query/actions"/>
+  </folder>
+  <folder name="Implementation" id="id-v52-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v51" id="id-v52-plat-v51"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v52 — comment-runtime-server-tabs" id="id-v52-plat-v52"/>
+    <element xsi:type="archimate:Gap" name="Gap: 运行状态面板无法按评论关联容器切换" id="id-v52-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v52-comment-runtime-server-tabs" id="id-v52-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v52-rel-plat51-gap" source="id-v52-plat-v51" target="id-v52-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v52-rel-wp-gap" source="id-v52-wp" target="id-v52-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v52-rel-wp-plat52" source="id-v52-wp" target="id-v52-plat-v52"/>
+  </folder>
+  <folder name="Views" id="id-v52-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v51→v52 — comment-runtime-server-tabs" id="id-v52-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v52-do-plat51" archimateElement="id-v52-plat-v51">
+        <bounds x="48" y="100" width="240" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v52-conn-plat51-gap"
+          source="id-v52-do-plat51" target="id-v52-do-gap"
+          archimateRelationship="id-v52-rel-plat51-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v52-do-gap" archimateElement="id-v52-gap"
+        targetConnections="id-v52-conn-plat51-gap id-v52-conn-wp-gap">
+        <bounds x="340" y="100" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v52-do-wp" archimateElement="id-v52-wp">
+        <bounds x="760" y="60" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v52-conn-wp-gap"
+          source="id-v52-do-wp" target="id-v52-do-gap"
+          archimateRelationship="id-v52-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v52-conn-wp-plat52"
+          source="id-v52-do-wp" target="id-v52-do-plat52"
+          archimateRelationship="id-v52-rel-wp-plat52"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v52-do-plat52" archimateElement="id-v52-plat-v52"
+        targetConnections="id-v52-conn-wp-plat52">
+        <bounds x="760" y="160" width="320" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v52 Target — comment runtime tabs 数据流" id="id-v52-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v52-do-sc" archimateElement="id-v52-server-config">
+        <bounds x="40" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v52-conn-sc-tabs"
+          source="id-v52-do-sc" target="id-v52-do-tabs"
+          archimateRelationship="id-v52-comp-sc-tabs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v52-do-tabs" archimateElement="id-v52-runtime-tabs"
+        targetConnections="id-v52-conn-sc-tabs">
+        <bounds x="300" y="80" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v52-conn-tabs-panel"
+          source="id-v52-do-tabs" target="id-v52-do-panel"
+          archimateRelationship="id-v52-serv-tabs-panel"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v52-conn-tabs-data"
+          source="id-v52-do-tabs" target="id-v52-do-data"
+          archimateRelationship="id-v52-acc-tabs-data"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v52-do-panel" archimateElement="id-v52-runtime-panel"
+        targetConnections="id-v52-conn-tabs-panel">
+        <bounds x="600" y="80" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v52-conn-panel-api"
+          source="id-v52-do-panel" target="id-v52-do-api"
+          archimateRelationship="id-v52-flow-panel-api"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v52-do-api" archimateElement="id-v52-cloud-api"
+        targetConnections="id-v52-conn-panel-api">
+        <bounds x="880" y="80" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v52-do-ctx" archimateElement="id-v52-ctx">
+        <bounds x="40" y="200" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v52-conn-ctx-data"
+          source="id-v52-do-ctx" target="id-v52-do-data"
+          archimateRelationship="id-v52-flow-ctx-data"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v52-do-data" archimateElement="id-v52-tab-data"
+        targetConnections="id-v52-conn-tabs-data id-v52-conn-ctx-data">
+        <bounds x="300" y="200" width="240" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

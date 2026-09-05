@@ -1,0 +1,64 @@
+' @title: Application Integration — 排队调度自动关闭
+' @view: application-integration
+' @status: target
+' @version: 44
+' @author: claude
+' @based_on: v41 current (v41-application-integration-20260719-1816-claude.puml)
+' @updated: 2026-07-22 12:17
+' @description: ScheduleRhythm.auto_close；T-5min 通知容器；窗外 shutdown/stop-vm
+' @iteration: schedule-rhythm-auto-close
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v44 — Schedule Rhythm Auto Close (2026-07-22 12:17)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v44 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v44 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+rectangle "Motivation" {
+  Motivation_Constraint(goFirst, "Constraint\n新增接口默认 Go")
+  Motivation_Principle(costClose, "Principle\n窗口结束回收排队机器")
+}
+
+rectangle "Application" {
+  Application_Component(vueTask, "🟡 Vue Task Detail\nauto_close checkbox")
+  Application_Component(gw, "task-gateway")
+  Application_Component(tts, "🟡 taskTaskService\nAutoCloser + Rhythm")
+  Application_Component(tcs, "🟡 taskCloudService\nlifecycle proxy + stop-vm")
+  Application_Component(cgw, "🟡 taskContainerGateway\nclosing-soon L0")
+  Application_Component(agent, "🟡 onlineServiceJS\nclosing-soon / shutdown")
+  Application_DataObject(rhythm, "🟡 schedule_rhythms\nauto_close + keys")
+  Application_DataObject(slots, "queued_machine_slots")
+}
+
+rectangle "Technology" {
+  Technology_Node(kafka, "Kafka")
+}
+
+note right of tts
+  [MODIFIED v44] auto_close 配置
+  T-5min warn / 窗外 release
+  @author: claude @2026-07-22 12:17
+end note
+
+note top of agent
+  [NEW v44] POST /task-lifecycle/closing-soon
+  复用 shutdown → request-machine-release
+end note
+
+Rel_Flow(vueTask, gw, "PATCH schedule_rhythm")
+Rel_Flow(gw, tts, "JWT")
+Rel_Access_W(tts, rhythm, "R/W")
+Rel_Access_W(tts, slots, "R/W clear")
+Rel_Flow(tts, tcs, "closing-soon / shutdown / stop-vm")
+Rel_Flow(tcs, cgw, "proxy lifecycle")
+Rel_Flow(cgw, agent, "container API")
+Rel_Flow(tts, kafka, "ScheduleAutoClose*")
+Rel_Influence(goFirst, tts, "落点")
+Rel_Influence(costClose, tts, "回收")
+
+@enduml

@@ -1,0 +1,43 @@
+' @title: 推荐分账资格取消与操作审计（企业景观）
+' @view: enterprise-landscape
+' @status: target
+' @version: 95
+' @iteration: referral-qualification-revoke
+' @author: cursor
+' @based_on: v94 (v94-enterprise-landscape-20260822-1120-cursor.puml)
+' @updated: 2026-08-22 13:30
+' @description: 超管可取消推荐分账资格并查阅带理由的操作审计
+
+@startuml
+!include <archimate/Archimate>
+
+title v95 Target landscape — referral qualification revoke 2026-08-22 13:30
+
+Business_Actor(admin, "系统超级管理员")
+Business_Service(review, "审批推荐资格")
+Business_Service(revoke, "取消分账资格")
+Business_Service(audit, "查阅操作审计")
+
+Application_Component(fe, "taskFE")
+Application_Component(ref, "taskReferral")
+Application_Component(bill, "taskBill")
+
+Rel_Assignment(admin, review)
+Rel_Assignment(admin, revoke)
+Rel_Assignment(admin, audit)
+Rel_Serving(fe, review)
+Rel_Serving(fe, revoke)
+Rel_Serving(fe, audit)
+Rel_Flow(review, revoke, "approved → revoked")
+Rel_Flow(revoke, audit, "reason row")
+Rel_Flow(revoke, bill, "stop future commission")
+
+Implementation_Plateau(p94, "v94")
+Implementation_Plateau(p95, "v95")
+Implementation_Gap(g, "已通过资格无法取消")
+Implementation_WorkPackage(wp, "WP-referral-qualification-revoke")
+Rel_Triggering(p94, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p95, "delivers")
+
+@enduml

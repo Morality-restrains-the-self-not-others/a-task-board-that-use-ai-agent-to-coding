@@ -1,0 +1,62 @@
+' @title: 任务帖配额来源与订单消耗归属
+' @view: application-integration
+' @status: archived
+' @version: 91
+' @iteration: task-post-quota-source-and-order-consumption
+' @author: cursor
+' @based_on: v88 (v88-application-integration-20260820-1520-cursor.puml)
+' @updated: 2026-08-20 19:30
+' @description: 配额 GET 拆赠送/购买；消耗归属 grant 批次与订单
+
+@startuml
+!include <archimate/Archimate>
+
+title v91 Current — 任务帖配额来源与订单消耗 2026-08-20 19:30
+
+Application_Component(fe, "taskFE Vue SPA")
+note right of fe
+  账单卡赠送/购买
+  订单展开与详情展示消耗
+end note
+
+Application_Component(gw, "API Gateway APISIX")
+Application_Component(bill, "taskBill")
+note right of bill
+  quotas split
+  consume FEFO by source_kind
+  orderJSON resource_consumption
+end note
+
+Application_DataObject(grant, "billing_resource_grant")
+note right of grant
+  source_kind gift|purchase
+  order_id
+end note
+
+Application_DataObject(txn, "billing_transaction")
+note right of txn
+  source_grant_id
+  related_order_id on consume
+end note
+
+Application_DataObject(order, "billing_resource_order")
+Technology_Node(mysql, "MySQL task_bill utf8mb4")
+
+Rel_Flow(fe, gw, "GET quotas / orders")
+Rel_Flow(gw, bill, "tenant_id")
+Rel_Flow(bill, grant, "FEFO remaining")
+Rel_Flow(bill, txn, "quota_consumption")
+Rel_Flow(bill, order, "loadOrder")
+Rel_Serving(mysql, grant, "InnoDB")
+Rel_Serving(mysql, txn, "InnoDB")
+Rel_Serving(mysql, order, "InnoDB")
+
+Implementation_Plateau(plateauV88, "Plateau v88")
+Implementation_Plateau(plateauV91, "Plateau v91 quota source")
+Implementation_Gap(gapSrc, "Gap: 配额合计无法区分来源、消耗无订单归属")
+Implementation_WorkPackage(wpSrc, "WP-task-post-quota-source")
+Rel_Triggering(plateauV88, gapSrc, "identifies")
+Rel_Realization(wpSrc, gapSrc, "closes")
+Rel_Realization(wpSrc, plateauV91, "delivers")
+
+@enduml

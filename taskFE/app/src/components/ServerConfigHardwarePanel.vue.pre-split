@@ -1,0 +1,3082 @@
+<template>
+<!-- 500-line rule exception: ServerConfigHardwarePanel is 2062 lines. See taskDetailCloneProgress.js for split progress. -->
+    <div
+      id="hardware-config-section"
+      data-testid="server-hardware-config-panel"
+      class="p-4 bg-white border border-gray-200 rounded-lg"
+    >
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-medium text-gray-500">服务器硬件配置</h3>
+        <div class="flex items-center gap-2">
+          <button
+            v-if="!runTemplateMode && hasConfiguredProjectRunTemplate() && !temporaryConfigExpanded"
+            type="button"
+            data-testid="open-temporary-hardware-config-btn"
+            class="px-3 py-1 border border-primary text-primary rounded-md text-xs font-medium hover:bg-primary hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            @click="openTemporaryConfig"
+          >
+            临时配置
+          </button>
+          <button
+            v-if="!runTemplateMode && hasConfiguredProjectRunTemplate() && temporaryConfigExpanded"
+            type="button"
+            data-testid="close-temporary-hardware-config-btn"
+            class="px-3 py-1 border border-gray-300 text-gray-700 rounded-md text-xs font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            @click="closeTemporaryConfig"
+          >
+            收起临时配置
+          </button>
+          <!-- 应用上一次运行配置按钮 -->
+          <button
+            v-if="!runTemplateMode && temporaryConfigExpanded && previousServerConfig"
+            type="button"
+            @click="applyPreviousConfig"
+            class="px-3 py-1 border border-primary text-primary rounded-md text-xs font-medium hover:bg-primary hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+          >
+            应用上一次运行配置
+          </button>
+          <button
+            v-if="runTemplateMode"
+            type="button"
+            data-testid="hardware-panel-collapse-toggle"
+            class="inline-flex items-center gap-1 px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary"
+            :aria-expanded="panelExpanded ? 'true' : 'false'"
+            @click="panelExpanded = !panelExpanded"
+          >
+            <span>{{ panelExpanded ? '收起' : '展开' }}</span>
+            <svg
+              class="w-3.5 h-3.5 transition-transform duration-200"
+              :class="{ 'rotate-180': panelExpanded }"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div
+        v-if="showProjectTemplateSummaryOnly"
+        class="mb-3 rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-900 space-y-1"
+        data-testid="hardware-project-template-banner"
+      >
+        <p class="m-0 font-medium">{{ projectTemplateBannerText }}</p>
+        <p v-if="projectTemplateHardwareSummary" class="m-0 text-[11px] text-blue-800" data-testid="hardware-project-template-spec-summary">
+          {{ projectTemplateHardwareSummary }}
+        </p>
+        <p v-if="projectTemplatePriceHint" class="m-0 text-[11px] text-blue-800" data-testid="hardware-project-template-price-hint">
+          {{ projectTemplatePriceHint }}
+        </p>
+        <p class="m-0 text-[11px] text-blue-700">
+          将使用上述项目模版启动服务器。如需本次单独调整，请点击「临时配置」。
+        </p>
+      </div>
+
+      <div v-show="showHardwareConfigForm">
+      <div
+        v-if="!runTemplateMode && temporaryConfigExpanded && hasConfiguredProjectRunTemplate()"
+        class="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+        data-testid="temporary-config-toolbar"
+      >
+        <p class="m-0 text-[11px] leading-snug">
+          以下为本次启动的临时硬件配置，不会保存到项目。
+        </p>
+        <button
+          type="button"
+          data-testid="restore-project-template-defaults-btn"
+          class="shrink-0 px-3 py-1 border border-amber-300 text-amber-900 rounded-md text-xs font-medium hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-400"
+          @click="restoreProjectTemplateDefaults"
+        >
+          恢复为项目模版默认值
+        </button>
+      </div>
+      <!-- 网络配置选择：云平台、地域、VPC、安全组、可用区 -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+        <!-- 云平台选择 -->
+        <div class="flex-shrink-0 min-w-[140px]">
+          <label for="cloud-platform-select" class="block text-xs font-medium text-gray-500 mb-1">
+            云平台
+            <span v-if="isLoadingPlatforms" class="inline-block animate-spin h-3 w-3 border-2 border-gray-300 border-t-primary rounded-full ml-1"></span>
+          </label>
+          <select
+            id="cloud-platform-select"
+            v-model="selectedCloudPlatform"
+            class="w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-primary focus:border-primary"
+            :disabled="isLoadingPlatforms || cloudPlatforms.length === 0"
+            @change="handleCloudPlatformChange"
+          >
+            <option v-if="isLoadingPlatforms" disabled value="">加载中...</option>
+            <option v-else-if="!hasCloudContext()" disabled value="">等待工作空间上下文...</option>
+            <option v-else-if="!cloudPlatforms.length" disabled value="">暂无云平台授权</option>
+            <option v-else disabled value="">-- 请选择 --</option>
+            <option
+              v-for="platform in cloudPlatforms"
+              :key="platform.id"
+              :value="String(platform.id)"
+            >
+              {{ platform.remark ? `${platform.remark}-${platform.platform_name}` : platform.platform_name }}
+            </option>
+          </select>
+        </div>
+        <!-- 地域选择 -->
+        <div class="flex-shrink-0 min-w-[140px]">
+          <label for="region-select" class="block text-xs font-medium text-gray-500 mb-1">
+            地域
+            <span v-if="isLoadingRegions" class="inline-block animate-spin h-3 w-3 border-2 border-gray-300 border-t-primary rounded-full ml-1"></span>
+          </label>
+          <select
+            id="region-select"
+            v-model="selectedRegion"
+            class="w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-primary focus:border-primary"
+            :disabled="!selectedCloudPlatform || isLoadingRegions || regions.length === 0"
+            @change="loadVpcs"
+          >
+            <option v-if="isLoadingRegions" disabled value="">加载中...</option>
+            <option v-else-if="!regions.length" disabled value="">请先选择云平台</option>
+            <option v-else disabled value="">-- 请选择 --</option>
+            <option
+              v-for="region in regions"
+              :key="region.region_id"
+              :value="String(region.region_id)"
+            >
+              {{ region.region_name }}
+            </option>
+          </select>
+        </div>
+        <!-- VPC选择 -->
+        <div class="flex-shrink-0 min-w-[140px]">
+          <label for="vpc-select" class="block text-xs font-medium text-gray-500 mb-1">
+            VPC
+            <span v-if="isLoadingVpcs" class="inline-block animate-spin h-3 w-3 border-2 border-gray-300 border-t-primary rounded-full ml-1"></span>
+          </label>
+          <select
+            id="vpc-select"
+            v-model="selectedVpc"
+            class="w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-primary focus:border-primary"
+            :disabled="!selectedRegion || isLoadingVpcs || vpcs.length === 0"
+            @change="loadVswitches"
+          >
+            <option v-if="isLoadingVpcs" disabled value="">加载中...</option>
+            <option v-else-if="!vpcs.length" disabled value="">请先选择地域</option>
+            <option v-else disabled value="">-- 请选择 --</option>
+            <option v-for="vpc in vpcs" :key="vpc.id" :value="String(vpc.id)">{{ vpc.name }}</option>
+          </select>
+        </div>
+        <!-- 安全组选择 -->
+        <div class="flex-shrink-0 min-w-[140px]">
+          <label for="security-group-select" class="block text-xs font-medium text-gray-500 mb-1">
+            安全组
+          </label>
+          <select id="security-group-select" v-model="selectedSecurityGroup" class="w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-primary focus:border-primary" :disabled="!selectedVpc">
+            <option value="">-- 请选择 --</option>
+            <option v-for="sg in securityGroups" :key="sg.id" :value="String(sg.id)">{{ sg.name }}</option>
+          </select>
+        </div>
+        <!-- 可用区选择 -->
+        <div class="flex-shrink-0 min-w-[140px]">
+          <label for="zone-select" class="block text-xs font-medium text-gray-500 mb-1">
+            可用区
+            <span v-if="isLoadingZones" class="inline-block animate-spin h-3 w-3 border-2 border-gray-300 border-t-primary rounded-full ml-1"></span>
+          </label>
+          <select
+            id="zone-select"
+            v-model="selectedZone"
+            class="w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-primary focus:border-primary"
+            :disabled="!selectedVpc || isLoadingZones || zones.length === 0"
+          >
+            <option v-if="isLoadingZones" disabled value="">加载中...</option>
+            <option v-else-if="!zones.length" disabled value="">请先选择 VPC</option>
+            <option v-else disabled value="">-- 请选择 --</option>
+            <option
+              v-for="zone in zones"
+              :key="zone.zone_id"
+              :value="String(zone.zone_id)"
+            >
+              {{ zone.display_name }}
+            </option>
+          </select>
+        </div>
+      </div>
+      
+      <div
+        v-if="selectedSecurityGroup === 'auto_create_security_group'"
+        class="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-md px-2 py-1.5"
+        role="alert"
+      >
+        <span class="font-medium">安全提示：</span>选择「自动创建安全组」时，入网仅允许「您当前的公网 IP」与「服务器公网 IP」，其余地址禁止访问。请确认本机公网 IP 未变更；如需开放更多来源，请改用已有安全组或在云控制台调整规则。
+      </div>
+      
+      <!-- 过滤选项 -->
+      <div class="mt-4">
+        <!-- 实例过滤选项 -->
+        <div class="mb-2">
+          <h4 class="text-sm font-medium text-gray-500 mb-2">实例</h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+            <!-- CPU核心数 -->
+            <div class="flex-shrink-0">
+              <label class="block text-xs font-medium text-gray-500 mb-1">CPU核心数</label>
+              <input type="number" id="cpu-cores" v-model="filterOptions.cores" class="w-28 px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-primary focus:border-primary" placeholder="核心数">
+            </div>
+            <!-- 内存大小 -->
+            <div class="flex-shrink-0">
+              <label class="block text-xs font-medium text-gray-500 mb-1">内存(GB)</label>
+              <input type="number" id="memory-size" v-model="filterOptions.memory" class="w-28 px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-primary focus:border-primary" placeholder="内存大小">
+            </div>
+            <!-- IoOptimized -->
+            <div class="flex-shrink-0">
+              <label class="block text-xs font-medium text-gray-500 mb-1">IoOptimized</label>
+              <input type="checkbox" id="io-optimized" v-model="filterOptions.io_optimized" class="mt-1" checked>
+            </div>
+            <!-- SystemDiskCategory -->
+            <div class="flex-shrink-0 min-w-[120px]">
+              <label for="system-disk-category" class="block text-xs font-medium text-gray-500 mb-1">系统盘类型</label>
+              <select id="system-disk-category" v-model="filterOptions.system_disk_category" class="w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-primary focus:border-primary">
+                <option value="">-- 请选择 --</option>
+                <option value="cloud">普通云盘</option>
+                <option value="cloud_efficiency">高效云盘</option>
+                <option value="cloud_ssd">SSD 云盘</option>
+                <option value="ephemeral_ssd">本地 SSD 盘</option>
+                <option value="cloud_essd">ESSD 云盘</option>
+                <option value="cloud_auto">ESSD AutoPL 云盘</option>
+                <option value="cloud_essd_entry">ESSD Entry 云盘</option>
+              </select>
+            </div>
+            <!-- DataDisk -->
+            <div class="flex-shrink-0 min-w-[120px]">
+              <label for="data-disk" class="block text-xs font-medium text-gray-500 mb-1">数据盘类型</label>
+              <select id="data-disk" v-model="filterOptions.data_disk_category" class="w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-primary focus:border-primary">
+                <option value="">-- 请选择 --</option>
+                <option value="cloud">普通云盘</option>
+                <option value="cloud_efficiency">高效云盘</option>
+                <option value="cloud_ssd">SSD 云盘</option>
+                <option value="ephemeral_ssd">本地 SSD 盘</option>
+                <option value="cloud_essd">ESSD 云盘</option>
+                <option value="cloud_auto">ESSD AutoPL 云盘</option>
+                <option value="cloud_essd_entry">ESSD Entry 云盘</option>
+              </select>
+            </div>
+            <!-- 按量付费实例的竞价策略 -->
+            <div class="flex-shrink-0 min-w-[120px]">
+              <label for="spot-strategy" class="block text-xs font-medium text-gray-500 mb-1">竞价策略</label>
+              <select id="spot-strategy" v-model="filterOptions.spot_strategy" class="w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-primary focus:border-primary">
+                <option value="">-- 请选择 --</option>
+                <option value="NoSpot">正常按量付费</option>
+                <option value="SpotWithPriceLimit">设置上限价格</option>
+                <option value="SpotAsPriceGo">系统自动出价</option>
+              </select>
+            </div>
+            <!-- CPU 架构（只读展示，与已选镜像一致） -->
+            <div class="flex-shrink-0 min-w-[140px]">
+              <label for="image-architecture-display" class="block text-xs font-medium text-gray-500 mb-1">CPU 架构</label>
+              <div
+                id="image-architecture-display"
+                data-testid="image-architecture-display"
+                class="w-full px-2 py-1 border border-gray-200 rounded-md text-xs bg-gray-50 text-gray-800 min-h-[26px] flex items-center"
+                :title="imageArchitectureDisplayHint"
+              >
+                {{ imageArchitectureDisplayLabel }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- 可用实例列表 -->
+      <div class="mt-4">
+        <div class="flex justify-between items-center mb-3">
+          <div class="flex items-center space-x-4">
+            <h4 class="text-sm font-medium text-gray-500">可用实例列表 <span class="text-xs text-gray-400">(共 {{ availableInstances.length }} 行)</span></h4>
+            <div v-if="sdkMethods.length > 0" class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              SDK方法: 
+              <span v-for="(method, index) in sdkMethods" :key="index" class="text-primary">
+                {{ method.method }}
+                <span v-if="index < sdkMethods.length - 1">, </span>
+              </span>
+            </div>
+            <div class="text-sm text-gray-500">
+              第 {{ currentPage }} / {{ totalPages }} 页
+            </div>
+          </div>
+          <div class="flex space-x-2">
+            <button 
+              @click="prevPage" 
+              class="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
+              :disabled="currentPage === 1"
+            >
+              上一页
+            </button>
+            <button 
+              v-if="nextToken || currentPage < totalPages" 
+              @click="loadNextPage" 
+              class="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-blue-600"
+              :disabled="isLoadingNextPage || (currentPage === totalPages && !nextToken)"
+            >
+              <span v-if="isLoadingNextPage" class="flex items-center">
+                <span class="inline-block animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                加载中...
+              </span>
+              <span v-else>下一页</span>
+            </button>
+          </div>
+        </div>
+        <div v-if="isLoadingInstances" class="flex justify-center items-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+        <div v-else-if="isLoadingNextPage" class="flex justify-center items-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+        <div v-else-if="availableInstances.length === 0" class="text-center py-8 text-gray-500">
+          暂无可用实例
+        </div>
+        <div v-else class="space-y-1">
+          <div 
+            v-for="instance in availableInstances" 
+            :key="instance.instance_type" 
+            class="flex flex-col gap-1 px-2 py-1.5 border border-gray-200 rounded hover:bg-gray-50"
+            v-show="!selectedInstance || selectedInstance.instance_type === instance.instance_type"
+          >
+            <div class="flex items-center justify-between gap-2 min-w-0">
+              <span class="font-medium text-xs text-gray-900 truncate min-w-0" :title="instance.instance_type">{{ instance.instance_type }}</span>
+              <button 
+                type="button"
+                @click="selectInstance(instance)" 
+                :class="['shrink-0 px-1.5 py-0.5 rounded text-[11px] leading-none', selectedInstance && selectedInstance.instance_type === instance.instance_type ? 'bg-gray-200 text-gray-600' : 'bg-primary text-white hover:bg-blue-600']"
+              >
+                {{ selectedInstance && selectedInstance.instance_type === instance.instance_type ? '已选' : '选择' }}
+              </button>
+            </div>
+            <!-- 核心规格一行 -->
+            <div class="text-[11px] text-gray-800 tabular-nums leading-tight">
+              <span>{{ instance.cpu_cores }}核</span>
+              <span class="text-gray-400 mx-1">·</span>
+              <span>{{ instance.memory_gb }}GB</span>
+              <template v-if="instance.gpu_cores">
+                <span class="text-gray-400 mx-1">·</span>
+                <span>GPU {{ instance.gpu_cores }}核</span>
+              </template>
+              <template v-if="instance.gpu_type">
+                <span class="text-gray-400 mx-1">·</span>
+                <span>{{ instance.gpu_type }}</span>
+              </template>
+            </div>
+            <!-- 其余规格：紧凑换行 -->
+            <div class="flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-gray-600 leading-snug">
+              <span v-if="instance.instance_type_family">家族 {{ instance.instance_type_family }}</span>
+              <span v-if="instance.status">状态 {{ instance.status === 'available' ? '可用' : '不可用' }}</span>
+              <span v-if="instance.instance_category">分类 {{ instance.instance_category }}</span>
+              <span v-if="instance.local_disk_size">本地盘 {{ instance.local_disk_size }}GB</span>
+              <span v-if="instance.network_performance">网络 {{ instance.network_performance }}</span>
+              <span v-if="instance.max_bandwidth_out">出 {{ instance.max_bandwidth_out }}Mbps</span>
+              <span v-if="instance.max_bandwidth_in">入 {{ instance.max_bandwidth_in }}Mbps</span>
+              <span v-if="instance.max_pps">PPS {{ instance.max_pps }}</span>
+              <span v-if="instance.architecture">架构 {{ instance.architecture }}</span>
+              <span v-if="instance.cpu_type">{{ instance.cpu_type }}</span>
+              <span v-if="instance.gpu_memory">显存 {{ instance.gpu_memory }}GB</span>
+              <span v-if="instance.gpu_count">GPU×{{ instance.gpu_count }}</span>
+            </div>
+            
+            <!-- 存储信息 -->
+            <div class="mt-1 pt-1 border-t border-gray-100">
+              <div v-if="instance.storage_amount || instance.storage_category" class="text-[11px] text-gray-600 flex flex-wrap gap-x-3 gap-y-0 leading-tight">
+                <span v-if="instance.storage_amount">盘数 {{ instance.storage_amount }}</span>
+                <span v-if="instance.storage_category">{{ instance.storage_category }}</span>
+              </div>
+              
+              <!-- 存储配置 -->
+              <div class="mt-1 space-y-1">
+                <div v-if="instance.storage_types && instance.storage_types.length > 0" class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span class="text-[10px] font-medium text-gray-500 shrink-0">存储类型</span>
+                  <div class="flex flex-wrap gap-1">
+                    <button 
+                      v-for="type in instance.storage_types" 
+                      :key="type"
+                      type="button"
+                      @click="handleStorageTypeChange(instance, type)"
+                      :class="['px-1.5 py-px text-[10px] border rounded hover:bg-gray-100 leading-tight', instance.storage_type === type ? 'bg-primary text-white border-primary' : 'border-gray-300']"
+                    >
+                      {{ type }}
+                    </button>
+                  </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <label class="text-[10px] font-medium text-gray-500 shrink-0" :for="'storage-size-' + instance.instance_type">大小(GB)</label>
+                  <input type="number" 
+                         :id="'storage-size-' + instance.instance_type" 
+                         v-model="instance.storage_gb" 
+                         @change="handleStorageSizeChange(instance)"
+                         class="w-[4.5rem] px-1 py-px border border-gray-300 rounded text-[11px] focus:outline-none focus:ring-primary focus:border-primary"
+                         :min="getStorageMin(instance, instance.storage_type)"
+                         :max="getStorageMax(instance, instance.storage_type)"
+                         step="10"
+                         placeholder="GB">
+                  <span class="text-[10px] text-gray-500 tabular-nums">
+                    {{ getStorageMin(instance, instance.storage_type) }}–{{ getStorageMax(instance, instance.storage_type) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 带宽设置 -->
+        <div v-if="selectedInstance" class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+          <h4 class="text-xs font-medium text-gray-500 mb-2">带宽设置</h4>
+          <div class="flex flex-wrap gap-3">
+            <div>
+              <label class="block text-[10px] font-medium text-gray-500 mb-1">计费模式</label>
+              <select 
+                id="bandwidth-charging-mode-select"
+                v-model="selectedBandwidthChargingMode"
+                class="w-28 px-1.5 py-0.5 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-primary focus:border-primary"
+              >
+                <option value="PayByBandwidth">按固定带宽</option>
+                <option value="PayByTraffic">按使用流量</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-medium text-gray-500 mb-1">带宽</label>
+              <div class="flex items-center space-x-1.5">
+                <input
+                  id="bandwidth-input"
+                  type="number"
+                  :value="selectedBandwidth[selectedInstance.instance_type]"
+                  class="w-28 px-1.5 py-0.5 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-primary focus:border-primary"
+                  :min="bandwidthLimitations[selectedInstance.instance_type]?.min_bandwidth ?? 0"
+                  :max="bandwidthLimitations[selectedInstance.instance_type]?.max_bandwidth ?? 100"
+                  :placeholder="bandwidthLoading[selectedInstance.instance_type] ? '加载中...' : 'Mbps'"
+                  :disabled="!bandwidthLimitations[selectedInstance.instance_type] || bandwidthLoading[selectedInstance.instance_type]"
+                  @input="onBandwidthInput(selectedInstance.instance_type, $event)"
+                  @blur="onBandwidthBlur(selectedInstance.instance_type)"
+                />
+                <span class="text-[10px] text-gray-500">Mbps</span>
+                <button 
+                  v-if="!bandwidthLimitations[selectedInstance.instance_type] && !bandwidthLoading[selectedInstance.instance_type]"
+                  @click="fetchBandwidthLimitation(selectedInstance)"
+                  class="px-1.5 py-0.5 bg-gray-200 text-gray-700 rounded text-[10px] hover:bg-gray-300"
+                >
+                  获取
+                </button>
+                <span v-else-if="bandwidthLimitations[selectedInstance.instance_type]" class="text-[10px] text-gray-500">
+                  ({{ bandwidthLimitations[selectedInstance.instance_type].min_bandwidth }}-{{ bandwidthLimitations[selectedInstance.instance_type].max_bandwidth }}Mbps)
+                </span>
+                <span v-else class="text-[10px] text-gray-500">
+                  (默认: {{ DEFAULT_BANDWIDTH }}Mbps)
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 分页控件 -->
+        <div class="mt-3 flex justify-between items-center">
+          <button 
+            @click="prevPage" 
+            class="px-2 py-0.5 bg-gray-200 text-gray-700 rounded text-xs hover:bg-gray-300"
+            :disabled="currentPage === 1"
+          >
+            上一页
+          </button>
+          <div class="text-xs text-gray-500">
+            第 {{ currentPage }} / {{ totalPages }} 页
+          </div>
+          <button 
+            @click="nextPage" 
+            class="px-2 py-0.5 bg-primary text-white rounded text-xs hover:bg-blue-600"
+            :disabled="(currentPage === totalPages && !nextToken) || isLoadingNextPage"
+          >
+            <span v-if="isLoadingNextPage" class="flex items-center">
+              <span class="inline-block animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full mr-1"></span>
+              加载中...
+            </span>
+            <span v-else>下一页</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 价格信息 -->
+      <div v-if="selectedInstance" class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex justify-between items-start mb-1.5">
+          <h4 class="text-xs font-medium text-blue-800">选中实例价格信息</h4>
+          <span class="text-[10px] text-gray-500">价格仅供参考，实际以云厂商为准</span>
+        </div>
+        <div v-if="priceLoading[selectedInstance.instance_type]" class="text-gray-400 text-xs">
+          实例类型: {{ selectedInstance.instance_type }}
+          <div class="mt-1 flex items-center">
+            <span class="inline-block animate-spin h-3 w-3 border-2 border-gray-300 border-t-primary rounded-full mr-1.5"></span>
+            价格: 获取中...
+          </div>
+        </div>
+        <div v-else-if="selectedInstancePriceView" class="text-green-600 font-medium text-xs">
+          实例类型: {{ selectedInstance.instance_type }}
+          <div class="mt-1">价格: {{ formatPriceAmount(selectedInstancePriceView.currency, selectedInstancePriceView.tradePrice) }}</div>
+          <div
+            v-if="selectedInstancePriceView.originalPrice != null && selectedInstancePriceView.originalPrice !== selectedInstancePriceView.tradePrice"
+            class="mt-0.5 text-[10px] text-gray-500 line-through"
+          >
+            原价: {{ formatPriceAmount(selectedInstancePriceView.currency, selectedInstancePriceView.originalPrice) }}
+          </div>
+          <div
+            v-if="selectedInstancePriceView.discountPrice != null && selectedInstancePriceView.discountPrice > 0"
+            class="mt-0.5 text-[10px] text-orange-600"
+          >
+            折扣: -{{ formatPriceAmount(selectedInstancePriceView.currency, selectedInstancePriceView.discountPrice) }}
+          </div>
+          <div v-if="selectedInstancePriceView.details.length" class="mt-1.5 text-[10px] text-gray-600 space-y-0.5">
+            <div v-for="(detail, index) in selectedInstancePriceView.details" :key="index" class="flex justify-between gap-2">
+              <span>{{ getResourceName(detail.resource) }}:</span>
+              <span>{{ formatPriceAmount(selectedInstancePriceView.currency, detail.amount) }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-else class="text-gray-400 text-xs">
+          价格: 获取中...
+        </div>
+      </div>
+      </div>
+
+      <!-- 自动释放服务器（项目模版摘要模式与临时配置模式均可见） -->
+      <div v-if="!runTemplateMode" class="mt-4 p-3 border border-dashed border-gray-200 rounded-lg bg-gray-50/80">
+        <div class="flex flex-wrap items-center gap-3">
+          <label class="inline-flex items-center cursor-pointer">
+            <input
+              id="auto-release-enabled"
+              type="checkbox"
+              v-model="autoReleaseEnabled"
+              class="rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <span class="ml-1.5 text-xs text-gray-700">自动释放服务器</span>
+          </label>
+          <div v-if="autoReleaseEnabled" class="flex items-center gap-1.5 flex-wrap">
+            <label for="auto-release-minutes" class="text-xs text-gray-600">在</label>
+            <input
+              id="auto-release-minutes"
+              type="number"
+              v-model.number="autoReleaseMinutes"
+              min="30"
+              max="1440"
+              step="1"
+              class="w-20 px-2 py-0.5 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-primary focus:border-primary"
+            />
+            <span class="text-xs text-gray-600">分钟后自动释放</span>
+          </div>
+        </div>
+        <p v-if="autoReleaseEnabled" class="mt-1.5 text-[10px] text-gray-500">
+          阿里云要求自动释放时间不早于当前时间 30 分钟（UTC ISO8601，秒为 00）；未勾选则不会自动释放。
+        </p>
+      </div>
+
+      <!-- 服务器控制按钮 -->
+      <div v-if="!runTemplateMode" class="mt-4">
+        <div class="flex items-center space-x-2 flex-wrap">
+          <button type="button" id="start-server-btn" @click="startServer" class="px-3 py-1.5 border border-transparent rounded-md text-xs font-medium text-white bg-primary hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-400" :disabled="isStartServerDisabled" :title="startServerDisabledReason">
+            {{ startServerButtonLabel }}
+          </button>
+          <button type="button" id="stop-server-btn" @click="emit('stop-server')" class="px-3 py-1.5 border border-transparent rounded-md text-xs font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" :class="{ hidden: !(props.isServerRunning || isServerRuntimeRunning) }">
+            停止服务器
+          </button>
+          <template v-if="serverJumpUrl">
+            <a
+              id="jump-to-server-btn"
+              :href="serverJumpUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="px-3 py-1.5 border border-transparent rounded-md text-xs font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              跳转到服务器
+            </a>
+            <span class="text-xs text-gray-500 leading-snug max-w-md">
+              默认端口 {{ serverJumpDefaultPort }}；请根据需要自行调整域名或 IP 后的端口号。
+            </span>
+          </template>
+        </div>
+        <p
+          v-if="isStartServerDisabled && startServerDisabledReason"
+          class="mt-2 text-xs text-amber-700"
+          data-testid="start-server-disabled-reason"
+          role="status"
+        >
+          {{ startServerDisabledReason }}
+        </p>
+        <p
+          v-if="!isStartServerDisabled && activeHardwareConfigSourceLabel"
+          class="mt-2 text-xs text-gray-500"
+          data-testid="start-server-config-source"
+        >
+          {{ activeHardwareConfigSourceLabel }}
+        </p>
+      </div>
+    </div>
+</template>
+
+<script setup>
+/**
+ * 任务详情「服务器硬件配置」独立组件（云平台、地域、VPC、实例列表与启动等），由 `ServerConfig.logic.vue` 引用。
+ */
+import { apiFetch } from '../utils/apiUtils.js';
+import { fetchWorkspaceCloudPlatforms } from '../utils/workspaceCloudPlatformsApi.js';
+import { createAvailableInstancesFetchScheduler } from '../utils/availableInstancesFetchCoordinator.js';
+import { ref, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import {
+  runTemplateToServerConfigShape,
+  hardwarePanelStateToRunTemplate,
+  resolveRunTemplateInstanceType,
+  buildRunTemplateHardwareSpecSummary,
+  formatGpuSpec,
+  formatInstanceHourlyPrice,
+  summarizeRunTemplate,
+  summarizeRunTemplateHardwareSpecs,
+  projectHasConfiguredRunTemplate,
+} from '../utils/projectRunTemplateUtils.js'
+import { resolveServerStartDisabledReason } from '../utils/serverStartDisabledReason.js'
+import { resolveEnvParamsSourceRequiredHint } from '../utils/envParamsSourceSelection.js'
+import { buildStartVmErrorStatusUpdate } from '../utils/startVmHttpResult.js'
+import {
+  buildManualHardwareStartVmBody,
+  buildTemplateStartVmRequestWithClientIp,
+  postHardwarePanelStartVm,
+} from '../utils/hardwarePanelStartVm.js'
+import {
+  resolvePrimaryImageArchitecture,
+} from '../utils/containerImageArchitecture.js'
+
+const props = defineProps({
+  task: { type: Object, default: null },
+  tenantId: { type: String, default: '' },
+  workspaceId: { type: String, default: null },
+  installedImages: { type: Array, default: () => [] },
+  isServerStarting: { type: Boolean, default: false },
+  isServerRunning: { type: Boolean, default: false },
+  serverRuntimeStatus: { type: String, default: '' },
+  updateServerStatus: { type: Function, default: null },
+  /** 与父组件 serverJumpUrl 计算属性一致，供硬件区「跳转到服务器」复用 */
+  serverJumpUrl: { type: String, default: '' },
+  serverJumpDefaultPort: { type: Number, default: 8080 },
+  /** 关联项目的 server_run_template，无任务历史配置时自动应用 */
+  projectServerRunTemplate: { type: Object, default: null },
+  /** 须先选镜像区环境变量参数后再启动服务器 */
+  requireEnvParamsSource: { type: Boolean, default: false },
+  featureParamsSource: { type: String, default: '' },
+  selectedPersonalConfigId: { type: String, default: '' },
+  /** 项目运行模版编辑模式：隐藏启动/释放等任务级操作，暴露 buildRunTemplatePayload */
+  runTemplateMode: { type: Boolean, default: false },
+  readonly: { type: Boolean, default: false },
+})
+
+const emit = defineEmits(['stop-server', 'spec-summary-change', 'start-request-accepted'])
+
+const panelExpanded = ref(Boolean(props.runTemplateMode))
+/** 任务详情：用户点开「临时配置」后才展示可编辑硬件表单 */
+const temporaryConfigExpanded = ref(false)
+
+const showProjectTemplateSummaryOnly = computed(
+  () =>
+    !props.runTemplateMode
+    && projectHasConfiguredRunTemplate({ server_run_template: props.projectServerRunTemplate })
+    && !temporaryConfigExpanded.value,
+)
+
+const showHardwareConfigForm = computed(() => {
+  if (props.runTemplateMode) return panelExpanded.value
+  if (projectHasConfiguredRunTemplate({ server_run_template: props.projectServerRunTemplate })) {
+    return temporaryConfigExpanded.value
+  }
+  return true
+})
+
+const useProjectTemplateForStart = computed(
+  () => showProjectTemplateSummaryOnly.value,
+)
+
+const hardwareConfigSource = computed(() =>
+  useProjectTemplateForStart.value ? 'project_template' : 'temporary',
+)
+
+const activeHardwareConfigSourceLabel = computed(() => {
+  if (props.runTemplateMode) return ''
+  if (hardwareConfigSource.value === 'project_template') {
+    return '将使用关联项目的运行硬件模版启动'
+  }
+  if (temporaryConfigExpanded.value) {
+    return '将使用本次临时硬件配置启动（不会保存到项目）'
+  }
+  return ''
+})
+
+const selectedImageId = defineModel('selectedImageId', { type: String, default: '' })
+
+const route = useRoute()
+
+const resolveTenantId = () => String(props.tenantId || route.params.tenant || '').trim()
+const resolveWorkspaceId = () => String(props.workspaceId || route.params.workspaceId || '').trim()
+const hasCloudContext = () => Boolean(resolveTenantId() && resolveWorkspaceId())
+
+const getRegionDisplayName = (regionId, fallbackName) => {
+  return fallbackName || regionId
+}
+
+const installedImages = computed(() => (Array.isArray(props.installedImages) ? props.installedImages : []))
+
+const cloudPlatforms = ref([])
+const regions = ref([])
+const zones = ref([])
+const vpcs = ref([])
+const vswitches = ref([])
+const securityGroups = ref([])
+const selectedRegion = ref('')
+const selectedZone = ref('')
+const selectedVpc = ref('')
+const selectedSecurityGroup = ref('')
+const selectedCloudPlatform = ref('')
+const hardwareBootstrapDone = ref(false)
+
+const isLoadingPlatforms = ref(false)
+const isLoadingRegions = ref(false)
+const isLoadingVpcs = ref(false)
+const isLoadingZones = ref(false)
+
+// 防止重复请求的标志
+let loadRegionsPromise = null
+let isLoadingVpcsFlag = false
+let isLoadingZonesFlag = false
+
+const previousServerConfig = ref(null)
+const projectRunTemplateApplied = ref(false)
+
+const applyServerConfigShape = async (serverConfig, { setPreviousRef = false, skipFinalize = false } = {}) => {
+  if (!serverConfig) return
+  if (setPreviousRef) {
+    previousServerConfig.value = serverConfig
+  }
+  if (serverConfig.hardware_config) {
+    hardwareConfig.value = {
+      cpu_cores: serverConfig.hardware_config.cpu_cores || '1',
+      memory_gb: serverConfig.hardware_config.memory_gb || '1',
+      storage_gb: serverConfig.hardware_config.storage_gb || '40',
+    }
+    if (serverConfig.hardware_config.cpu_cores) {
+      filterOptions.value.cores = String(serverConfig.hardware_config.cpu_cores)
+    }
+    if (serverConfig.hardware_config.memory_gb) {
+      filterOptions.value.memory = String(serverConfig.hardware_config.memory_gb)
+    }
+  }
+  const filterOptionsFromTemplate = serverConfig.filter_options
+  if (filterOptionsFromTemplate && typeof filterOptionsFromTemplate === 'object') {
+    const { image_architecture: _savedImageArch, ...restFilterOptions } = filterOptionsFromTemplate
+    filterOptions.value = {
+      ...filterOptions.value,
+      ...restFilterOptions,
+    }
+  }
+  syncImageArchitectureFilterFromSelection()
+  if (serverConfig.platform_id) {
+    selectedCloudPlatform.value = String(serverConfig.platform_id)
+    ensureDefaultConfigForPlatform(serverConfig.platform_id, serverConfig.authorization_id)
+  }
+  if (serverConfig.region) {
+    selectedRegion.value = String(serverConfig.region)
+    if (!regions.value.length) {
+      await loadRegions()
+    }
+    await loadVpcs()
+    if (serverConfig.vpc_id) {
+      selectedVpc.value = String(serverConfig.vpc_id)
+      await loadVswitches()
+    }
+    if (serverConfig.zone_id) {
+      selectedZone.value = serverConfig.vswitch_id
+        ? `${String(serverConfig.zone_id)}:${String(serverConfig.vswitch_id)}`
+        : String(serverConfig.zone_id)
+    }
+  }
+  if (serverConfig.security_group_id) {
+    selectedSecurityGroup.value = String(serverConfig.security_group_id)
+  }
+  if (!skipFinalize) {
+    await finalizeServerConfigShape(serverConfig)
+  }
+}
+
+const resolveShapePlatformId = (shape, template) => {
+  const direct = String(
+    shape.platform_id || template?.cloud_platform_id || template?.platform_id || '',
+  ).trim()
+  if (direct) {
+    const byId = cloudPlatforms.value.find((p) => String(p.id) === direct)
+    if (byId) {
+      shape.platform_id = direct
+      const liveAuth = String(byId?.authorization_id ?? byId?.iam_id ?? '').trim()
+      if (liveAuth) shape.authorization_id = liveAuth
+      return true
+    }
+  }
+  const authId = String(shape.authorization_id || template?.authorization_id || '').trim()
+  const platformType = String(shape.platform || template?.platform || '').trim().toLowerCase()
+  if (cloudPlatforms.value.length) {
+    let matched = null
+    if (authId) {
+      matched = cloudPlatforms.value.find((p) => {
+        const pAuth = String(p?.authorization_id ?? p?.iam_id ?? '').trim()
+        return pAuth === authId
+      })
+    }
+    if (!matched && platformType) {
+      matched = cloudPlatforms.value.find(
+        (p) => String(p?.platform_type || '').trim().toLowerCase() === platformType,
+      )
+    }
+    if (!matched && cloudPlatforms.value.length === 1) {
+      matched = cloudPlatforms.value[0]
+    }
+    if (matched?.id != null) {
+      shape.platform_id = String(matched.id)
+      const liveAuth = String(matched?.authorization_id ?? matched?.iam_id ?? '').trim()
+      if (liveAuth) shape.authorization_id = liveAuth
+      return true
+    }
+  }
+  if (direct) {
+    shape.platform_id = direct
+    return true
+  }
+  return false
+}
+
+const projectTemplateBannerText = computed(() => {
+  const tpl = props.projectServerRunTemplate
+  if (!tpl || typeof tpl !== 'object' || !Object.keys(tpl).length) return ''
+  const label = summarizeRunTemplate(tpl)
+  if (label === '未设置') return ''
+  return `关联项目的运行硬件模版：${label}`
+})
+
+const restoreProjectTemplateDefaults = async () => {
+  projectRunTemplateApplied.value = false
+  await applyProjectRunTemplateIfNeeded()
+}
+
+const openTemporaryConfig = async () => {
+  temporaryConfigExpanded.value = true
+  projectRunTemplateApplied.value = false
+  await applyProjectRunTemplateIfNeeded()
+  if (!selectedCloudPlatform.value && cloudPlatforms.value.length > 0) {
+    selectedCloudPlatform.value = String(cloudPlatforms.value[0].id)
+    await handleCloudPlatformChange()
+  }
+}
+
+const closeTemporaryConfig = () => {
+  temporaryConfigExpanded.value = false
+  void fetchProjectTemplateSummaryPrice()
+}
+
+const applyProjectRunTemplateIfNeeded = async () => {
+  const shape = runTemplateToServerConfigShape(props.projectServerRunTemplate)
+  if (!shape) return
+  if (props.projectServerRunTemplate?.template_id || props.projectServerRunTemplate?.label) {
+    runTemplateMeta.value = {
+      template_id: String(props.projectServerRunTemplate.template_id || '').trim(),
+      label: String(props.projectServerRunTemplate.label || '').trim(),
+    }
+  }
+  resolveShapePlatformId(shape, props.projectServerRunTemplate)
+  if (shape.platform_id) {
+    selectedCloudPlatform.value = String(shape.platform_id)
+    ensureDefaultConfigForPlatform(shape.platform_id, shape.authorization_id)
+  }
+  projectRunTemplateApplied.value = true
+  await applyServerConfigShape(shape)
+}
+
+const normalizeDefaultConfigsList = (raw) => {
+  if (Array.isArray(raw)) return raw
+  if (raw && typeof raw === 'object') {
+    return Object.entries(raw).map(([platform_type, value]) => ({
+      platform_type,
+      ...(value && typeof value === 'object' ? value : {}),
+    }))
+  }
+  return []
+}
+
+function resolveInstanceTypeFromServerConfig(serverConfig) {
+  return String(
+    serverConfig?.hardware_config?.instance_type
+    || props.projectServerRunTemplate?.selected_instance
+    || resolveRunTemplateInstanceType(props.projectServerRunTemplate)
+    || '',
+  ).trim()
+}
+
+function findCachedInstanceByType(instanceType) {
+  const target = String(instanceType || '').trim()
+  if (!target) return null
+  return pageDataCache.value.find((item) => item.instance_type === target)
+    || availableInstances.value.find((item) => item.instance_type === target)
+    || null
+}
+
+function ensureInstanceVisibleOnCurrentPage(instanceType) {
+  const target = String(instanceType || '').trim()
+  if (!target || !pageDataCache.value.length) return false
+  const idx = pageDataCache.value.findIndex((item) => item.instance_type === target)
+  if (idx < 0) return false
+  const targetPage = Math.floor(idx / pageSize.value) + 1
+  if (currentPage.value !== targetPage) {
+    currentPage.value = targetPage
+    updateCurrentPageData()
+  }
+  return true
+}
+
+const queueRestoreSelectedInstanceFromTemplate = (instanceType) => {
+  const target = String(instanceType || '').trim()
+  pendingRestoreInstanceType.value = target
+}
+
+const tryRestorePendingSelectedInstance = async () => {
+  const target = String(pendingRestoreInstanceType.value || '').trim()
+  if (!target) return false
+
+  if (selectedInstance.value?.instance_type === target) {
+    pendingRestoreInstanceType.value = ''
+    return true
+  }
+
+  const cached = findCachedInstanceByType(target)
+  if (!cached) return false
+
+  ensureInstanceVisibleOnCurrentPage(target)
+  const instanceToSelect = findCachedInstanceByType(target)
+  if (!instanceToSelect) return false
+
+  await selectInstance(instanceToSelect)
+  if (selectedInstance.value?.instance_type === target) {
+    pendingRestoreInstanceType.value = ''
+    return true
+  }
+  return false
+}
+
+const restoreSelectedInstanceFromTemplate = async (instanceType) => {
+  queueRestoreSelectedInstanceFromTemplate(instanceType)
+  return tryRestorePendingSelectedInstance()
+}
+
+const finalizeServerConfigShape = async (serverConfig) => {
+  if (!selectedCloudPlatform.value) return
+  ensureDefaultConfigForPlatform(selectedCloudPlatform.value)
+  if (!regions.value.length) {
+    await loadRegions()
+  }
+  if (!selectedZone.value && selectedRegion.value && selectedVpc.value) {
+    await loadVswitches()
+  }
+  if (selectedRegion.value && selectedZone.value) {
+    scheduleFetchAvailableInstances({ immediate: true })
+  }
+  const instanceType = resolveInstanceTypeFromServerConfig(serverConfig)
+  if (instanceType) {
+    queueRestoreSelectedInstanceFromTemplate(instanceType)
+    await tryRestorePendingSelectedInstance()
+  }
+}
+
+const hasConfiguredProjectRunTemplate = () =>
+  projectHasConfiguredRunTemplate({ server_run_template: props.projectServerRunTemplate })
+
+const runTemplateMeta = ref({ template_id: '', label: '' })
+
+const buildRunTemplatePayload = () => {
+  if (!selectedCloudPlatform.value || !selectedRegion.value) {
+    return {}
+  }
+  return hardwarePanelStateToRunTemplate({
+    selectedCloudPlatform: selectedCloudPlatform.value,
+    cloudPlatforms: cloudPlatforms.value,
+    cloudPlatformDefaultConfigs: cloudPlatformDefaultConfigs.value,
+    selectedRegion: selectedRegion.value,
+    selectedZone: selectedZone.value,
+    selectedVpc: selectedVpc.value,
+    selectedSecurityGroup: selectedSecurityGroup.value,
+    hardwareConfig: hardwareConfig.value,
+    filterOptions: filterOptions.value,
+    selectedInstance: selectedInstance.value,
+    selectedBandwidth: selectedBandwidth.value,
+    selectedBandwidthChargingMode: selectedBandwidthChargingMode.value,
+    templateMeta: runTemplateMeta.value,
+  })
+}
+
+let lastApplyRunTemplateError = ''
+
+const applyRunTemplate = async (template) => {
+  lastApplyRunTemplateError = ''
+  if (!template || typeof template !== 'object') {
+    lastApplyRunTemplateError = 'invalid_template'
+    return false
+  }
+  const platformsReady = await bootstrapCloudPlatformsIfNeeded()
+  if (!platformsReady) {
+    lastApplyRunTemplateError = 'no_platforms'
+    return false
+  }
+  const shape = runTemplateToServerConfigShape(template)
+  if (!shape) {
+    lastApplyRunTemplateError = 'invalid_shape'
+    return false
+  }
+  runTemplateMeta.value = {
+    template_id: String(template?.template_id || '').trim(),
+    label: String(template?.label || '').trim(),
+  }
+  if (!resolveShapePlatformId(shape, template)) {
+    lastApplyRunTemplateError = 'no_match'
+    return false
+  }
+  projectRunTemplateApplied.value = true
+  await applyServerConfigShape(shape)
+  return true
+}
+
+const getLastApplyRunTemplateError = () => lastApplyRunTemplateError
+
+// 硬件配置
+const hardwareConfig = ref({
+  cpu_cores: "1",
+  memory_gb: "1",
+  storage_gb: "40",
+  generation: ""
+})
+
+// 按量实例自动释放（分钟，与后端 RunInstances AutoReleaseTime 对应）
+const autoReleaseEnabled = ref(true)
+const autoReleaseMinutes = ref(30)
+
+// 过滤选项
+const DEFAULT_SYSTEM_DISK_CATEGORY = 'cloud_essd'
+const DEFAULT_STORAGE_TYPES = Object.freeze([DEFAULT_SYSTEM_DISK_CATEGORY])
+
+const resolveInstanceStorageTypes = (instance, preferredCategory = DEFAULT_SYSTEM_DISK_CATEGORY) => {
+  const types = instance?.diskSupport?.storage_types
+    || instance?.storage_types
+    || instance?.StorageTypes
+    || instance?.SupportedStorageCategories
+  if (Array.isArray(types) && types.length > 0) {
+    return types
+  }
+  const single = instance?.storage_type || instance?.StorageType || preferredCategory
+  return single ? [single] : [...DEFAULT_STORAGE_TYPES]
+}
+
+const resolveInstanceStorageType = (instance, preferredCategory = filterOptions.value.system_disk_category || DEFAULT_SYSTEM_DISK_CATEGORY) => {
+  const fromInstance = instance?.storage_type || instance?.StorageType
+  if (fromInstance) {
+    return fromInstance
+  }
+  const types = resolveInstanceStorageTypes(instance, preferredCategory)
+  return types[0] || preferredCategory || DEFAULT_SYSTEM_DISK_CATEGORY
+}
+
+const filterOptions = ref({
+  // 基础过滤选项
+  cores: '2',
+  memory: '4',
+  io_optimized: true,
+  system_disk_category: 'cloud_essd',
+  data_disk_category: 'cloud_essd',
+  spot_strategy: 'SpotAsPriceGo',
+  /** 与镜像 target_architectures 对齐，传给 available-instances 的 image_architecture */
+  image_architecture: '',
+  /** 与阿里云 RunInstances.SpotDuration 一致；抢占策略下多为 0 */
+  spot_duration: 0,
+  /** PostPaid 等，与 RunInstances.InstanceChargeType 对齐 */
+  instance_charge_type: 'PostPaid',
+  network_category: 'vpc'
+})
+
+// 云平台默认配置
+const cloudPlatformDefaultConfigs = ref({})
+
+const ensureDefaultConfigForPlatform = (platformId, fallbackAuthId = '') => {
+  const pid = String(platformId || selectedCloudPlatform.value || '').trim()
+  if (!pid) return null
+  const existing = cloudPlatformDefaultConfigs.value[pid]
+  if (existing?.authorization_id) return existing
+  const platform = cloudPlatforms.value.find((p) => String(p.id) === pid)
+  const authId = String(
+    platform?.authorization_id ?? platform?.iam_id ?? fallbackAuthId ?? '',
+  ).trim()
+  if (!platform && !authId) return existing || null
+  cloudPlatformDefaultConfigs.value[pid] = {
+    platform_type: platform?.platform_type || existing?.platform_type || 'aliyun',
+    authorization_id: authId,
+    remark: platform?.remark || existing?.remark || '',
+    config: existing?.config ?? null,
+  }
+  return cloudPlatformDefaultConfigs.value[pid]
+}
+
+const resolveCloudPlatformDefaultConfig = () => {
+  const pid = String(selectedCloudPlatform.value || '').trim()
+  if (!pid) return null
+  const cfg = cloudPlatformDefaultConfigs.value[pid]
+  if (cfg?.authorization_id) return cfg
+  return ensureDefaultConfigForPlatform(pid)
+}
+// 防止重复请求的标志
+let isLoadingPlatformsFlag = false
+let loadCloudPlatformsPromise = null
+let isLoadingDefaultConfigsFlag = false
+let loadDefaultConfigsPromise = null
+
+// 可用实例列表
+const availableInstances = ref([])
+const isLoadingInstances = ref(false)
+// 选中的实例
+const selectedInstance = ref(null)
+/** 模版加载后待恢复的实例类型（可用实例列表异步拉取完成后应用） */
+const pendingRestoreInstanceType = ref('')
+// 分页信息
+const nextToken = ref(null)
+const isLoadingNextPage = ref(false)
+// 分页控制
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalPages = ref(1)
+// 页面数据缓存
+const pageDataCache = ref([])
+// 防止重复请求的标志
+let isFetchingInstances = false
+// 可用实例列表请求：代际 + 取消，避免 debounce/模版加载期间过期响应覆盖最新结果
+let availableInstancesFetchGeneration = 0
+let availableInstancesAbortController = null
+let availableInstancesDetailsAbortController = null
+
+function abortPendingAvailableInstancesFetch() {
+  if (availableInstancesAbortController) {
+    availableInstancesAbortController.abort()
+    availableInstancesAbortController = null
+  }
+  abortPendingInstanceDetailsFetch()
+}
+
+function abortPendingInstanceDetailsFetch() {
+  if (availableInstancesDetailsAbortController) {
+    availableInstancesDetailsAbortController.abort()
+    availableInstancesDetailsAbortController = null
+  }
+}
+
+function releaseAvailableInstancesFetchState(fetchGeneration) {
+  if (fetchGeneration !== availableInstancesFetchGeneration) {
+    return
+  }
+  isLoadingInstances.value = false
+  isLoadingNextPage.value = false
+  isFetchingInstances = false
+  availableInstancesAbortController = null
+}
+
+const availableInstancesFetchScheduler = createAvailableInstancesFetchScheduler({
+  onRun: (intentGeneration) => {
+    nextToken.value = null
+    void fetchAvailableInstances(intentGeneration)
+  },
+})
+
+function scheduleFetchAvailableInstances({ immediate = false } = {}) {
+  availableInstancesFetchScheduler.schedule({
+    immediate,
+    onAbort: abortPendingAvailableInstancesFetch,
+  })
+}
+// 价格信息缓存
+const instancePrices = ref({})
+// 价格加载状态
+const priceLoading = ref({})
+// 带宽限制信息
+const bandwidthLimitations = ref({})
+// 带宽加载状态
+const bandwidthLoading = ref({})
+// 选中的带宽值
+const selectedBandwidth = ref({})
+// 选中的带宽计费模式
+const selectedBandwidthChargingMode = ref('PayByTraffic')
+// 默认带宽值
+const DEFAULT_BANDWIDTH = 5
+// SSE连接由父组件TaskDetail管理
+// SDK方法调用记录
+const sdkMethods = ref([])
+// 计算属性
+/** 已选镜像推导出的 CPU 架构，用于实例列表过滤 */
+const imageArchitectureFromSelection = computed(() =>
+  resolvePrimaryImageArchitecture({
+    task: props.task,
+    selectedImageId: selectedImageId.value,
+    installedImages: installedImages.value,
+  }),
+)
+
+const imageArchitectureDisplayLabel = computed(() => imageArchitectureFromSelection.value || '—')
+
+const imageArchitectureDisplayHint = computed(() => {
+  if (imageArchitectureFromSelection.value) {
+    return `与已选镜像 CPU 架构一致：${imageArchitectureFromSelection.value}`
+  }
+  return '请先选择已安装镜像以解析 CPU 架构'
+})
+
+function syncImageArchitectureFilterFromSelection() {
+  filterOptions.value.image_architecture = imageArchitectureFromSelection.value || ''
+}
+
+/** 传给可用实例等云 API 的 CPU 架构，始终与镜像一致 */
+const containerImageArchitectureForCloudQuery = computed(() => imageArchitectureFromSelection.value)
+
+const isServerRuntimeRunning = computed(() => props.serverRuntimeStatus === 'Running')
+
+const startServerDisabledReason = computed(() =>
+  resolveServerStartDisabledReason({
+    hardwareConfigSource: hardwareConfigSource.value,
+    isServerStarting: props.isServerStarting,
+    isServerRunning: props.isServerRunning,
+    isServerRuntimeRunning: isServerRuntimeRunning.value,
+    serverRuntimeStatus: props.serverRuntimeStatus,
+    hasCloudContext: hasCloudContext(),
+    selectedImageId: selectedImageId.value,
+    taskId: props.task?.id,
+    runTemplate: props.projectServerRunTemplate,
+    autoReleaseEnabled: autoReleaseEnabled.value,
+    autoReleaseMinutes: autoReleaseMinutes.value,
+    isLoadingPlatforms: isLoadingPlatforms.value,
+    selectedCloudPlatform: selectedCloudPlatform.value,
+    isLoadingRegions: isLoadingRegions.value,
+    selectedRegion: selectedRegion.value,
+    selectedVpc: selectedVpc.value,
+    selectedZone: selectedZone.value,
+    isLoadingInstances: isLoadingInstances.value,
+    selectedInstance: selectedInstance.value,
+    requireEnvParamsSource: props.requireEnvParamsSource,
+    featureParamsSource: props.featureParamsSource,
+    selectedPersonalConfigId: props.selectedPersonalConfigId,
+  }),
+)
+
+const isStartServerDisabled = computed(() => Boolean(startServerDisabledReason.value))
+
+const startServerButtonLabel = computed(() => {
+  if (props.isServerStarting) return '启动中...'
+  if (props.isServerRunning || isServerRuntimeRunning.value) return '服务器运行中'
+  const s = props.serverRuntimeStatus
+  if (s === 'Starting' || s === 'Pending' || s === 'Initializing') return '实例创建中…'
+  if (s === 'Stopping' || s === 'Rebooting') return '实例处理中…'
+  return '启动服务器'
+})
+// 获取存储类型的最小容量
+const getStorageMin = (instance, storageType) => {
+  if (instance.diskSupport && instance.diskSupport.storage_configs) {
+    const config = instance.diskSupport.storage_configs.find(config => config.type === storageType);
+    if (config) {
+      return config.min;
+    }
+  }
+  return 20; // 默认值
+}
+
+// 获取存储类型的最大容量
+const getStorageMax = (instance, storageType) => {
+  if (instance.diskSupport && instance.diskSupport.storage_configs) {
+    const config = instance.diskSupport.storage_configs.find(config => config.type === storageType);
+    if (config) {
+      return config.max;
+    }
+  }
+  return 2048; // 默认值
+}
+const fetchImageRegions = async (imageId) => {
+  if (!imageId) {
+    return []
+  }
+  
+  try {
+    const tenantId = route.params.tenant
+    const defaultConfig = resolveCloudPlatformDefaultConfig()
+    const platformType = defaultConfig?.platform_type || ''
+    
+    const response = await apiFetch(`/api/tenant/${tenantId}/installed-images/${imageId}/regions/?platform_type=${platformType}`, {
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      return Array.isArray(data) ? data.map(region => {
+        const regionId = region.region_id || region.id
+        const regionName = region.region_name || region.name
+        return {
+          region_id: regionId,
+          region_name: getRegionDisplayName(regionId, regionName)
+        }
+      }) : []
+    } else {
+      console.error('获取镜像支持地域列表失败')
+      return []
+    }
+  } catch (error) {
+    console.error('获取镜像支持地域列表出错:', error)
+    return []
+  }
+}
+
+const loadRegions = async () => {
+  if (loadRegionsPromise) {
+    return loadRegionsPromise
+  }
+
+  loadRegionsPromise = (async () => {
+    try {
+      isLoadingRegions.value = true
+      const tenantId = resolveTenantId()
+      ensureDefaultConfigForPlatform(selectedCloudPlatform.value)
+      const defaultConfig = resolveCloudPlatformDefaultConfig()
+
+      if (!defaultConfig || !defaultConfig.authorization_id) {
+        return
+      }
+
+      let fetchedRegions = []
+
+      // 如果已选择镜像，优先从镜像支持的地域列表中获取
+      if (selectedImageId.value) {
+        fetchedRegions = await fetchImageRegions(selectedImageId.value)
+        console.log('从镜像获取地域列表:', fetchedRegions.length, '个地域')
+      }
+
+      // 如果镜像地域列表为空或未选择镜像，回退到云平台地域列表
+      if (fetchedRegions.length === 0) {
+        const response = await apiFetch(`/api/tenant/${tenantId}/cloud-platform/${defaultConfig.authorization_id}/cloud/regions/?platform_type=${defaultConfig.platform_type}`, {
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.status !== 'error') {
+            fetchedRegions = Array.isArray(data) ? data.map(region => ({
+              region_id: region.id,
+              region_name: getRegionDisplayName(region.id, region.name),
+            })) : []
+          }
+        } else {
+          console.error('获取云平台地域列表失败')
+        }
+      }
+
+      regions.value = fetchedRegions
+
+      // 运行模版/历史配置已指定地域时保留，否则用工作区默认或列表首项
+      if (regions.value.length > 0) {
+        const platDefault = resolveCloudPlatformDefaultConfig()
+        const savedRegion = platDefault?.config?.region
+        const regionIds = regions.value.map((r) => r.region_id)
+        const preferredRegion = String(selectedRegion.value || '').trim()
+        if (!preferredRegion || !regionIds.includes(preferredRegion)) {
+          selectedRegion.value = String(
+            savedRegion && regionIds.includes(savedRegion)
+              ? savedRegion
+              : regions.value[0].region_id,
+          )
+        }
+        if (!selectedZone.value) {
+          vswitches.value = []
+          zones.value = []
+          selectedZone.value = ''
+        }
+        await loadVpcs()
+        if (!props.runTemplateMode || !projectRunTemplateApplied.value) {
+          scheduleFetchAvailableInstances({ immediate: true })
+        }
+      }
+    } catch (error) {
+      console.error('获取地域列表出错:', error)
+    } finally {
+      isLoadingRegions.value = false
+      loadRegionsPromise = null
+    }
+  })()
+
+  return loadRegionsPromise
+}
+
+const loadVpcs = async () => {
+  // 防止重复请求
+  if (isLoadingVpcsFlag) {
+    console.log('正在获取VPC列表，跳过重复请求');
+    return
+  }
+  
+  // 清空VPC列表的数据
+  vpcs.value = []
+  selectedVpc.value = ''
+  
+  if (!selectedRegion.value) {
+    return
+  }
+  
+  try {
+    isLoadingVpcsFlag = true
+    isLoadingVpcs.value = true
+    const tenantId = route.params.tenant
+    const defaultConfig = resolveCloudPlatformDefaultConfig()
+    
+    if (defaultConfig && defaultConfig.authorization_id) {
+      const response = await apiFetch(`/api/tenant/${tenantId}/cloud/server-images/vpcs/?region_id=${selectedRegion.value}&authorization_id=${defaultConfig.authorization_id}`, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.status !== 'error') {
+          vpcs.value = Array.isArray(data) ? data.map(vpc => ({
+            id: vpc.vpc_id || vpc.id || vpc.VpcId,
+            name: vpc.vpc_name || vpc.name || vpc.VpcName || '未命名VPC'
+          })) : []
+          
+          // 无论VPC列表是否为空，都添加"自动创建VPC"选项
+          vpcs.value.push({
+            id: 'auto_create_vpc',
+            name: '自动创建VPC'
+          })
+          
+          // 优先使用工作区已保存的默认 VPC，否则选列表第一项（排除末尾「自动创建」）
+          if (vpcs.value.length > 0) {
+            const platDefault = resolveCloudPlatformDefaultConfig()
+            const savedVpc = platDefault?.config?.vpc_id
+            const vpcIds = vpcs.value.map((v) => v.id)
+            if (savedVpc && vpcIds.includes(savedVpc)) {
+              selectedVpc.value = String(savedVpc)
+            } else {
+              const firstReal = vpcs.value.find((v) => v.id !== 'auto_create_vpc')
+              selectedVpc.value = String((firstReal || vpcs.value[0]).id)
+            }
+          }
+          
+          // 加载交换机列表
+          await loadVswitches()
+        }
+      } else {
+        console.error('获取VPC列表失败')
+      }
+    }
+  } catch (error) {
+    console.error('获取VPC列表出错:', error)
+  } finally {
+    isLoadingVpcs.value = false
+    isLoadingVpcsFlag = false
+  }
+}
+
+const loadVswitches = async () => {
+  if (!selectedVpc.value) {
+    vswitches.value = []
+    zones.value = []
+    securityGroups.value = []
+    selectedZone.value = ''
+    selectedSecurityGroup.value = ''
+    return
+  }
+  
+  try {
+    const tenantId = route.params.tenant
+    const defaultConfig = resolveCloudPlatformDefaultConfig()
+    
+    if (defaultConfig && defaultConfig.authorization_id) {
+      // 同时加载交换机和安全组
+      const [vswitchesResponse, securityGroupsResponse] = await Promise.all([
+        // 加载交换机列表
+        selectedVpc.value === 'auto_create_vpc' ? Promise.resolve({ ok: true, json: () => Promise.resolve([]) }) :
+          apiFetch(`/api/tenant/${tenantId}/cloud/server-images/vswitches/?region_id=${selectedRegion.value}&vpc_id=${selectedVpc.value}&authorization_id=${defaultConfig.authorization_id}`, {
+            credentials: 'include',
+            headers: {
+              'Accept': 'application/json'
+            }
+          }),
+        // 加载安全组列表
+        apiFetch(`/api/tenant/${tenantId}/cloud/server-images/security-groups/?region_id=${selectedRegion.value}&vpc_id=${selectedVpc.value}&authorization_id=${defaultConfig.authorization_id}`, {
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json'
+          }
+        })
+      ])
+      
+      // 处理交换机响应
+      if (vswitchesResponse.ok) {
+        const data = await vswitchesResponse.json()
+        if (data.status !== 'error') {
+          vswitches.value = Array.isArray(data) ? data.map(vswitch => ({
+            vswitch_id: vswitch.vswitch_id || vswitch.id || vswitch.VSwitchId || `vswitch_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            zone_id: vswitch.zone_id || vswitch.zoneId || vswitch.ZoneId || vswitch.zone_id || `zone_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            vswitch_name: vswitch.vswitch_name || vswitch.name || vswitch.VSwitchName || '未命名交换机'
+          })) : []
+        }
+      } else {
+        console.error('获取交换机列表失败')
+      }
+      
+      // 处理安全组响应
+      if (securityGroupsResponse.ok) {
+        const data = await securityGroupsResponse.json()
+        if (data.status !== 'error') {
+          securityGroups.value = Array.isArray(data) ? data.map(sg => ({
+            id: sg.security_group_id || sg.id || sg.SecurityGroupId,
+            name: sg.security_group_name || sg.name || sg.SecurityGroupName || '未命名安全组'
+          })) : []
+          
+          // 添加"自动创建安全组"选项
+          securityGroups.value.push({
+            id: 'auto_create_security_group',
+            name: '自动创建安全组'
+          })
+          
+          // 优先使用工作区已保存的默认安全组
+          if (securityGroups.value.length > 0) {
+            const platDefault = resolveCloudPlatformDefaultConfig()
+            const savedSg = platDefault?.config?.security_group_id
+            const sgIds = securityGroups.value.map((s) => s.id)
+            if (savedSg && sgIds.includes(savedSg)) {
+              selectedSecurityGroup.value = String(savedSg)
+            } else {
+              const firstReal = securityGroups.value.find((s) => s.id !== 'auto_create_security_group')
+              selectedSecurityGroup.value = String((firstReal || securityGroups.value[0]).id)
+            }
+          }
+        }
+      } else {
+        console.error('获取安全组列表失败')
+      }
+      
+      // 加载可用区列表
+      await loadZones()
+    }
+  } catch (error) {
+    console.error('获取网络资源出错:', error)
+  }
+}
+
+const loadZones = async () => {
+  // 防止重复请求
+  if (isLoadingZonesFlag) {
+    console.log('正在获取可用区列表，跳过重复请求');
+    return
+  }
+  
+  if (!selectedRegion.value) {
+    zones.value = []
+    return
+  }
+  
+  try {
+    isLoadingZonesFlag = true
+    isLoadingZones.value = true
+    const tenantId = route.params.tenant
+    const defaultConfig = resolveCloudPlatformDefaultConfig()
+    
+    if (defaultConfig && defaultConfig.authorization_id) {
+      const response = await apiFetch(`/api/tenant/${tenantId}/cloud-platform/${defaultConfig.authorization_id}/cloud/zones/?region_id=${selectedRegion.value}`, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.status !== 'error') {
+          // 转换API响应格式并添加交换机信息
+          zones.value = Array.isArray(data) ? data.map(zone => {
+            // 查找该可用区的交换机
+            const zoneVswitches = vswitches.value.filter(vswitch => vswitch.zone_id === (zone.id || zone.zone_id))
+            
+            // 获取可用区名称，支持不同的属性名
+            const zoneName = zone.name || zone.zone_name || zone.display_name || '未知可用区'
+            
+            // 获取可用区ID，支持不同的属性名
+            const zoneId = zone.id || zone.zone_id || zone.ZoneId || `zone_${Date.now()}_${Math.floor(Math.random() * 1000)}`
+            
+            // 为每个交换机创建一个选项
+            const options = zoneVswitches.map(vswitch => {
+              const vswitchId = vswitch.vswitch_id || vswitch.id || vswitch.VSwitchId || `vswitch_${Date.now()}_${Math.floor(Math.random() * 1000)}`
+              return {
+                zone_id: `${zoneId}:${vswitchId}`,
+                zone_name: zoneName,
+                display_name: `${zoneName}-${vswitch.vswitch_name || vswitch.name || vswitch.VSwitchName || '未命名交换机'}`
+              }
+            })
+            
+            // 为每个可用区添加"自动创建交换机"选项
+            options.push({
+              zone_id: zoneId,
+              zone_name: zoneName,
+              display_name: `${zoneName}-自动创建交换机`
+            })
+            
+            return options
+          }).flat() : []
+          
+          // 优先使用工作区已保存的默认可用区+交换机，否则选第一项
+          if (zones.value.length > 0) {
+            const platDefault = resolveCloudPlatformDefaultConfig()
+            const cfg = platDefault?.config
+            const savedZoneId = cfg?.zone_id
+            const savedVsw = cfg?.vswitch_id
+            let picked = ''
+            if (savedZoneId && savedVsw) {
+              const composite = `${savedZoneId}:${savedVsw}`
+              if (zones.value.some((z) => z.zone_id === composite)) {
+                picked = composite
+              }
+            }
+            if (!picked && savedZoneId) {
+              const plain = zones.value.find((z) => z.zone_id === savedZoneId)
+              if (plain) {
+                picked = plain.zone_id
+              }
+            }
+            selectedZone.value = String(picked || zones.value[0].zone_id)
+          }
+        }
+      } else {
+        console.error('获取可用区列表失败')
+      }
+    }
+  } catch (error) {
+    console.error('获取可用区列表出错:', error)
+  } finally {
+    isLoadingZones.value = false
+    isLoadingZonesFlag = false
+  }
+}
+
+
+
+const loadCloudPlatforms = async ({ skipHandleChange = false } = {}) => {
+  if (loadCloudPlatformsPromise) {
+    await loadCloudPlatformsPromise
+    return
+  }
+
+  loadCloudPlatformsPromise = (async () => {
+    try {
+      isLoadingPlatformsFlag = true
+      isLoadingPlatforms.value = true
+      const tenantId = resolveTenantId()
+      const workspaceId = resolveWorkspaceId()
+      if (!tenantId || !workspaceId) {
+        console.warn('loadCloudPlatforms: 缺少 tenantId 或 workspaceId', { tenantId, workspaceId })
+        return
+      }
+      const platforms = await fetchWorkspaceCloudPlatforms(tenantId, workspaceId)
+      if (platforms.length) {
+        cloudPlatforms.value = platforms
+        await loadAllCloudPlatformsDefaultConfig()
+
+        if (cloudPlatforms.value.length > 0) {
+          if (!selectedCloudPlatform.value) {
+            selectedCloudPlatform.value = String(cloudPlatforms.value[0].id)
+          }
+          if (!skipHandleChange) {
+            await handleCloudPlatformChange()
+          }
+        }
+      } else {
+        console.error('获取云平台列表失败')
+      }
+    } catch (error) {
+      console.error('获取云平台列表出错:', error)
+    } finally {
+      isLoadingPlatforms.value = false
+      isLoadingPlatformsFlag = false
+      loadCloudPlatformsPromise = null
+    }
+  })()
+
+  await loadCloudPlatformsPromise
+}
+
+// 获取任务的上一次服务器配置
+const fetchPreviousServerConfig = async () => {
+  try {
+    if (!props.task) return
+    
+    const tenantId = route.params.tenant
+    // 优先使用props传递的workspaceId，其次使用路由参数
+    const workspaceId = props.workspaceId || route.params.workspaceId
+    const taskId = props.task.id
+    
+    const response = await apiFetch(`/api/tenant/${tenantId}/workspace/${workspaceId}/cloud/compute/previous-server-config/?task_id=${taskId}`, {
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      if (data.status === 'success' && data.server_config) {
+        previousServerConfig.value = data.server_config
+      }
+    }
+    if (!hasConfiguredProjectRunTemplate() || temporaryConfigExpanded.value) {
+      await applyProjectRunTemplateIfNeeded()
+    }
+  } catch (error) {
+    console.error('获取上一次服务器配置出错:', error)
+    if (!hasConfiguredProjectRunTemplate() || temporaryConfigExpanded.value) {
+      await applyProjectRunTemplateIfNeeded()
+    }
+  }
+}
+
+// 加载所有云平台的默认配置
+const loadAllCloudPlatformsDefaultConfig = async () => {
+  if (loadDefaultConfigsPromise) {
+    await loadDefaultConfigsPromise
+    return
+  }
+
+  loadDefaultConfigsPromise = (async () => {
+    try {
+      isLoadingDefaultConfigsFlag = true
+      const tenantId = resolveTenantId()
+      const workspaceId = resolveWorkspaceId()
+      if (!tenantId || !workspaceId) return
+
+      const response = await apiFetch(`/api/tenant/${tenantId}/workspaces/${workspaceId}/cloud/platforms/default-config/`, {
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.status === 'success' && data.default_configs) {
+          const configs = normalizeDefaultConfigsList(data.default_configs)
+          for (const platform of cloudPlatforms.value) {
+            let defaultConfig = configs.find(
+              (config) =>
+                config.platform_type === platform.platform_type
+                && config.remark === platform.remark,
+            )
+            if (!defaultConfig) {
+              defaultConfig = configs.find((config) => config.platform_type === platform.platform_type)
+            }
+            if (defaultConfig) {
+              cloudPlatformDefaultConfigs.value[String(platform.id)] = {
+                ...defaultConfig,
+                authorization_id: String(
+                  defaultConfig.authorization_id || platform.authorization_id || '',
+                ).trim(),
+              }
+            } else if (platform.authorization_id) {
+              cloudPlatformDefaultConfigs.value[String(platform.id)] = {
+                platform_type: platform.platform_type,
+                authorization_id: String(platform.authorization_id).trim(),
+                remark: platform.remark || '',
+                config: null,
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('加载所有云平台默认配置出错:', error)
+    } finally {
+      isLoadingDefaultConfigsFlag = false
+      loadDefaultConfigsPromise = null
+    }
+  })()
+
+  await loadDefaultConfigsPromise
+}
+// 处理云平台切换事件
+const handleCloudPlatformChange = async (event) => {
+  // 重置地域、VPC、交换机和可用区
+  selectedRegion.value = ''
+  selectedVpc.value = ''
+  selectedZone.value = ''
+  zones.value = []
+  vpcs.value = []
+  vswitches.value = []
+  
+  // 重置可用实例列表
+  availableInstances.value = []
+  
+  // 应用云平台的默认配置
+  if (selectedCloudPlatform.value) {
+    let defaultConfig = resolveCloudPlatformDefaultConfig()
+    const platform = cloudPlatforms.value.find(
+      (p) => String(p.id) === String(selectedCloudPlatform.value),
+    )
+    if (!defaultConfig && platform?.authorization_id) {
+      cloudPlatformDefaultConfigs.value[String(selectedCloudPlatform.value)] = {
+        platform_type: platform.platform_type,
+        authorization_id: String(platform.authorization_id).trim(),
+        remark: platform.remark || '',
+        config: null,
+      }
+      defaultConfig = resolveCloudPlatformDefaultConfig()
+    }
+    if (defaultConfig?.authorization_id || platform?.authorization_id) {
+      if (defaultConfig?.config?.bandwidth_charging_mode) {
+        selectedBandwidthChargingMode.value = defaultConfig.config.bandwidth_charging_mode
+      }
+      // 重新加载地域列表（loadRegions 内会按已保存默认选中地域/VPC/可用区）
+      await loadRegions()
+    }
+  }
+}
+
+// 应用上一次运行配置
+const applyPreviousConfig = () => {
+  if (previousServerConfig.value) {
+    void applyServerConfigShape(previousServerConfig.value)
+  }
+}
+
+// SSE连接和状态更新由父组件TaskDetail管理
+
+const startServer = async () => {
+  if (props.requireEnvParamsSource) {
+    const envHint = resolveEnvParamsSourceRequiredHint({
+      featureParamsSource: props.featureParamsSource,
+      selectedPersonalConfigId: props.selectedPersonalConfigId,
+    })
+    if (envHint) {
+      console.warn(envHint)
+      return
+    }
+  }
+  if (!selectedImageId.value) {
+    alert('请先选择镜像')
+    return
+  }
+  if (autoReleaseEnabled.value) {
+    const m = Math.floor(Number(autoReleaseMinutes.value))
+    if (!Number.isFinite(m) || m < 30 || m > 1440) {
+      alert('自动释放时间请填写 30～1440 之间的整数分钟（阿里云最短为当前时间 30 分钟后）')
+      return
+    }
+  }
+
+  const tenantId = route.params.tenant
+  const workspaceId = props.workspaceId || route.params.workspaceId
+  const onAccepted = (result) => emit('start-request-accepted', result)
+  const failNetwork = () => {
+    if (props.updateServerStatus) {
+      props.updateServerStatus(
+        buildStartVmErrorStatusUpdate(null, '启动服务器失败，请检查网络连接或联系管理员'),
+      )
+    }
+  }
+
+  if (useProjectTemplateForStart.value) {
+    try {
+      const built = await buildTemplateStartVmRequestWithClientIp({
+        taskId: props.task?.id,
+        containerImageId: selectedImageId.value,
+        runTemplate: props.projectServerRunTemplate,
+        autoReleaseEnabled: autoReleaseEnabled.value,
+        autoReleaseMinutes: autoReleaseMinutes.value,
+      })
+      if (!built) {
+        alert('项目运行硬件模版配置不完整，请检查或使用临时配置')
+        return
+      }
+      await postHardwarePanelStartVm({
+        tenantId,
+        workspaceId,
+        apiPath: built.apiPath,
+        body: built.body,
+        updateServerStatus: props.updateServerStatus,
+        onAccepted,
+      })
+    } catch (error) {
+      console.error('启动服务器出错:', error)
+      failNetwork()
+    }
+    return
+  }
+
+  if (!selectedCloudPlatform.value) { alert('请先选择云平台'); return }
+  if (!selectedRegion.value) { alert('请选择地域'); return }
+  if (!selectedVpc.value) { alert('请选择VPC'); return }
+  if (!selectedZone.value) { alert('请选择可用区'); return }
+
+  try {
+    let zoneId = selectedZone.value
+    let vswitchId = null
+    let autoCreateVswitch = false
+    if (zoneId.includes(':')) {
+      const parts = zoneId.split(':')
+      zoneId = parts[0]
+      vswitchId = parts[1]
+    } else {
+      const previousZoneId = previousServerConfig.value?.zone_id
+      const previousVswitchId = previousServerConfig.value?.vswitch_id
+      if (previousZoneId && previousVswitchId && previousZoneId === zoneId) {
+        vswitchId = previousVswitchId
+      } else {
+        autoCreateVswitch = true
+      }
+    }
+    let securityGroupId = selectedSecurityGroup.value
+    let autoCreateSecurityGroup = false
+    if (securityGroupId === 'auto_create_security_group') {
+      autoCreateSecurityGroup = true
+      securityGroupId = null
+    }
+    const defaultConfig = resolveCloudPlatformDefaultConfig()
+    const autoCreateVpc = selectedVpc.value === 'auto_create_vpc'
+    const apiPath = (autoCreateVpc || autoCreateVswitch || autoCreateSecurityGroup)
+      ? 'start-vm-auto'
+      : 'start-vm'
+    const body = await buildManualHardwareStartVmBody({
+      taskId: props.task.id,
+      containerImageId: selectedImageId.value,
+      hardwareConfig: hardwareConfig.value,
+      filterOptions: filterOptions.value,
+      selectedInstance: selectedInstance.value,
+      selectedBandwidth: selectedBandwidth.value,
+      defaultBandwidth: DEFAULT_BANDWIDTH,
+      regionId: selectedRegion.value,
+      zoneId,
+      vpcId: autoCreateVpc ? null : selectedVpc.value,
+      vswitchId,
+      autoCreateVswitch,
+      cloudPlatformId: selectedCloudPlatform.value,
+      authorizationId: defaultConfig ? defaultConfig.authorization_id : null,
+      securityGroupId,
+      autoCreateSecurityGroup,
+      bandwidth: selectedInstance.value
+        ? (selectedBandwidth.value[selectedInstance.instance_type] || DEFAULT_BANDWIDTH)
+        : DEFAULT_BANDWIDTH,
+      bandwidthChargingMode: selectedBandwidthChargingMode.value,
+      autoReleaseEnabled: autoReleaseEnabled.value,
+      autoReleaseMinutes: autoReleaseMinutes.value,
+    })
+    await postHardwarePanelStartVm({
+      tenantId,
+      workspaceId,
+      apiPath,
+      body,
+      updateServerStatus: props.updateServerStatus,
+      onAccepted,
+    })
+  } catch (error) {
+    console.error('启动服务器出错:', error)
+    failNetwork()
+  }
+}
+// 深度比较两个对象是否相等
+function deepEqual(obj1, obj2) {
+  if (obj1 === obj2) return true;
+  if (obj1 == null || obj2 == null) return false;
+  if (typeof obj1 !== typeof obj2) return false;
+  if (typeof obj1 === 'object') {
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    if (keys1.length !== keys2.length) return false;
+    for (const key of keys1) {
+      if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+const parseBandwidthLimitationResponse = (data) => {
+  if (!data || typeof data !== 'object') return null
+  if (data.BandwidthInfo && (data.BandwidthInfo.min_bandwidth != null || data.BandwidthInfo.max_bandwidth != null)) {
+    return {
+      min_bandwidth: data.BandwidthInfo.min_bandwidth ?? 0,
+      max_bandwidth: data.BandwidthInfo.max_bandwidth ?? 0,
+      bandwidth_options: data.BandwidthInfo.bandwidth_options,
+    }
+  }
+  if (data.min_bandwidth != null || data.max_bandwidth != null) {
+    return {
+      min_bandwidth: data.min_bandwidth ?? 0,
+      max_bandwidth: data.max_bandwidth ?? 0,
+      bandwidth_options: data.bandwidth_options,
+    }
+  }
+  return null
+}
+
+const clampBandwidthValue = (instanceType, rawValue) => {
+  const limitation = bandwidthLimitations.value[instanceType]
+  const min = limitation?.min_bandwidth ?? 0
+  const max = limitation?.max_bandwidth ?? 100
+  let num = Number(rawValue)
+  if (Number.isNaN(num)) {
+    num = DEFAULT_BANDWIDTH
+  }
+  return Math.min(max, Math.max(min, Math.round(num)))
+}
+
+const onBandwidthInput = (instanceType, event) => {
+  const raw = event.target.value
+  if (raw === '') {
+    selectedBandwidth.value[instanceType] = ''
+    return
+  }
+  selectedBandwidth.value[instanceType] = Number(raw)
+}
+
+const onBandwidthBlur = (instanceType) => {
+  if (!bandwidthLimitations.value[instanceType]) return
+  const clamped = clampBandwidthValue(instanceType, selectedBandwidth.value[instanceType])
+  if (selectedBandwidth.value[instanceType] !== clamped) {
+    selectedBandwidth.value[instanceType] = clamped
+  }
+}
+
+const normalizeInstancePriceRecord = (data) => {
+  if (!data || typeof data !== 'object' || data.error) return null
+  const priceObj = data.Price || {}
+  const currency = priceObj.Currency || data.currency || data.Currency || 'CNY'
+  const tradePrice = priceObj.TradePrice ?? data.price ?? data.trade_price ?? null
+  if (tradePrice == null || tradePrice === '无法获取价格') return null
+  const originalPrice = priceObj.OriginalPrice ?? data.original_price ?? null
+  const discountPrice = priceObj.DiscountPrice ?? data.discount_price ?? null
+  const detailInfos = priceObj.DetailInfos || data.detail_infos || data.DetailInfos || {}
+  const detailList = detailInfos.detail_info || detailInfos.DetailInfo || detailInfos.detailInfo || []
+  const details = (Array.isArray(detailList) ? detailList : []).map((detail) => ({
+    resource: detail.resource || detail.Resource || '',
+    amount: detail.trade_price ?? detail.TradePrice ?? detail.original_price ?? detail.OriginalPrice ?? 0,
+  })).filter((detail) => detail.resource)
+  return {
+    currency,
+    tradePrice,
+    originalPrice,
+    discountPrice,
+    details,
+  }
+}
+
+const getInstancePriceView = (instanceType) => normalizeInstancePriceRecord(instancePrices.value[instanceType])
+
+const selectedInstancePriceView = computed(() => {
+  const instanceType = selectedInstance.value?.instance_type
+  if (!instanceType) return null
+  return getInstancePriceView(instanceType)
+})
+
+const formatPriceAmount = (currency, amount) => {
+  const formatted = formatInstanceHourlyPrice(currency, amount)
+  if (formatted) return formatted.replace('元/时', ' 元/小时')
+  return '—'
+}
+
+const projectTemplateHardwareSummary = computed(() => {
+  const tpl = props.projectServerRunTemplate
+  if (!tpl || typeof tpl !== 'object') return ''
+  const instanceType = resolveRunTemplateInstanceType(tpl)
+  const hw = tpl.hardware_config && typeof tpl.hardware_config === 'object' ? tpl.hardware_config : {}
+  const priceView = instanceType ? getInstancePriceView(instanceType) : null
+  const priceLoadingNow = instanceType ? Boolean(priceLoading.value[instanceType]) : false
+  const priceText = priceView
+    ? formatInstanceHourlyPrice(priceView.currency, priceView.tradePrice)
+    : null
+
+  const summary = buildRunTemplateHardwareSpecSummary({
+    cpuCores: hw.cpu_cores,
+    memoryGb: hw.memory_gb,
+    gpuSpec: formatGpuSpec(hw),
+    priceText: showProjectTemplateSummaryOnly.value ? null : priceText,
+    priceLoading: showProjectTemplateSummaryOnly.value ? false : priceLoadingNow,
+  })
+  if (summary) return summary
+  return summarizeRunTemplateHardwareSpecs(tpl)
+})
+
+const projectTemplatePriceHint = computed(() => {
+  if (!showProjectTemplateSummaryOnly.value) return ''
+  const instanceType = resolveRunTemplateInstanceType(props.projectServerRunTemplate)
+  if (!instanceType) return ''
+  if (priceLoading.value[instanceType]) return '按量付费价格：加载中…'
+  const priceView = getInstancePriceView(instanceType)
+  if (!priceView) return ''
+  const formatted = formatPriceAmount(priceView.currency, priceView.tradePrice)
+  if (!formatted || formatted === '—') return ''
+  return `按量付费价格：${formatted}（仅供参考，实际以云厂商为准）`
+})
+
+const runTemplateSpecSummary = computed(() => {
+  if (!props.runTemplateMode) return ''
+  const inst = selectedInstance.value
+  const hw = hardwareConfig.value
+  const tplHw = props.projectServerRunTemplate?.hardware_config || {}
+  const instanceType = inst?.instance_type || resolveRunTemplateInstanceType(props.projectServerRunTemplate)
+
+  let cpuCores = inst?.cpu_cores ?? null
+  let memoryGb = inst?.memory_gb ?? null
+  let gpuSpec = formatGpuSpec(inst)
+
+  if (!inst) {
+    const tplCpu = tplHw?.cpu_cores ?? hw?.cpu_cores
+    const tplMem = tplHw?.memory_gb ?? hw?.memory_gb
+    const looksLikePlaceholder = instanceType
+      && String(tplCpu ?? '') === '1'
+      && String(tplMem ?? '') === '1'
+    if (!looksLikePlaceholder && (tplCpu || tplMem)) {
+      cpuCores = tplCpu ?? null
+      memoryGb = tplMem ?? null
+      gpuSpec = formatGpuSpec(tplHw || hw)
+    }
+  }
+
+  const priceView = instanceType ? getInstancePriceView(instanceType) : null
+  const priceLoadingNow = instanceType ? Boolean(priceLoading.value[instanceType]) : false
+  const priceText = priceView
+    ? formatInstanceHourlyPrice(priceView.currency, priceView.tradePrice)
+    : null
+
+  const summary = buildRunTemplateHardwareSpecSummary({
+    cpuCores,
+    memoryGb,
+    gpuSpec,
+    priceText,
+    priceLoading: priceLoadingNow,
+  })
+  if (summary) return summary
+  if (instanceType) return `实例 ${instanceType}`
+  return ''
+})
+
+watch(
+  runTemplateSpecSummary,
+  (summary) => {
+    if (props.runTemplateMode) {
+      emit('spec-summary-change', summary)
+    }
+  },
+  { immediate: true },
+)
+
+// 获取带宽限制
+const fetchBandwidthLimitation = async (instance) => {
+  if (!instance || !instance.instance_type) return;
+  
+  // 防止重复请求
+  if (bandwidthLoading.value[instance.instance_type]) {
+    return;
+  }
+  
+  try {
+    bandwidthLoading.value[instance.instance_type] = true;
+    const tenantId = route.params.tenant;
+    const defaultConfig = resolveCloudPlatformDefaultConfig();
+    
+    if (!defaultConfig || !selectedRegion.value) {
+      return;
+    }
+    
+    // 构建API URL
+    const url = `/api/tenant/${tenantId}/cloud-platform/${defaultConfig.authorization_id}/cloud/bandwidth-limitation/?platform_type=${defaultConfig.platform_type}&region_id=${selectedRegion.value}&instance_type=${instance.instance_type}`;
+    
+    const response = await apiFetch(url, {
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      const bandwidthInfo = parseBandwidthLimitationResponse(data);
+      if (bandwidthInfo) {
+          bandwidthLimitations.value[instance.instance_type] = bandwidthInfo;
+          // 默认选择 DEFAULT_BANDWIDTH，如果不在范围内则使用最小带宽
+          if (selectedBandwidth.value[instance.instance_type] == null || selectedBandwidth.value[instance.instance_type] === '') {
+            const minBandwidth = bandwidthInfo.min_bandwidth;
+            const maxBandwidth = bandwidthInfo.max_bandwidth;
+            let defaultBandwidth = DEFAULT_BANDWIDTH;
+            
+            // 确保默认带宽在范围内
+            if (defaultBandwidth < minBandwidth) {
+              defaultBandwidth = minBandwidth;
+            } else if (defaultBandwidth > maxBandwidth) {
+              defaultBandwidth = maxBandwidth;
+            }
+            
+            selectedBandwidth.value[instance.instance_type] = defaultBandwidth;
+            // 当设置默认带宽后，重新获取价格信息
+            if (instance.storage_type) {
+              await fetchInstancePrice(
+                instance.instance_type, 
+                instance.storage_type, 
+                instance.storage_gb, 
+                defaultBandwidth
+              );
+            }
+          }
+        }
+    }
+  } catch (error) {
+    console.error('获取带宽限制失败:', error);
+  } finally {
+    bandwidthLoading.value[instance.instance_type] = false;
+  }
+};
+watch(
+  () => ({
+    cores: filterOptions.value.cores,
+    memory: filterOptions.value.memory,
+    io_optimized: filterOptions.value.io_optimized,
+    system_disk_category: filterOptions.value.system_disk_category,
+    data_disk_category: filterOptions.value.data_disk_category,
+    spot_strategy: filterOptions.value.spot_strategy,
+    network_category: filterOptions.value.network_category,
+    image_architecture: filterOptions.value.image_architecture,
+    selectedZone: selectedZone.value,
+    imageArch: containerImageArchitectureForCloudQuery.value
+  }), 
+  async (newValues, oldValues) => {
+    // 检查参数是否真正发生变化
+    if (!oldValues || !deepEqual(newValues, oldValues)) {
+      scheduleFetchAvailableInstances()
+    }
+  }, 
+  { deep: true }
+)
+
+// 监听带宽选择变化，重新获取价格信息
+watch(
+  () => selectedInstance.value ? selectedBandwidth.value[selectedInstance.value.instance_type] : null, 
+  async (newBandwidth, oldBandwidth) => {
+    // 检查是否有带宽值变化
+    if (selectedInstance.value && newBandwidth !== oldBandwidth) {
+      // 当带宽值变化时，重新获取价格信息
+      await fetchInstancePrice(
+        selectedInstance.value.instance_type, 
+        selectedInstance.value.storage_type, 
+        selectedInstance.value.storage_gb, 
+        newBandwidth
+      );
+    }
+  }
+)
+// 获取可用实例列表
+const fetchAvailableInstances = async (intentGeneration) => {
+  abortPendingAvailableInstancesFetch()
+  const { fetchGeneration, isStale } = availableInstancesFetchScheduler.beginFetch(intentGeneration)
+  availableInstancesFetchGeneration = fetchGeneration
+  const abortController = new AbortController()
+  availableInstancesAbortController = abortController
+
+  try {
+    isFetchingInstances = true
+    
+    if (!nextToken.value) {
+      // 首次加载或参数变动，清空临时数据区域
+      isLoadingInstances.value = true
+      currentPage.value = 1
+      pageDataCache.value = []
+      totalPages.value = 0
+      nextToken.value = null
+    } else {
+      // 加载下一页，保留临时数据区域
+      isLoadingNextPage.value = true
+    }
+    // 重置选中的实例，因为数据将被重新拉取
+    selectedInstance.value = null
+    const tenantId = resolveTenantId()
+    ensureDefaultConfigForPlatform(selectedCloudPlatform.value)
+    const defaultConfig = resolveCloudPlatformDefaultConfig()
+    
+    console.log('开始获取可用实例列表');
+    console.log('selectedCloudPlatform:', selectedCloudPlatform.value);
+    console.log('selectedRegion:', selectedRegion.value);
+    console.log('selectedZone:', selectedZone.value);
+    console.log('cores:', filterOptions.value.cores);
+    console.log('memory:', filterOptions.value.memory);
+    console.log('system_disk_category:', filterOptions.value.system_disk_category);
+    console.log('data_disk_category:', filterOptions.value.data_disk_category);
+    console.log('spot_strategy:', filterOptions.value.spot_strategy);
+    console.log('defaultConfig:', defaultConfig);
+    
+    if (!selectedCloudPlatform.value || !selectedRegion.value || !selectedZone.value || !defaultConfig || !filterOptions.value.cores || !filterOptions.value.memory || !filterOptions.value.system_disk_category || !filterOptions.value.data_disk_category || !filterOptions.value.spot_strategy) {
+      console.log('缺少必要参数，返回空列表');
+      availableInstances.value = []
+      return
+    }
+    let url = `/api/tenant/${tenantId}/cloud-platform/${defaultConfig.authorization_id}/cloud/available-instances/?platform_type=${defaultConfig.platform_type}&region_id=${selectedRegion.value}`
+    
+    // 添加zoneId参数
+    if (selectedZone.value) {
+      // 从selectedZone中提取真正的zoneId（可能包含vswitchId）
+      let zoneId = selectedZone.value
+      if (zoneId.includes(':')) {
+        zoneId = zoneId.split(':')[0]
+      }
+      url += `&zone_id=${zoneId}`
+    }
+    
+    // 添加过滤选项
+    const filterParams = new URLSearchParams()
+    if (filterOptions.value.cores) {
+      filterParams.append('Cores', filterOptions.value.cores)
+    }
+    if (filterOptions.value.memory) {
+      filterParams.append('Memory', filterOptions.value.memory)
+    }
+    if (filterOptions.value.io_optimized) {
+      filterParams.append('IoOptimized', 'optimized')
+    } else {
+      filterParams.append('IoOptimized', 'none')
+    }
+    if (filterOptions.value.system_disk_category) {
+      filterParams.append('SystemDiskCategory', filterOptions.value.system_disk_category)
+    }
+    if (filterOptions.value.data_disk_category) {
+      filterParams.append('DataDiskCategory', filterOptions.value.data_disk_category)
+    }
+    if (filterOptions.value.spot_strategy) {
+      filterParams.append('spot_strategy', filterOptions.value.spot_strategy)
+    }
+    if (filterOptions.value.network_category) {
+      filterParams.append('NetworkCategory', filterOptions.value.network_category)
+    }
+    // 添加固定参数
+    filterParams.append('DestinationResource', 'InstanceType')
+    filterParams.append('ResourceType', 'instance')
+    // 添加NextToken参数
+    if (nextToken.value) {
+      filterParams.append('NextToken', nextToken.value)
+    }
+    
+    const filterString = filterParams.toString()
+    if (filterString) {
+      url += `&${filterString}`
+    }
+    if (containerImageArchitectureForCloudQuery.value) {
+      url += `&image_architecture=${encodeURIComponent(containerImageArchitectureForCloudQuery.value)}`
+    }
+    if (selectedImageId.value) {
+      url += `&container_image_id=${encodeURIComponent(selectedImageId.value)}`
+    }
+    
+    console.log('API URL:', url);
+    
+    const response = await apiFetch(url, {
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json'
+      },
+      signal: abortController.signal,
+    })
+    
+    if (isStale()) {
+      return
+    }
+    
+    console.log('API响应状态:', response.status);
+    
+    if (response.ok) {
+      const data = await response.json()
+      if (isStale()) {
+        return
+      }
+      console.log('API响应数据:', data);
+      if (data.status !== 'error') {
+        let newInstances = []
+        if (Array.isArray(data)) {
+          // 旧格式：直接是实例数组
+          console.log('获取到可用实例数量:', data.length);
+          // 为每个实例添加必要的字段
+          newInstances = data.map(instance => ({
+            ...instance,
+            storage_gb: hardwareConfig.value.storage_gb || 40,
+            storage_type: resolveInstanceStorageType(instance),
+            storage_types: resolveInstanceStorageTypes(instance)
+          }))
+          nextToken.value = null
+        } else if (typeof data === 'object') {
+          // 检查是否有NextToken
+          if (data.NextToken) {
+            nextToken.value = data.NextToken
+            console.log('获取到NextToken:', nextToken.value);
+          } else {
+            nextToken.value = null
+          }
+          
+          if (data.InstanceTypes && data.InstanceTypes.InstanceType) {
+            // 新格式：原始JSON响应，包含InstanceTypes字段
+            const instanceTypes = data.InstanceTypes.InstanceType
+            console.log('获取到可用实例数量:', instanceTypes.length);
+            // 转换字段名称以匹配前端期望的格式
+            newInstances = instanceTypes.map(instance => ({
+              instance_type: instance.InstanceTypeId || '',
+              cpu_cores: instance.CpuCoreCount || 0,
+              memory_gb: instance.MemorySize || 0,
+              storage_gb: hardwareConfig.value.storage_gb || 40,
+              storage_type: resolveInstanceStorageType(instance),
+              storage_types: resolveInstanceStorageTypes(instance),
+              storage_min: instance.diskSupport?.storage_min || instance.StorageMin || instance.storage_min || 20,
+              storage_max: instance.diskSupport?.storage_max || instance.StorageMax || instance.storage_max || 2048,
+              gpu_cores: instance.GPUAmount || instance.GpuCoreCount || 0,
+              gpu_type: instance.GpuSpec || '',
+              instance_type_family: instance.InstanceTypeFamily || '',
+              status: instance.Status === 'Available' ? 'available' : 'unavailable',
+              instance_category: instance.InstanceTypeCategory || '',
+              local_disk_size: instance.LocalDiskSize || 0,
+              local_disk_type: instance.LocalDiskCategory || '',
+              nvme_support: instance.NvmeSupport || '',
+              network_performance: instance.NetworkPerformance || '',
+              max_bandwidth_out: instance.MaxBandwidthOut || 0,
+              max_bandwidth_in: instance.MaxBandwidthIn || 0,
+              max_pps: instance.MaxPps || 0,
+              eni_quota: instance.EniQuota || 0,
+              max_internet_bandwidth_out: instance.MaxInternetBandwidthOut || 0,
+              architecture: instance.Architecture || '',
+              cpu_type: instance.CpuType || '',
+              instance_charge_type_supported: instance.InstanceTypeChargeTypeSupported || '',
+              spot_strategy_supported: instance.SpotStrategySupported || '',
+              gpu_memory: instance.GpuMemory || 0,
+              local_storage_amount: instance.LocalStorageAmount || 0,
+              local_storage_category: instance.LocalStorageCategory || '',
+              network_type: instance.NetworkType || '',
+              primary_network_interface_quota: instance.PrimaryNetworkInterfaceQuota || 0,
+              secondary_private_ip_address_quota_per_eni: instance.SecondaryPrivateIpAddressQuotaPerEni || 0,
+              storage_amount: instance.StorageAmount || 0,
+              storage_category: instance.StorageCategory || '',
+              instance_family_level: instance.InstanceFamilyLevel || '',
+              instance_type_charge_type: instance.InstanceTypeChargeType || '',
+              gpu_count: instance.GpuCount || 0,
+              local_disk_count: instance.LocalDiskCount || 0,
+              vcpu_core_count: instance.VcpuCoreCount || 0,
+              price_info: instance.PriceInfo || instance.price_info || {}
+            }))
+          } else if (data.instance_types) {
+            // 新格式：包含instance_types数组和pagination信息
+            console.log('获取到可用实例类型数量:', data.instance_types.length);
+            console.log('分页信息:', data.pagination);
+            // 保存SDK方法调用记录
+            if (data.sdk_methods) {
+              sdkMethods.value = data.sdk_methods;
+              console.log('SDK方法调用记录:', sdkMethods.value);
+            }
+            // 更新分页信息
+            if (data.pagination) {
+              totalPages.value = parseInt(data.pagination.total_pages) || 1
+            }
+            
+            // 为所有实例类型创建基本对象
+            const basicInstances = data.instance_types.map(instanceType => ({
+              instance_type: instanceType,
+              cpu_cores: 0,
+              memory_gb: 0,
+              storage_gb: hardwareConfig.value.storage_gb || 40,
+              storage_type: filterOptions.value.system_disk_category || DEFAULT_SYSTEM_DISK_CATEGORY,
+              storage_types: [filterOptions.value.system_disk_category || DEFAULT_SYSTEM_DISK_CATEGORY],
+              storage_min: 20,
+              storage_max: 2048,
+              gpu_cores: 0,
+              gpu_type: '',
+              instance_type_family: '',
+              status: 'available',
+              instance_category: '',
+              local_disk_size: 0,
+              local_disk_type: '',
+              nvme_support: '',
+              network_performance: '',
+              max_bandwidth_out: 0,
+              max_bandwidth_in: 0,
+              max_pps: 0,
+              eni_quota: 0,
+              max_internet_bandwidth_out: 0,
+              architecture: '',
+              cpu_type: '',
+              instance_charge_type_supported: '',
+              spot_strategy_supported: '',
+              gpu_memory: 0,
+              local_storage_amount: 0,
+              local_storage_category: '',
+              network_type: '',
+              primary_network_interface_quota: 0,
+              secondary_private_ip_address_quota_per_eni: 0,
+              storage_amount: 0,
+              storage_category: '',
+              instance_family_level: '',
+              instance_type_charge_type: '',
+              gpu_count: 0,
+              local_disk_count: 0,
+              vcpu_core_count: 0,
+              price_info: {}
+            }));
+            
+            // 先使用基本对象
+            newInstances = basicInstances;
+            
+            // 将新数据添加到缓存
+            pageDataCache.value = [...pageDataCache.value, ...newInstances];
+            // 计算总页数
+            totalPages.value = Math.ceil(pageDataCache.value.length / pageSize.value);
+            // 确保totalPages至少为1
+            if (totalPages.value === 0) {
+              totalPages.value = 1;
+            }
+            
+            // 只请求当前页的实例详细信息
+            await fetchCurrentPageInstancesDetails(data.instance_types, { fetchGeneration })
+          } else {
+            console.log('API返回错误或非预期数据格式');
+            newInstances = []
+          }
+        } else {
+          console.log('API返回错误或非预期数据格式');
+          newInstances = []
+        }
+        
+        if (newInstances.length > 0 && !data.instance_types) {
+          pageDataCache.value = [...pageDataCache.value, ...newInstances]
+        }
+
+        // 处理分页逻辑
+        if (newInstances.length > 0) {
+          // 记录加载前的总页数
+          const oldTotalPages = totalPages.value
+          // 计算总页数
+          totalPages.value = Math.ceil(pageDataCache.value.length / pageSize.value)
+          // 确保totalPages至少为1
+          if (totalPages.value === 0) {
+            totalPages.value = 1
+          }
+          // 如果是通过NextToken加载的，且总页数增加了，则自动跳转到新的一页
+          if (nextToken.value && totalPages.value > oldTotalPages) {
+            currentPage.value = oldTotalPages + 1
+          }
+          // 显示当前页数据
+          updateCurrentPageData()
+          void tryRestorePendingSelectedInstance()
+          
+          // 为每个实例获取价格信息
+          newInstances.forEach(instance => {
+            // 检查实例是否已经包含价格信息
+            if (instance.price_info) {
+              // 使用API返回的价格信息，不额外发起请求
+              instancePrices.value[instance.instance_type] = instance.price_info
+              console.log('使用API返回的价格信息:', instance.instance_type, instance.price_info);
+            } else if (instance.PriceInfo) {
+              // 兼容旧格式
+              instancePrices.value[instance.instance_type] = instance.PriceInfo
+              console.log('使用API返回的价格信息 (旧格式):', instance.instance_type, instance.PriceInfo);
+            }
+            // 不再发起价格请求，因为接口已经返回了价格信息
+          })
+        } else {
+          // 当API返回空数组时，清空缓存并更新界面
+          pageDataCache.value = []
+          availableInstances.value = []
+          totalPages.value = 1
+          currentPage.value = 1
+        }
+      } else {
+        console.log('API返回错误:', data.message);
+        availableInstances.value = []
+        nextToken.value = null
+      }
+    } else {
+      console.error('获取可用实例列表失败，状态码:', response.status);
+      availableInstances.value = []
+      nextToken.value = null
+    }
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      console.log('可用实例列表请求已取消');
+      return
+    }
+    if (isStale()) {
+      return
+    }
+    console.error('获取可用实例列表出错:', error);
+    availableInstances.value = []
+  } finally {
+    releaseAvailableInstancesFetchState(fetchGeneration)
+  }
+}
+
+// 更新当前页数据
+const updateCurrentPageData = () => {
+  const startIndex = (currentPage.value - 1) * pageSize.value
+  const endIndex = startIndex + pageSize.value
+  availableInstances.value = pageDataCache.value.slice(startIndex, endIndex)
+}
+
+// 上一页
+const prevPage = async () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+    updateCurrentPageData()
+    // 请求当前页的实例详细信息
+    if (pageDataCache.value.length > 0) {
+      const allInstanceTypes = pageDataCache.value.map(instance => instance.instance_type);
+      await fetchCurrentPageInstancesDetails(allInstanceTypes);
+    }
+  }
+}
+
+// 下一页
+const nextPage = async () => {
+  // 如果当前页是已缓存的最后一页且有NextToken，则加载更多数据
+  if (currentPage.value === totalPages.value && nextToken.value) {
+    await fetchAvailableInstances()
+  } else if (currentPage.value < totalPages.value) {
+    // 如果当前页不是最后一页，则直接切换到下一页
+    currentPage.value++
+    updateCurrentPageData()
+    // 请求当前页的实例详细信息
+    if (pageDataCache.value.length > 0) {
+      const allInstanceTypes = pageDataCache.value.map(instance => instance.instance_type);
+      await fetchCurrentPageInstancesDetails(allInstanceTypes);
+    }
+  }
+}
+
+// 处理存储类型变更
+const handleStorageTypeChange = async (instance, storageType) => {
+  // 更新实例的存储类型
+  instance.storage_type = storageType
+  
+  // 如果该实例是当前选中的实例，重新获取价格信息
+  if (selectedInstance.value && selectedInstance.value.instance_type === instance.instance_type) {
+    selectedInstance.value = instance
+    if (instance.instance_type && storageType) {
+      await fetchInstancePrice(instance.instance_type, storageType, instance.storage_gb)
+    }
+  }
+}
+
+// 处理存储大小变更
+const handleStorageSizeChange = async (instance) => {
+  // 如果该实例是当前选中的实例，重新获取价格信息
+  if (selectedInstance.value && selectedInstance.value.instance_type === instance.instance_type) {
+    selectedInstance.value = instance
+    if (instance.instance_type && instance.storage_type) {
+      await fetchInstancePrice(instance.instance_type, instance.storage_type, instance.storage_gb)
+    }
+  }
+}
+
+// 选择实例
+const selectInstance = async (instance) => {
+  // 如果当前实例已经被选中，则取消选择
+  if (selectedInstance.value && selectedInstance.value.instance_type === instance.instance_type) {
+    selectedInstance.value = null
+    pendingRestoreInstanceType.value = ''
+    return
+  } else {
+    // 选中新实例
+    selectedInstance.value = instance
+
+    if (instance.cpu_cores != null && Number(instance.cpu_cores) > 0) {
+      hardwareConfig.value.cpu_cores = String(instance.cpu_cores)
+    }
+    if (instance.memory_gb != null && Number(instance.memory_gb) > 0) {
+      hardwareConfig.value.memory_gb = String(instance.memory_gb)
+    }
+    
+    // 获取实例价格信息
+    if (instance.instance_type && instance.storage_type) {
+      await fetchInstancePrice(instance.instance_type, instance.storage_type, instance.storage_gb)
+    }
+    
+    // 自动获取带宽限制
+    fetchBandwidthLimitation(instance)
+  }
+}
+
+// 获取实例价格信息
+const fetchInstancePrice = async (instanceType, storageType, storageGb, bandwidth) => {
+  try {
+    // 设置加载状态
+    priceLoading.value[instanceType] = true
+    
+    const tenantId = route.params.tenant
+    const defaultConfig = resolveCloudPlatformDefaultConfig()
+    
+    // 找到对应的实例以获取存储大小
+    const instance = pageDataCache.value.find(item => item.instance_type === instanceType)
+    const storage_gb = storageGb || (instance ? instance.storage_gb : 40)
+    const bandwidth_value = bandwidth || (selectedBandwidth.value[instanceType] || DEFAULT_BANDWIDTH)
+    
+    if (defaultConfig && defaultConfig.authorization_id) {
+      const priceUrl = `/api/tenant/${tenantId}/cloud-platform/${defaultConfig.authorization_id}/cloud/instance-price/?platform_type=${defaultConfig.platform_type}&region_id=${selectedRegion.value}&instance_type=${instanceType}&system_disk_category=${storageType}&storage_gb=${storage_gb}&bandwidth=${bandwidth_value}&spot_strategy=${filterOptions.value.spot_strategy}`
+      
+      console.log('请求实例价格信息:', priceUrl)
+      
+      const priceResponse = await apiFetch(priceUrl, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+      
+      if (priceResponse.ok) {
+        const priceData = await priceResponse.json()
+        console.log('获取到实例价格信息:', instanceType, priceData)
+        
+        // 检查是否包含错误信息
+        if (priceData.error) {
+          console.error('获取实例价格信息失败:', priceData.error)
+          // 可以设置一个默认值或者不更新价格信息
+          instancePrices.value[instanceType] = {
+            Price: {
+              Currency: '',
+              TradePrice: '无法获取价格'
+            }
+          }
+        } else {
+          instancePrices.value[instanceType] = priceData
+          const resolvedDiskCategory = priceData.system_disk_category
+          if (resolvedDiskCategory && resolvedDiskCategory !== storageType) {
+            const cachedInstance = pageDataCache.value.find(item => item.instance_type === instanceType)
+            if (cachedInstance) {
+              cachedInstance.storage_type = resolvedDiskCategory
+              if (!cachedInstance.storage_types?.includes(resolvedDiskCategory)) {
+                cachedInstance.storage_types = resolveInstanceStorageTypes(
+                  { ...cachedInstance, storage_type: resolvedDiskCategory },
+                  resolvedDiskCategory,
+                )
+              }
+            }
+            if (selectedInstance.value?.instance_type === instanceType) {
+              selectedInstance.value = {
+                ...selectedInstance.value,
+                storage_type: resolvedDiskCategory,
+                storage_types: cachedInstance?.storage_types || [resolvedDiskCategory],
+              }
+            }
+          }
+        }
+      } else {
+        console.error('获取实例价格信息失败:', await priceResponse.text())
+        // 设置默认值
+        instancePrices.value[instanceType] = {
+          Price: {
+            Currency: '',
+            TradePrice: '无法获取价格'
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('获取实例价格信息出错:', error)
+  } finally {
+    // 清除加载状态
+    priceLoading.value[instanceType] = false
+  }
+}
+
+const fetchProjectTemplateSummaryPrice = async () => {
+  const tpl = props.projectServerRunTemplate
+  if (!tpl || !showProjectTemplateSummaryOnly.value) return
+
+  const instanceType = resolveRunTemplateInstanceType(tpl)
+  const shape = runTemplateToServerConfigShape(tpl)
+  if (!instanceType || !shape?.region) return
+  if (priceLoading.value[instanceType] || getInstancePriceView(instanceType)) return
+
+  await bootstrapCloudPlatformsIfNeeded()
+  const shapeCopy = { ...shape }
+  resolveShapePlatformId(shapeCopy, tpl)
+  if (!shapeCopy.platform_id) return
+
+  const savedPlatform = selectedCloudPlatform.value
+  const savedRegion = selectedRegion.value
+  try {
+    selectedCloudPlatform.value = String(shapeCopy.platform_id)
+    ensureDefaultConfigForPlatform(shapeCopy.platform_id, shapeCopy.authorization_id)
+    selectedRegion.value = String(shape.region)
+    const filterOptions = tpl.filter_options && typeof tpl.filter_options === 'object'
+      ? tpl.filter_options
+      : {}
+    const hw = shape.hardware_config || {}
+    await fetchInstancePrice(
+      instanceType,
+      filterOptions.system_disk_category || DEFAULT_SYSTEM_DISK_CATEGORY,
+      hw.storage_gb || 40,
+      Number(tpl.bandwidth ?? DEFAULT_BANDWIDTH),
+    )
+  } finally {
+    if (!temporaryConfigExpanded.value) {
+      selectedCloudPlatform.value = savedPlatform
+      selectedRegion.value = savedRegion
+    }
+  }
+}
+
+// 获取当前页的实例详细信息
+const fetchCurrentPageInstancesDetails = async (allInstanceTypes, { fetchGeneration } = {}) => {
+  abortPendingInstanceDetailsFetch()
+  const detailsController = new AbortController()
+  availableInstancesDetailsAbortController = detailsController
+  const isStale = () => (
+    fetchGeneration != null && fetchGeneration !== availableInstancesFetchGeneration
+  )
+
+  try {
+    // 计算当前页的实例类型范围
+    const startIndex = (currentPage.value - 1) * pageSize.value;
+    const endIndex = startIndex + pageSize.value;
+    const currentPageInstanceTypes = allInstanceTypes.slice(startIndex, endIndex);
+    
+    console.log('当前页实例类型:', currentPageInstanceTypes);
+    
+    if (currentPageInstanceTypes.length > 0) {
+      // 构建实例类型参数，最多一次请求10个实例
+      const instanceTypesChunks = [];
+      for (let i = 0; i < currentPageInstanceTypes.length; i += 10) {
+        instanceTypesChunks.push(currentPageInstanceTypes.slice(i, i + 10));
+      }
+      
+      const tenantId = route.params.tenant;
+      const defaultConfig = resolveCloudPlatformDefaultConfig();
+      
+      if (defaultConfig && defaultConfig.authorization_id) {
+        // 处理每个实例类型 chunk
+        for (const chunk of instanceTypesChunks) {
+          try {
+            const instanceTypesParam = chunk.join(',');
+            const detailUrl = `/api/tenant/${tenantId}/cloud-platform/${defaultConfig.authorization_id}/cloud/instance-details/?platform_type=${defaultConfig.platform_type}&region_id=${selectedRegion.value}&instance_types=${instanceTypesParam}`;
+            
+            console.log('请求当前页实例详细信息:', detailUrl);
+            
+            const detailResponse = await apiFetch(detailUrl, {
+              credentials: 'include',
+              headers: {
+                'Accept': 'application/json'
+              },
+              signal: detailsController.signal,
+            });
+            
+            if (isStale()) {
+              return
+            }
+            
+            if (detailResponse.ok) {
+              const detailData = await detailResponse.json();
+              if (isStale()) {
+                return
+              }
+              console.log('获取到当前页实例详细信息:', detailData.length);
+              
+              // 直接更新pageDataCache中的所有实例
+              // 遍历所有缓存的实例
+              pageDataCache.value = pageDataCache.value.map(instance => {
+                // 查找API响应中对应的实例详细信息
+                const detailInstance = detailData.find(detail => detail.instance_type === instance.instance_type);
+                
+                if (detailInstance) {
+                  // 转换API响应字段名以匹配前端期望的字段名
+                  const transformedInstance = {
+                    ...instance,
+                    ...detailInstance,
+                    // 映射字段名
+                    gpu_cores: detailInstance.gpu_amount || detailInstance.gpu_cores,
+                    gpu_type: detailInstance.gpu_spec || detailInstance.gpu_type,
+                    instance_category: detailInstance.instance_type_category || detailInstance.instance_category,
+                    // 确保必要的字段存在
+                    storage_gb: hardwareConfig.value.storage_gb || 40,
+                    storage_type: resolveInstanceStorageType(detailInstance),
+                    storage_types: resolveInstanceStorageTypes(detailInstance),
+                    // 确保CPU和内存字段存在且不为空
+                    cpu_cores: detailInstance.cpu_cores || 0,
+                    memory_gb: detailInstance.memory_gb || 0,
+                    instance_type_family: detailInstance.instance_type_family || '',
+                    status: detailInstance.status || 'unavailable'
+                  };
+                  
+                  console.log('更新实例信息:', transformedInstance.instance_type, 'CPU:', transformedInstance.cpu_cores, '内存:', transformedInstance.memory_gb, '实例家族:', transformedInstance.instance_type_family);
+                  return transformedInstance;
+                }
+                
+                return instance;
+              });
+              
+              // 重新更新当前页数据
+              updateCurrentPageData();
+              void tryRestorePendingSelectedInstance();
+            } else {
+              console.error('获取当前页实例详细信息失败:', await detailResponse.text());
+            }
+          } catch (error) {
+            if (error?.name === 'AbortError') {
+              console.log('实例详细信息请求已取消');
+              return
+            }
+            console.error('获取当前页实例详细信息出错:', error);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      return
+    }
+    console.error('获取当前页实例详细信息出错:', error);
+  } finally {
+    if (availableInstancesDetailsAbortController === detailsController) {
+      availableInstancesDetailsAbortController = null
+    }
+  }
+}
+
+// 获取资源名称的中文翻译
+const getResourceName = (resource) => {
+  const resourceMap = {
+    'instanceType': '实例类型',
+    'systemDisk': '系统盘',
+    'bandwidth': '带宽',
+    'image': '镜像'
+  }
+  return resourceMap[resource] || resource
+}
+
+// 加载下一页实例
+const loadNextPage = async () => {
+  await nextPage()
+}
+
+watch(selectedImageId, async () => {
+  syncImageArchitectureFilterFromSelection()
+  if (hardwareBootstrapDone.value && selectedCloudPlatform.value) {
+    await loadRegions()
+  }
+})
+
+watch(
+  () => [installedImages.value, imageArchitectureFromSelection.value],
+  () => {
+    syncImageArchitectureFilterFromSelection()
+  },
+  { deep: true },
+)
+
+async function bootstrapCloudPlatformsIfNeeded() {
+  if (!hasCloudContext()) return false
+  if (cloudPlatforms.value.length > 0) return true
+  if (isLoadingPlatforms.value || loadCloudPlatformsPromise) {
+    await loadCloudPlatforms({ skipHandleChange: props.runTemplateMode })
+    return cloudPlatforms.value.length > 0
+  }
+  await loadCloudPlatforms({ skipHandleChange: props.runTemplateMode })
+  return cloudPlatforms.value.length > 0
+}
+
+async function initHardwareFromParent() {
+  hardwareBootstrapDone.value = false
+  if (props.runTemplateMode) {
+    projectRunTemplateApplied.value = false
+  }
+  const hasTemplate = props.runTemplateMode && hasConfiguredProjectRunTemplate()
+  await loadCloudPlatforms({ skipHandleChange: hasTemplate })
+  if (props.runTemplateMode) {
+    await applyProjectRunTemplateIfNeeded()
+    if (!regions.value.length && selectedCloudPlatform.value) {
+      await loadRegions()
+    }
+    if (!projectRunTemplateApplied.value && selectedCloudPlatform.value) {
+      await handleCloudPlatformChange()
+    }
+  } else if (props.task) {
+    await fetchPreviousServerConfig()
+  }
+  syncImageArchitectureFilterFromSelection()
+  hardwareBootstrapDone.value = true
+  if (showProjectTemplateSummaryOnly.value) {
+    void fetchProjectTemplateSummaryPrice()
+  }
+}
+
+const bootstrapManualConfig = async () => {
+  projectRunTemplateApplied.value = false
+  runTemplateMeta.value = { template_id: '', label: '' }
+  if (selectedCloudPlatform.value) {
+    await handleCloudPlatformChange()
+  } else if (cloudPlatforms.value.length > 0) {
+    selectedCloudPlatform.value = String(cloudPlatforms.value[0].id)
+    await handleCloudPlatformChange()
+  }
+}
+
+watch(
+  () => [resolveTenantId(), resolveWorkspaceId()],
+  ([tenantId, workspaceId], previous) => {
+    const [prevTenantId, prevWorkspaceId] = previous ?? []
+    if (!tenantId || !workspaceId) return
+    if (tenantId === prevTenantId && workspaceId === prevWorkspaceId && cloudPlatforms.value.length > 0) {
+      return
+    }
+    void bootstrapCloudPlatformsIfNeeded()
+  },
+  { immediate: true },
+)
+
+watch(
+  () => props.projectServerRunTemplate,
+  () => {
+    if (!hardwareBootstrapDone.value) return
+    if (!temporaryConfigExpanded.value && hasConfiguredProjectRunTemplate()) {
+      void fetchProjectTemplateSummaryPrice()
+      return
+    }
+    projectRunTemplateApplied.value = false
+    void applyProjectRunTemplateIfNeeded()
+  },
+  { deep: true },
+)
+
+watch(
+  showProjectTemplateSummaryOnly,
+  (visible) => {
+    if (visible) {
+      void fetchProjectTemplateSummaryPrice()
+    }
+  },
+)
+
+watch(
+  () => props.task?.id,
+  () => {
+    temporaryConfigExpanded.value = false
+    projectRunTemplateApplied.value = false
+    if (props.task && hardwareBootstrapDone.value) {
+      void fetchPreviousServerConfig()
+    }
+  },
+)
+
+defineExpose({
+  initHardwareFromParent,
+  buildRunTemplatePayload,
+  applyRunTemplate,
+  bootstrapManualConfig,
+  getLastApplyRunTemplateError,
+})
+</script>

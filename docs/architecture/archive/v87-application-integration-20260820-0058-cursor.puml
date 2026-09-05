@@ -1,0 +1,78 @@
+' @title: taskFE Docker nginx 静态常驻
+' @view: application-integration
+' @status: target
+' @version: 87
+' @iteration: taskfe-nginx-static-resident
+' @author: cursor
+' @based_on: v85 (v85-application-integration-20260818-1439-cursor.puml)
+' @updated: 2026-08-20 00:58
+' @description: 公网 SPA 由 Docker nginx 常驻 :4000；Vite 只 build；APISIX spa-catch-all 不变
+
+@startuml
+!include <archimate/Archimate>
+
+title v87 Target — taskFE Docker nginx 静态常驻 2026-08-20 00:58
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v87 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v87 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v87 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(gateway, "API Gateway APISIX :18081")
+note right of gateway
+  无标记 — spa-catch-all /* → up-taskFE :4000 不变
+end note
+
+Application_Component(taskFE, "taskFE Vue SPA")
+note right of taskFE
+  🟡 [MODIFIED v87]
+  Vite 只负责 build
+  public/releases + html symlink
+  @author: cursor @2026-08-20 00:58
+end note
+
+Application_Component(preview, "vite preview :4000")
+note right of preview
+  🔴 [DEPRECATED v87]
+  不再作为 runAll/公网入口
+  本机 npm run preview 可对照
+  @author: cursor @2026-08-20 00:58
+end note
+
+Technology_Node(ngx, "taskfe-nginx Docker")
+note right of ngx
+  🟢 [NEW v87]
+  unless-stopped
+  0.0.0.0:4000 → 容器 :80
+  bind-mount public/ 父目录
+  @author: cursor @2026-08-20 00:58
+end note
+
+Application_DataObject(html, "public/html → releases/<id>")
+note right of html
+  🟢 [NEW v87]
+  原子 symlink；构建不 recreate 容器
+end note
+
+Technology_Node(edge, "SH Edge nginx")
+note right of edge
+  无标记 — 仅 TLS/反代，不读 dist
+end note
+
+Rel_Flow(edge, gateway, "www :443")
+Rel_Flow(gateway, ngx, "spa-catch-all GET/HEAD host.docker.internal:4000")
+Rel_Serving(ngx, html, "root 跟随 symlink")
+Rel_Flow(taskFE, html, "🟡 atomic-vite-build 切 symlink")
+Rel_Flow(gateway, preview, "🔴 不再转发")
+
+Implementation_Plateau(plateauV85, "Plateau v85 current")
+Implementation_Plateau(plateauV87, "Plateau v87 Docker nginx SPA")
+Implementation_Gap(gapPreview, "Gap: SPA 绑 vite preview 进程，stop 即 502")
+Implementation_WorkPackage(wpNginx, "WP-taskfe-nginx-static-resident")
+Rel_Triggering(plateauV85, gapPreview, "identifies")
+Rel_Realization(wpNginx, gapPreview, "closes")
+Rel_Realization(wpNginx, plateauV87, "delivers")
+
+@enduml

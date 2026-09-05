@@ -1,0 +1,114 @@
+#!/bin/bash
+# Go + Python 测例仓库（如 db）：Go 包随机抽测 + Python 单测随机抽测。
+# 库: scripts/hooks/lib/random_test_runner.sh（SSOT，由 deploy_repo_random_precommit.sh 分发）
+
+set -u
+
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+LIB="$HOOK_DIR/lib/random_test_runner.sh"
+if [ ! -f "$LIB" ]; then
+    echo "ERROR: shared lib missing: $LIB" >&2
+    echo "       redeploy: bash <monorepo-root>/scripts/deploy_repo_random_precommit.sh" >&2
+    exit 1
+fi
+source "$LIB"
+# Session Hub 提交锁校验（v1.1.0，可选 — 二进制缺失时放行）
+SES_LIB="$HOOK_DIR/lib/session_lock_check.sh"
+if [ -f "$SES_LIB" ]; then source "$SES_LIB"; session_hub_lock_check; fi
+# gitignored deploy-binaries refresh (fail-open; no-op outside the meta checkout)
+_COLLECT="$(cd "$(dirname "$0")/../.." && pwd)/scripts/lib/collect-deploy-binaries-on-commit.sh"
+if [ -x "$_COLLECT" ]; then bash "$_COLLECT" || true; fi
+unset _COLLECT
+
+cleanup() {
+    echo "如果有测例失败，记得修复"
+    echo "如果提交失败，记得先尝试修复，不行再忽略测例"
+    # OPT-20260806-059: 自愈 core.bare 误置（外部工具写 git config 的副作用），
+    # 防止钩子结束后 git 命令全部报 "must run in a worktree"
+    rt_guard_core_bare
+}
+trap cleanup EXIT
+
+# 仅变更 hooks/文档时跳过抽测，便于自举提交钩子模板（非 --no-verify）
+rt_bootstrap_skip && exit 0
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+# OPT-20260806-059: 进入钩子时先自检 core.bare（可能已被外部工具置位）
+rt_guard_core_bare
+
+echo "=== [1/2] Go random unit tests ==="
+export PRE_COMMIT=1
+TEST_RATIO="${PRECOMMIT_TEST_RATIO:-30}"
+STAGED_FILES="$(git diff --cached --name-only 2>/dev/null || true)"
+
+TMP_ALL="$(mktemp)"
+TMP_STAGED="$(mktemp)"
+TMP_TO_RUN="$(mktemp)"
+trap 'rm -f "$TMP_ALL" "$TMP_STAGED" "$TMP_TO_RUN"; cleanup' EXIT
+
+rt_go_collect_dirs > "$TMP_ALL"
+if [ -s "$TMP_ALL" ]; then
+    # 暂存 100%
+    while IFS= read -r f; do
+        [ -z "$f" ] && continue
+        dir="$(rt_go_dir_for_file "$f" 2>/dev/null)" || continue
+        if rt_go_dir_has_tests "$dir"; then
+            echo "$dir" >> "$TMP_STAGED"
+        fi
+    done <<< "$STAGED_FILES"
+    if [ -s "$TMP_STAGED" ]; then
+        sort -u "$TMP_STAGED" -o "$TMP_STAGED"
+        echo "Running staged Go test packages..."
+        while IFS= read -r dir; do
+            [ -z "$dir" ] && continue
+            rt_go_run_dir "$dir" || exit 1
+        done < "$TMP_STAGED"
+    fi
+    # 随机抽测
+    echo "Running random Go test packages (ratio=${TEST_RATIO}%)..."
+    if [ -s "$TMP_STAGED" ]; then
+        grep -vxFf "$TMP_STAGED" "$TMP_ALL" | rt_pick_random "$TEST_RATIO" > "$TMP_TO_RUN"
+    else
+        rt_pick_random "$TEST_RATIO" < "$TMP_ALL" > "$TMP_TO_RUN"
+    fi
+    while IFS= read -r dir; do
+        [ -z "$dir" ] && continue
+        echo "Random pick: ${dir}"
+        rt_go_run_dir "$dir" || exit 1
+    done < "$TMP_TO_RUN"
+else
+    echo "No Go test packages found."
+fi
+rm -f "$TMP_ALL" "$TMP_STAGED" "$TMP_TO_RUN"
+
+echo "=== [2/2] Python random unit tests ==="
+TMP_PY_ALL="$(mktemp)"
+TMP_PY_RUN="$(mktemp)"
+trap 'rm -f "$TMP_PY_ALL" "$TMP_PY_RUN"; cleanup' EXIT
+
+rt_py_collect_files > "$TMP_PY_ALL"
+if [ -s "$TMP_PY_ALL" ]; then
+    echo "Running random Python tests (ratio=${TEST_RATIO}%)..."
+    rt_pick_random "$TEST_RATIO" < "$TMP_PY_ALL" > "$TMP_PY_RUN"
+    while IFS= read -r t; do
+        [ -z "$t" ] && continue
+        echo "Random pick: ${t}"
+        rt_py_run_file "$t" || exit 1
+    done < "$TMP_PY_RUN"
+else
+    echo "No Python unit tests."
+fi
+rm -f "$TMP_PY_ALL" "$TMP_PY_RUN"
+
+# OPT-20260822-011: git-oauth/评论写接口路径必须登记在 saas-machine-container.md §5.2
+echo "=== [3/3] saas-machine-container §5.2 write-API path check ==="
+if [ -f "scripts/ci/check_saas_container_skill_paths.py" ]; then
+    python3 scripts/ci/check_saas_container_skill_paths.py || {
+        echo "FAIL: skill 文档 §5.2 缺少新增写接口路径，请同步 docs/skills/saas-container/saas-machine-container.md" >&2
+        exit 1
+    }
+else
+    echo "WARN: check_saas_container_skill_paths.py not found — skip (SSOT: db/scripts/ci/)"
+fi
+
+echo "All Go+Python unit tests passed. Commit can proceed."

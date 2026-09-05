@@ -1,0 +1,55 @@
+' @title: 安全响应头 + HTTP→HTTPS 强制跳转（企业景观）
+' @view: enterprise-landscape
+' @status: target
+' @version: 106
+' @iteration: security-headers-hsts-https-redirect
+' @author: claude
+' @based_on: v104 (v104-enterprise-landscape-20260823-1400-cursor.puml)
+' @updated: 2026-08-24 08:54
+' @description: 公网入口安全加固：边缘 nginx 安全响应头 + HTTPS 强制跳转；证书续签监控
+
+@startuml
+!include <archimate/Archimate>
+
+title v106 landscape — 安全头 + HTTPS 跳转 2026-08-24 08:54
+
+' ═══════════════════════════════════════
+' Change Legend — v106 变更图例
+' ═══════════════════════════════════════
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v106 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v106 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Business_Actor(dev, "开发者 / 外部用户")
+Business_Service(secSvc, "安全访问公网平台 🟡")
+
+Application_Component(edge, "边缘 nginx (Host)")
+note right of edge
+  [MODIFIED v106] 安全响应头 + :80→:443 308 跳转
+  @author: claude @2026-08-24 08:54
+end note
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(taskFE, "taskFE SPA")
+Technology_Node(lets, "Let's Encrypt wildcard *.daydaymoney.com")
+note right of lets
+  [MODIFIED v106] 新增续签监控（HSTS 后证书到期=全站不可达）
+  @author: claude @2026-08-24 08:54
+end note
+
+Rel_Assignment(dev, secSvc)
+Rel_Serving(edge, secSvc, "HTTPS 🟡")
+Rel_Flow(edge, gw, "HTTPS 🟡")
+Rel_Flow(gw, taskFE, "SPA")
+Rel_Serving(lets, edge, "TLS 证书 🟡")
+
+Implementation_Plateau(plateauV104, "Plateau v104")
+Implementation_Plateau(plateauV106, "Plateau v106 安全头+HTTPS 跳转")
+Implementation_Gap(gapSec, "Gap: 公网响应无安全头、无强制 HTTPS")
+Implementation_WorkPackage(wpSec, "WP-security-headers-hsts")
+Rel_Triggering(plateauV104, gapSec, "identifies")
+Rel_Realization(wpSec, gapSec, "closes")
+Rel_Realization(wpSec, plateauV106, "delivers")
+
+@enduml

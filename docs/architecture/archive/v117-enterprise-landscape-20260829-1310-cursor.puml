@@ -1,0 +1,45 @@
+' @title: 开放式邀请链接（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 117
+' @iteration: open-invite-link
+' @author: cursor
+' @based_on: v116 (v116-enterprise-landscape-20260829-0940-cursor.puml)
+' @updated: 2026-08-29 13:20
+' @description: 邀请人可发多人共用加入链接
+
+@startuml
+!include <archimate/Archimate>
+
+title v117 — 企业景观 开放式邀请链接 2026-08-29 13:10
+
+Business_Actor(inviter, "邀请人（成员管理）")
+Business_Actor(joiners, "多名被邀请人")
+Business_Process(createOpen, "创建开放邀请链接")
+note right of createOpen
+  可选人数上限与有效期
+  @author: cursor @2026-08-29 13:10
+end note
+Business_Process(multiJoin, "多人点击同一链接加入")
+note right of multiJoin
+  每人独立 MEMBER_JOINED
+end note
+
+Application_Component(fe, "taskFE")
+Application_Component(ten, "taskTenantService")
+
+Rel_Assignment(inviter, createOpen)
+Rel_Assignment(joiners, multiJoin)
+Rel_Flow(inviter, fe, "people invite")
+Rel_Flow(joiners, fe, "people join")
+Rel_Flow(fe, ten, "invite / join APIs")
+
+Implementation_Plateau(p116, "Plateau v116")
+Implementation_Plateau(p117, "Plateau v117")
+Implementation_Gap(g, "Gap: 链接仅单次")
+Implementation_WorkPackage(wp, "WP-open-invite-link")
+Rel_Triggering(p116, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p117, "delivers")
+
+@enduml

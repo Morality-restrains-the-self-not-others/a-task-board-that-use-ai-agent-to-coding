@@ -1,0 +1,83 @@
+---
+description: 举一反三修复规则 — 发现并修复一处问题后，必须搜索全仓库同类问题一并修复
+globs: "**/*"
+alwaysApply: true
+---
+
+# 举一反三修复规则（元规则）
+
+适用于整个 monorepo 的所有修复任务。本规则是**元规则**，优先级高于各语言局部惯例。违反此规则的修复视为不完整。
+
+## 核心原则
+
+**当发现并修复一处问题时，修复者必须在提交前搜索整个仓库中是否存在同类问题，一并修复。**
+
+## 搜索分层（强制，从近到远）
+
+每次修复必须至少执行以下 4 层搜索：
+
+### 1. 同文件搜索
+在当前文件中搜索与修复点相同的模式。
+
+### 2. 同服务搜索
+在同一服务的代码中搜索相同的模式。
+
+### 3. 跨服务同语言搜索
+在 monorepo 所有同语言服务中搜索相同模式。例如：
+- Go 服务：搜索所有 `.go` 文件
+- Python/Django 服务：搜索所有 `.py` 文件
+- 前端：搜索所有 `.vue`/`.ts`/`.js` 文件
+
+### 4. 跨语言架构层搜索
+如果问题根因是架构设计缺陷（如某类配置应在共享层解析），搜索所有使用该架构模式的其他语言服务。
+
+## 搜索执行规范
+
+- **精确模式**: `grep -r "exact_pattern" --include="*.go"` — 适用于函数名、配置键、错误消息
+- **正则模式**: `grep -rE "pattern.*variant" --include="*.py"` — 适用于一类调用模式
+- **结构搜索**: 委派 Explore agent 遍历目录 → 适用于需要理解代码结构的复杂模式
+- **禁止跳过**: 不能仅凭"感觉应该没有"而跳过搜索步骤
+
+## Commit Message 格式要求
+
+每次修复的 commit message 必须包含搜索结果说明：
+
+```
+fix: <简短描述>
+
+Search: <搜索模式> across <N> 个服务 — <M> 处同类问题，全部修复
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+如果搜索后确认无同类问题：
+```
+fix: <简短描述>
+
+Search: <搜索模式> across <N> 个服务 — 0 处同类问题（单例，无泛化模式）
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+## 例外（需在 commit message 阐明理由）
+
+- `Single-instance: no pattern to generalize` — 硬编码单例，无通用化价值
+- `Upstream bug: <link>, monitored for recurrence` — 外部依赖 bug，当前仅触发于此
+- `Hotfix: follow-up search tracked in <issue-link>` — 紧急热修复，后续有 tracking issue
+
+## Code Review 门禁
+
+Reviewer 第一问：「你搜索过其他地方是否有同类问题吗？」
+
+PR description 必须包含：
+1. 搜索模式描述
+2. 搜索范围（哪些目录/文件类型）
+3. 发现同类问题数量及修复情况
+4. 若无同类问题，说明为什么是单例
+
+## 已知失败模式（严禁重复）
+
+以下模式曾在本仓库造成重复问题，必须避免：
+
+1. **分裂式修复**: 先修一个服务，另一个服务的同类问题开 follow-up PR → 必须同一 commit 修复
+2. **AI 拖延**: AI 修复时说 "可以后续统一处理" → AI 必须在当前会话完成搜索和修复
+3. **仅修当前文件**: 找到问题后只看当前文件 → 必须执行 4 层搜索
+4. **跨语言遗漏**: Go 端修复了，Python/Django 端未检查 → 等价实现必须跨语言检查

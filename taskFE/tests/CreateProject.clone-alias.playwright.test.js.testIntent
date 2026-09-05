@@ -1,0 +1,8 @@
+# 测试意图：CreateProject Git 仓库别名 E2E
+
+| ID | 场景 | 期望 |
+|----|------|------|
+| E1 | 打开创建项目页 | `git-repo-clone-alias-input` 可见 |
+| E2 | 填写 URL+别名并创建 | API 响应 `git_repo_entries` 含别名；详情页 `git-repo-clone-alias-display` 展示；编辑页输入框 value=别名 |
+
+对应测例：`CreateProject.clone-alias.playwright.test.js`

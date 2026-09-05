@@ -1,0 +1,65 @@
+' @title: 邮件邀请退订（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 116
+' @iteration: email-invite-unsubscribe
+' @author: cursor
+' @based_on: v115 (v115-application-integration-20260828-0720-cursor.puml)
+' @updated: 2026-08-29 10:10
+' @description: 邀请邮件退订列表归 taskAuth；邀请发送前查询并跳过 SMTP
+
+@startuml
+!include <archimate/Archimate>
+
+title v116 — 邮件邀请退订 2026-08-29 09:40
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  /auth/unsubscribe/ 确认页
+  邀请人复制链接提示
+  @author: cursor @2026-08-29 09:40
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(auth, "taskAuth")
+note right of auth
+  公开退订 + 内部查询
+  HMAC token；表 owner
+  @author: cursor @2026-08-29 09:40
+end note
+
+Application_Component(ten, "taskTenantService")
+note right of ten
+  邮箱邀请前 IsUnsubscribed
+end note
+
+Application_Component(ev, "taskEvents")
+note right of ev
+  邀请模板退订链接
+  投递纵深跳过 SMTP
+end note
+
+Application_DataObject(unsub, "auth_email_unsubscription")
+note right of unsub
+  UNIQUE(email) utf8mb4
+  @author: cursor @2026-08-29 09:40
+end note
+
+Business_Event(evUnsub, "EMAIL_UNSUBSCRIBED")
+
+Rel_Flow(taskFE, gw, "public unsubscribe / invite")
+Rel_Flow(gw, auth, "GET/POST email-unsubscribe")
+Rel_Access(auth, unsub, "UPSERT/SELECT")
+Rel_Flow(auth, evUnsub, "commit after")
+Rel_Flow(ten, auth, "GET internal unsubscription")
+Rel_Flow(ev, auth, "GET internal unsubscription")
+
+Implementation_Plateau(plateauV115, "Plateau v115 邀请只发信")
+Implementation_Plateau(plateauV116, "Plateau v116 可退订邀请邮件")
+Implementation_Gap(gapUnsub, "Gap: 邀请邮件无法退订")
+Implementation_WorkPackage(wpUnsub, "WP-email-invite-unsubscribe")
+Rel_Triggering(plateauV115, gapUnsub, "identifies")
+Rel_Realization(wpUnsub, gapUnsub, "closes")
+Rel_Realization(wpUnsub, plateauV116, "delivers")
+
+@enduml

@@ -1,0 +1,157 @@
+# GitLab CE：自托管 Git 托管 + MR/Issue/CI，Web 体验接近 GitHub。
+# 首次启动需数分钟初始化。
+# Docker Desktop 建议 ≥ 6 GiB（runAll 全栈含 Kafka/AiMonitor 时建议 ≥ 8 GiB）。
+#
+# 启动：docker compose up -d  （无 v2 插件时用 docker-compose up -d）
+# 访问：http://localhost:8929  （root 初始密码见下方 logs 说明）
+# SSH 克隆：git clone ssh://git@localhost:2222/group/project.git
+#
+services:
+  gitlab:
+    # SSOT: conf/infra/git-service*/config.yaml → imageTag；run.sh 导出 GITLAB_IMAGE
+    image: ${GITLAB_IMAGE:-gitlab/gitlab-ce:19.2.4-ce.0}
+    container_name: ${GITLAB_CONTAINER_NAME:-gitlab}
+    # 崩溃自愈：与隧道 cron 自愈形成完整链路（OPT-20260807-008）
+    restart: "unless-stopped"
+    hostname: '${GITLAB_HOSTNAME:-gitlab.daydaymoney.com}'
+    environment:
+      GITLAB_EXTERNAL_HOST: ${GITLAB_EXTERNAL_HOST:-localhost}
+      GITLAB_HTTP_PORT: ${GITLAB_HTTP_PORT:-8012}
+      GITLAB_HOSTNAME: ${GITLAB_HOSTNAME:-gitlab.daydaymoney.com}
+      # 公网 SSOT（与 conf allowedHost/publicUrl 一致）：clone/Web 显示用，无 :8012
+      GITLAB_EXTERNAL_URL: ${GITLAB_EXTERNAL_URL:-http://localhost:8012}
+      # 由 gitService/run.sh 从 conf/base.yaml / task-auth 解析后注入；勿硬编码域名
+      GITLAB_OIDC_ISSUER: ${GITLAB_OIDC_ISSUER:-}
+      GITLAB_OIDC_CLIENT_ID: ${GITLAB_OIDC_CLIENT_ID:-gitlab-git-service}
+      GITLAB_OIDC_CLIENT_SECRET: ${GITLAB_OIDC_CLIENT_SECRET:-}
+      # 必须与 taskAuth oidc.bootstrapClients[].redirectUri 一致（公网 HTTPS、无端口）
+      GITLAB_OIDC_REDIRECT_URI: ${GITLAB_OIDC_REDIRECT_URI:-}
+      GITLAB_SIGNUP_ENABLED: ${GITLAB_SIGNUP_ENABLED:-false}
+      GITLAB_PASSWORD_AUTH_WEB: ${GITLAB_PASSWORD_AUTH_WEB:-false}
+      GITLAB_PASSWORD_AUTH_GIT: ${GITLAB_PASSWORD_AUTH_GIT:-false}
+      # GitLab → taskBill 流量闸门（SSOT: conf/infra/git-service-tencent-sh-1/config.yaml）
+      # sh 经本地 ensure-edge-tunnels.sh 8004 反向隧道访问本机 taskBill
+      # （2026-08-23，OPT 联动；直接公网 10.2.150.68 不可达）
+      TRAE_TASKBILL_BASE: ${TRAE_TASKBILL_BASE:-http://host.docker.internal:8004}
+      TRAE_TASKBILL_INTERNAL_SECRET: ${TRAE_TASKBILL_INTERNAL_SECRET:-}
+      TRAE_GITLAB_REGION: ${TRAE_GITLAB_REGION:-tencent-sh-1}
+      TRAE_GITLAB_PUBLIC_HOST: ${TRAE_GITLAB_PUBLIC_HOST:-gitlab-tencent-sh-1.daydaymoney.com}
+      TRAE_GITLAB_INTRANET_HOSTS: ${TRAE_GITLAB_INTRANET_HOSTS:-}
+      GITLAB_OMNIBUS_CONFIG: |
+        # 公网入口 URL（HTTPS 无端口）；TLS 在边缘终止，容器内仍 HTTP 监听 GITLAB_HTTP_PORT
+        external_url '${GITLAB_EXTERNAL_URL}'
+        nginx['listen_port'] = ${GITLAB_HTTP_PORT:-8012}
+        nginx['listen_https'] = false
+        letsencrypt['enable'] = false
+        # 展示端口（公网默认 22）；宿主机映射仍用 GITLAB_SSH_PORT（本机常 2222）
+        gitlab_rails['gitlab_shell_ssh_port'] = ${GITLAB_SSH_ADVERTISE_PORT:-${GITLAB_SSH_PORT:-2222}}
+        # 本地 dev：关闭 GitLab 内置监控栈（AiMonitor 已提供 Prometheus/Grafana）
+        prometheus_monitoring['enable'] = false
+        alertmanager['enable'] = false
+        postgres_exporter['enable'] = false
+        redis_exporter['enable'] = false
+        gitlab_exporter['enable'] = false
+        node_exporter['enable'] = false
+        # 降低并发，减少内存峰值（OAuth / MR / Issue 本地开发足够）
+        # SSOT: conf/infra/git-service/config.yaml → pumaWorkers / sidekiqConcurrency
+        puma['worker_processes'] = ${GITLAB_PUMA_WORKERS:-2}
+        sidekiq['concurrency'] = ${GITLAB_SIDEKIQ_CONCURRENCY:-5}
+        postgresql['shared_buffers'] = '128MB'
+        postgresql['max_connections'] = 100
+        gitlab_rails['env'] = {
+          'MALLOC_CONF' => 'dirty_decay_ms:1000,muzzy_decay_ms:1000',
+          'TRAE_TASKBILL_BASE' => '${TRAE_TASKBILL_BASE:-http://host.docker.internal:8004}',
+          'TRAE_TASKBILL_INTERNAL_SECRET' => '${TRAE_TASKBILL_INTERNAL_SECRET:-}',
+          'TRAE_GITLAB_REGION' => '${TRAE_GITLAB_REGION:-tencent-sh-1}',
+          'TRAE_GITLAB_PUBLIC_HOST' => '${TRAE_GITLAB_PUBLIC_HOST:-gitlab-tencent-sh-1.daydaymoney.com}',
+          'TRAE_GITLAB_INTRANET_HOSTS' => '${TRAE_GITLAB_INTRANET_HOSTS:-}'
+        }
+        # === taskAuth OIDC SSO (OmniAuth) ===
+        # discovery: false — 边缘 api.daydaymoney.com 未反代 /.well-known，
+        # 显式 /api/oidc/* 端点（与同源 /api/ 反代一致）。
+        # redirect_uri 走公网入口（与 taskAuth bootstrapClients.redirectUri 一致），
+        # 勿用 http://host:8012 —— 与 taskAuth 白名单不一致会 400 redirect_uri not allowed。
+        # === 注册/账密开关（OPT-20260807-034；SSOT: conf/infra/git-service/config.yaml）===
+        # 关闭手动注册与账密登录，仅保留平台 OIDC 单点登录。
+        gitlab_rails['signup_enabled'] = ${GITLAB_SIGNUP_ENABLED:-false}
+        gitlab_rails['password_authentication_enabled_for_web'] = ${GITLAB_PASSWORD_AUTH_WEB:-false}
+        gitlab_rails['password_authentication_enabled_for_git'] = ${GITLAB_PASSWORD_AUTH_GIT:-false}
+        gitlab_rails['omniauth_enabled'] = true
+        gitlab_rails['omniauth_allow_single_sign_on'] = ['openid_connect']
+        gitlab_rails['omniauth_block_auto_created_users'] = false
+        gitlab_rails['omniauth_auto_link_user'] = ['openid_connect']
+        gitlab_rails['omniauth_sync_profile_from_provider'] = ['openid_connect']
+        gitlab_rails['omniauth_sync_profile_attributes'] = ['email', 'name']
+        gitlab_rails['omniauth_providers'] = [
+          {
+            name: 'openid_connect',
+            label: 'taskAuth SSO',
+            args: {
+              name: 'openid_connect',
+              scope: ['openid', 'profile', 'email'],
+              response_type: 'code',
+              issuer: ENV['GITLAB_OIDC_ISSUER'],
+              discovery: false,
+              client_auth_method: 'basic',
+              uid_field: 'sub',
+              send_scope_to_token_endpoint: ''
+              client_options: {
+                identifier: ENV['GITLAB_OIDC_CLIENT_ID'],
+                secret: ''
+                redirect_uri: ENV['GITLAB_OIDC_REDIRECT_URI'],
+                authorization_endpoint: "#{ENV['GITLAB_OIDC_ISSUER']}/api/oidc/authorize",
+                token_endpoint: "#{ENV['GITLAB_OIDC_ISSUER']}/api/oidc/token",
+                userinfo_endpoint: "#{ENV['GITLAB_OIDC_ISSUER']}/api/oidc/userinfo",
+                jwks_uri: "#{ENV['GITLAB_OIDC_ISSUER']}/api/oidc/jwks"
+              }
+            }
+          }
+        ]
+    ports:
+      - '${GITLAB_HTTP_PORT:-8012}:${GITLAB_HTTP_PORT:-8012}'
+      - '${GITLAB_SSH_PORT:-2222}:22'
+    volumes:
+      # Durable host path (NOT repo-relative): set by run.sh → GITLAB_HOME.
+      # Default: $XDG_DATA_HOME/daydaymoney/gitService or ~/.local/share/daydaymoney/gitService
+      # Avoid ./gitlab_home under tmpfs worktrees (/tmp/ram-work) — reboot/rebuild wipes data.
+      - '${GITLAB_HOME}/config:/etc/gitlab'
+      - '${GITLAB_HOME}/logs:/var/log/gitlab'
+      - '${GITLAB_HOME}/data:/var/opt/gitlab'
+      # OIDC SSL fix persistence: SWD.url_builder = URI::HTTP initializer
+      - './initializers/zzz_fix_oidc_http.rb:/opt/gitlab/embedded/service/gitlab-rails/config/initializers/zzz_fix_oidc_http.rb:ro'
+      # OIDC traceId injection: adds data-traceId to OmniAuth error flash alerts
+      - './initializers/zzz_fix_oidc_traceid.rb:/opt/gitlab/embedded/service/gitlab-rails/config/initializers/zzz_fix_oidc_traceid.rb:ro'
+      - './initializers/zzz_trae_gitlab_traffic_quota.rb:/opt/gitlab/embedded/service/gitlab-rails/config/initializers/zzz_trae_gitlab_traffic_quota.rb:ro'
+      # Bootstrap 标记文件：记录已完成的初始化步骤，避免重启时重复执行
+      - '${GITLAB_HOME}/bootstrap_marks:/opt/gitlab/bootstrap_marks'
+    extra_hosts:
+      # 容器内 host.docker.internal → 宿主 gateway（访问 sh 上 8004 隧道 → 本机 taskBill）
+      - 'host.docker.internal:host-gateway'
+    shm_size: '${GITLAB_SHM_SIZE:-512m}'  # SSOT: conf/infra/git-service/config.yaml → shmSize
+    mem_limit: '${GITLAB_MEM_LIMIT:-6g}'  # SSOT: conf/infra/git-service/config.yaml → memLimit
+
+  # ADR-0042: follow workhorse git-upload-pack written_bytes → taskBill.
+  gitlab-traffic-shipper:
+    image: python:3.12-alpine
+    container_name: ${GITLAB_CONTAINER_NAME:-gitlab}-traffic-shipper
+    restart: unless-stopped
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    environment:
+      TRAE_TASKBILL_BASE: ${TRAE_TASKBILL_BASE:-http://host.docker.internal:8004}
+      TRAE_TASKBILL_INTERNAL_SECRET: ${TRAE_TASKBILL_INTERNAL_SECRET:-}
+      TRAE_GITLAB_REGION: ${TRAE_GITLAB_REGION:-tencent-sh-1}
+      TRAE_GITLAB_PUBLIC_HOST: ${TRAE_GITLAB_PUBLIC_HOST:-gitlab-tencent-sh-1.daydaymoney.com}
+      TRAE_GITLAB_INTRANET_HOSTS: ${TRAE_GITLAB_INTRANET_HOSTS:-}
+      GITLAB_WORKHORSE_LOG: /var/log/gitlab/gitlab-workhorse/current
+      GITLAB_SHELL_LOG: /var/log/gitlab/gitlab-shell/gitlab-shell.log
+      SHIPPER_STATE_FILE: /state/gitlab_traffic_shipper.offset.json
+      SHIPPER_SHELL_STATE_FILE: /state/gitlab_shell_traffic_shipper.offset.json
+    volumes:
+      - '${GITLAB_HOME}/logs:/var/log/gitlab:ro'
+      - '${GITLAB_HOME}/bootstrap_marks:/state'
+      - './scripts/ship_gitlab_git_traffic.py:/opt/ship/ship_gitlab_git_traffic.py:ro'
+    command: ["python3", "-u", "/opt/ship/ship_gitlab_git_traffic.py"]
+    depends_on:
+      - gitlab
+

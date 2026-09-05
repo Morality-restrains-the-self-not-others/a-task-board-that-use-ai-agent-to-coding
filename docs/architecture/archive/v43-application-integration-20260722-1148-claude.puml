@@ -1,0 +1,48 @@
+' @title: Application Integration — 平台注册邀请码每日限量
+' @view: application-integration
+' @status: target
+' @version: 43
+' @author: claude
+' @based_on: v41 current (v41-application-integration-20260719-1816-claude.puml)
+' @updated: 2026-07-22 11:48
+' @description: taskAuth 拥有注册邀请码策略与码表；注册路径原子核销；Admin/Profile/Login/Register UI
+' @iteration: registration-invite-code-daily-quota
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v43 — Registration Invite Code Daily Quota (2026-07-22 11:48)
+
+rectangle "Motivation" {
+  Motivation_Constraint(goFirst, "Constraint\n新增接口默认 Go")
+  Motivation_Principle(singleOwner, "Principle\n单表单服务所有权")
+  Motivation_Constraint(dailyCap, "Constraint\n每日放量闸门")
+}
+
+rectangle "Application" {
+  Application_Component(vueAdmin, "🟡 Vue SystemAdmin\n邀请码策略/关系")
+  Application_Component(vueProfile, "🟡 Vue UserProfile\n申请/使用情况")
+  Application_Component(vueAuth, "🟡 Vue Login/Register\ninvite_code 字段")
+  Application_Component(gw, "🟡 task-gateway\ninvite 路由")
+  Application_Component(taskAuth, "🟡 taskAuth\npolicy+codes+register redeem")
+  Application_Component(django, "saas-backend\n(无新公网 API)")
+  Application_Component(te, "taskEvents")
+  Application_DataObject(authDB, "🟡 task-auth.db\ninvite_policy/codes")
+}
+
+rectangle "Technology" {
+  Technology_Node(kafka, "Kafka")
+}
+
+Rel_Flow(vueAdmin, gw, "system-admin/registration-invite*")
+Rel_Flow(vueProfile, gw, "registration-invite-codes*")
+Rel_Flow(vueAuth, gw, "register + public policy")
+Rel_Flow(gw, taskAuth, "token/none")
+Rel_Access_W(taskAuth, authDB, "R/W")
+Rel_Flow(taskAuth, kafka, "INVITE_* events")
+Rel_Flow(kafka, te, "consume")
+Rel_Influence(goFirst, taskAuth, "落点")
+Rel_Influence(singleOwner, authDB, "owner")
+Rel_Influence(dailyCap, taskAuth, "quota")
+
+@enduml

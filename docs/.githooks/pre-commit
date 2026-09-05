@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# HOOK_VERSION 1.0.0
+# 架构视图自动归档 — pre-commit 门禁
+# 检测到本次提交新增了架构视图新版本文件（v<N>-application-integration-* 或
+# v<N>-enterprise-landscape-*），自动运行 archive-old-views.sh 归档旧版本
+# （保留最近 5 版，其余移入 architecture/archive/），并将归档变更纳入本次提交。
+#
+# 背景：视图版本文件在 docs 子模块内提交，meta-repo 的 .githooks 不会触发，
+#       故本 hook 独立安装于 docs 子模块（见 architecture/scripts/install-arch-hooks.sh）。
+# 用法：无需手动干预；不想归档时可在提交前临时跳过：
+#   git commit --no-verify
+set -euo pipefail
+# Session Hub 提交锁校验（v1.1.0，可选 — 二进制缺失时放行）
+SES_LIB="$(cd "$(dirname "$0")" && pwd)/lib/session_lock_check.sh"
+if [ -f "$SES_LIB" ]; then source "$SES_LIB"; session_hub_lock_check; fi
+
+
+echo "▸ [hook:pre-commit v1.0.0]"
+
+ROOT="$(git rev-parse --show-toplevel)"
+ARCH_SCRIPT="$ROOT/architecture/scripts/archive-old-views.sh"
+
+# 本次暂存新增（A）的视图版本文件
+new_view_files="$(git diff --cached --name-only --diff-filter=A | \
+  grep -E '^architecture/v[0-9]+-(application-integration|enterprise-landscape)-' || true)"
+
+if [ -z "$new_view_files" ]; then
+  exit 0
+fi
+
+echo "▸ 检测到新架构视图版本，自动归档旧版本…"
+echo "$new_view_files"
+
+if [ ! -x "$ARCH_SCRIPT" ]; then
+  echo "⚠ archive-old-views.sh 不可执行或不存在，跳过自动归档" >&2
+  exit 0
+fi
+
+bash "$ARCH_SCRIPT" --keep 5
+
+# 将归档产生的移动（删除+新增）纳入本次提交
+git add -A "$ROOT/architecture/"
+exit 0

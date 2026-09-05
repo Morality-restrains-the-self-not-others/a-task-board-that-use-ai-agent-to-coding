@@ -1,0 +1,56 @@
+' @title: Application Integration — ai-provider Python→Go (taskAiProvider)
+' @view: application-integration
+' @status: archived
+' @version: 32
+' @author: claude
+' @based_on: v31 current (v31-application-integration-20260715-2040-claude.puml)
+' @updated: 2026-07-16 03:05
+' @description: 新建 taskAiProvider Go 服务直替 Django Saas_Ai_Provider(:8010)；同库同契约；清理 Python
+' @iteration: ai-provider-go-migration
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v32 — taskAiProvider Go Migration (2026-07-16 00:13)
+
+rectangle "Motivation" {
+  Motivation_Constraint(goFirst, "Constraint\nGo-first APIs\nai-provider 废止 Non-Goal")
+  Motivation_Constraint(singleOwner, "Constraint\n单表所有权\ndb/ai-provider")
+}
+
+rectangle "Application" {
+  Application_Component(vue, "Vue SPA\nvendor/admin portal")
+  Application_Component(gw, "task-gateway")
+  Application_Component(goProv, "🟢 taskAiProvider\n:8010 Go")
+  Application_Component(auth, "taskAuth\nOIDC issuer")
+  Application_Component(cloud, "taskCloudService\n:8018")
+  Application_Component(saas, "saas-backend\nSSO bridge")
+  Application_Component(pyGone, "[DEPRECATED v32]\nDjango Saas_Ai_Provider")
+  Application_DataObject(db, "marketplace_*\nSQLite")
+}
+
+rectangle "Technology" {
+  Technology_Node(sqlite, "db/ai-provider")
+  Technology_Node(oci, "OCI Registry")
+}
+
+Rel_Flow(vue, goProv, " /api/* + SPA")
+Rel_Flow(gw, goProv, "upstream :8010")
+Rel_Flow(goProv, auth, "OIDC authorize/token")
+Rel_Flow(saas, goProv, "SSO bridge JWT")
+Rel_Flow(goProv, cloud, "proxy + internal")
+Rel_Flow(cloud, goProv, "public catalog")
+Rel_Access_W(goProv, db, "W marketplace_*")
+Rel_Flow(goProv, oci, "manifest resolve")
+Rel_Flow(sqlite, db, "store")
+Rel_Influence(goFirst, goProv, "新建 Go")
+Rel_Influence(singleOwner, goProv, "唯一直连")
+Rel_Flow(pyGone, goProv, "replaced by")
+
+note top of goProv
+  契约兼容 Django Saas_Ai_Provider
+  JWT + OIDC + SSO bridge
+  @author: claude @2026-07-16 00:13
+end note
+
+@enduml

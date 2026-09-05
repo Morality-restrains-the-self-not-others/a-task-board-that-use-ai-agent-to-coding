@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v104 全量" id="id-v104elfull01">
+  <folder name="Business" id="id-v104elf-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v104f-dev" name="开发者"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v104f-admin" name="平台管理员"/>
+    <element xsi:type="archimate:BusinessService" id="id-v104f-review" name="关容器后复查执行日志"/>
+    <element xsi:type="archimate:BusinessService" id="id-v104f-cfg" name="配置执行日志 COS"/>
+  </folder>
+  <folder name="Application" id="id-v104elf-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v104f-el-fe" name="taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v104f-el-cloud" name="taskCloudService"/>
+  </folder>
+  <folder name="Technology" id="id-v104elf-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v104f-el-cos" name="Tencent COS"/>
+  </folder>
+  <folder name="Relations" id="id-v104elf-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v104f-rel-dev" source="id-v104f-dev" target="id-v104f-review"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v104f-rel-adm" source="id-v104f-admin" target="id-v104f-cfg"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v104f-rel-fe-rev" source="id-v104f-el-fe" target="id-v104f-review"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v104f-rel-fe-cfg" source="id-v104f-el-fe" target="id-v104f-cfg"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v104f-rel-cloud-cos" source="id-v104f-el-cloud" target="id-v104f-el-cos"/>
+  </folder>
+  <folder name="Views" id="id-v104elf-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v104f-el-view" name="v104 Full landscape — COS archive">
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-dev" archimateElement="id-v104f-dev">
+        <bounds x="48" y="48" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104f-c-dev" source="id-v104f-d-dev" target="id-v104f-d-rev" archimateRelationship="id-v104f-rel-dev"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-admin" archimateElement="id-v104f-admin">
+        <bounds x="48" y="160" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104f-c-adm" source="id-v104f-d-admin" target="id-v104f-d-cfg" archimateRelationship="id-v104f-rel-adm"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-rev" targetConnections="id-v104f-c-dev" archimateElement="id-v104f-review">
+        <bounds x="240" y="48" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-cfg" targetConnections="id-v104f-c-adm" archimateElement="id-v104f-cfg">
+        <bounds x="240" y="160" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-fe" archimateElement="id-v104f-el-fe">
+        <bounds x="500" y="96" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104f-c-fe-rev" source="id-v104f-d-fe" target="id-v104f-d-rev" archimateRelationship="id-v104f-rel-fe-rev"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104f-c-fe-cfg" source="id-v104f-d-fe" target="id-v104f-d-cfg" archimateRelationship="id-v104f-rel-fe-cfg"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-cloud" archimateElement="id-v104f-el-cloud">
+        <bounds x="680" y="96" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v104f-c-cos" source="id-v104f-d-cloud" target="id-v104f-d-cos" archimateRelationship="id-v104f-rel-cloud-cos"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v104f-d-cos" targetConnections="id-v104f-c-cos" archimateElement="id-v104f-el-cos">
+        <bounds x="900" y="96" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

@@ -1,0 +1,7 @@
+#import "./work_item_ancestors.fragment.graphql"
+
+query workItemAncestorsQuery($id: WorkItemID!) {
+  workItem(id: $id) {
+    ...WorkItemAncestors
+  }
+}

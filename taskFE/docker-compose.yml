@@ -1,0 +1,18 @@
+# taskFE 公网 SPA：Docker nginx 静态常驻。Vite 只负责 build。
+# 启动：bash app/scripts/runall-lifecycle.sh start（或本目录 docker compose up -d）
+# 卷必须挂父目录 app/public（含 releases/ + html symlink），禁止只 mount html 目标。
+services:
+  taskfe-nginx:
+    image: ${TASKFE_NGINX_IMAGE:-nginx:1.27-alpine} # SSOT: conf/frontend/vue/config.yaml
+    container_name: taskfe-nginx
+    restart: unless-stopped
+    # Host network binds 0.0.0.0:${TASKFE_NGINX_PORT} via nginx listen
+    # (SSOT: conf/frontend/vue/config.yaml host/port). Avoid Docker published-port
+    # DNAT (taskfe_default gw 172.26.0.1) so login-history /api sees the real client IP.
+    # TASKFE_NGINX_HOST remains 0.0.0.0 in conf; do not reintroduce ports: mapping.
+    network_mode: host
+    mem_limit: ${TASKFE_NGINX_MEM_LIMIT:-128m} # SSOT: conf/frontend/vue/config.yaml
+    volumes:
+      - ./app/public:/srv/taskfe:ro
+      - ./app/static:/srv/taskfe-static:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro

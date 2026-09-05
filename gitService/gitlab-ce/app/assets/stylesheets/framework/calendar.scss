@@ -1,0 +1,34 @@
+.user-contrib-cell {
+  &:hover,
+  &:focus,
+  &.is-active {
+    cursor: pointer;
+    outline: none;
+    stroke: var(--gl-text-color-default);
+  }
+
+  &:active,
+  &.is-active {
+    stroke-width: 2px;
+  }
+
+  &[data-level="0"] {
+    fill: var(--user-contribution-graph-cell-level-0);
+  }
+
+  &[data-level="1"] {
+    fill: var(--user-contribution-graph-cell-level-1);
+  }
+
+  &[data-level="2"] {
+    fill: var(--user-contribution-graph-cell-level-2);
+  }
+
+  &[data-level="3"] {
+    fill: var(--user-contribution-graph-cell-level-3);
+  }
+
+  &[data-level="4"] {
+    fill: var(--user-contribution-graph-cell-level-4);
+  }
+}

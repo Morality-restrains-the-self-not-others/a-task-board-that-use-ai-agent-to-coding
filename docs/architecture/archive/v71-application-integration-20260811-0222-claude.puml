@@ -1,0 +1,61 @@
+' @title: 微信登录 APISIX 502 加固
+' @view: application-integration
+' @status: target
+' @version: 71
+' @iteration: wechat-login-apisix-502-hardening
+' @author: claude
+' @based_on: v70 (v70-application-integration-20260810-1955-claude.puml)
+' @updated: 2026-08-11 02:22
+' @description: Init 后恢复登录关键路径 + FE 微信预检 + Promtail 刮 APISIX access/error
+
+@startuml
+!include <archimate/Archimate>
+
+title v71 — WeChat Login APISIX 502 Hardening (Target, 2026-08-11 02:22)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v71 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v71 |
+  | <#White>       </> | 无标记 — 未变 |
+endlegend
+
+Application_Component(taskFE, "taskFE (Vue SPA)")
+note right of taskFE
+  🟡 [MODIFIED v71]
+  navigateWechatOAuth 预检
+  502 留在登录页 + data-traceId
+end note
+
+Application_Component(gateway, "APISIX Gateway (:18081)")
+note right of gateway
+  🟡 [MODIFIED v71]
+  Promtail 采集 access/error
+  （file-logger → Loki apisix-*）
+end note
+
+Application_Component(taskAuth, "taskAuth (Go :8003)")
+note right of taskAuth
+  🟡 [MODIFIED v71]
+  runAll EnsureLoginCriticalPath
+  Init 后自动拉起
+end note
+
+Application_Component(runAll, "runAll InitAllDatabases")
+note right of runAll
+  🟡 [MODIFIED v71]
+  登录关键路径：
+  task-auth → task-gateway → taskFE
+end note
+
+Application_Component(promtail, "Promtail")
+Application_DataObject(loki, "Loki")
+
+Rel_Flow(taskFE, gateway, "GET /api/auth/wechat/login/ (preflight)")
+Rel_Flow(gateway, taskAuth, "upstream :8003")
+Rel_Flow(runAll, taskAuth, "EnsureLoginCriticalPath")
+Rel_Flow(runAll, gateway, "start if down")
+Rel_Flow(runAll, taskFE, "start if down")
+Rel_Flow(gateway, promtail, "access/error logs")
+Rel_Flow(promtail, loki, "push")
+
+@enduml

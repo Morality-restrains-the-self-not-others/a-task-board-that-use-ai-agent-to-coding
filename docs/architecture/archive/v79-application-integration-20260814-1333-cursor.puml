@@ -1,0 +1,74 @@
+' @title: 厂商证照 COS 预签名直传
+' @view: application-integration
+' @status: archived
+' @version: 79
+' @iteration: vendor-docs-cos-presign-v79
+' @author: cursor
+' @based_on: v78 (v78-application-integration-20260814-0115-cursor.puml)
+' @updated: 2026-08-14 13:52
+' @description: 厂商身份证/营业执照由本机 vendorDocsDir 改为腾讯云 COS 预签名 PUT；运营 GetObject 反代；路径规则写回 conf 片段
+
+@startuml
+!include <archimate/Archimate>
+
+title v79 — Vendor Docs COS Presign Target 2026-08-14 13:33
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v79 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v79 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(taskFE, "taskFE VendorApplicationForm")
+note right of taskFE
+  🟡 [MODIFIED v79]
+  upload-url → PUT COS → complete
+  @author: cursor @2026-08-14 13:33
+end note
+
+Application_Component(adminPortal, "taskAiProvider AdminPortal")
+note right of adminPortal
+  🟡 [MODIFIED v79]
+  路径规则 UI 抽独立组件
+  PATCH admin-vendor-docs-storage
+  @author: cursor @2026-08-14 13:33
+end note
+
+Application_Component(aiProvider, "taskAiProvider (Go :8010)")
+note right of aiProvider
+  🟡 [MODIFIED v79]
+  预签名 PUT / Head / Get
+  VendorDocStore local|cos
+  @author: cursor @2026-08-14 13:33
+end note
+
+Application_DataObject(vendorRow, "ai_provider_vendor.file_key")
+note right of vendorRow
+  🟡 [MODIFIED v79]
+  file_key = COS object key
+  存量本地 key 可回退
+end note
+
+Application_DataObject(pathFrag, "vendor-docs-path.yaml")
+note right of pathFrag
+  🟢 [NEW v79]
+  keyPrefix + pathRule
+  后台写回 conf 片段
+end note
+
+Technology_Service(cos, "Tencent COS\nai-provider-1259712831\nap-shanghai")
+note right of cos
+  🟢 [NEW v79]
+  私有桶 + SSE-COS AES256
+  浏览器 Presigned PUT
+  @author: cursor @2026-08-14 13:33
+end note
+
+Rel_Flow(taskFE, aiProvider, "upload-url / upload-complete")
+Rel_Flow(taskFE, cos, "🟢 presigned PUT")
+Rel_Flow(aiProvider, cos, "🟢 sign / Head / Get")
+Rel_Flow(adminPortal, aiProvider, "GET|PATCH storage pathRule")
+Rel_Access_W(aiProvider, pathFrag, "write fragment")
+Rel_Access_W(aiProvider, vendorRow, "bind file_key")
+
+@enduml

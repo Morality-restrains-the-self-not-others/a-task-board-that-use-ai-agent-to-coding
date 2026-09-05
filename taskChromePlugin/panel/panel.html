@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="trae-service" content="taskChromePlugin" />
+  <title>云端Coding: 自动创新助手</title>
+  <link rel="stylesheet" href="panel.css">
+  <!--
+    DevTools postMessage 消息入口（initRequests / newRequest / requestUpdated）已在
+    panel.js bindRequestMessagePipeline() 中统一注册。切勿改回内联 <script> ——
+    MV3 扩展页面 CSP (script-src 'self') 会阻止内联脚本，导致 devtools 请求列表为空。
+  -->
+</head>
+<body>
+  <div id="app">
+    <!-- 头部状态 -->
+    <header class="header">
+      <h1>🔧 云端Coding: 自动创新助手</h1>
+      <span id="statusBadge" class="badge badge-disconnected">未连接</span>
+    </header>
+
+    <!-- Tab 切换 -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="single">📋 单请求创建</button>
+      <button class="tab" data-tab="batch">📦 批量错误捕获</button>
+      <button class="tab" data-tab="errors">⚠️ 错误列表</button>
+      <button class="tab" data-tab="history">📜 历史记录</button>
+      <button class="tab" data-tab="guide">📖 使用说明</button>
+    </nav>
+
+    <!-- Tab: 单请求创建 -->
+    <section id="tab-single" class="tab-content active">
+      <!-- 请求列表 + 选中预览 -->
+      <div class="section">
+        <h3>📌 请求列表 <span class="hint-inline">(来自 DevTools Network)</span></h3>
+        <!-- 搜索栏 -->
+        <div class="search-bar">
+          <input type="text" id="requestSearch" class="form-input search-input" placeholder="🔍 搜索 URL / 方法 / 状态码...">
+          <select id="requestMethodFilter" class="form-select search-select">
+            <option value="">全部方法</option>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+            <option value="PATCH">PATCH</option>
+            <option value="OPTIONS">OPTIONS</option>
+            <option value="HEAD">HEAD</option>
+          </select>
+          <select id="requestStatusFilter" class="form-select search-select">
+            <option value="">全部状态</option>
+            <option value="2xx">2xx 成功</option>
+            <option value="3xx">3xx 重定向</option>
+            <option value="4xx">4xx 客户端错误</option>
+            <option value="5xx">5xx 服务端错误</option>
+            <option value="canceled">Canceled 已取消</option>
+          </select>
+        </div>
+        <!-- Anti-Replay-OK: local view query only — type chips do not POST -->
+        <div id="requestTypeFilters" class="request-type-filters" role="group" aria-label="资源类型">
+          <button type="button" class="type-chip active" data-type="" aria-pressed="true">全部</button>
+          <button type="button" class="type-chip" data-type="xhr" aria-pressed="false">XHR</button>
+          <button type="button" class="type-chip" data-type="doc" aria-pressed="false">Doc</button>
+          <button type="button" class="type-chip" data-type="js" aria-pressed="false">JS</button>
+          <button type="button" class="type-chip" data-type="css" aria-pressed="false">CSS</button>
+          <button type="button" class="type-chip" data-type="img" aria-pressed="false">Img</button>
+          <button type="button" class="type-chip" data-type="other" aria-pressed="false">Other</button>
+        </div>
+        <div class="btn-row">
+          <button id="btnRefreshRequest" class="btn btn-sm">🔄 刷新列表</button>
+          <button id="btnClearRequestList" class="btn btn-sm btn-danger" title="清空本面板与后台缓存的请求列表（不影响 Network 面板）">🗑️ 清空列表</button>
+          <span id="requestCount" class="hint-inline"></span>
+        </div>
+        <!-- Anti-Replay-OK: local view query only — column headers sort in-memory list -->
+        <div class="request-list-header" role="row">
+          <button type="button" class="req-sort" data-sort="method">方法</button>
+          <button type="button" class="req-sort" data-sort="status">状态</button>
+          <button type="button" class="req-sort req-sort-url" data-sort="url">URL</button>
+          <button type="button" class="req-sort" data-sort="time">耗时</button>
+          <button type="button" class="req-sort" data-sort="timestamp" aria-sort="descending">时间</button>
+        </div>
+        <div id="selectedRequest" class="request-preview empty">
+          <p class="placeholder">正在加载请求列表...</p>
+        </div>
+      </div>
+
+      <!-- 工作空间 & 项目选择 -->
+      <div class="section">
+        <h3>🗂️ 工作空间</h3>
+        <div class="target-row">
+          <select id="singleWorkspace" class="form-select" style="flex:2">
+            <option value="">-- 请选择工作空间 --</option>
+          </select>
+          <select id="singleProgressColumn" class="form-select" style="flex:1">
+            <option value="">进度列</option>
+          </select>
+          <select id="singlePriority" class="form-select" style="flex:1">
+            <option value="0">高</option>
+            <option value="1" selected>中</option>
+            <option value="2">低</option>
+          </select>
+          <select id="singleOwner" class="form-select" style="flex:2">
+            <option value="">负责人</option>
+          </select>
+        </div>
+        <div id="singleProjects" class="checkbox-group" style="margin-top:6px">
+          <p class="placeholder">项目 (单选)</p>
+        </div>
+        <p id="panel-daydaymoney-status" class="hint-inline" hidden style="margin-top:6px"></p>
+      </div>
+
+      <!-- 分支策略 -->
+      <div class="section">
+        <h3>🌿 分支策略</h3>
+        <div class="target-row">
+          <div style="flex:1">
+            <label>工作分支 <span class="hint-inline">— 选择模板或输入分支名</span></label>
+            <input type="text" id="singleWorkBranch" class="form-input" placeholder="选择模板或输入分支名" list="singleWorkBranchList">
+            <datalist id="singleWorkBranchList"></datalist>
+          </div>
+          <div style="flex:1">
+            <label>合并目标分支 <span class="hint-inline">— 选择模板或输入分支名</span></label>
+            <div class="target-row" style="gap:4px">
+              <input type="text" id="singleMergeTarget" class="form-input" style="flex:1" placeholder="如: main, develop" list="singleMergeTargetList">
+              <button id="btnRefreshSingleBranches" class="btn btn-sm" title="从 Git 仓库刷新分支列表（工作分支 + 合并目标）">🔄</button>
+            </div>
+            <datalist id="singleMergeTargetList"></datalist>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:8px">
+          <label>基准分支 <span class="hint-inline">— 空则用项目默认分支</span></label>
+          <div id="singleRepoBases" class="repo-bases">
+            <p class="placeholder">空则用项目默认分支</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 对齐 work-panel 的创建参数 -->
+      <div class="section">
+        <h3>⚙️ 创建参数 <span class="hint-inline">— 与工作面板创建任务一致</span></h3>
+        <div class="target-row">
+          <div style="flex:1">
+            <label>交付物类别</label>
+            <select id="singleDeliverable" class="form-select">
+              <option value="">加载中...</option>
+            </select>
+          </div>
+          <div style="flex:1">
+            <label>已安装镜像 <span id="singleImageRequired" class="hint-inline" hidden style="color:#f38ba8;">*自动运行必选</span></label>
+            <select id="singleContainerImage" class="form-select">
+              <option value="">无</option>
+            </select>
+          </div>
+        </div>
+        <div class="target-row" style="margin-top:6px">
+          <div style="flex:1">
+            <label>智能体资源配置 <span class="hint-inline">— 必填</span></label>
+            <select id="singleFeatureParamsSource" class="form-select">
+              <option value="">-- 请选择 --</option>
+              <option value="company">公司默认</option>
+              <option value="workspace">工作空间默认</option>
+              <option value="personal">个人配置</option>
+            </select>
+          </div>
+          <div style="flex:1" id="singlePersonalConfigWrap" hidden>
+            <label>个人配置</label>
+            <select id="singlePersonalConfig" class="form-select">
+              <option value="">-- 请选择个人配置 --</option>
+            </select>
+          </div>
+          <div style="flex:1">
+            <label>截止日期</label>
+            <input type="datetime-local" id="singleDueDate" class="form-input">
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:6px">
+          <label class="toggle-label">
+            <input type="checkbox" id="singleAutoRun" disabled aria-disabled="true">
+            <span>
+              是否自动运行
+              <span class="hint-inline" id="singleAutoRunHint">请先选择项目</span>
+            </span>
+          </label>
+        </div>
+        <div class="form-row" id="singleQueuedAutoRunWrap" hidden>
+          <label class="toggle-label">
+            <input type="checkbox" id="singleQueuedAutoRun">
+            <span>
+              加入自动调度队列
+              <span class="hint-inline" id="singleQueuedAutoRunHint">工作空间已启用自动调度。勾选后任务进入排队，按调度时段逐个启动，创建后不立即启服。不勾选则仍立即按运行模版启动。</span>
+            </span>
+          </label>
+          <div id="singleQueuedAutoRunError" class="result" hidden></div>
+        </div>
+        <div class="form-row" id="singleGitIdentities"></div>
+        <div class="form-row">
+          <label>协作人员 (可多选)</label>
+          <div id="singleAssignees" class="checkbox-group">
+            <p class="placeholder">选择工作空间后加载成员</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 任务信息编辑 -->
+      <div class="section">
+        <h3>📝 任务信息</h3>
+        <div id="singleResult" class="result"></div>
+        <div class="target-row">
+          <div style="flex:1">
+            <label>标题</label>
+            <input type="text" id="singleTaskTitle" class="form-input" placeholder="任务标题">
+          </div>
+          <button id="btnCreateSingle" class="btn btn-primary" style="flex-shrink:0;margin-top:18px">✅ 创建任务</button>
+        </div>
+        <div class="form-row">
+          <label>描述</label>
+          <textarea id="singleTaskDesc" class="form-textarea" rows="14" placeholder="点击请求列表中的请求 → 自动填充"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab: 批量错误捕获 -->
+    <section id="tab-batch" class="tab-content">
+      <!-- 捕获控制 -->
+      <div class="section">
+        <h3>🎯 自动捕获设置</h3>
+        <div class="form-row">
+          <label class="toggle-label">
+            <input type="checkbox" id="captureToggle">
+            启用自动请求捕获
+          </label>
+        </div>
+        <div class="form-row">
+          <label>捕获状态码</label>
+          <div class="checkbox-group horizontal" id="statusCodeFilters">
+            <label><input type="checkbox" value="2xx" checked> 2xx</label>
+            <label><input type="checkbox" value="3xx" checked> 3xx</label>
+            <label><input type="checkbox" value="4xx" checked> 4xx</label>
+            <label><input type="checkbox" value="5xx" checked> 5xx</label>
+            <label><input type="checkbox" value="canceled" checked> Canceled</label>
+          </div>
+        </div>
+        <div class="form-row">
+          <span id="captureStatus" class="status-text">⏸️ 捕获已停止</span>
+          <span id="capturedCount" class="status-text" style="display:none"> | 5xx 示数: <strong>0</strong></span>
+        </div>
+      </div>
+
+      <!-- 工作空间 & 项目选择 -->
+      <div class="section">
+        <h3>🗂️ 批量创建目标</h3>
+        <div class="form-row">
+          <label>工作空间</label>
+          <select id="batchWorkspace" class="form-select">
+            <option value="">-- 请选择 --</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>项目 (单选)</label>
+          <div id="batchProjects" class="checkbox-group">
+            <p class="placeholder">请先选择工作空间</p>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>进度列 <span class="hint-inline">— 选择工作空间后自动加载</span></label>
+          <select id="batchProgressColumn" class="form-select">
+            <option value="">请先选择工作空间</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>交付物类别</label>
+          <select id="batchDeliverable" class="form-select">
+            <option value="">请先选择工作空间</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>已安装镜像 <span id="batchImageRequired" class="hint-inline" hidden style="color:#f38ba8;">*自动运行必选</span></label>
+          <select id="batchContainerImage" class="form-select">
+            <option value="">无</option>
+          </select>
+        </div>
+        <div class="target-row">
+          <div style="flex:1">
+            <label>智能体资源配置 <span class="hint-inline">— 必填</span></label>
+            <select id="batchFeatureParamsSource" class="form-select">
+              <option value="">-- 请选择 --</option>
+              <option value="company">公司默认</option>
+              <option value="workspace">工作空间默认</option>
+              <option value="personal">个人配置</option>
+            </select>
+          </div>
+          <div style="flex:1" id="batchPersonalConfigWrap" hidden>
+            <label>个人配置</label>
+            <select id="batchPersonalConfig" class="form-select">
+              <option value="">-- 请选择个人配置 --</option>
+            </select>
+          </div>
+          <div style="flex:1">
+            <label>截止日期</label>
+            <input type="datetime-local" id="batchDueDate" class="form-input">
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="toggle-label">
+            <input type="checkbox" id="batchAutoRun" disabled aria-disabled="true">
+            <span>
+              是否自动运行
+              <span class="hint-inline" id="batchAutoRunHint">请先选择项目</span>
+            </span>
+          </label>
+        </div>
+        <div class="form-row" id="batchQueuedAutoRunWrap" hidden>
+          <label class="toggle-label">
+            <input type="checkbox" id="batchQueuedAutoRun">
+            <span>
+              加入自动调度队列
+              <span class="hint-inline" id="batchQueuedAutoRunHint">工作空间已启用自动调度。勾选后任务进入排队，按调度时段逐个启动，创建后不立即启服。不勾选则仍立即按运行模版启动。</span>
+            </span>
+          </label>
+          <div id="batchQueuedAutoRunError" class="result" hidden></div>
+        </div>
+        <div class="form-row" id="batchGitIdentities"></div>
+        <div class="form-row">
+          <label>基准分支 <span class="hint-inline">— 批量任务共用；空则用项目默认分支</span></label>
+          <div id="batchRepoBases" class="repo-bases">
+            <p class="placeholder">空则用项目默认分支</p>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>工作分支 <span class="hint-inline">— 选择模板或输入分支名，所有批量任务共用</span></label>
+          <input type="text" id="batchWorkBranch" class="form-input" placeholder="选择模板或输入分支名" list="batchWorkBranchList">
+          <datalist id="batchWorkBranchList"></datalist>
+        </div>
+        <div class="form-row">
+          <label>合并目标分支 <span class="hint-inline">— 选择模板或输入分支名，所有批量任务共用</span></label>
+          <div class="target-row" style="gap:4px">
+            <input type="text" id="batchMergeTarget" class="form-input" style="flex:1" placeholder="如: main, develop" list="batchMergeTargetList">
+            <button id="btnRefreshBatchBranches" class="btn btn-sm" title="从 Git 仓库刷新分支列表（工作分支 + 合并目标）">🔄</button>
+          </div>
+          <datalist id="batchMergeTargetList"></datalist>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="btnRefreshErrors" class="btn">🔄 刷新错误列表</button>
+        <button id="btnClearErrors" class="btn btn-danger">🗑️ 清空错误列表</button>
+        <button id="btnCreateBatch" class="btn btn-primary">📦 批量创建任务</button>
+      </div>
+      <div id="batchResult" class="result"></div>
+    </section>
+
+    <!-- Tab: 错误列表 -->
+    <section id="tab-errors" class="tab-content">
+      <div class="section">
+        <h3>⚠️ 已捕获的错误请求</h3>
+        <div class="btn-row">
+          <button id="btnRefreshErrorList" class="btn btn-sm">🔄 刷新</button>
+          <button id="btnClearErrorList" class="btn btn-sm btn-danger">🗑️ 清空</button>
+        </div>
+        <div id="errorList" class="error-list">
+          <p class="placeholder">暂无捕获的错误请求</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab: 历史记录 -->
+    <section id="tab-history" class="tab-content">
+      <div class="section">
+        <h3>📜 任务创建历史</h3>
+        <div class="btn-row">
+          <button id="btnRefreshHistory" class="btn btn-sm">🔄 刷新</button>
+          <button id="btnClearHistory" class="btn btn-sm btn-danger">🗑️ 清空历史</button>
+          <button id="btnRetryAllFailed" class="btn btn-sm" style="display:none">🔁 重试全部失败</button>
+        </div>
+        <div id="historyStats" class="history-stats"></div>
+        <div id="historyList" class="history-list">
+          <p class="placeholder">暂无创建记录</p>
+        </div>
+        <div id="historyResult" class="result"></div>
+      </div>
+    </section>
+
+    <!-- Tab: 使用说明 -->
+    <section id="tab-guide" class="tab-content">
+      <div class="section">
+        <h3>📖 使用说明</h3>
+        <div id="panel-user-guide" class="tcp-guide-host"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="../lib/daydaymoney-meta.js"></script>
+  <script src="../lib/storage.js"></script>
+  <script src="../lib/dom-trace.js"></script>
+  <script src="../lib/capture-status.js"></script>
+  <script src="../lib/create-task-git-identity.js"></script>
+  <script src="../lib/branch-datalist.js"></script>
+  <script src="../lib/create-task-payload.js"></script>
+  <script src="../lib/panel-request-bootstrap.js"></script>
+  <script src="../lib/plugin-brand.js"></script>
+  <script src="../lib/user-guide.js"></script>
+  <script src="../lib/workspace-list.js"></script>
+  <script src="../lib/project-auto-run-label.js"></script>
+  <script src="../lib/workspace-auto-schedule.js"></script>
+  <script src="../lib/float-workspace-select.js"></script>
+  <script src="../lib/request-task-desc.js"></script>
+  <script src="../lib/request-list-query.js"></script>
+  <script src="../lib/hot-path-guards.js"></script>
+  <script src="../lib/visibility-interval.js"></script>
+  <script src="../lib/panel-create-success.js"></script>
+  <script src="lib/panel-core.js"></script>
+  <script src="lib/workspace.js"></script>
+  <script src="lib/workspace-projects.js"></script>
+  <script src="lib/branches.js"></script>
+  <script src="tabs/single-request.js"></script>
+  <script src="tabs/batch.js"></script>
+  <script src="tabs/errors.js"></script>
+  <script src="tabs/history.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>

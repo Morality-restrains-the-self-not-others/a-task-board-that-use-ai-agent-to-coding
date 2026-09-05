@@ -1,0 +1,61 @@
+' @title: Application Integration — 租户级自建 GitLab OAuth 连接
+' @view: application-integration
+' @status: archived
+' @version: 30
+' @author: claude
+' @based_on: v29 (v29-application-integration-20260715-1736-claude.puml); parallel with v31
+' @updated: 2026-07-15 22:44
+' @description: 已交付：租户管理员配置唯一自建 GitLab OAuth App；成员经 git-site-oauth 绑定；表归 taskGitOauth。application-integration 视图 tip current 为 v31。
+' @iteration: tenant-gitlab-oauth-connection
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v30 — Tenant GitLab OAuth Connection (shipped 2026-07-15 22:44)
+
+rectangle "Motivation" {
+  Motivation_Constraint(tenantScope, "Constraint\n每租户最多1个\n自建 GitLab App")
+  Motivation_Constraint(goFirst, "Constraint\nGo-first\n零新增 Python 公网")
+}
+
+rectangle "Application" {
+  Application_Component(vueAdmin, "Vue\nsettings/gitlab-connection")
+  Application_Component(vueMember, "Vue\ngit-site-oauth providers")
+  Application_Component(gw, "task-gateway")
+  Application_Component(goAuth, "taskGitOauth\nCRUD+resolve tenant App")
+  Application_Component(django, "saas-backend\nproviders catalog merge")
+  Application_DataObject(conn, "tenant_gitlab_oauth_connections")
+  Application_DataObject(cred, "api_gitoauthappusercredential")
+}
+
+rectangle "Technology" {
+  Technology_Node(sqlite, "db/git-oauth")
+  Technology_Node(glSelf, "Tenant self-hosted\nGitLab OAuth")
+  Technology_Node(kafka, "Kafka domain events")
+}
+
+note top of goAuth
+  PUT/GET/DELETE tenant connection;
+  ResolveGitLab 可读 tenant DB 行
+end note
+
+note right of conn
+  company_id UNIQUE;
+  client_secret Fernet
+end note
+
+Rel_Flow(vueAdmin, gw, "CRUD connection")
+Rel_Flow(vueMember, gw, "providers + oauth")
+Rel_Flow(gw, goAuth, "tenant CRUD / oauth")
+Rel_Flow(gw, django, "providers catalog")
+Rel_Flow(django, goAuth, "internal resolve tenant")
+Rel_Access_W(goAuth, conn, "W connection")
+Rel_Access_W(goAuth, cred, "W bind on callback")
+Rel_Flow(goAuth, glSelf, "authorize/token")
+Rel_Flow(goAuth, kafka, "Upserted/Deleted events")
+Rel_Flow(sqlite, conn, "store")
+Rel_Flow(sqlite, cred, "store")
+Rel_Influence(tenantScope, goAuth, "UNIQUE company_id")
+Rel_Influence(goFirst, goAuth, "CRUD on Go")
+
+@enduml

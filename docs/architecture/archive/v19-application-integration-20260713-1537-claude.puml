@@ -1,0 +1,76 @@
+' @title: Application Integration — 工作空间机器节点闲置策略
+' @view: application-integration
+' @status: archived
+' @version: 19
+' @author: claude
+' @based_on: v17 (v17-application-integration-20260713-1428-claude.puml)
+' @updated: 2026-07-13 15:55
+' @description: workspace 机器策略/汇总/闲置复用；taskCloudService 闲置回收 ticker
+' @iteration: workspace-machine-idle-policy
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v19 — 工作空间机器节点闲置策略 (2026-07-13 15:37)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v19 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v19 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v19 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件 |
+endlegend
+
+' ── Application ──
+Application_Component(vueSettings, "🟡 Vue WorkspaceSettingsTaskPanel")
+Application_Component(vueWork, "🟡 Vue WorkPanel")
+Application_Component(gw, "task-gateway\nAPISIX")
+Application_Component(tcs, "🟡 taskCloudService\n:8018")
+Application_Component(tev, "🟢 taskEvents\nintent idle_recycle")
+Application_Component(cgw, "taskContainerGateway\n:8014")
+Application_Component(css, "cloudserverstopped\nhandler")
+
+' ── Data ──
+Application_DataObject(policy, "🟢 workspace_machine_policies")
+Application_DataObject(csc, "🟡 cloud_server_configs\n(+idle_since)")
+
+' ── Technology ──
+Technology_Node(kafkaStop, "Kafka\ntopic cloud-server-stopped")
+
+note top of tcs
+  [MODIFIED v19]
+  GET/PUT workspace-machine-policy
+  GET workspace-machine-summary
+  start-vm: CPA 门禁 + prefer idle reuse
+  @author: claude @2026-07-13 15:37
+end note
+
+note right of tev
+  [NEW v19]
+  定时扫描 idle_since + recycle_minutes
+  → stop ECS/relay/mock
+  @author: claude @2026-07-13 15:37
+end note
+
+note bottom of policy
+  [NEW v19] SSOT in task_cloud.db
+end note
+
+note top of vueSettings
+  [MODIFIED v19] 每工作空间机器节点策略模态
+end note
+
+note top of vueWork
+  [MODIFIED v19] 启动/闲置数 + 回收间隙摘要
+end note
+
+Rel_Flow(vueSettings, gw, "GET/PUT policy")
+Rel_Flow(vueWork, gw, "GET summary")
+Rel_Flow(gw, tcs, "compute APIs")
+Rel_Access_RW(tcs, policy, "RW")
+Rel_Access_RW(tcs, csc, "RW idle_since")
+Rel_Flow(tev, tcs, "list idle / clear")
+Rel_Flow(tev, kafkaStop, "CLOUD_SERVER_STOPPED")
+Rel_Flow(kafkaStop, css, "DeleteInstance")
+Rel_Flow(tev, cgw, "relay/mock stop")
+
+@enduml

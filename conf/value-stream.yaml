@@ -1,0 +1,3931 @@
+version: '1'
+runall_config: runAll.yaml
+runner:
+  working_dir: ../task2app/Saas_project
+  pytest_bin: pytest
+  env:
+    DJANGO_SETTINGS_MODULE: saas_project.settings_test
+  pytest_args: []
+value_streams:
+- name: user-auth
+  domain: 用户与认证
+  description: 用户注册与认证
+  steps:
+  - name: email-register
+    status: active
+    test_file: accounts/view_test/UserViewSet_email_register_test.py
+    fields:
+    - name: task-auth.auth_user.id
+      description: 注册后业务 user_id 引用 auth.db 雪花 ID
+    - name: task-auth.auth_login_method.identifier
+      description: taskAuth 邮箱登录标识
+    - name: task-auth.auth_login_method.password_hash
+      description: 注册密码哈希（auth.db）
+  - name: phone-register
+    status: active
+    test_file: accounts/view_test/UserViewSet_phone_register_test.py
+    fields:
+    - name: task-auth.auth_user.id
+      description: 手机注册后 auth.db 雪花 ID
+    - name: task-auth.auth_login_method.identifier
+      description: 手机注册 identifier（国内号码）
+    - name: task-auth.auth_login_method.phone_country_calling_code
+      description: 手机国号
+    - name: task-auth.auth_customtoken.key
+      description: 注册后签发 token
+    - name: task-auth.auth_login_method.password_hash
+      description: 手机注册密码哈希
+  - name: privileged-phone-multi-bind
+    status: active
+    test_file: ../../taskAuth/src/auth_phone_bind_test.go
+    fields:
+    - name: task-auth.auth_login_method.identifier
+      description: 特权角色共享绑定的国内号码
+    - name: task-auth.auth_login_method.phone_country_calling_code
+      description: 共享绑定国号
+    - name: task-auth.auth_user.is_staff
+      description: 员工标志（可共享手机）
+    - name: task-auth.auth_user.is_tester
+      description: 测试标志（可共享手机）
+    - name: task-auth.auth_user.is_superuser
+      description: 超级用户标志（可共享手机）
+  - name: password-policy
+    status: active
+    test_file: accounts/tests/test_password_policy.py
+    fields:
+    - name: task-auth.auth_login_method.password_hash
+      description: 密码策略校验 auth.db 哈希
+  - name: activate
+    status: active
+    test_file: accounts/view_test/UserViewSet_activate_test.py
+    fields:
+    - name: task-auth.auth_login_method.is_verified
+      description: 激活后 auth.db 登录方式已验证
+    - name: task-auth.auth_login_method.activation_token
+      description: taskAuth 激活令牌读写
+  - name: login
+    status: active
+    test_file: accounts/view_test/UserViewSet_login_test.py
+    fields:
+    - name: task-auth.auth_user.id
+      description: enrich-login 读 auth.db user_id
+    - name: task-auth.auth_customtoken.key
+      description: taskAuth 签发 token（auth.db）
+    - name: task-auth.auth_login_method.identifier
+      description: taskAuth 凭证校验
+    - name: task-auth.auth_login_method.password_hash
+      description: 密码登录哈希校验
+  - name: login-history-record
+    status: active
+    test_file: ../../taskAuth/src/login_history_handlers_test.go
+    fields:
+    - name: task-auth.auth_login_history.user_id
+      description: 成功登录写入的用户 ID
+    - name: task-auth.auth_login_history.client_ip
+      description: resolveClientIP 记录的客户端 IP
+    - name: task-auth.auth_login_history.entry
+      description: customer/admin 等入口枚举
+  - name: login-history-profile
+    status: active
+    test_file: ../../taskFE/app/src/views/UserLoginHistory.test.js
+    fields:
+    - name: task-auth.auth_login_history.client_ip
+      description: 账号中心侧边栏展示的登录 IP
+  - name: admin-impersonate-start
+    status: active
+    test_file: ../../taskAuth/src/handlers_impersonation_test.go
+    fields:
+    - name: task-auth.auth_impersonation_session.id
+      description: 模拟会话 Snowflake id
+    - name: task-auth.auth_impersonation_session.token_key
+      description: 独立模拟 token（imp_ 前缀）
+    - name: task-auth.auth_impersonation_session.actor_user_id
+      description: 操作者 user id
+    - name: task-auth.auth_impersonation_session.target_user_id
+      description: 被模拟 user id
+  - name: admin-impersonate-stop
+    status: active
+    test_file: ../../taskAuth/src/handlers_impersonation_test.go
+    fields:
+    - name: task-auth.auth_impersonation_session.ended_at
+      description: 模拟会话结束时间
+  - name: frontend-auth-guard-redirect
+    status: active
+    test_file: ../../taskFE/app/src/tests/domain/auth/auth_domain_model.test.js
+    fields:
+    - name: task-auth.auth_user.id
+      description: profile 会话校验真源（auth.db / token）
+  - name: reset-password
+    status: active
+    test_file: accounts/view_test/UserViewSet_reset_password_test.py
+    fields:
+    - name: task-auth.auth_login_method.identifier
+      description: 邮箱/手机登录标识（重置目标）；Playwright E2E playwrig../../taskFE/tests/AuthResetPassword.full-flow.playwright.test.js（需
+        PW_RESET_EMAIL）
+    - name: task-auth.auth_login_method.password_reset_token
+      description: Go 生成重置令牌（auth.db）
+    - name: task-auth.auth_login_method.password_hash
+      description: 链接/验证码重置后新密码哈希
+  - name: resend-activation
+    status: active
+    test_file: accounts/view_test/UserViewSet_resend_activation_email_test.py
+    fields:
+    - name: task-auth.auth_login_method.identifier
+      description: 重发目标邮箱
+    - name: task-auth.auth_login_method.activation_token
+      description: taskAuth 重发激活时刷新令牌
+  - name: phone-otp-login
+    status: active
+    test_file: tests/test_login_phone_code.py
+    fields:
+    - name: task-auth.auth_user.id
+      description: forward-login 后 auth.db user_id
+    - name: task-auth.auth_login_method.identifier
+      description: 手机号登录标识（auth.db）
+    - name: task-auth.auth_customtoken.key
+      description: taskAuth proxyToDjangoAuth 在 auth.db 签发 token（saas forward_login
+        不写 token）
+  - name: login-phone-otp-ui-next-redirect
+    status: active
+    test_file: ../../taskFE/app/src/utils/resolvePostLoginRedirect.test.js
+    fields:
+    - name: saas-backend.auth_system_feature_policy.enable_phone_login
+      description: 登录页展示手机验证码入口门禁；0060 migration 打开现网 global
+    - name: task-auth.auth_customtoken.key
+      description: 登录成功后 persistLoginAccountSlot 写入本机槽
+  - name: forward-login-authdb-token
+    status: planned
+    test_file: tests/test_forward_login_token_in_auth_db.py
+    fields:
+    - name: task-auth.auth_customtoken.key
+      description: OTP 路径 token 仅写 auth.db
+    - name: task-auth.auth_user.id
+      description: forward-login 返回 user_id 供 taskAuth 建 token
+  - name: http-only-identity-client
+    status: active
+    test_file: tests/test_taskauth_identity_client_http.py
+    fields:
+    - name: task-auth.auth_user.id
+      description: GET /api/accounts/users/{id}/ internal secret
+    - name: task-auth.auth_user.is_active
+      description: 会话与业务门禁
+  - name: no-user-objects-guard
+    status: active
+    test_file: scripts/ci/check_no_user_objects.sh
+    fields:
+    - name: saas-backend.runtime.lifecycle_status
+      description: CI 禁止生产路径 User.objects
+  - name: identity-service-unavailable-503
+    status: active
+    test_file: tests/test_identity_service_unavailable_503.py
+    fields:
+    - name: saas-backend.runtime.lifecycle_status
+      description: taskAuth 不可达时 API 返回 503
+  - name: no-custom-token-guard
+    status: active
+    test_file: scripts/ci/check_no_custom_token_in_saas.sh
+    fields:
+    - name: saas-backend.runtime.lifecycle_status
+      description: 全路径禁止 CustomToken.objects
+  - name: no-filter-user-kwarg-guard
+    status: active
+    test_file: scripts/ci/check_no_filter_user_kwarg.sh
+    fields:
+    - name: saas-backend.auth_companymember.user_id
+      description: 生产查询显式 user_id
+  - name: test-principal-factory
+    status: active
+    test_file: tests/factories/principal.py
+    fields:
+    - name: task-auth.auth_user.id
+      description: 测试经 create_test_user 构造 user_id
+  - name: verification-code
+    status: active
+    test_file: tests/test_verification_code_service.py
+    fields:
+    - name: saas-backend.auth_sms_verification_code.code
+      description: 验证码仍存 default
+    - name: task-auth.auth_user.id
+      description: taskAuth delegate 发送验证码 HTTP 入口
+  - name: verification-code-delegate
+    status: active
+    test_file: tests/test_taskauth_verification_code_bridge.py
+    fields:
+    - name: task-auth.auth_user.id
+      description: TASKAUTH_ENABLED 时 delegate 至 taskAuth
+  - name: no-saas-accounts-user-table
+    status: active
+    test_file: tests/test_no_saas_accounts_user_table.py
+    fields:
+    - name: task-auth.auth_user.id
+      description: 用户身份真源在 auth.db
+    - name: task-auth.auth_login_method.id
+      description: login_method 仅存 auth.db
+    - name: task-auth.auth_customtoken.key
+      description: token 仅存 auth.db
+  - name: taskauth-bridge-regression
+    status: active
+    test_file: tests/test_taskauth_password_reset_bridge.py
+    fields:
+    - name: task-auth.auth_login_method.password_reset_token
+      description: 桥接回归覆盖密码重置 delegate
+    - name: task-auth.auth_customtoken.key
+      description: 桥接路径 token 路由至 auth.db
+  - name: multi-account-activate-session
+    status: active
+    test_file: ../../taskAuth/src/auth_activate_session_test.go
+    fields:
+    - name: task-auth.auth_customtoken.key
+      description: 切换目标账号 Token（activate-session 校验）
+    - name: task-auth.auth_user.id
+      description: Token 解析出的用户 ID
+  - name: multi-account-navbar-switch
+    status: active
+    test_file: ../../taskFE/app/src/tests/domain/auth/saved_accounts_store.test.js
+    fields:
+    - name: task-auth.auth_user.id
+      description: 激活账号 userId 写入 cookie / 多账号槽
+  - name: runall-task-auth-orchestration
+    status: active
+    test_file: tests/test_taskauth_phone_register_bridge.py
+    fields:
+    - name: task-auth.runtime.lifecycle_status
+      description: runAll.yaml 编排 task-auth :8003 health
+    - name: saas-backend.runtime.lifecycle_status
+      description: saas-backend 依赖 task-auth 且 TASKAUTH_ENABLED=true
+  - name: user-activation-event
+    status: active
+    test_file: tests/test_user_activation_welcome_event.py
+    fields:
+    - name: task-auth.auth_login_method.is_verified
+      description: 激活事件触发时 auth.db 已验证
+  - name: profile-phone-replace
+    status: active
+    test_file: tests/test_profile_phone_replace.py
+    fields:
+    - name: task-auth.auth_login_method.identifier
+      description: 手机号绑定读 auth.db（router）
+    - name: task-auth.auth_user.id
+      description: 资料页 user_id（无 saas User 表）
+  - name: gateway-forward-auth-token-resolve
+    status: active
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-auth.auth_customtoken.key
+      description: 网关 forward-auth 解析 token（auth.db），注入 X-User-Id 头；enrich_login 同步
+        token 至本地 DB
+    - name: task-auth.auth_user.id
+      description: forward-auth 返回 user_id 供后端信任（含 userId cookie fallback via resolveTokenUserIDFromRequest）
+    - name: task-auth.auth_user.is_active
+      description: forward-auth 校验用户激活状态
+    - name: task-auth.runtime.cookie_bridge_enabled
+      description: userId cookie 作为第4认证回退方式，统一用于 OIDC authorize 与网关 forward-auth
+    - name: saas-backend.runtime.lifecycle_status
+      description: Django TASK_GATEWAY_TRUST_HEADERS 信任网关头短路认证
+  - name: username-upsert
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-auth.auth_login_method.id
+      description: username/phone upsert 雪花ID（auth.db显式生成）；Go测试TestUsernameTakenAndUpsertLoginMethod
+    - name: task-auth.auth_login_method.identifier
+      description: username登录标识（upsert幂等）
+    - name: task-auth.auth_login_method.method_type
+      description: username类型（phone已有phone-register步骤覆盖）
+- name: company-management
+  domain: 组织与成员
+  description: 公司与成员管理
+  steps:
+  - name: company-crud
+    status: active
+    test_file: accounts/view_test/CompanyViewSet_test.py
+    fields:
+    - name: saas-backend.auth_company.name
+      description: ''
+    - name: saas-backend.auth_company.creator_id
+      description: ''
+  - name: member-crud
+    status: active
+    test_file: accounts/view_test/CompanyMemberViewSet_test.py
+    fields:
+    - name: saas-backend.auth_companymember.company_id
+      description: ''
+    - name: saas-backend.auth_companymember.user_id
+      description: ''
+    - name: saas-backend.auth_companymember.role
+      description: ''
+  - name: user-company-assoc
+    status: active
+    test_file: accounts/view_test/UserViewSet_test.py
+    fields:
+    - name: task-auth.auth_login_method.identifier
+      description: 用户邮箱来自 auth.db login_method
+    - name: saas-backend.auth_companymember.company_id
+      description: ''
+  - name: invitation-email
+    status: active
+    test_file: tests/test_invitation_email_handler.py
+    fields:
+    - name: saas-backend.auth_invitation.email
+      description: ''
+    - name: saas-backend.auth_company.id
+      description: ''
+  - name: pending-invitation-role
+    status: active
+    test_file: tests/test_pending_invitation_role_display.py
+    fields:
+    - name: saas-backend.auth_invitation.role
+      description: ''
+    - name: saas-backend.auth_companymember.role
+      description: ''
+  - name: member-permission-gate
+    status: active
+    test_file: accounts/view_test/CompanyMemberViewSet_test.py
+    fields:
+    - name: saas-backend.auth_companymember.is_admin
+      description: 管理操作需 admin 或 creator（无权限返回 200+has_permission=false）；profile company_nicknames 新增 is_admin 透出
+    - name: saas-backend.auth_company.creator_id
+      description: 创建者拥有最高管理权限；profile 侧 is_creator 判定来源
+  - name: company-switch-url-context
+    status: active
+    test_file: accounts/view_test/UserViewSet_test.py
+    fields:
+    - name: saas-backend.auth_companymember.company_id
+      description: get_current_company 新增 tenant_id aware filter，优先匹配 URL 中的租户（含 query param fallback）
+    - name: taskFE.runtime.currenttenant_resolution
+      description: Navbar/Sidebar currentTenant 优先级从 API-only 改为 URL-first（route.params.tenant）；JSON 路径为组件内 ref currentTenant
+    - name: taskFE.runtime.me_api_tenant_param
+      description: /me API 调用增加 ?tenant_id= query param，将当前页面 tenant 上下文传入后端
+    - name: saas-backend.projects_workspace.id
+      description: get_current_workspace 在 tenant_id query param 可用时优先解析该 tenant 的 workspace
+- name: cloud-integration
+  domain: 云平台与资源
+  description: 云平台集成与租户镜像
+  steps:
+  - name: platform-authorization
+    status: active
+    test_file: ../../taskCloudService/src/cloud_handlers_test.go
+    fields:
+    - name: task-cloud-service.cloud_platform_authorizations.platform_type
+      description: CPA CRUD 真源在 taskCloudService SQLite；网关 /api/tenant/*/cloud/cloud-platform-authorizations/* → :8018
+    - name: task-cloud-service.cloud_platform_authorizations.company_id
+      description: 租户隔离字段；toggle-active / active-list 使用 cloud_platform_authorization_active_methods 互斥激活
+  - name: tenant-cloud-zones-regions
+    status: active
+    test_file: ../../taskCloudService/src/tenant_cloud_handlers_test.go
+    fields:
+    - name: task-cloud-service.tenant_cloud_zones.region_id
+      description: GET /api/tenant/*/cloud-platform/*/cloud/zones/?region_id= 由 Go Aliyun SDK 或 USE_IN_MEMORY_CLOUD mock 提供
+    - name: task-cloud-service.tenant_cloud_regions.platform_type
+      description: GET /api/tenant/*/cloud-platform/*/cloud/regions/?platform_type= 响应 [{id,name}]
+  - name: platform-verify-credentials
+    status: active
+    test_file: ../../taskCloudService/src/cloud_handlers_test.go
+    fields:
+    - name: task-cloud-service.cloud_platform_authorizations.verify_credentials
+      description: POST verify-credentials 调用 STS GetCallerIdentity；mock 模式返回 mock-account
+  - name: cloud-server-image
+    status: active
+    test_file: cloud/view_test/CloudServerImageViewSet_test.py
+    fields:
+    - name: task-cloud-service.cloud_cloudserverimage.image_id
+      description: ''
+  - name: cloud-server-image-list
+    status: active
+    test_file: cloud/view_test/CloudServerImageViewSet_get_images_test.py
+    fields:
+    - name: task-cloud-service.cloud_cloudserverimage.region_id
+      description: ''
+  - name: cloud-compute
+    status: active
+    test_file: cloud/tests/test_cloud_compute.py
+    fields:
+    - name: task-cloud-service.cloud_cloudplatformauthorization.id
+      description: ''
+  - name: workspace-machine-idle-policy
+    status: active
+    test_file: ../../taskCloudService/src/workspace_machine_policy_test.go
+    fields:
+    - name: task-cloud-service.workspace_machine_policies.idle_recycle_minutes
+      description: 工作空间闲置回收分钟；0=关闭
+    - name: task-cloud-service.workspace_machine_policies.enabled_authorization_ids
+      description: JSON 数组；空=不限制 CPA
+    - name: task-cloud-service.cloud_server_configs.idle_since
+      description: 进入闲置时写入；容器 register 后清空
+    - name: taskFE.work_panel.machine_status_filter
+      description: 摘要已启动/闲置可点击；下方 chip；按 runtime-indicators 筛任务（意图 005）
+  - name: instruction-idle-recycle
+    status: active
+    test_file: ../../taskCloudService/src/instruction_idle_test.go;../../taskCloudService/src/instruction_idle_created_at_test.go
+    fields:
+    - name: task-cloud-service.cloud_workspace_machine_policies.idle_recycle_minutes
+      description: 工作空间指令闲置回收分钟；0=关闭；无行默认 5
+    - name: task-cloud-service.cloud_server_configs.instruction_idle_since
+      description: 指令交付成功或 BOOTSTRAP_COMPLETE 后写入；新指令清空；无 since 时 L2 可用 userdata_run_verified，再空则 created_at（UTC 未来则按上海墙钟；无 running job）到期释放
+    - name: task-cloud-service.cloud_platform_authorizations.sts_release_role_arn
+      description: 可选 RAM Role；空则 task-detail 不带 machine_release_sts
+  - name: workspace-machine-summary-click-filter
+    status: active
+    test_file: ../playwrig../../taskFE/tests/WorkPanel.workspace-machine-idle-summary.playwright.test.js
+    fields:
+    - name: taskFE.work_panel.machine_status_filter
+      description: E1-E3 点击已启动/闲置出现过滤条件 chip 并可清除
+  - name: mock-authorization-id-lookup-guard
+    status: active
+    test_file: cloud/tests/test_cloud_config_deprecated_views.py
+    fields:
+    - name: task-cloud-service.cloud_cloudserverconfighistory.authorization_id
+      description: mock/relay 占位符如 mock-auth；仅数值 PK 才查 cloud_cloudplatformauthorization
+    - name: task-cloud-service.cloud_cloudserverconfig.authorization_id
+      description: CharField 授权引用，stop-vm/runtime-status 读路径同规则
+  - name: installed-image-api
+    status: active
+    test_file: tests/test_installed_image.py
+    fields:
+    - name: saas-backend.tenant_installed_images.image_url
+      description: ''
+  - name: installed-image-view-auth
+    status: active
+    test_file: cloud/view_test/TenantInstalledImageViewSet_test.py
+    fields:
+    - name: saas-backend.tenant_installed_images.image_url
+      description: ''
+    - name: saas-backend.tenant_installed_images.tenant_id
+      description: ''
+  - name: container-image-creator
+    status: active
+    test_file: tests/test_container_image_creator.py
+    fields:
+    - name: saas-backend.tenant_installed_images.image_url
+      description: ''
+  - name: project-container-image-id
+    status: active
+    test_file: tests/test_project_container_image_serializer.py
+    fields:
+    - name: saas-backend.projects_project.installed_image_id
+      description: ''
+  - name: project-image-hardware-arch-bind
+    status: active
+    test_file: ../../taskProjectService/src/image_template_compat_test.go
+    fields:
+    - name: task-project-service.project_entries.installed_image_id
+      description: 项目默认容器镜像；跨架构变更须同单匹配运行模版
+    - name: task-project-service.project_entries.server_run_template
+      description: JSON 含 selected_instance / hardware_config.instance_type；须与镜像 target_architectures 匹配
+  - name: cloud-get-vpcs
+    status: active
+    test_file: tests/test_cloud_get_vpcs.py
+    fields:
+    - name: task-cloud-service.cloud_cloudplatformauthorization.id
+      description: ''
+  - name: github-pr-create-async
+    status: active
+    test_file: tests/test_github_pr_after_layer_push_async.py
+    fields:
+    - name: task-task-service.tasks.id
+      description: ''
+    - name: task-task-service.comments.content
+      description: ''
+  - name: cloud-github-binding-string-contract
+    status: active
+    test_file: tests/test_github_task_repo_oauth_binding.py
+    fields:
+    - name: saas-backend.projects_taskgithubrepooauthbinding.github_user_id
+      description: ''
+    - name: saas-backend.projects_taskgithubrepooauthbinding.repo_slug
+      description: ''
+  - name: cloud-credential-summary-string-contract
+    status: planned
+    test_file: ../../taskGitOauth/src/handlers_test.go
+    fields:
+    - name: task-git-oauth.git_oauth_appusercredential.github_user_id
+      description: ''
+    - name: task-git-oauth.git_oauth_appusercredential.github_login
+      description: ''
+- name: relay-token-audit-observability
+  domain: 云平台与资源
+  description: relayToTrae 令牌生命周期审计与 401 根因追踪（表已迁移至 Go task-credential-service）
+  steps:
+  - name: token-audit-thin-slice
+    status: active
+    test_file: cloud/view_test/test_relay_token_audit_status_push_view.py
+    fields:
+    - name: task-credential-service.credential_token_audit_events.task_id
+      description: 审计事件关联任务（Go 写 tokens.sqlite3）
+    - name: task-credential-service.credential_token_audit_events.event_type
+      description: 事件类型枚举
+    - name: task-credential-service.credential_token_audit_events.access_token_sha256
+      description: 令牌哈希（不存明文）
+  - name: token-lifecycle-events
+    status: planned
+    test_file: cloud/tests/test_container_token_lifecycle_audit_events.py
+    fields:
+    - name: task-credential-service.credential_token_audit_events.prev_access_token_sha256
+      description: 前值哈希
+    - name: task-credential-service.credential_token_audit_events.new_access_token_sha256
+      description: 新值哈希
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: Go tokens.sqlite3 中当前有效 token
+    - name: task-credential-service.credential_container_tokens.container_refresh_token
+      description: Go tokens.sqlite3 中 refresh token
+  - name: relay-usage-events
+    status: active
+    test_file: cloud/tests/test_relay_to_trae_usage_audit_events.py
+    fields:
+    - name: task-credential-service.credential_token_audit_events.source_component
+      description: 来源组件
+    - name: task-credential-service.credential_token_audit_events.trace_id
+      description: 链路追踪 ID
+    - name: task-credential-service.credential_token_audit_events.seq
+      description: 事件序号
+  - name: retention-and-safety
+    status: active
+    test_file: tests/test_container_token_audit_retention.py
+    fields:
+    - name: task-credential-service.credential_token_audit_events.created_at
+      description: 创建时间
+    - name: task-credential-service.credential_token_audit_events.refresh_token_sha256
+      description: refresh 令牌哈希
+    - name: task-credential-service.credential_token_audit_events.error_code
+      description: 错误分类码
+- name: relay-token-audit-full-chain-eventization
+  domain: 云平台与资源
+  description: relay register/start 审计事件全链路化（表已迁移至 Go task-credential-service）
+  steps:
+  - name: register-full-chain-thin-slice
+    status: active
+    test_file: tests/test_container_token_audit_integration.py
+    fields:
+    - name: task-credential-service.credential_token_audit_events.event_type
+      description: 事件类型
+    - name: task-credential-service.credential_token_audit_events.error_code
+      description: 错误码
+    - name: task-credential-service.credential_token_audit_events.error_detail
+      description: 错误详情
+    - name: task-credential-service.credential_token_audit_events.access_token_sha256
+      description: 令牌哈希
+  - name: start-full-chain-core
+    status: active
+    test_file: tests/test_relay_to_trae_proxy.py
+    fields:
+    - name: task-credential-service.credential_token_audit_events.event_type
+      description: 事件类型
+    - name: task-credential-service.credential_token_audit_events.source_component
+      description: 来源组件
+    - name: task-credential-service.credential_token_audit_events.access_token_suffix
+      description: 令牌后缀
+    - name: task-credential-service.credential_token_audit_events.created_at
+      description: 事件时间
+  - name: timeline-semantics-alignment
+    status: active
+    test_file: tests/test_container_token_audit_timeline_api.py
+    fields:
+    - name: task-credential-service.credential_token_audit_events.task_id
+      description: 关联任务
+    - name: task-credential-service.credential_token_audit_events.event_type
+      description: 事件类型
+    - name: task-credential-service.credential_token_audit_events.trace_id
+      description: 链路追踪
+  - name: failure-classification-enhancement
+    status: active
+    test_file: tests/test_relay_to_trae_proxy.py
+    fields:
+    - name: task-credential-service.credential_token_audit_events.error_code
+      description: 错误码
+    - name: task-credential-service.credential_token_audit_events.error_detail
+      description: 错误详情
+    - name: task-credential-service.credential_token_audit_events.seq
+      description: 序号
+- name: project-workspace
+  domain: 项目与工作空间
+  description: 项目与工作空间管理
+  steps:
+  - name: workspace-crud
+    status: active
+    test_file: projects/view_test/test_workspace_go_api.py
+    fields:
+    - name: saas-backend.projects_workspace.name
+      description: ''
+    - name: saas-backend.projects_workspace.company_id
+      description: ''
+  - name: project-crud
+    status: active
+    test_file: projects/view_test/test_project_go_api.py
+    fields:
+    - name: saas-backend.projects_project.name
+      description: ''
+    - name: saas-backend.projects_project.company_id
+      description: ''
+  - name: project-entity-revision
+    status: active
+    test_file: ../../taskProjectService/src/project_revision_store_test.go
+    fields:
+    - name: task-project-service.project_revision.project_id
+      description: 项目内容快照所属项目
+    - name: task-project-service.project_revision.version_num
+      description: 同一项目内递增版本号
+    - name: task-project-service.project_revision.name
+      description: 该版本名称快照
+    - name: task-project-service.project_revision.description
+      description: 该版本正文快照
+  - name: deliverable-system
+    status: active
+    test_file: projects/view_test/DeliverableSystemViewSet_test.py
+    fields:
+    - name: saas-backend.projects_deliverablesystem_workspace.deliverable_system_id
+      description: ''
+  - name: switch-workspace
+    status: active
+    test_file: projects/view_test/test_workspace_go_switch_api.py
+    fields:
+    - name: saas-backend.projects_workspace.id
+      description: ''
+  - name: workspace-creation-handler
+    status: active
+    test_file: tests/test_workspace_creation_handler.py
+    fields:
+    - name: saas-backend.projects_workspace.name
+      description: ''
+    - name: saas-backend.auth_company.id
+      description: ''
+  - name: tenant-feature-params
+    status: active
+    test_file: tests/test_manage_feature_params.py
+    fields:
+    - name: saas-backend.projects_tenant_feature_params.agent_max_steps
+      description: ''
+    - name: saas-backend.projects_tenant_feature_params.agent_model
+      description: ''
+    - name: saas-backend.projects_tenant_feature_params.summary_model
+      description: ''
+    - name: saas-backend.projects_tenant_feature_params.llm_budget_enabled
+      description: LLM 预算限额租户开关
+- name: task-management
+  domain: 任务协作
+  description: 任务管理
+  steps:
+  - name: todo-crud
+    status: active
+    test_file: projects/view_test/TodoViewSet_test.py
+    fields:
+    - name: task-task-service.tasks.title
+      description: ''
+    - name: task-task-service.tasks.workspace_id
+      description: ''
+    - name: task-task-service.task_tasks.workspace_seq
+      description: 工作空间内人读序号，展示为 #N
+    - name: task-task-service.task_workspace_seq.next_val
+      description: 下一将分配序号
+  - name: task-entity-revision
+    status: active
+    test_file: ../../taskTaskService/src/task_revision_store_test.go
+    fields:
+    - name: task-task-service.task_revision.task_id
+      description: 任务内容快照所属任务
+    - name: task-task-service.task_revision.version_num
+      description: 同一任务内递增版本号
+    - name: task-task-service.task_revision.title
+      description: 该版本标题快照
+    - name: task-task-service.task_revision.description
+      description: 该版本正文快照
+  - name: todo-manage-status
+    status: active
+    test_file: projects/view_test/TodoViewSet_manage_status_test.py
+    fields:
+    - name: task-task-service.tasks.progress_column_id
+      description: ''
+  - name: todo-manage-status-fixed
+    status: active
+    test_file: projects/view_test/TodoViewSet_manage_status_fixed_test.py
+    fields:
+    - name: task-task-service.tasks.completed
+      description: ''
+  - name: terminal-release-comment-csc
+    status: active
+    test_file: ../../taskEvents/internal/handlers/taskstatuschanged/handler_test.go
+    fields:
+    - name: task-cloud-service.cloud_server_configs.comment_id
+      description: 终态释放按评论 CSC
+    - name: task-cloud-service.cloud_server_configs.instance_id
+      description: 评论运行实例
+    - name: task-cloud-service.cloud_server_configs.running_machine_count
+      description: 任务级机器计数交叉校验
+  - name: task-comments-api
+    status: active
+    test_file: tests/test_task_comments_api.py
+    fields:
+    - name: task-task-service.comments.content
+      description: ''
+    - name: task-task-service.tasks.id
+      description: ''
+  - name: container-image-at-mention
+    status: planned
+    test_file: tests/test_container_image_at_mention.py
+    fields:
+    - name: task-project-service.workspaces.container_image_at_mode_enabled
+      description: 工作空间是否开启容器镜像@模式（默认0）
+    - name: task-task-service.comments.mentions_json
+      description: 评论结构化镜像mention JSON
+    - name: task-ai-comment.container_agent_comments.run_status
+      description: Agent评论运行状态
+    - name: task-ai-comment.container_agent_comments.assistant_response
+      description: Agent最终回复正文
+    - name: task-ai-comment.container_agent_comments.parent_comment_id
+      description: 挂载的人类评论ID
+  - name: todo-workspace-collaborator
+    status: active
+    test_file: tests/test_todo_workspace_collaborator_validation.py
+    fields:
+    - name: task-task-service.tasks.workspace_id
+      description: ''
+    - name: saas-backend.projects_workspace.id
+      description: ''
+  - name: todo-fork-from
+    status: active
+    test_file: tests/test_todo_fork_from.py
+    fields:
+    - name: task-task-service.tasks.fork_from_id
+      description: ''
+  - name: create-task-project-repo-access-label
+    status: active
+    test_file: tests/test_project_repo_access_check_api.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 创建任务弹窗项目首个仓库 URL
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: OAuth 绑定状态影响 needs_auth 判定
+  - name: create-task-auto-run-backend-start
+    status: active
+    test_file: ../../taskTaskService/src/auto_run_comment_id_test.go
+    fields:
+    - name: task-task-service.tasks.auto_run
+      description: 创建/更新 auto_run=true 须过门禁；先建【自动运行】评论再带 comment_id 触发 start-vm
+    - name: task-task-service.tasks.installed_image_id
+      description: 自动运行所需已安装镜像（缺失则 400）
+    - name: task-project-service.projects.server_run_template
+      description: 项目运行模版；未配置或 CloudServiceURL 缺失时禁止 auto_run
+  - name: create-task-auto-run-git-identity
+    status: active
+    test_file: ../../taskFE/app/src/utils/createTaskGitIdentityGate.test.js
+    fields:
+    - name: task-task-service.task_comments.repo_identities_json
+      description: 创建任务勾选 auto_run 时须为每仓选择 Git 提交身份并写入【自动运行】评论；身份选择器在「是否自动运行」下方
+    - name: task-task-service.tasks.auto_run
+      description: auto_run=false 时不校验、不展示 Git 提交身份
+  - name: top-deliverable-queued-auto-run-schedule
+    status: active
+    test_file: ../../taskTaskService/src/queued_schedule_test.go
+    fields:
+    - name: task-task-service.tasks.schedule_rhythm_enabled
+      description: 顶层任务每日排队窗口启用
+    - name: task-task-service.tasks.schedule_rhythm_max_queued_machines
+      description: 排队调度允许的并发机器上限
+    - name: task-task-service.tasks.queued_auto_run
+      description: 子树任务加入排队自动执行开关
+    - name: task-task-service.queued_auto_run_memberships.top_task_id
+      description: 排队成员归属的顶层任务
+    - name: task-cloud-service.cloud_server_configs.started_via
+      description: queued_schedule 与 auto_run/manual 额度隔离
+  - name: workspace-queue-schedule-task-title-link
+    status: active
+    test_file: ../../taskFE/app/src/views/WorkspaceQueueSchedule.test.js
+    fields:
+    - name: task-task-service.queued_auto_run_memberships.task_id
+      description: 自动调度安排排队任务标题为真实 a[href] 指向任务详情页
+  - name: workspace-queue-schedule-members-manage
+    status: active
+    test_file: ../../taskFE/app/src/components/workspaceSchedule/QueueMembersCard.test.js
+    fields:
+    - name: task-task-service.queued_auto_run_memberships.task_id
+      description: 排队任务卡搜索加入/离开自动调度队列
+    - name: task-task-service.tasks.queued_auto_run
+      description: PATCH todos queued_auto_run 入队出队
+  - name: workspace-queue-schedule-history
+    status: active
+    test_file: ../../taskFE/app/src/components/workspaceSchedule/ScheduleHistoryCard.test.js
+    fields:
+    - name: task-task-service.task_queued_schedule_history.workspace_id
+      description: 自动调度安排页按工作空间展示调度历史
+    - name: task-task-service.task_queued_schedule_history.event_type
+      description: 历史事件类型（入队/启服/窗口翻转等）
+- name: task-detail-runtime-relay
+  domain: 任务协作
+  description: task-detail 主链路与容器 runtime/relay 状态收敛
+  steps:
+  - name: task-detail-thin-slice
+    status: active
+    test_file: projects/view_test/TodoViewSet_test.py
+    fields:
+    - name: task-task-service.tasks.progress_column_id
+      description: ''
+    - name: task-task-service.tasks.title
+      description: ''
+    - name: task-task-service.tasks.updated_at
+      description: ''
+  - name: container-runtime-context
+    status: active
+    test_file: tests/test_ai_task_comment.py
+    fields:
+    - name: task-credential-service.credential_container_tokens.server_url
+      description: 容器服务地址（Go tokens.sqlite3）
+    - name: task-credential-service.credential_container_tokens.business_api_endpoint
+      description: 业务 API 端点（Go tokens.sqlite3）
+    - name: task-credential-service.credential_container_tokens.container_vscode_url
+      description: VS Code URL（Go tokens.sqlite3）
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: 容器访问令牌（Go tokens.sqlite3）
+  - name: relay-status-convergence
+    status: active
+    test_file: cloud/view_test/test_relay_token_audit_status_push_view.py
+    fields:
+    - name: task-credential-service.credential_token_audit_events.event_type
+      description: 审计事件类型
+    - name: task-credential-service.credential_token_audit_events.seq
+      description: 事件序号
+    - name: task-credential-service.credential_token_audit_events.trace_id
+      description: 链路追踪
+    - name: task-credential-service.credential_token_audit_events.error_code
+      description: 错误码
+  - name: relay-stop-refresh-status-ui
+    status: active
+    test_file: ../playwrig../../taskFE/tests/TaskDetail.relay-to-trae-direct-start.playwright.test.js
+    fields: []
+  - name: comment-binding-recover-after-start-success
+    status: active
+    test_file: ../../taskCloudService/src/comment_container_binding_server_log_test.go
+    fields:
+    - name: task-cloud-service.cloud_comment_container_bindings.status
+      description: 评论级 start-vm 成功或 CSC 升级后 failed binding 恢复为 starting
+    - name: task-cloud-service.cloud_comment_container_binding_logs.stage
+      description: server_started 写入评论启动日志；任务级 success 不扇出到 failed
+  - name: comment-runtime-push-sync
+    status: active
+    test_file: ../../taskFE/app/src/composables/taskDetail/runtimeStatusRefreshPolicy.test.js
+    fields:
+    - name: task-cloud-service.cloud_server_configs.last_runtime_status
+      description: 直播由 SSE runtime_status 写入评论 snapshot；按钮才 Describe
+    - name: task-cloud-service.cloud_server_configs.comment_id
+      description: 推送与刷新都必须路由到该评论 CSC
+- name: relay-status-push-timeout-go-relay
+  domain: 任务协作
+  description: go_relayToTrae 状态上报禁用代理，目标已迁移至 Go task-credential-service
+  steps:
+  - name: relay-status-push-no-proxy-thin-slice
+    status: active
+    test_file: tests/test_relay_to_trae_status.py
+    fields:
+    - name: task-credential-service.credential_token_audit_events.event_type
+      description: 状态推送事件类型
+    - name: task-credential-service.credential_token_audit_events.seq
+      description: 事件序号
+    - name: task-credential-service.credential_token_audit_events.trace_id
+      description: 链路追踪
+    - name: task-credential-service.credential_token_audit_events.error_code
+      description: 错误码
+  - name: relay-token-exchange-no-proxy-consistency
+    status: active
+    test_file: tests/test_relay_to_trae_proxy.py
+    fields:
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: Go tokens.sqlite3 当前有效 access token
+    - name: task-credential-service.credential_container_tokens.container_refresh_token
+      description: Go tokens.sqlite3 refresh token
+    - name: task-credential-service.credential_token_audit_events.event_type
+      description: 审计事件类型
+  - name: relay-no-proxy-regression-guard
+    status: active
+    test_file: cloud/view_test/test_relay_token_audit_status_push_view.py
+    fields:
+    - name: task-credential-service.credential_token_audit_events.event_type
+      description: 回归保护—事件类型
+    - name: task-credential-service.credential_token_audit_events.seq
+      description: 回归保护—序号
+    - name: task-credential-service.credential_token_audit_events.trace_id
+      description: 回归保护—链路追踪
+- name: relay-register-token-exchange-guard
+  domain: 任务协作
+  description: relay register TEIP 保护逻辑已迁移至 Go task-credential-service
+  steps:
+  - name: teip-bootstrap-guard-thin-slice
+    status: active
+    test_file: tests/test_relay_register_token_exchange_guard.py
+    fields:
+    - name: task-credential-service.credential_container_tokens.container_refresh_token
+      description: TEIP 期间 register 不得清空（Go tokens.sqlite3）
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: TEIP 期间禁止重签预埋 access（Go tokens.sqlite3）
+    - name: task-credential-service.credential_token_audit_events.event_type
+      description: token_bootstrap_blocked / relay_register_reused_state
+    - name: task-credential-service.credential_token_audit_events.error_code
+      description: TOKEN_EXCHANGE_IN_PROGRESS
+  - name: exchange-refresh-then-refresh-access-regression
+    status: active
+    test_file: tests/test_container_runtime_tokens.py
+    fields:
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: refresh-access 后新 access（Go tokens.sqlite3）
+    - name: task-credential-service.credential_container_tokens.container_refresh_token
+      description: 换票后 refresh 保留（Go tokens.sqlite3）
+  - name: relay-direct-start-no-invalid-token
+    status: active
+    test_file: ../playwrig../../taskFE/tests/TaskDetail.relay-to-trae-no-invalid-access-token.playwright.test.js
+    fields:
+    - name: task-credential-service.credential_token_audit_events.error_detail
+      description: 不得出现无效的 access_token
+- name: container-token-go-migration
+  domain: 任务协作
+  description: exchange-refresh/refresh-access 从 Django CloudServerConfig 迁移至 Go taskCredentialService，Go 成为 token 存储 SSOT
+  steps:
+  - name: go-exchange-refresh-refresh-access
+    status: active
+    test_file: ../../taskCredentialService/token_test.go
+    fields:
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: exchange-refresh 后作废（Go tokens.sqlite3）；refresh-access 后回写新 access
+    - name: task-credential-service.credential_container_tokens.container_refresh_token
+      description: exchange-refresh 后写入（Go tokens.sqlite3）；refresh-access 保持不变
+    - name: task-credential-service.credential_container_tokens.business_api_endpoint
+      description: exchange-refresh 时写入容器回调 business API endpoint
+    - name: task-credential-service.credential_token_audit_events.event_type
+      description: exchange_refresh / refresh_access 审计事件
+  - name: taskagent-routing-fork
+    status: active
+    test_file: tests/test_task_agent_support_internal.py
+    fields:
+    - name: task-agent-support.runtime.lifecycle_status
+      description: exchange-refresh/refresh-access 路由到 Go taskCredentialService
+  - name: go-validate-token-endpoint
+    status: active
+    test_file: ../../taskCredentialService/token_test.go
+    fields:
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: validate-token 按 access_token 查询并校验 scope + expiry
+    - name: task-credential-service.credential_container_tokens.company_id
+      description: 校验后返回 scope 供 Django 查 CloudServerConfig
+  - name: django-downstream-go-validate
+    status: active
+    test_file: tests/test_container_runtime_tokens.py
+    fields:
+    - name: task-cloud-service.cloud_cloudserverconfig.public_ip
+      description: Django 通过 Go validate 获取 scope → 查询 CloudServerConfig 继续业务逻辑
+    - name: task-cloud-service.cloud_cloudserverconfig.server_url
+      description: register-reachability 写入
+  - name: django-dispatch-cleanup
+    status: active
+    test_file: tests/test_task_agent_support_internal_dispatch.py
+    fields:
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: exchange-refresh/refresh-access 不再经 Django internal dispatch
+- name: oauth-token-fetch-timeout-governance
+  domain: 云平台与资源
+  description: OAuth AccessToken 拉取链路超时治理与可观测性提升
+  steps:
+  - name: oauth-github-uid-cache-thin-slice
+    status: active
+    test_file: tests/test_layer_github_oauth_tokens.py
+    fields:
+    - name: saas-backend.auth_usergithubappaccesstokencache.github_user_id
+      description: ''
+    - name: saas-backend.auth_usergithubappaccesstokencache.access_token_expires_at
+      description: ''
+    - name: saas-backend.projects_taskgithubrepooauthbinding.repo_slug
+      description: ''
+    - name: saas-backend.projects_taskgithubrepooauthbinding.github_user_id
+      description: ''
+    - name: task-git-oauth.git_oauth_appusercredential.github_user_id
+      description: ''
+  - name: oauth-stage-observability
+    status: active
+    test_file: tests/cloud/services/test_layer_github_oauth_tokens_observability.py
+    fields:
+    - name: saas-backend.projects_taskgithubrepooauthbinding.task_id
+      description: ''
+    - name: saas-backend.projects_taskgithubrepooauthbinding.user_id
+      description: ''
+    - name: saas-backend.projects_taskgithubrepooauthbinding.repo_slug
+      description: ''
+  - name: oauth-binding-domain-safety
+    status: active
+    test_file: tests/cloud/domain/test_container_github_oauth_token_fetch_observed.py
+    fields:
+    - name: saas-backend.projects_taskgithubrepooauthbinding.task_id
+      description: ''
+    - name: saas-backend.projects_taskgithubrepooauthbinding.github_user_id
+      description: ''
+    - name: saas-backend.projects_taskgithubrepooauthbinding.repo_slug
+      description: ''
+  - name: oauth-multi-repo-enhancement
+    status: active
+    test_file: tests/test_layer_git_push_auth_context.py
+    fields:
+    - name: saas-backend.projects_taskgithubrepooauthbinding.task_id
+      description: ''
+    - name: saas-backend.projects_taskgithubrepooauthbinding.user_id
+      description: ''
+  - name: oauth-async-job-future
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-cloud-service.cloud_cloudserverconfig.task_id
+      description: ''
+    - name: task-cloud-service.cloud_cloudserverconfig.container_access_token
+      description: ''
+- name: internal-api-timeout-governance
+  domain: 云平台与资源
+  description: 内网同步调用 1 秒超时治理与统一异常契约
+  steps:
+  - name: internal-sync-hard-timeout-one-second
+    status: active
+    test_file: tests/core/test_outbound_gateway.py
+    fields:
+    - name: task-cloud-service.cloud_cloudserverconfig.server_url
+      description: ''
+    - name: task-cloud-service.cloud_cloudserverconfig.business_api_endpoint
+      description: ''
+  - name: internal-rpc-uid-string-contract-guard
+    status: active
+    test_file: tests/cloud/services/test_layer_github_oauth_tokens_observability.py
+    fields:
+    - name: saas-backend.projects_taskgithubrepooauthbinding.task_id
+      description: ''
+    - name: saas-backend.projects_taskgithubrepooauthbinding.user_id
+      description: ''
+    - name: saas-backend.projects_taskgithubrepooauthbinding.github_user_id
+      description: ''
+    - name: task-git-oauth.git_oauth_appusercredential.github_user_id
+      description: ''
+- name: task2app-outbound-governance
+  domain: 云平台与资源
+  description: 出站调用统一治理（内网1秒超时、外网异步、事件回传）
+  steps:
+  - name: outbound-internal-timeout-thin-slice
+    status: active
+    test_file: tests/core/test_outbound_gateway.py
+    fields:
+    - name: task-cloud-service.cloud_cloudserverconfig.server_url
+      description: ''
+    - name: task-cloud-service.cloud_cloudserverconfig.business_api_endpoint
+      description: ''
+  - name: outbound-pr-uid-string-propagation
+    status: active
+    test_file: tests/test_github_pr_after_layer_push_async.py
+    fields:
+    - name: saas-backend.projects_taskgithubrepooauthbinding.github_user_id
+      description: ''
+    - name: task-task-service.tasks.id
+      description: ''
+    - name: task-task-service.comments.content
+      description: ''
+  - name: outbound-cloud-integration-async-expansion
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-cloud-service.cloud_cloudplatformauthorization.id
+      description: ''
+    - name: task-cloud-service.cloud_cloudserverimage.region_id
+      description: ''
+  - name: outbound-governance-hardening
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.cloud_container_token_audit_event.event_type
+      description: ''
+    - name: saas-backend.cloud_container_token_audit_event.error_code
+      description: ''
+- name: system-admin-phone-login-recharge-policy
+  domain: 系统管理与策略
+  description: 系统管理员配置手机号登录与充值前手机号验证策略
+  steps:
+  - name: policy-thin-slice-phone-login
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.auth_system_feature_policy.enable_phone_login
+      description: 手机号登录开关
+    - name: task-auth.auth_login_method.method_type
+      description: 登录方式类型（auth.db）
+  - name: recharge-policy-core
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.auth_system_feature_policy.enable_recharge_phone_verification
+      description: 充值前手机号验证开关
+    - name: task-auth.auth_login_method.identifier
+      description: 充值验证手机号绑定标识（auth.db）
+  - name: policy-invariant-enforcement
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.auth_system_feature_policy.enable_phone_login
+      description: 依赖开关主条件
+    - name: saas-backend.auth_system_feature_policy.enable_recharge_phone_verification
+      description: 依赖开关从条件
+  - name: policy-regression-suite
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-auth.auth_customtoken.key
+      description: 登录认证 token（auth.db）
+    - name: saas-backend.auth_system_feature_policy.updated_at
+      description: 策略更新时序
+- name: task-detail-repo-clone-credentials-contract
+  domain: 任务协作
+  description: task-detail 返回完整 repo_clone_credentials，实现已迁移至 Go task-credential-service
+  steps:
+  - name: task-detail-repo-credentials-thin-slice
+    status: active
+    test_file: tests/test_container_runtime_tokens.py
+    fields:
+    - name: task-task-service.task_repo_identities.repo_url
+      description: 任务仓库与身份绑定关系（Go 只读查询）
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: task-detail 调用鉴权令牌（Go tokens.sqlite3）
+  - name: task-detail-repo-credentials-coverage-guard
+    status: active
+    test_file: tests/test_container_runtime_tokens.py
+    fields:
+    - name: task-task-service.task_repo_identities.repo_url
+      description: 缺失凭证仓库集合来源
+- name: task-detail-relay-debug-agent-observability
+  domain: 任务协作
+  description: relay 直启默认 DEBUG_AGENT 并增强 onlineServiceJS 出入站调试可观测性
+  steps:
+  - name: relay-debug-agent-thin-slice
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-task-service.tasks.id
+      description: task-detail 直启上下文任务标识
+    - name: task-cloud-service.cloud_cloudserverconfig.business_api_endpoint
+      description: relay 直启透传业务端点
+  - name: relay-debug-agent-inbound-visibility
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-cloud-service.cloud_cloudserverconfig.server_url
+      description: onlineServiceJS 入站请求目标地址
+    - name: saas-backend.cloud_container_token_audit_event.trace_id
+      description: 请求链路调试追踪标识
+  - name: relay-debug-agent-outbound-visibility
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.cloud_container_token_audit_event.event_type
+      description: 出站调用阶段事件
+    - name: saas-backend.cloud_container_token_audit_event.error_code
+      description: 出站失败分类
+  - name: relay-debug-agent-regression-guard
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-task-service.comments.content
+      description: 任务详情调试信息可读性回归约束
+    - name: saas-backend.cloud_container_token_audit_event.seq
+      description: 状态推送时序回归约束
+- name: task-detail-repo-clone-credentials-decoupling
+  domain: 任务协作
+  description: 将 task-detail 与 repo_clone_credentials 解耦为两阶段引导调用
+  steps:
+  - name: repo-clone-credentials-endpoint-thin-slice
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-task-service.task_repo_identities.repo_url
+      description: 凭证覆盖校验的仓库全集
+    - name: task-cloud-service.cloud_cloudserverconfig.container_access_token
+      description: 容器凭证接口鉴权令牌
+    - name: saas-backend.cloud_container_token_audit_event.error_code
+      description: 缺失凭证失败分类
+  - name: online-service-two-phase-bootstrap
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-task-service.tasks.id
+      description: 启动链路任务标识
+    - name: task-cloud-service.cloud_cloudserverconfig.business_api_endpoint
+      description: 两阶段调用业务端点前缀
+  - name: task-detail-contract-slimming
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-task-service.task_repo_identities.repo_url
+      description: task-detail 仅保留仓库列表输入
+    - name: task-task-service.tasks.id
+      description: task-detail 任务元信息
+  - name: decoupling-regression-guard
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.cloud_container_token_audit_event.trace_id
+      description: 引导失败链路追踪
+    - name: saas-backend.cloud_container_token_audit_event.error_code
+      description: 回归失败分类一致性
+- name: task-detail-oauth-binding-guidance
+  domain: 任务协作
+  description: 任务详情 OAuth 绑定与仓库授权两阶段引导，启动前预检失败可视化
+  steps:
+  - name: oauth-binding-two-phase-guidance-thin-slice
+    status: active
+    test_file: tests/test_relay_to_trae_proxy.py
+    fields:
+    - name: task-task-service.task_repo_identities.repo_url
+      description: 任务仓库覆盖率校验输入
+    - name: task-cloud-service.cloud_cloudserverconfig.container_access_token
+      description: relay 启动预检鉴权令牌
+    - name: saas-backend.cloud_container_token_audit_event.error_code
+      description: 预检失败分类码
+  - name: relay-precheck-visual-guidance
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.projects_taskgithubrepooauthbinding.github_user_id
+      description: 仓库已保存授权账号标识
+    - name: saas-backend.projects_taskgithubrepooauthbinding.repo_slug
+      description: 仓库与授权账号绑定关系
+  - name: ztree-push-oauth-precheck-alignment
+    status: active
+    test_file: tests/test_layer_git_push_policy.py
+    fields:
+    - name: task-task-service.task_repo_identities.repo_url
+      description: 推送与克隆共享的任务仓库 provider 判定
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: 按 provider 汇总 OAuth connected 状态
+- name: task-detail-oauth-repo-url-row-action
+  domain: 任务协作
+  description: 任务详情仓库行级 OAuth 绑定动作与 repo_url 级判定
+  steps:
+  - name: repo-url-binding-contract-thin-slice
+    status: active
+    test_file: tests/test_github_task_repo_oauth_binding.py
+    fields:
+    - name: task-task-service.task_repo_identities.repo_url
+      description: 仓库行级 OAuth 绑定判定输入
+    - name: saas-backend.projects_taskgithubrepooauthbinding.repo_slug
+      description: 仓库保存账号绑定键
+    - name: saas-backend.projects_taskgithubrepooauthbinding.github_user_id
+      description: 仓库保存账号绑定用户标识
+  - name: repo-row-oauth-visibility-guidance
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-task-service.task_repo_identities.repo_url
+      description: 未绑定仓库行显示 OAuth 按钮依据
+    - name: task-git-oauth.git_oauth_appusercredential.github_user_id
+      description: OAuth 账号绑定基础标识
+  - name: repo-row-oauth-regression-guard
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-task-service.task_repo_identities.repo_url
+      description: 同页多仓库已绑定/未绑定按钮可见性回归约束
+    - name: saas-backend.projects_taskgithubrepooauthbinding.github_user_id
+      description: 仓库绑定账号字符串契约回归约束
+  - name: session-user-id-resolver-thin-slice
+    status: active
+    test_file: ../../taskFE/app/src/utils/sessionUserIdUtils.test.js
+    fields:
+    - name: task-auth.auth_user.id
+      description: profile API 回退解析的 session user id
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: user-scoped connection 预检输入
+- name: gitoauth-binding-state-persistence
+  domain: 云平台与资源
+  description: OAuth 回调先落库并状态化主站绑定结果，失败保留记录与原因
+  steps:
+  - name: bind-state-summary-contract-thin-slice
+    status: planned
+    test_file: ../../taskGitOauth/src/handlers_test.go
+    fields:
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: 凭据绑定状态 pending/active/failed
+    - name: task-git-oauth.git_oauth_appusercredential.bind_error
+      description: 最近一次绑定失败原因
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: provider/provider_key 维度隔离
+  - name: task-detail-gitlab-auth-guard-integration
+    status: active
+    test_file: tests/test_project_branches_gitlab_auth_guard.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 分支预览请求的仓库地址
+    - name: task-auth.auth_user.id
+      description: 发起预览请求的用户主体
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: 仅 active 凭据可用于换票
+  - name: oauth-callback-bind-failure-retention
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-git-oauth.git_oauth_appusercredential.refresh_token_cipher
+      description: 回调先落库后的 refresh 密文
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: bind 失败后置 failed 而非删除
+    - name: task-git-oauth.git_oauth_appusercredential.bind_error
+      description: bind 失败原因代码
+  - name: access-audit-site-host-port
+    status: active
+    test_file: ../../taskGitOauth/src/access_audit_site_test.go
+    fields:
+    - name: task-git-oauth.git_oauth_appaccesstokenuseaudit.site
+      description: 审计 site 存 Git 站点域名+端口（url.Host）；旧 provider_key 行由 006 清空
+- name: project-detail-repo-oauth-row-action
+  domain: 项目与工作空间
+  description: 项目详情页仓库行 OAuth 授权入口与 repo_url 驱动的 provider 路由
+  steps:
+  - name: project-detail-repo-oauth-button-thin-slice
+    status: active
+    test_file: tests/test_github_app_start_redirect_uri.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 项目详情页仓库行 OAuth 按钮的 repo_url 输入
+    - name: task-auth.auth_user.id
+      description: 发起 OAuth start 请求的用户主体
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: 授权 provider 维度（github/gitlab）
+  - name: project-detail-repo-oauth-provider-routing
+    status: active
+    test_file: tests/test_project_branches_gitlab_auth_guard.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 根据仓库 host 命中 gitOauth provider 配置
+    - name: task-auth.auth_user.id
+      description: OAuth 路由与鉴权链路的用户主体
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: 分支预览前的可用授权状态
+  - name: project-detail-config-aware-gitlab-repo-detection
+    status: active
+    test_file: tests/test_git_utils_is_gitlab_repo_url.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: IP 自托管 GitLab 仓库 URL 配置驱动识别
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: infer_git_provider_from_repo_url 命中 service_provider
+  - name: project-detail-repo-oauth-regression-guard
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 项目详情页 OAuth 行级入口回归约束输入
+    - name: task-auth.auth_user.id
+      description: 授权发起与回跳链路主体一致性
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: provider 命中与站点 host 一致性约束
+  - name: project-detail-gitlab-provider-config-compat-thin-slice
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 本地 GitLab 仓库 URL 命中 provider 路由输入
+    - name: task-auth.auth_user.id
+      description: GitLab OAuth start 的用户主体
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: provider_key 应命中 gitlab:local-gitlab
+  - name: project-detail-gitlab-provider-config-dual-shape-compat
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: list/dict 双结构配置下统一路由输入
+    - name: task-auth.auth_user.id
+      description: 配置兼容回归中的用户主体一致性
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: 配置命中后凭据状态消费契约保持不变
+  - name: project-detail-gitlab-provider-start-failure-observability
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: start 失败时的仓库上下文
+    - name: task-auth.auth_user.id
+      description: start 失败链路主体
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: 失败日志中 provider 维度
+  - name: project-detail-gitlab-provider-health-signal-enhancement
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 健康信号与路由故障关联定位输入
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: 健康信号中的 provider 聚合维度
+- name: project-detail-oauth-token-status-aware
+  domain: 项目与工作空间
+  description: 项目详情页 OAuth 授权按钮根据 token_status 智能展示，替代原有的"只看 provider"逻辑
+  steps:
+  - name: project-detail-git-repos-status-api
+    status: active
+    test_file: tests/test_project_detail_git_repos_status.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 项目详情 API 返回 git_repos_status 的仓库 URL 输入
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: 通过 resolve_repo_access_tokens 读取的凭据绑定状态
+    - name: task-auth.auth_user.id
+      description: token_status 解析的用户主体
+  - name: project-detail-oauth-button-token-status-aware
+    status: active
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 前端 token_status 感知的 repo URL 输入
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: 前端按钮显隐依据的 bind_status（通过 token_status 桥接）
+    - name: task-auth.auth_user.id
+      description: 发起 OAuth start 请求的用户主体
+  - name: project-detail-oauth-callback-refresh
+    status: active
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: OAuth 回调后重新拉取的仓库 URL
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: 回调后刷新 bind_status 从 pending 到 active
+    - name: task-auth.auth_user.id
+      description: 回调刷新链路用户主体一致性
+- name: project-detail-nested-git-repos-oauth
+  domain: 项目与工作空间
+  description: 项目详情子 Git 仓库展示 OAuth 授权状态，未授权/授权异常置顶；校验走 Go 批量接口
+  steps:
+  - name: project-detail-nested-git-repos-oauth-badge
+    status: active
+    test_file: ../../taskFE/app/src/components/ProjectDetailGitReposSection.nested-oauth.test.js
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 子仓库推导 URL，用于 validate-git-repos 拉取 token_status
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: 子仓库行徽章文案（已授权/未授权/授权异常）
+    - name: task-auth.auth_user.id
+      description: 子仓库 OAuth 状态查询与授权发起的用户主体
+  - name: project-detail-nested-git-repos-unauthorized-first
+    status: active
+    test_file: ../../taskFE/app/src/utils/gitRepoOAuthStatusUtils.test.js
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 排序输入的子仓库 URL 列表
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: not_bound/token_error 优先于 token_available 的排序权重
+  - name: project-detail-validate-git-repos-batch
+    status: active
+    test_file: ../../taskFE/app/src/composables/useProjectDetailGitRepos.batch.test.js
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 批量 POST urls 列表（probe_access=false）
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: Go 原生 token_status 映射到前端徽章
+  - name: create-project-validate-git-repos-batch-probe
+    status: active
+    test_file: ../../taskFE/app/src/composables/useCreateProjectGitRepoRows.batch.test.js
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 创建项目多仓 debounce 合并为一次 POST probe_access=true
+    - name: taskFE.runtime.git_repo_is_accessible
+      description: 批量 is_accessible 驱动不可访问提示与 OAuth 按钮
+  - name: project-detail-nested-oauth-top-playwright
+    status: active
+    test_file: ../playwrig../../taskFE/tests/ProjectDetail.nested-git-oauth-unauthorized-first.playwright.test.js
+    fields:
+    - name: taskFE.runtime.nested_git_repo_oauth_status_0
+      description: 未授权徽章置顶断言
+    - name: taskFE.runtime.validate_git_repos_batch_calls
+      description: 批量接口调用次数 > 0 且无单仓 N 次调用
+  - name: project-detail-auto-run-git-gate
+    status: active
+    test_file: ../../taskFE/app/src/utils/projectDetailAutoRunGitGate.test.js
+    fields:
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: token_error（授权异常）阻断默认自动运行
+    - name: taskFE.runtime.nested_git_repos_error
+      description: nestedError 非空时阻断默认自动运行并展示无法启动
+    - name: task-project-service.projects.server_run_template_default_auto_run
+      description: JSON 路径 server_run_template.default_auto_run；门禁触发时自动 PATCH 关闭
+  - name: project-detail-auto-run-git-gate-ui
+    status: active
+    test_file: ../../taskFE/app/src/components/ProjectDetailInlineEditableFields.test.js
+    fields:
+    - name: taskFE.runtime.project_default_auto_run_label
+      description: 展示文案为「无法启动」且编辑态禁用勾选
+- name: create-project-oauth-validation-loop
+  domain: 项目与工作空间
+  description: CreateProject OAuth 校验闭环 — token_status 区分 + 回调自动重校验 + 按钮智能显隐
+  steps:
+  - name: validate-git-repo-token-status
+    status: active
+    test_file: tests/test_validate_git_repo_api.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: validate-git-repo API 输入仓库 URL
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: OAuth 绑定状态驱动 token_status (not_bound/token_error/token_available)
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: provider 维度 (gitlab:default 等)
+    - name: task-auth.auth_user.id
+      description: OAuth 授权发起与校验的用户主体
+    - name: saas-backend.runtime.validate_git_repo_response_token_status
+      description: API 新增 token_status 字段 (not_bound/token_error/token_available/not_applicable)；JSON 路径为 response.token_status
+  - name: create-project-oauth-callback-revalidate
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: taskFE.runtime.oauth_callback_revalidate
+      description: CreateProject 页检测 gitlab=ok/github=ok → 自动触发 validateGitRepoRow 重校验
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: 回调后 bind_status=active 是重校验成功的前提
+  - name: create-project-oauth-button-smart-visibility
+    status: planned
+    test_file: ../playwrig../../taskFE/tests/CreateProject.oauth-button.playwright.test.js
+    fields:
+    - name: taskFE.runtime.oauth_button_visibility
+      description: token_status=not_bound 显示授权按钮，token_error 显示重试，token_available+不可访问不显示 OAuth 按钮
+    - name: saas-backend.runtime.validate_git_repo_response_token_status
+      description: token_status 字段驱动前端按钮显隐逻辑；JSON 路径为 response.token_status
+- name: oauth-callback-error-toast
+  domain: 项目与工作空间
+  description: OAuth 授权回调失败后全局 Toast 提示与 URL query 清理（return_key 回跳页）
+  steps:
+  - name: callback-hints-guard-thin-slice
+    status: active
+    test_file: ../../taskFE/docs/view_test/oauth-callback-error-toast-hints-guard-thin-slice.md
+    fields:
+    - name: task-git-oauth.git_oauth_appusercredential.bind_error
+      description: 回调失败原因码（如 profile_failed），与 Toast 文案映射源
+    - name: task-auth.auth_user.id
+      description: 发起 OAuth 并接收回跳的用户主体
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 项目详情 OAuth 授权的仓库上下文
+  - name: return-key-surface-alignment
+    status: planned
+    test_file: ../../taskFE/docs/view_test/oauth-callback-error-toast-return-key-alignment.md
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 创建任务等入口 OAuth 的 repo_url 输入
+    - name: task-auth.auth_user.id
+      description: 跨入口 return_key 回跳主体一致性
+  - name: settings-inline-skip-regression
+    status: planned
+    test_file: ../../taskFE/docs/view_test/oauth-callback-error-toast-settings-skip-regression.md
+    fields:
+    - name: task-git-oauth.git_oauth_appusercredential.bind_error
+      description: 设置页内联展示的错误码，不应触发全局 Toast
+    - name: task-auth.auth_user.id
+      description: 个人中心 OAuth 设置页用户主体
+  - name: multi-surface-regression-guard
+    status: planned
+    test_file: ../../taskFE/docs/view_test/oauth-callback-error-toast-multi-surface-regression.md
+    fields:
+    - name: task-task-service.task_repo_identities.repo_url
+      description: 任务详情仓库行 OAuth 回跳上下文
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: github/gitlab 回调 query 键与 provider 维度
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: 回调结果与落库状态交叉验证
+- name: gitlab-oauth-scope-failfast-governance
+  domain: 项目与工作空间
+  description: GitLab OAuth scope 合法化与启动期 fail-fast 防呆
+  steps:
+  - name: gitlab-scope-thin-slice
+    status: active
+    test_file: tests/test_github_app_start_redirect_uri.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 项目详情 OAuth 授权仓库来源
+    - name: task-auth.auth_user.id
+      description: 发起 OAuth 授权请求的用户主体
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: provider 路由维度（gitlab:service_provider）
+    - name: task-git-oauth.git_oauth_appusercredential.scope
+      description: 授权 scope 存储与展示契约
+  - name: gitlab-scope-startup-failfast
+    status: active
+    test_file: tests/test_git_oauth_scope_validation.py
+    fields:
+    - name: task-git-oauth.git_oauth_appusercredential.scope
+      description: 仅允许 GitLab 合法 scope token 组合
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: 配置校验错误定位维度
+  - name: gitlab-oauth-app-bootstrap
+    status: active
+    test_file: ../../gitService/scripts/test_sync_oauth_app.sh
+    fields:
+    - name: git-service.runtime.oauth_app_bootstrapped
+      description: Application 自愈创建结果（find-or-create 幂等）
+    - name: task-git-oauth.git_oauth_appusercredential.scope
+      description: 同步后 scope 与 YAML 对齐
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: gitlab-local provider 维度
+  - name: gitlab-local-oauth-doorkeeper-regression
+    status: active
+    test_file: ../playwrig../../taskFE/tests/TaskDetail.gitlab-oauth-bind.playwright.test.js
+    fields:
+    - name: git-service.runtime.oauth_app_bootstrapped
+      description: gitlab-local Doorkeeper uid 与 YAML client_id 对齐
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: gitlab-local provider 维度（含 website_aliases）
+    - name: task-task-service.task_repo_identities.repo_url
+      description: 任务详情 OAuth 绑定 authorize URL 参数
+  - name: gitlab-scope-regression-guard
+    status: active
+    test_file: tests/test_github_app_start_redirect_uri.py
+    fields:
+    - name: saas-backend.projects_projectrepo.repo_url
+      description: 回归测试中的 GitLab 仓库 host 输入
+    - name: task-auth.auth_user.id
+      description: 授权发起主体一致性
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: 授权链路可用性回归辅助信号
+  - name: git-site-oauth-multi-service-provider-catalog
+    status: active
+    test_file: tests/test_git_oauth_providers_catalog.py
+    fields:
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: conf/git-oauth/providers 中全部 service_provider 目录项
+    - name: task-auth.auth_user.id
+      description: 设置页按站点切换绑定状态
+- name: runall-log-copy-gitoauth-port-conflict-recovery
+  domain: 云平台与资源
+  description: runAll 日志复制与 git-oauth 端口冲突恢复启动闭环
+  steps:
+  - name: runall-log-copy-thin-slice
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-git-oauth.runtime.stderr_line
+      description: 日志面板复制范围内的 stderr 行内容
+    - name: task-git-oauth.runtime.stdout_line
+      description: 日志面板复制范围内的 stdout 行内容
+  - name: gitoauth-port-conflict-diagnostic
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-git-oauth.runtime.listener_port
+      description: git-oauth 目标监听端口（预期 8002）
+    - name: task-git-oauth.runtime.preflight_result
+      description: 启动前端口冲突探测结果
+  - name: gitoauth-port-conflict-auto-recovery
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-git-oauth.runtime.conflict_pid
+      description: 端口占用冲突进程 PID
+    - name: task-git-oauth.runtime.cleanup_result
+      description: 冲突进程清理与重试绑定结果
+  - name: runall-log-copy-and-recovery-feedback
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-git-oauth.runtime.log_copy_timestamp
+      description: 最近一次日志复制动作时间戳
+    - name: task-git-oauth.runtime.recovery_status
+      description: 端口冲突恢复后的最终状态
+- name: runall-cascade-lifecycle
+  domain: 云平台与资源
+  description: runAll Web UI 依赖链一键启停（启动/关闭链式 + 启动本组）
+  steps:
+  - name: runall-start-cascade-thin-slice
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-auth.runtime.lifecycle_status
+      description: 认证服务先于 saas-backend 启动
+    - name: task-git-oauth.runtime.cascade_plan_order
+      description: 启动链计划中的服务顺序（上游在前）
+    - name: saas-backend.runtime.lifecycle_status
+      description: 链式启动过程中 saas-backend 状态迁移
+    - name: taskFE.runtime.lifecycle_status
+      description: 目标服务最终是否 healthy
+  - name: runall-stop-cascade
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: taskFE.runtime.lifecycle_status
+      description: 关闭链中下游先变为 stopped
+    - name: ai-provider.runtime.lifecycle_status
+      description: 并行下游关闭顺序与状态
+    - name: task-git-oauth.runtime.lifecycle_status
+      description: 上游目标服务最后关闭
+  - name: runall-stop-cascade-failed-downstream
+    status: active
+    test_file: ../../runAll/docs/view_test/runall-stop-cascade-failed-downstream.md
+    fields:
+    - name: saas-backend.runtime.lifecycle_status
+      description: failed 且 pid>0 的下游仍纳入级联停止计划
+    - name: task-git-oauth.runtime.cascade_plan_order
+      description: 计划含 task-auth → git-oauth → saas-backend → ai-provider
+    - name: task-git-oauth.runtime.lifecycle_status
+      description: 级联完成后 git-oauth 为 stopped
+  - name: runall-cascade-mixed-ownership
+    status: active
+    test_file: ../../runAll/docs/view_test/runall-cascade-mixed-ownership.md
+    fields:
+    - name: taskFE.runtime.owner_session_id
+      description: bootstrap 拥有的下游在级联关闭时使用原 owner 委托
+    - name: task-git-oauth.runtime.owner_session_id
+      description: UI session 拥有的目标服务由 initiating actor 关闭
+    - name: task-git-oauth.runtime.cascade_step_actor
+      description: 级联每步解析后的有效 session_id
+  - name: runall-start-group
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-git-oauth.runtime.cascade_plan_order
+      description: platform 组启动本组计划顺序
+    - name: saas-backend.runtime.lifecycle_status
+      description: 组内依赖服务启动结果
+  - name: runall-cascade-failure-feedback
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.runtime.cascade_failed_at
+      description: 级联失败时停在哪一步
+    - name: saas-backend.runtime.cascade_completed_steps
+      description: 失败前已成功完成的步骤列表
+  - name: runall-global-start-stop-all
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: docker-redis.runtime.lifecycle_status
+      description: 二期全局启停验收（infrastructure 组；docker-redis 独立栈）
+    - name: docker-kafka.runtime.lifecycle_status
+      description: 二期全局启停验收（optional Kafka 栈）
+  - name: runall-docker-infra-split
+    status: planned
+    test_file: ../../runAll/src/compose_lifecycle_test.go
+    fields:
+    - name: docker-redis.runtime.lifecycle_status
+      description: Redis 栈独立启停与 TCP 6379 就绪
+    - name: docker-kafka.runtime.lifecycle_status
+      description: Kafka 栈独立启停与 Kafka UI 18080 就绪
+  - name: runall-portainer-management-ui
+    status: deprecated
+    test_file: ../../runAll/src/ui_test.go
+    fields:
+    - name: docker-portainer.runtime.lifecycle_status
+      description: '[DEPRECATED 2026-06-05] Portainer 已改为本地 conf_app 管理，远程面板移除。参见
+        remove-remote-sync-unify-infra-host 价值流。'
+  - name: runall-explicit-lifecycle-commands
+    status: planned
+    test_file: ../../runAll/src/service_lifecycle_config_test.go
+    fields:
+    - name: docker-kafka.runtime.lifecycle_status
+      description: stop_command 执行后容器停止且 status stopped
+    - name: docker-redis.runtime.lifecycle_status
+      description: YAML 显式 start/stop 与 strict 校验
+  - name: runall-restart-does-not-compile
+    status: active
+    test_file: ../../runAll/src/runner_restart_all_test.go
+    fields:
+    - name: runall.runtime.restart_skips_build_command
+      description: 全部重启与单服务重启不执行 build_command，只拉 last-good 二进制
+- name: runall-build-group-progress
+  domain: 云平台与资源
+  description: runAll Web UI 分组「全部重新编译」异步进度 — 复用 build-all SSE
+  steps:
+  - name: runall-build-group-async-progress
+    status: active
+    test_file: ../../runAll/src/ui_test.go
+    fields:
+    - name: runall.runtime.build_group_accepted
+      description: POST /api/build-group 返回 202 accepted + run_id
+    - name: runall.runtime.build_group_progress_sse
+      description: 复用 GET /api/build-all/progress 推送 operation=build 进度事件
+    - name: runall.runtime.build_bulk_busy_lock
+      description: 全局/分组 bulk rebuild 互斥，并发请求返回 409 already in progress
+    - name: runall.runtime.active_bulk_progress_resume
+      description: 刷新页面后 /api/status 返回 active_bulk_progress，前端重连 SSE 并恢复进度面板
+- name: runall-precise-restart-reload-yaml
+  domain: 云平台与资源
+  description: runAll 精准编译重启执行前重载磁盘 runAll.yaml，避免新增 task-events 消费者报 unknown service
+  steps:
+  - name: runall-precise-restart-reload-disk-config
+    status: active
+    test_file: ../../runAll/src/precise_restart_reload_test.go
+    fields:
+    - name: runall.runtime.precise_restart_reload_disk_config
+      description: PreciseRestart 解析登记名前 LoadConfig 磁盘 YAML 并 EnsureNames
+    - name: runall.runtime.precise_restart_unknown_after_reload
+      description: 磁盘 YAML 仍无该名时 unknown service 并 failed 保留登记
+    - name: runall.runtime.precise_restart_reload_failure_keeps_memory
+      description: YAML 非法时保留内存配置，已知服务仍可重启
+  - name: runall-precise-restart-compile-then-swap
+    status: active
+    test_file: ../../runAll/src/runner_kill_first_test.go
+    fields:
+    - name: runall.runtime.precise_restart_compile_before_stop
+      description: 精准编译重启先原子编译再停旧进程；编译失败旧进程仍 healthy
+- name: runall-build-all-progress
+  domain: 云平台与资源
+  description: runAll Web UI 顶部「全部重新编译」异步进度 — SSE 进度条与可中断
+  steps:
+  - name: runall-build-all-async-progress
+    status: active
+    test_file: ../../runAll/src/ui_test.go
+    fields:
+    - name: runall.runtime.build_all_accepted
+      description: POST /api/build-all 返回 202 accepted + run_id
+    - name: runall.runtime.build_all_progress_sse
+      description: GET /api/build-all/progress 推送 operation=build 进度事件
+    - name: runall.runtime.build_all_cancel
+      description: POST /api/build-all/cancel 可中断进行中的全部重新编译
+  - name: runall-build-all-clears-precise-restart
+    status: active
+    test_file: ../../runAll/src/build_all_clears_precise_restart_test.go
+    fields:
+    - name: runall.runtime.build_all_clears_precise_restart_file
+      description: BuildAll 成功后 precise_restart_services.txt 为空
+    - name: runall.runtime.build_all_abort_keeps_precise_restart
+      description: 已取消的 BuildAll 保留登记文件内容
+- name: runall-group-build-all
+  domain: 云平台与资源
+  description: runAll Web UI 分组「全部重新编译」按钮 — 一键编译组内所有可编译服务
+  steps:
+  - name: runall-build-group-thin-slice
+    status: planned
+    test_file: ../../runAll/src/runner_test.go
+    fields:
+    - name: runall.runtime.build_group_result_status
+      description: 分组编译结果状态 ok / partial / none
+    - name: runall.runtime.build_group_built_count
+      description: 成功编译的服务数
+    - name: runall.runtime.build_group_failed_names
+      description: 编译失败的服务名列表
+    - name: runall.runtime.build_group_skipped_names
+      description: 仅在 building 并发冲突时跳过的服务名列表（编译不再受运行时状态限制）
+  - name: runall-build-group-ui-button
+    status: planned
+    test_file: ../../runAll/src/ui_test.go
+    fields:
+    - name: runall.runtime.group_header_button_count
+      description: 分组 header action 按钮数量（含 build-group）
+    - name: runall.runtime.build_group_button_disabled
+      description: 组内无 buildable 服务时按钮 disabled
+- name: relay-precheck-internal-origin
+  domain: 任务协作
+  description: relay 直启预检走 Go 凭证服务 (:8015)，消除 Django --noreload 单线程自调用死锁
+  steps:
+  - name: relay-precheck-internal-origin-thin-slice
+    status: active
+    test_file: tests/test_relay_to_trae_proxy.py
+    fields:
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: 预检鉴权令牌（Go 服务签发，存 tokens.sqlite3）
+    - name: saas-backend.django.task_credential_service_base
+      description: 预检 HTTP 目标 origin（taskCredentialServiceBase）
+  - name: relay-precheck-error-guidance-split
+    status: active
+    test_file: ../playwrig../../taskFE/tests/TaskDetail.relay-to-trae-direct-start.playwright.test.js
+    fields:
+    - name: saas-backend.projects_taskgithubrepooauthbinding.github_user_id
+      description: 409 场景 per-repo 账号绑定
+    - name: task-task-service.task_repo_identities.repo_url
+      description: 缺失凭证仓库列表
+  - name: relay-precheck-go-service-phase1
+    status: planned
+    test_file: tests/test_relay_to_trae_proxy.py
+    fields:
+    - name: task-credential-service.credential_container_tokens.id
+      description: Go 服务 token init 签发并持久化到 tokens.sqlite3
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: Django precheck 调 Go 服务的鉴权令牌
+    - name: task-credential-service.credential_container_tokens.container_refresh_token
+      description: Go relay 换票后写入的 refresh token
+  - name: relay-precheck-go-service-phase2
+    status: planned
+    test_file: ../../taskCredentialService/src/handlers_test.go
+    fields:
+    - name: task-credential-service.credential_container_tokens.container_access_token_expires_at
+      description: token 过期时间校验
+    - name: task-task-service.tasks.id
+      description: Go 服务只读查询任务主体
+    - name: task-task-service.task_repo_identities.repo_url
+      description: Go 服务只读查询仓库身份绑定
+    - name: task-git-oauth.git_oauth_appusercredential.access_token
+      description: Go 服务调 gitOauth 换发临时克隆 token
+- name: task-credential-service-go
+  domain: 任务协作
+  description: 容器令牌基础设施 Go 服务 — 独立端口 :8015，独立 DB tokens.sqlite3，15 容器回调端点
+  steps:
+  - name: go-service-skeleton-token-init
+    status: planned
+    test_file: ../../taskCredentialService/src/handlers_test.go
+    fields:
+    - name: task-credential-service.credential_container_tokens.id
+      description: 雪花 ID，Go 侧生成
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: 令牌签发后持久化
+    - name: task-credential-service.credential_container_tokens.task_id
+      description: 令牌关联的任务标识
+    - name: task-credential-service.runtime.lifecycle_status
+      description: Go 服务 /health 探针，runAll 健康检查
+  - name: go-service-query-endpoints
+    status: planned
+    test_file: ../../taskCredentialService/src/credentials_test.go
+    fields:
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: 查询端点 token 校验
+    - name: task-task-service.tasks.id
+      description: task-detail 任务主体（Go 只读）
+    - name: task-task-service.task_repo_identities.repo_url
+      description: repo-clone-credentials 仓库身份（Go 只读）
+    - name: task-git-oauth.git_oauth_appusercredential.access_token
+      description: gitOauth 换发临时克隆 token
+  - name: go-service-token-lifecycle
+    status: planned
+    test_file: ../../taskCredentialService/src/token_test.go
+    fields:
+    - name: task-credential-service.credential_container_tokens.container_refresh_token
+      description: exchange-refresh 写入 refresh token
+    - name: task-credential-service.credential_container_tokens.container_access_token_expires_at
+      description: refresh-access 更新过期时间
+  - name: go-service-status-reporting
+    status: planned
+    test_file: ../../taskCredentialService/src/status_test.go
+    fields:
+    - name: task-credential-service.credential_container_tokens.server_url
+      description: register-reachability 更新容器地址
+    - name: task-credential-service.credential_container_tokens.updated_at
+      description: heartbeat 刷新时间戳
+  - name: go-service-django-cleanup
+    status: planned
+    test_file: tests/test_relay_to_trae_proxy.py
+    fields:
+    - name: saas-backend.runtime.cloud_cloudserverconfig_removed
+      description: Django CloudServerConfig Model 已删除
+    - name: saas-backend.runtime.instance_callback_urls_cleared
+      description: instance_callback_urls.py 已清空
+- name: layer-oauth-fetch-multi-provider
+  domain: 任务协作
+  description: 容器层拉取 AccessToken 支持 gitOauth 配置的全部 Git 站点
+  steps:
+  - name: layer-oauth-repo-match-key-thin-slice
+    status: planned
+    test_file: tests/test_layer_git_oauth_repo_match_keys.py
+    fields:
+    - name: task-task-service.task_repo_identities.repo_url
+      description: 任务仓库身份匹配 repo_match_key
+    - name: task-git-oauth.git_oauth_appusercredential.provider
+      description: gitlab-local provider 换 token
+  - name: layer-oauth-fetch-onlineServiceJS
+    status: active
+    test_file: ../../trae-agent/onlineServiceJS/src/layerGitOauthRefreshPush.test.mjs
+    fields:
+    - name: go-relay.online_service_js.repo_match_key
+      description: 层内 origin 解析为 host/path 键（onlineServiceJS 由 go-relay 拉起）
+  - name: layer-oauth-repo-match-key-utils
+    status: active
+    test_file: tests/test_repo_match_key.py
+    fields:
+    - name: saas-backend.projects_service.repo_match_key
+      description: repo_match_key 与 path 别名匹配
+- name: domain-events-consumer-split
+  domain: 系统管理与策略
+  description: 领域事件 v4 intent 级 Go 消费者（18020-18037）；G5 已删 Python handlers、域级 cmd、Django
+    dispatch
+  steps:
+  - name: increment1-registration-chain-go
+    status: active
+    test_file: ../../taskEvents/integration/registration_chain_test.go
+    fields:
+    - name: saas-backend.config.domain_events_transport
+      description: kafka|redis；对应 conf/events/domain-events/config.yaml transport
+    - name: task-events-user-created-0-create-company.health.status
+      description: USER_CREATED intent 健康；port 18025
+    - name: task-events-company-created-1-set-default-deliverable-system.health.status
+      description: COMPANY_CREATED intent 1；port 18027
+    - name: task-events-workspace-created-1-process-workspace-creation.health.status
+      description: WORKSPACE_CREATED intent；port 18030
+    - name: saas-backend.auth_company.id
+      description: 注册链 USER→COMPANY→WORKSPACE DB 断言
+  - name: increment2-company-fan-out-d2
+    status: active
+    test_file: ../../taskEvents/integration/company_fanout_test.go
+    fields:
+    - name: task-events-company-created-2-set-default-progress-system.health.status
+      description: COMPANY_CREATED intent 2 fan-out；port 18028
+    - name: task-events-company-created-3-create-default-workspace.health.status
+      description: COMPANY_CREATED intent 3 fan-out；port 18029
+  - name: increment3-redis-transport
+    status: active
+    test_file: tests/test_task_events_redis_transport.py
+    fields:
+    - name: saas-backend.config.domain_events_transport
+      description: kafka|redis；默认 redis
+    - name: saas-backend.config.domain_events_redis_stream_key_prefix
+      description: Redis Streams 键前缀
+  - name: increment4-billing-sse-go
+    status: active
+    test_file: ../../taskEvents/integration/billing_integration_test.go
+    fields:
+    - name: task-events-billing-transaction-created-1-process-billing-transaction.health.status
+      description: BILLING intent；port 18020
+    - name: task-events-sse-message-1-send-sse-message.health.status
+      description: SSE intent；port 18021
+    - name: task-sse.config.channel_prefix
+      description: 与 taskSSE redis channel 对齐
+  - name: increment5-g45-gate
+    status: active
+    test_file: ../../taskEvents/scripts/g45_verify.sh
+    fields:
+    - name: task-events-billing-transaction-created-1-process-billing-transaction.health.status
+      description: g45 门禁；enabled intent 段起点 port 18020
+    - name: task-events-company-created-3-create-default-workspace.health.status
+      description: g45 门禁；company fan-out intent port 18029
+    - name: task-events-cloud-platform-authorization-created-1-process-cloud-platform-authorization.health.status
+      description: g45 门禁；enabled intent 段终点 port 18037
+  - name: mq-reconnect-backoff
+    status: active
+    test_file: ../../taskEvents/broker/retry_test.go
+    fields:
+    - name: task-events-user-created-0-create-company.health.readiness_status
+      description: /api/health/ready ok|degraded；MQ 连通性
+    - name: task-events-user-created-0-create-company.runtime.mq_connected
+      description: broker ConnectionState；断连时 false
+    - name: saas-backend.config.domain_events_transport
+      description: redis|kafka；broker Ping 与退避策略按 transport 分支
+- name: message-queue-kafka-to-redis
+  domain: 系统管理与策略
+  description: 消息队列基础设施默认切换为 Redis，移除 django.messageQueue.memory 同步模式
+  steps:
+  - name: increment1-config-redis-default
+    status: active
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.config.domain_events_transport
+      description: 默认 redis；对应 conf/events/domain-events/config.yaml transport
+    - name: task-events-email-sent-1-send-email.health.status
+      description: notifications 类 intent（默认 disabled）；port 18022
+  - name: increment1-redis-transport-e2e
+    status: active
+    test_file: tests/test_task_events_redis_transport.py
+    fields:
+    - name: saas-backend.config.domain_events_redis_stream_key_prefix
+      description: Redis Streams 键前缀；对应 conf/events/domain-events/config.yaml redis.streamKeyPrefix
+    - name: task-events-user-created-0-create-company.health.status
+      description: Redis 模式下 USER_CREATED intent；port 18025
+  - name: increment1-register-without-memory
+    status: active
+    test_file: accounts/view_test/UserViewSet_email_register_test.py
+    fields:
+    - name: task-auth.auth_user.id
+      description: memory=false 时注册发布 USER_CREATED
+    - name: saas-backend.auth_company.id
+      description: taskEvents 异步建公司
+  - name: increment2-deprecate-memory-mode
+    status: planned
+    test_file: tests/test_port_config_merge.py
+    fields:
+    - name: saas-backend.config.domain_events_transport
+      description: 禁止 memory 枚举；传输仅 kafka|redis
+  - name: increment2-health-redis-required
+    status: active
+    test_file: tests/test_health_endpoint.py
+    fields:
+    - name: saas-backend.health.status
+      description: health 探针含 redis 连通性；非 memory 模式必检
+- name: platform-centralized-logging
+  domain: 平台可观测性
+  description: runAll 日志 tee + Loki/Promtail + Grafana 按 traceId 检索
+  steps:
+  - name: increment1-loki-mvp-thin-slice
+    status: active
+    test_file: ../../runAll/src/infrastructure/file_service_log_sink_test.go
+    fields:
+    - name: ai-monitor.loki.trace_id
+      description: Grafana/Loki 按 trace_id label 检索
+    - name: saas-backend.runtime.log_file_path
+      description: RUNALL_LOG_ROOT 下 saas-backend 日志文件路径
+    - name: saas-backend.runtime.stdout_line
+      description: tee 文件中含 trace_id 的 stdout 行
+  - name: increment1-runall-log-tee
+    status: active
+    test_file: ../../runAll/src/infrastructure/tee_service_log_repository_test.go
+    fields:
+    - name: saas-backend.runtime.log_file_path
+      description: 与内存 LogRepository 并存的 per-service 文件 sink
+  - name: increment2-json-log-contract
+    status: active
+    test_file: tests/test_json_trace_logging.py
+    fields:
+    - name: go-relay.stdout_json.trace_id
+      description: Go relay JSON slog + X-Trace-Id middleware
+    - name: saas-backend.stdout_json.trace_id
+      description: Django JsonTraceFormatter console output
+  - name: increment2-grafana-trace-dashboard
+    status: active
+    test_file: ../../AiMonitor/scripts/test_promtail_config.py
+    fields:
+    - name: ai-monitor.grafana.trace_log_journey
+      description: Trace Log Journey dashboard + Promtail JSON pipeline
+  - name: increment2-grafana-trace-log-level-filter
+    status: active
+    test_file: ../../AiMonitor/scripts/test_trace_log_explore_dashboard.py
+    fields:
+    - name: ai-monitor.grafana.trace_log_explore_level
+      description: Trace Log Explore dashboard level template variable + LogQL filter
+    - name: ai-monitor.grafana.trace_log_explore_search
+      description: Trace Log Explore search textbox + msg dropdown + adhoc Filters
+        for field-value filtering
+  - name: increment2-task-container-gateway-json-logs
+    status: active
+    test_file: ../../taskContainerGateway/src/handlers_observability_test.go
+    fields:
+    - name: task-container-gateway.stdout_json.trace_id
+      description: Go JSON slog http_request + forward_stage for Loki trace correlation
+    - name: task-container-gateway.stdout_json.forward_stage
+      description: django_validate / django_resolve / upstream_forward stage logs
+  - name: increment2-taskFE-proxy-access-log
+    status: active
+    test_file: ../../taskFE/app/vite-proxy-access-log.mjs
+    fields:
+    - name: taskFE.stdout_json.trace_id
+      description: Dev-only Vite proxy_forward JSON line for container-layer-git-commit
+  - name: increment2-go-sidecar-http-access-logs
+    status: active
+    test_file: ../../shareLib/tracelog/tracelog_test.go
+    fields:
+    - name: task-agent-support.stdout_json.trace_id
+      description: taskAgentSupport JSON http_request access logs
+    - name: task-ai-endpoint.stdout_json.trace_id
+      description: taskAIEndPoint JSON http_request access logs
+  - name: increment3-runall-grafana-deep-link
+    status: active
+    test_file: ../../runAll/src/domain/grafana_trace_link_test.go
+    fields:
+    - name: ai-monitor.runtime.grafana_trace_deep_link
+      description: runAll UI/API 打开 Grafana Trace Log Journey
+  - name: increment3-loki-retention
+    status: active
+    test_file: ../../AiMonitor/scripts/test_loki_config.py
+    fields:
+    - name: ai-monitor.loki.retention_period
+      description: 本地 Loki 7 天保留（168h）
+  - name: increment2-relay-child-log-forwarding
+    status: active
+    test_file: ../../go_relayToTrae/src/subprocess_log_grouper_test.go
+    fields:
+    - name: go-relay.stdout_json.service
+      description: 子进程 JSON 透传后 Loki service=onlineServiceJS
+    - name: go-relay.runtime.subprocess_log_block
+      description: 多行 Node stack 合并为单条 msg
+  - name: increment-remote-promtail-push
+    status: active
+    test_file: ../../AiMonitor/scripts/test_promtail_local_push_config.py
+    fields:
+    - name: ai-monitor.promtail.remote_push_enabled
+      description: Mac promtail-local.yaml clients.url 使用 LOKI_PUSH_URL 指向远程 Loki
+    - name: ai-monitor.loki.trace_id
+      description: 远程 Loki 可查询 runAll tee 日志中的 trace_id
+    - name: runall.runtime.local_promtail_status
+      description: /api/observability 返回 log_shipping 与 loki_push_url
+  - name: increment4-runall-clear-all-observability
+    status: active
+    test_file: ../../runAll/src/domain/observability_stack_reset_test.go
+    fields:
+    - name: ai-monitor.loki.chunks_cleared
+      description: Loki data volume reset via reset_observability_storage.sh
+    - name: ai-monitor.tempo.blocks_cleared
+      description: Tempo trace blocks/WAL volume reset
+    - name: ai-monitor.prometheus.tsdb_cleared
+      description: Prometheus TSDB volume reset (incl. span-metrics remote_write)
+    - name: runall.runtime.log_file_truncated
+      description: tee 文件 TruncateAll + 全服务内存 Clear（POST /api/logs/clear-all；禁止 rm logs/*.log）
+    - name: runall.runtime.memory_log_cleared
+      description: POST /api/logs/clear-all 或 /api/observability/clear-all 清空内存日志
+  - name: fix-log-dir-path-alignment
+    status: active
+    test_file: ../../AiMonitor/scripts/test_promtail_local_push_config.py
+    fields:
+    - name: runall.runtime.log_file_root
+      description: conf/runAll.yaml logging.file_root 与 Promtail RUNALL_LOG_ROOT 解析到同一目录
+    - name: ai-monitor.promtail.monitored_directory
+      description: Promtail __path__ 挂载目录与 runAll tee 写入目录一致
+- name: task-llm-budget-governance
+  domain: 任务协作
+  description: 任务 LLM 预算限额（CNY、租户 opt-in、仅 use_sub_token provider、端点×模型粒度）
+  steps:
+  - name: tenant-llm-budget-feature-toggle
+    status: active
+    test_file: tests/test_llm_budget_endpoint_enable.py
+    fields:
+    - name: saas-backend.projects_tenant_feature_params.providers_budget_enabled
+      description: providers[].budget_enabled；端点级 LLM 预算启用；须 use_sub_token=true
+    - name: saas-backend.projects_tenant_feature_params.llm_budget_enabled
+      description: 由任意 budget_enabled 聚合同步（只读兼容）
+  - name: llm-budget-sub-token-eligibility
+    status: active
+    test_file: tests/test_llm_budget_sub_token_eligibility.py
+    fields:
+    - name: saas-backend.projects_tenant_feature_params.providers_use_sub_token
+      description: providers[].use_sub_token；派生子 Key；预算还须 budget_enabled
+    - name: saas-backend.projects_task_api_key_usage.key_type
+      description: sub 与 budget policy 关联
+  - name: workspace-model-budget-defaults
+    status: active
+    test_file: tests/test_workspace_model_budget_defaults.py
+    fields:
+    - name: saas-backend.projects_workspace_model_budget_default.input_price_per_1m
+      description: 元/1M input tokens
+    - name: saas-backend.projects_workspace_model_budget_default.budget_limit
+      description: 默认预算上限（元）
+  - name: task-model-budget-override
+    status: planned
+    test_file: tests/test_task_model_budget_override.py
+    fields:
+    - name: saas-backend.projects_task_model_budget.budget_limit
+      description: 任务级覆盖或继承
+    - name: saas-backend.projects_task_model_budget.budget_limit_source
+      description: inherited / override / raised
+  - name: task-model-budget-usage-report
+    status: planned
+    test_file: tests/test_task_model_budget_usage_api.py
+    fields:
+    - name: saas-backend.projects_task_model_budget_usage.spent_amount
+      description: 累计费用（元）
+    - name: saas-backend.projects_task_model_budget_usage.input_tokens
+      description: 累计 input tokens
+  - name: budget-raise-permission
+    status: planned
+    test_file: tests/test_tenant_budget_permission.py
+    fields:
+    - name: saas-backend.projects_tenant_budget_permission.can_raise_task_budget
+      description: people/manage 授权临时上调
+- name: task-agent-support-phase2-internal-scoped
+  domain: 云平台与资源
+  description: taskAgentSupport 路径化 internal API + bootstrap 全量转发
+  steps:
+  - name: internal-scoped-dispatch
+    status: active
+    test_file: tests/test_task_agent_support_internal.py
+    fields:
+    - name: task-cloud-service.cloud_cloudserverconfig.container_access_token
+      description: 容器 inbound 鉴权
+  - name: bootstrap-task-detail-via-gateway
+    status: active
+    test_file: tests/test_task_agent_support_internal_dispatch.py
+    fields:
+    - name: task-task-service.tasks.title
+      description: task-detail 返回任务元信息
+- name: task-container-gateway
+  domain: 云平台与资源
+  description: taskContainerGateway 容器 outbound 鉴权转发（Increment 1 git-commit）
+  steps:
+  - name: gateway-validate-session
+    status: active
+    test_file: tests/test_gateway_validate_session.py
+    fields:
+    - name: task-cloud-service.cloud_cloudserverconfig.container_access_token
+      description: resolve-container-target 返回容器 token
+  - name: gateway-git-commit-forward
+    status: active
+    test_file: ../../taskContainerGateway/src/handlers_test.go
+    fields:
+    - name: task-cloud-service.cloud_cloudserverconfig.business_api_endpoint
+      description: 容器 business API 基址
+  - name: gateway-internal-observability
+    status: active
+    test_file: tests/test_gateway_validate_session.py
+    fields:
+    - name: saas-backend.stdout_json.internal_action
+      description: container_gateway_internal validate_session / resolve_container_target
+        logs
+  - name: gateway-l0-forward-registry
+    status: active
+    test_file: ../../taskContainerGateway/src/l0_registry_test.go
+    fields:
+    - name: task-container-gateway.config.forward_read_sec
+      description: L0 outbound 长 I/O 读超时（layer-delete/clone-log 等）
+  - name: gateway-relay-health-status-proxy
+    status: active
+    test_file: ../../taskContainerGateway/src/l0_registry_test.go
+    fields:
+    - name: task-container-gateway.config.relay_to_trae_url
+      description: relay health/status 经网关直转 go_relayToTrae
+  - name: gateway-relay-lifecycle-proxy
+    status: active
+    test_file: ../../taskContainerGateway/src/relay_lifecycle_test.go
+    fields:
+    - name: task-container-gateway.config.relay_to_trae_url
+      description: relay register/start/stop 经 tcg 编排直转 go_relayToTrae
+  - name: relay-lifecycle-event-consumer
+    status: active
+    test_file: ../../taskEvents/internal/handlers/relaylifecycle/handler_test.go
+    fields:
+    - name: task-credential-service.credential_token_audit_events.event_type
+      description: RELAY_* bus 事件经 consumer 写入 audit SSOT
+  - name: relay-lifecycle-open-runtime-session
+    status: active
+    test_file: tests/test_relay_lifecycle_internal_views.py
+    fields:
+    - name: saas-backend.cloud_cloudserverconfighistory.started_at
+      description: RELAY_START_ACCEPTED consumer 打开 runtime session
+  - name: relay-lifecycle-clear-reachability
+    status: active
+    test_file: tests/test_relay_lifecycle_internal_views.py
+    fields:
+    - name: task-cloud-service.cloud_cloudserverconfig.server_url
+      description: RELAY_STOP_SUCCEEDED consumer 清 reachability
+  - name: relay-lifecycle-workflow-update
+    status: active
+    test_file: tests/test_relay_lifecycle_internal_views.py
+    fields:
+    - name: saas-backend.cloud_relay_startup_session.phase
+      description: workflow transition 默认 no-op session 写；可选 RELAY_WORKFLOW_TRANSITION_PERSIST_SESSION
+  - name: gateway-relay-startup-session-direct-write
+    status: active
+    test_file: ../../taskContainerGateway/src/cloud_internal_client_test.go
+    fields:
+    - name: saas-backend.cloud_relay_startup_session.phase
+      description: token-init/start 经 Cloud upsert 直写 Redis（与 converge 同 key）
+  - name: gateway-job-stream-relay
+    status: active
+    test_file: ../../taskContainerGateway/src/job_stream_test.go
+    fields:
+    - name: saas-backend.internal.publish_container_job_stream
+      description: 默认关闭网关轮询容器 events；CONTAINER_JOB_STREAM_POLL_ENABLED 为逃生开关
+  - name: container-job-stream-push-kafka
+    status: active
+    test_file: ../../taskCloudService/src/job_stream_inbound_test.go
+    fields:
+    - name: taskCloudService.job_stream.publish_sse_message
+      description: 容器 job-stream-push 先发布 Kafka SSE_MESSAGE，再经 SSE 到前端
+  - name: job-stream-persist-from-kafka
+    status: active
+    test_file: ../../taskEvents/internal/handlers/jobstreampersist/handler_test.go
+    fields:
+    - name: taskEvents.sse_message.persist_job_execution_event
+      description: 消费者将 step/生命周期落入 cloud_job_execution_event，跳过 chunk
+  - name: job-stream-hydrate-from-db
+    status: active
+    test_file: ../../taskCloudService/src/job_execution_event_store_test.go
+    fields:
+    - name: taskCloudService.job_execution_log.read_db
+      description: GET container-job-execution-log 从 SaaS DB 还原历史步骤
+  - name: layer-graph-snapshot-persist
+    status: active
+    test_file: ../../taskCloudService/src/layer_graph_snapshot_handlers_test.go
+    fields:
+    - name: task-cloud-service.cloud_layer_graph_snapshot.graph_json
+      description: layer-graph-push UPSERT 评论级层图 JSON 快照（不存克隆日志）
+  - name: layer-graph-hydrate-from-db
+    status: active
+    test_file: ../../taskCloudService/src/layer_graph_snapshot_handlers_test.go
+    fields:
+    - name: task-cloud-service.cloud_layer_graph_snapshot.graph_json
+      description: GET container-layer-graph 从 Cloud 快照 hydrate，关容器仍 200
+  - name: job-step-full-archive-persist
+    status: active
+    test_file: ../../taskCloudService/src/step_full_store_test.go
+    fields:
+    - name: task-cloud-service.cloud_job_step_full_object.object_key
+      description: job 终态 UPSERT 评论级 step_full.json COS 指针（同 job 覆盖）
+  - name: job-step-full-hydrate-from-cos
+    status: active
+    test_file: ../../taskCloudService/src/step_full_handlers_test.go
+    fields:
+    - name: task-cloud-service.cloud_job_step_full_object.object_key
+      description: GET container-job-execution-log 优先 COS 全文，source=saas_cos
+  - name: step-full-cos-admin-config
+    status: active
+    test_file: ../../taskCloudService/src/step_full_admin_test.go
+    fields:
+    - name: task-cloud-service.step_full_cos.backend
+      description: 管理员后台配置 COS 参数，密钥不回显
+  - name: ccb-startup-log-archive-persist
+    status: active
+    test_file: ../../taskCloudService/src/ccb_log_cos_test.go
+    fields:
+    - name: task-cloud-service.cloud_comment_startup_log_object.object_key
+      description: CCB 启动日志分片写入后合并 COS；Put 成功则删除分片行
+  - name: ccb-startup-log-hydrate-from-cos
+    status: active
+    test_file: ../../taskCloudService/src/ccb_log_cos_test.go
+    fields:
+    - name: task-cloud-service.cloud_comment_startup_log_object.object_key
+      description: list bindings logs 以 COS/指针为主，分片仅补 Put 失败残留
+  - name: frontend-exec-log-hydrate-then-sse
+    status: active
+    test_file: ../../taskFE/app/src/composables/taskDetail/taskDetailZTreeExecLogWatchers.test.js
+    fields:
+    - name: taskFE.task_detail.exec_log_hydrate_without_endpoint
+      description: 页面初始化先拉 DB 历史，不依赖容器端点；禁止执行日志后台轮询
+  - name: gateway-django-forward-stub
+    status: active
+    test_file: tests/test_tcgw_django_forward_stub.py
+    fields:
+    - name: saas-backend.settings.task_container_gateway_enabled
+      description: 启用时 Django 直连 outbound 返回 410 引导 taskGateway
+- name: value-stream-config-governance
+  domain: 系统管理与策略
+  description: value-stream.yaml 字段三段式治理（pre-commit + CI）
+  steps:
+  - name: production-config-validation
+    status: active
+    test_file: tests/test_value_stream_config_governance.py
+    fields:
+    - name: value-stream.config.production_yaml_valid
+      description: conf/value-stream.yaml 通过 LoadConfig 校验
+    - name: value-stream.config.design_doc_field_names_valid
+      description: docs/specs/*-design.md 中 yaml 块 fields.name 行须三段式
+- name: task-gateway
+  domain: 平台与本地开发
+  description: APISIX taskGateway 统一 API 入口（TLS、路由、forward-auth）
+  steps:
+  - name: gateway-routes-codegen
+    status: active
+    test_file: tests/test_taskgateway_routes_codegen.py
+    fields:
+    - name: task-gateway.routes.version
+      description: routes.yaml 声明式路由版本
+    - name: task-gateway.apisix.routes
+      description: 生成的 apisix.yaml 路由表
+  - name: gateway-trust-headers-auth
+    status: active
+    test_file: tests/test_gateway_trust_headers_auth.py
+    fields:
+    - name: saas-backend.runtime.gateway_trust_headers
+      description: CustomTokenAuthentication 信任 X-User-Id
+    - name: task-gateway.plugins.forward_auth
+      description: forward-auth 委托 task-auth gateway/forward-auth
+  - name: gateway-routes-ci-check
+    status: active
+    test_file: tests/test_taskgateway_routes_codegen.py
+    fields:
+    - name: task-gateway.apisix.codegen_check
+      description: taskGateway/scripts/ci/check_routes.sh --check 通过
+  - name: gateway-skeleton-tls
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-gateway.runtime.tls_port
+      description: HTTPS 8443 健康检查
+    - name: taskFE.config.api_base_url
+      description: apiBaseUrl 指向 task-gateway publicBase
+  - name: gateway-docs-portal
+    status: active
+    test_file: tests/test_taskgateway_routes_codegen.py
+    fields:
+    - name: task-gateway.docs.enabled
+      description: 开发环境 Swagger 门户开关
+    - name: task-gateway.docs.portal_path
+      description: /gateway/docs/ 门户索引
+    - name: task-gateway.routes.docs_proxy
+      description: 各 upstream Swagger 反代路由
+  - name: gateway-openapi-upstream-contract
+    status: active
+    test_file: tests/test_taskgateway_routes_codegen.py
+    fields:
+    - name: task-gateway.routes.upstream_docs
+      description: routes.yaml 每 upstream 声明 docs 或 false
+  - name: taskauth-openapi-docs
+    status: active
+    test_file: ../../taskAuth/src/openapi_test.go
+    fields:
+    - name: task-auth.runtime.openapi_schema_path
+      description: GET /api/schema/ OpenAPI JSON
+    - name: task-gateway.routes.docs_proxy
+      description: taskAuth 经 /gateway/docs/taskAuth/ 反代
+- name: platform-dev-database-reset
+  domain: 平台与本地开发
+  description: runAll 开发工具：清空六库 + Redis/Kafka，与 migrate/init 分离
+  steps:
+  - name: runall-dev-clear-databases
+    status: active
+    test_file: ../../runAll/src/domain/database_platform_reset_test.go
+    fields:
+    - name: runall.runtime.dev_db_clear_status
+      description: POST /api/dev/clear-databases 聚合 status ok/partial
+    - name: saas-backend.registry.sqlite_removed
+      description: registry 六库文件已删除
+    - name: docker-redis.runtime.flushed
+      description: FLUSHALL 完成
+    - name: docker-kafka.runtime.topics_recreated
+      description: 业务 topics 与 handlers 一致
+  - name: runall-dev-init-databases
+    status: active
+    test_file: ../../runAll/src/domain/database_platform_reset_test.go
+    fields:
+    - name: runall.runtime.dev_db_init_status
+      description: POST /api/dev/init-databases migrate+init 聚合 status
+    - name: saas-backend.registry.migrations_applied
+      description: 六库 migrate_script 按 order 执行
+    - name: saas-backend.registry.inits_applied
+      description: 六库 init_script 按 order 执行
+  - name: dev-bootstrap-admin
+    status: active
+    test_file: ../../taskAuth/src/bootstrap_admin_test.go
+    fields:
+    - name: task-auth.auth_login_method.identifier
+      description: migrate 渲染 022 占位符为 conf bootstrapAdmin.email；init bootstrap-admin 幂等同步（随机密码，明文销毁，须邮箱重置）
+    - name: task-auth.auth_user.is_superuser
+      description: auth 侧超管标记
+    - name: saas-backend.auth_super_admin.id
+      description: default SuperAdmin 与 auth user id 对齐
+- name: dev-tools-log-viewer
+  domain: 平台与本地开发
+  description: runAll 开发工具统一日志查看 — 五个工具的持久化日志文件读写与 Web UI 面板
+  steps:
+  - name: runall-dev-tool-log-recorder
+    status: active
+    test_file: ../../runAll/src/infrastructure/dev_tool_log_recorder_test.go
+    fields:
+    - name: runall.runtime.dev_tool_log_recorder
+      description: DevToolLogRecorder 接口 Append/Tail/Clear/ClearAll 文件实现
+    - name: runall.runtime.dev_logs_api
+      description: GET /api/dev/logs + POST /api/dev/logs/clear 端点
+  - name: runall-dev-tool-log-viewer-ui
+    status: active
+    test_file: ../../runAll/src/ui_test.go
+    fields:
+    - name: runall.runtime.dev_tool_log_viewer_button
+      description: dev-tools-bar 中日志查看按钮与下拉选择器
+    - name: runall.runtime.dev_tool_log_clear_button
+      description: 日志面板中清空当前工具日志的按钮
+- name: remove-remote-sync-unify-infra-host
+  domain: 云平台与资源
+  description: 移除 runAll SSH+rsync 远程同步，基础设施转为本地 Docker Compose，统一 ${INFRA_HOST} 变量
+  steps:
+  - name: infra-conf-split
+    status: active
+    test_file: ../../runAll/src/config_test.go
+    fields:
+    - name: docker-redis.runtime.conf_app_host
+      description: conf/infra/redis/config.yaml host 解析到 docker-redis health check
+    - name: docker-kafka.runtime.conf_app_host
+      description: conf/infra/kafka/config.yaml host 解析到 docker-kafka health check
+    - name: docker-portainer.runtime.conf_app_host
+      description: conf/infra/portainer/config.yaml host 解析到 docker-portainer health
+        check
+    - name: ai-monitor.runtime.conf_app_host
+      description: conf/infra/ai-monitor/config.yaml host 解析到 ai-monitor health check
+    - name: git-service.runtime.conf_app_host
+      description: conf/infra/git-service/config.yaml host 解析到 git-service health
+        check
+  - name: unify-infra-host-variable
+    status: active
+    test_file: ../../runAll/src/config_test.go
+    fields:
+    - name: task-events-user-created-0-create-company.runtime.health_check_url
+      description: taskEvents 服务族健康检查 URL 使用 ${INFRA_HOST} 而非 ${HOST}
+    - name: task-git-oauth.runtime.health_check_url
+      description: git-oauth 健康检查 URL 使用 ${INFRA_HOST} 而非 ${HOST}
+    - name: value-stream.runtime.health_check_url
+      description: value-stream 健康检查 URL 使用 ${INFRA_HOST} 而非 ${HOST}
+    - name: runall.config.template_variable
+      description: runAll.yaml 中不再存在 ${HOST} 占位符
+  - name: remove-remote-sync-scripts
+    status: active
+    test_file: ../../runAll/src/runner_test.go
+    fields:
+    - name: docker-redis.runtime.start_command
+      description: start_command 改为 bash dockerInfra/redis/run.sh start
+    - name: docker-kafka.runtime.start_command
+      description: start_command 改为 bash dockerInfra/kafka/run.sh start
+    - name: docker-portainer.runtime.start_command
+      description: start_command 改为 bash dockerInfra/portainer/run.sh start
+    - name: ai-monitor.runtime.start_command
+      description: start_command 改为 bash AiMonitor/run.sh start
+    - name: git-service.runtime.start_command
+      description: start_command 改为 bash gitService/run.sh start
+  - name: ui-api-cleanup
+    status: active
+    test_file: ../../runAll/src/ui_test.go
+    fields:
+    - name: runall.api.remote_docker_sync
+      description: /api/remote-docker/sync 端点已移除
+    - name: runall.api.conf_sync_remote
+      description: /api/conf/sync-remote 端点已移除
+    - name: runall.api.observability_portainer_url
+      description: observability API 不再返回 portainer_url
+  - name: e2e-verification
+    status: planned
+    test_file: ../../runAll/playwright/tests/runall-live-verify.playwright.test.js
+    fields:
+    - name: docker-redis.runtime.lifecycle_status
+      description: docker-redis 本地启动后 TCP 6379 就绪
+    - name: docker-kafka.runtime.lifecycle_status
+      description: docker-kafka 本地启动后 HTTP 18080 就绪
+    - name: ai-monitor.runtime.lifecycle_status
+      description: ai-monitor 本地启动后 HTTP 3000 就绪
+    - name: saas-backend.runtime.lifecycle_status
+      description: platform 级联启动（依赖 docker-redis）正常
+- name: runall-startup-race-eaddrinuse-fix
+  domain: 云平台与资源
+  description: runAll 启动竞态 EADDRINUSE 修复 — CAS 并发守卫 + SO_REUSEADDR + 孤儿进程清理
+  steps:
+  - name: start-and-check-cas-guard
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-git-oauth.runtime.startup_race_guard
+      description: startAndCheck CAS 并发守卫防止 DAG/API 竞态重复启动导致端口冲突
+  - name: kill-previous-wait-managed-services
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-git-oauth.runtime.orphan_process_cleanup
+      description: killPreviousRunAllProcess 等待托管服务端口释放后再杀旧进程，防止孤儿占用
+  - name: gitoauth-so-reuseaddr
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-git-oauth.runtime.so_reuseaddr
+      description: NoReverseDNSWSGIServer 设置 SO_REUSEADDR 避免 TIME_WAIT 虚假冲突
+  - name: listener-pids-error-not-silent
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-git-oauth.runtime.port_check_error_handling
+      description: listenerPIDs 错误时标记服务 Failed 并中止，不再静默尝试启动
+- name: user-profile-username-sync
+  domain: 用户与认证
+  description: 用户展示名本地化 — USER_CREATED 事件同步 username 到 UserProfile，替代 taskAuth display_label
+  steps:
+  - name: userprofile-username-migration
+    status: active
+    test_file: tests/test_user_profile_inc2.py
+    fields:
+    - name: saas-backend.auth_user_profile.username
+      description: 新增展示名字段，同步自 USER_CREATED 事件
+  - name: company-members-fix
+    status: active
+    test_file: accounts/view_test/CompanyMemberViewSet_test.py
+    fields:
+    - name: saas-backend.auth_company_member.member_name
+      description: 租户作用域展示名（优先使用）
+    - name: saas-backend.auth_user_profile.username
+      description: member_name 为空的 fallback 展示名
+  - name: sync-profile-intent
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.auth_user_profile.username
+      description: taskEvents (写入方) → saas-backend 消费 USER_CREATED → UPSERT username
+  - name: display-label-consumers-switch
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.auth_user_profile.username
+      description: CompanyGroupMemberSerializer 从 display_label HTTP 切换到读本地 UserProfile
+  - name: taskauth-remove-display-label
+    status: planned
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-auth.auth_login_method.identifier
+      description: taskAuth 移除 display_label 计算，login_method.identifier 仅用于登录
+
+- name: taskauth-oidc-issuer-docker-reachability
+  domain: 平台与本地开发
+  description: taskAuth OIDC issuer URL 在 Docker 网络中可达，修复 GitLab SSO connection refused
+  steps:
+  - name: oidc-issuer-external-reachable
+    status: active
+    test_file: ../../gitService/scripts/test_sync_oauth_app.sh
+    fields:
+    - name: task-auth.runtime.oidc_issuer
+      description: OIDC issuer URL 从不可路由 (0.0.0.0) 修正为外部可达地址
+    - name: git-service.runtime.oidc_issuer_env
+      description: GITLAB_OIDC_ISSUER 环境变量注入 Docker 容器 (GITLAB_EXTERNAL_HOST:8003)
+
+- name: gitlab-oidc-redirect-uri-public-ssot
+  domain: 平台与本地开发
+  description: GitLab OmniAuth redirect_uri 与 taskAuth bootstrapClients 公网白名单一致，避免 redirect_uri not allowed
+  steps:
+  - name: oidc-redirect-uri-ssot
+    status: active
+    test_file: ../../gitService/scripts/test_oidc_redirect_uri_ssot.sh
+    fields:
+    - name: git-service.runtime.oidc_redirect_uri
+      description: GITLAB_OIDC_REDIRECT_URI 由 run.sh 从 task-auth bootstrapClients 解析（HTTPS 无端口）
+    - name: task-auth.runtime.oidc_redirect_whitelist
+      description: authorize 仅接受公网 callback，拒绝 http://host:8012 形式
+
+- name: gitlab-external-url-public-https
+  domain: 平台与本地开发
+  description: GitLab external_url 对齐 conf publicUrl（HTTPS 无端口），clone URL 不再带 :8012
+  steps:
+  - name: external-url-ssot
+    status: active
+    test_file: ../../gitService/scripts/test_gitlab_external_url_ssot.sh
+    fields:
+    - name: git-service.runtime.external_url
+      description: GITLAB_EXTERNAL_URL 来自 publicUrl/allowedHost；Omnibus external_url + 边缘 TLS（listen_https=false）
+  - name: external-url-validate
+    status: active
+    test_file: ../../gitService/scripts/validate_gitlab_url.sh
+    fields:
+    - name: git-service.runtime.external_url_live
+      description: 容器内 Gitlab.config.gitlab.url 与 conf 公网 URL 一致且无 :8012
+
+- name: oidc-ssl-protocol-fix
+  domain: 平台与本地开发
+  description: Ruby openid_connect gem 强制 HTTP→HTTPS 导致 SSL record layer failure 的修复 + Playwright E2E 验证
+  steps:
+  - name: swd-url-builder-http-fix
+    status: active
+    test_file: ../../gitService/scripts/fix_oidc_ssl.sh
+    fields:
+    - name: git-service.runtime.oidc_protocol_fix
+      description: SWD.url_builder = URI::HTTP 的 GitLab Rails initializer 注入（fix_oidc_ssl.sh 幂等注入 + reconfigure）
+    - name: git-service.runtime.oidc_ssl_initializer_present
+      description: zzz_fix_oidc_http.rb 是否已存在于容器 /opt/gitlab/.../initializers/
+  - name: oidc-playwright-diagnostic
+    status: active
+    test_file: ../../gitService/playwright/tests/oidc-ssl-diagnostic.playwright.test.js
+    fields:
+    - name: git-service.runtime.oidc_protocol_fix
+      description: "Playwright 诊断: GET http://$ISSUER/.well-known/openid-configuration 验证 200 + JSON"
+    - name: task-auth.runtime.oidc_issuer
+      description: OIDC discovery 端点 issuer 字段与配置一致
+  - name: oidc-playwright-e2e-login
+    status: active
+    test_file: ../../gitService/playwright/tests/oidc-sso-login.playwright.test.js
+    fields:
+    - name: git-service.runtime.oidc_playwright_e2e_pass
+      description: "Playwright E2E: 完整 SSO 登录流程 (login -> 代码仓库 -> taskAuth SSO -> dashboard)"
+    - name: git-service.runtime.oidc_protocol_fix
+      description: "E2E 断言: 页面不含 record layer failure 或 Could not authenticate"
+  - name: oidc-ssl-fix-verify
+    status: active
+    test_file: ../../gitService/playwright/tests/oidc-ssl-fix-verify.playwright.test.js
+    fields:
+    - name: git-service.runtime.oidc_playwright_e2e_pass
+      description: "核心回归: 修复后 OIDC 回调不出现 SSL 错误，最终在 GitLab dashboard"
+
+- name: oidc-sso-404-fix
+  domain: 平台与本地开发
+  description: taskAuth SSO 登录 404 修复 — 统一 OIDC 网关入口 + 修正登录重定向 URL + SSL fix 持久化
+  steps:
+  - name: oidc-authorize-login-redirect-fix
+    status: active
+    test_file: ../../taskAuth/src/oidc_handlers.go
+    fields:
+    - name: task-auth.runtime.oidc_login_redirect_url
+      description: "OIDC authorize 未认证重定向从 /login/ 修正为 /auth/login/ 避免网关 404"
+    - name: task-gateway.routes.auth_login_page
+      description: "网关新增 /auth/login GET 路由，auth_mode: none，转发到前端登录页"
+  - name: oidc-issuer-unify-gateway
+    status: active
+    test_file: ../../gitService/playwright/tests/oidc-ssl-fix-verify.playwright.test.js
+    fields:
+    - name: task-auth.runtime.oidc_issuer
+      description: "OIDC issuer 从直连端口 :8003 统一为网关 :18081；消除端口碎片化"
+    - name: git-service.runtime.oidc_issuer_env
+      description: "GITLAB_OIDC_ISSUER 同步更新 (run.sh 从 gateway publicBase 推导)"
+  - name: oidc-ssl-fix-persistence
+    status: active
+    test_file: ../../gitService/scripts/fix_oidc_ssl.sh
+    fields:
+    - name: git-service.runtime.oidc_ssl_fix_persistent
+      description: "SSL fix (SWD.url_builder = URI::HTTP) 容器 entrypoint 自动注入，重建后自动恢复"
+  - name: playwright-e2e-404-regression
+    status: active
+    test_file: ../../gitService/playwright/tests/oidc-sso-e2e-full-flow.playwright.test.js
+    fields:
+    - name: git-service.runtime.oidc_playwright_e2e_pass
+      description: "Playwright E2E: 完整 SSO → Dashboard 流程 + 404 回归断言（任何中间页面不含 404）"
+    - name: task-auth.runtime.oidc_issuer
+      description: "E2E 断言: OIDC authorize/token/userinfo 均通过网关 18081 可达"
+  - name: gitlab-taskauth-sso-first-click
+    status: active
+    test_file: ../../task2app/playwrig../../taskFE/tests/TaskDetail.gitlab-taskauth-sso-first-click.playwright.test.js
+    fields:
+    - name: git-service.runtime.oidc_playwright_e2e_pass
+      description: "Playwright E2E: 主站已登录 → GitLab taskAuth SSO 第一次点击即成功（不回跳 :4000/ 首页）"
+    - name: task-auth.runtime.oidc_login_redirect_url
+      description: "OIDC 未认证重定向 next 为绝对 authorize URL；gateway /auth/login 已登录时续接 OIDC"
+
+  - name: gitlab-taskauth-sso-cross-subdomain
+    status: active
+    test_file: ../../task2app/Saas_project/tests/test_auth_login_oidc_resume.py
+    fields:
+    - name: taskFE.runtime.oidc_gateway_base_baked
+      description: "VITE_TASK_GATEWAY_PUBLIC_BASE 烘焙为 api.${baseDomain}，sanitize 接受生产 authorize next"
+    - name: taskFE.runtime.sso_cookie_domain
+      description: "userId Cookie Domain=.${baseDomain}，顶层导航到 api authorize 可携带"
+    - name: task-auth.runtime.oidc_login_prefers_www
+      description: "未认证 authorize 优先 302 到 www 登录入口（解析后的 PostLogoutOrigins）"
+    - name: saas-backend.runtime.confload_string_slice_templates
+      description: "resolveStructStrings 解析 []string（postLogoutRedirectOrigins）；实现位于 runAll/confload"
+    - name: taskFE.runtime.cross_subdomain_sso_e2e
+      description: "Playwright 公网 www+api+gitlab：共享 Cookie + SSO 首次成功"
+      test_file: ../../task2app/playwrig../../taskFE/tests/Gitlab.daydaymoney-cross-subdomain-sso.playwright.test.js
+
+- name: oidc-slo-logout-sync
+  domain: 用户与认证
+  description: OIDC 单点登出同步 — 主应用登出时联动 GitLab 登出（Cookie-Based SLO + 安全加固）
+  steps:
+  - name: taskauth-end-session-endpoint
+    status: active
+    test_file: ../../taskAuth/src/oidc_endsession_test.go
+    fields:
+    - name: task-auth.runtime.end_session_endpoint
+      description: OIDC Discovery 新增 end_session_endpoint；GET /api/oidc/endsession 端点（含 redirect_uri 白名单验证）
+    - name: task-auth.runtime.oidc_allowed_redirect_origins
+      description: EndSession post_logout_redirect_uri 白名单验证（scheme + host 匹配 GatewayPublicBase / GitServicePublicBase）
+    - name: task-auth.auth_customtoken.key
+      description: EndSession 清除 userId + _gitlab_session cookies（SameSite=Lax）并销毁 customtoken 记录
+  - name: main-app-server-side-logout
+    status: active
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.runtime.logout_session_destroyed
+      description: Django auth_logout() 服务端销毁 session + 删除 userId/sessionid cookies（SameSite=Lax）
+    - name: saas-backend.runtime.logout_exception_logged
+      description: forward_to_taskauth 异常时记录 logger.warning(exc_info=True)，非静默吞噬
+    - name: task-auth.auth_customtoken.key
+      description: 登出 API 转发至 taskAuth 销毁 token
+  - name: frontend-slo-redirect
+    status: active
+    test_file: ../../taskFE/app/src/components/Navbar.logic.vue
+    fields:
+    - name: taskFE.runtime.slo_redirect
+      description: Navbar.logic.vue 登出成功后执行 SLO 重定向至 taskAuth EndSession（post_logout_redirect_uri 参数）
+    - name: taskFE.runtime.slo_url_safe_construction
+      description: URL 构造使用 new URL() + searchParams.set() 替代字符串拼接
+    - name: taskFE.runtime.cookie_domain_clear
+      description: document.cookie 清除时包含 Domain 属性，与设置时一致
+  - name: playwright-slo-e2e
+    status: active
+    test_file: ../../gitService/playwright/tests/oidc-slo-logout-sync.playwright.test.js
+    fields:
+    - name: git-service.runtime.oidc_slo_playwright_e2e_pass
+      description: Playwright E2E 验证主应用登出后 GitLab 同步登出（cookie-based SLO + 3 个测试场景）
+    - name: task-auth.runtime.end_session_endpoint
+      description: E2E 验证 taskAuth end_session 清除 cookies 后重定向至登录页
+  - name: dead-code-cleanup
+    status: active
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-auth.domain.session_termination_deleted
+      description: 删除 SessionTermination 值对象 + CustomTokenRepository 接口（无生产代码引用）
+    - name: task-auth.domain.customtoken_repository_deleted
+      description: 删除 CustomTokenRepository 接口（无实现/引用）
+- name: per-service-log-config
+  domain: 统一日志与可观测性
+  description: 每服务独立日志路径配置（三级优先级：环境变量 > conf_app > file_root 默认值）
+  steps:
+  - name: go-sink-per-service-path
+    status: active
+    test_file: ../../runAll/src/config_test.go
+    fields:
+    - name: runall.runtime.log_file_sink_service_paths
+      description: FileServiceLogSink.servicePaths map 支持每服务自定义日志文件路径
+    - name: runall.runtime.conf_app_logging_read
+      description: Config.resolveConfApps 读取 conf/<app>/config.yaml 中 logging.log_file 字段
+    - name: runall.runtime.service_log_file_priority
+      description: 三级优先级：RUNALL_LOG_ROOT > conf_app logging.log_file > file_root/<name>.log
+  - name: service-config-logging-block
+    status: active
+    test_file: ../../runAll/src/config_test.go
+    fields:
+    - name: task-auth.runtime.logging_log_file
+      description: conf/auth/task-auth/config.yaml 新增 logging.log_file 字段
+    - name: saas-backend.runtime.logging_log_file
+      description: config 新增 logging.log_file 字段
+    - name: runall.runtime.logs_config_reference
+      description: conf/logs/config.yaml 更新为文档/参考，描述三级优先级与独立部署指引
+  - name: promtail-multi-path
+    status: planned
+    test_file: ../../AiMonitor/scripts/verify_trace_stack.py
+    fields:
+    - name: ai-monitor.runtime.promtail_recursive_glob
+      description: Promtail scrape_configs 改为 **/*.log 递归 glob 支持多目录日志采集
+    - name: ai-monitor.runtime.promtail_service_template
+      description: conf/logs/promtail-service-template.yaml 独立部署模板
+  - name: all-services-log-config
+    status: planned
+    test_file: ../../runAll/src/config_test.go
+    fields:
+    - name: runall.runtime.all_services_logging_configured
+      description: 所有带 conf_app 的服务均已添加 logging.log_file（35+ 服务）
+    - name: runall.runtime.no_conf_app_fallback
+      description: 无 conf_app 的服务自动使用 file_root + <name>.log fallback
+- name: gitoauth-gateway-allowed-host
+  domain: 平台与本地开发
+  description: gitOauth ALLOWED_HOSTS 动态包含网关公网地址，修复经网关代理的 OAuth 请求 DisallowedHost 400
+  steps:
+  - name: gateway-public-host-allowed
+    status: planned
+    test_file: ../../gitOauth/config/test_integration_allowed_hosts.py
+    fields:
+    - name: task-gateway.runtime.public_base_hostname
+      description: conf/gateway/task-gateway/config.yaml publicBase 解析出的 hostname
+    - name: task-git-oauth.runtime.allowed_hosts
+      description: Django ALLOWED_HOSTS 白名单包含网关公网地址
+- name: gitoauth-provider-config-loading
+  domain: 平台与本地开发
+  description: gitOauth 启动时从 conf/auth/git-oauth/providers/ 加载 OAuth 提供者配置（client_id/secret/redirect_uri），保证 OAuth start 不因配置空返回 503
+  steps:
+  - name: provider-config-path-fix-thin-slice
+    status: planned
+    test_file: ../../gitOauth/config/test_port_config.py
+    fields:
+    - name: task-git-oauth.runtime.provider_configs_loaded
+      description: load_merged() 从 conf/auth/git-oauth/providers/*.yaml 加载的提供者数量
+  - name: provider-config-path-fallback
+    status: planned
+    test_file: ../../gitOauth/config/test_port_config.py
+    fields:
+    - name: task-git-oauth.runtime.provider_config_path
+      description: 提供者配置目录路径（主路径 + 回退路径）
+- name: oauth-session-cookie-collision-fix
+  domain: 项目与工作空间
+  description: OAuth 授权回调后认证保持 — gitOauth session cookie 与主站 sessionid 命名隔离
+  steps:
+  - name: session-cookie-name-isolation
+    status: planned
+    test_file: ../../taskGitOauth/src/browser_oauth_state_test.go
+    fields:
+    - name: task-git-oauth.runtime.session_cookie_name
+      description: gitOauth SESSION_COOKIE_NAME 改为 gitoauth_sessionid，避免覆盖主站 sessionid
+    - name: task-auth.auth_user.id
+      description: OAuth 流程中关联的用户主体
+- name: gitoauth-http-client-proxy-bypass
+  domain: 云平台与资源
+  description: gitOauth 出站 HTTP 调用绕过宿主机代理，防止 SOCKS 代理劫持导致 OAuth token 交换失败
+  steps:
+  - name: gitoauth-http-client-trust-env-false
+    status: planned
+    test_file: ../../gitOauth/api/test_http_client.py
+    fields:
+    - name: task-git-oauth.runtime.http_session_trust_env
+      description: HTTP session 的 trust_env 必须为 False，防止读取 ALL_PROXY/HTTP_PROXY 环境变量
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: proxy bypass 后 bind_status 可正常从 pending 转为 active
+- name: billing-account-event-driven-init
+  domain: 任务协作
+  description: BillingAccount 事件驱动初始化 — COMPANY_CREATED 消费者主动创建账户，Todo 创建时只读查询余额
+  steps:
+  - name: seed-data-and-fallback
+    status: active
+    test_file: ../../taskBill/migrations/002_seed_default_pricing.sql
+    fields:
+    - name: task-bill.billing_pricing_package.id
+      description: 默认定价套餐种子行（package_number=0，永久有效）
+    - name: task-bill.billing_unit.id
+      description: 默认计费单元种子行（post_creation + server_start）
+    - name: task-bill.billing_account.id
+      description: 空表回退修复后新租户可创建账户（pricing_package_id=0 降级）
+  - name: event-consumer-init
+    status: active
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-bill.health.status
+      description: COMPANY_CREATED intent 4 — BillingAccount 初始化消费者；port 18039（由 task-bill 管理）
+    - name: task-bill.billing_account.tenant_id
+      description: 事件驱动创建后 billing_account 行（tenant_id==company_id）
+    - name: task-bill.billing_account.balance
+      description: 新账户初始余额（0 积分）
+    - name: task-bill.billing_account.locked_post_creation_points
+      description: 任务帖创建扣费点数（来自定价套餐或默认值 3）
+  - name: read-only-python-bridge
+    status: active
+    test_file: projects/view_test/TodoViewSet_test.py
+    fields:
+    - name: task-task-service.tasks.id
+      description: Todo 创建回归 — get_billing_account 只读查询替代 get_or_create
+    - name: task-task-service.tasks.workspace_id
+      description: workspace.company_id 作为 tenant_id 查询账户
+    - name: task-bill.billing_account.id
+      description: GET /api/internal/taskbill/accounts/{tenant_id} 只读端点返回
+    - name: task-bill.runtime.get_account_error_detail
+      description: 错误响应含 status/tenant_id/error 三段诊断信息
+- name: company-switcher-join-event
+  domain: 组织与成员
+  description: 公司切换器、加入后跳转优化、MEMBER_JOINED 域事件
+  steps:
+  - name: frontend-company-switcher
+    status: active
+    test_file: ../../taskFE/app/src/tests/domain/auth/auth_domain_model.test.js
+    fields:
+    - name: saas-backend.auth_companymember.user_id
+      description: Navbar 从 user/me API companies 字段读取用户所属公司列表
+    - name: saas-backend.auth_companymember.company_id
+      description: 切换公司时 window.location 跳转至 /tenant/{company_id}
+  - name: post-join-redirect
+    status: active
+    test_file: tests/test_invitation_email_handler.py
+    fields:
+    - name: saas-backend.auth_invitation.invitation_token
+      description: PeopleJoin.vue joinTeam 成功后跳转 /tenant/{id}/work-panel/
+    - name: saas-backend.auth_companymember.workspace_id
+      description: 跳转后 WorkspaceSwitcher 加载新公司工作空间列表
+  - name: member-joined-event
+    status: active
+    test_file: accounts/view_test/CompanyMemberViewSet_test.py
+    fields:
+    - name: saas-backend.auth_companymember.id
+      description: join API 成功后 send_event MEMBER_JOINED 携带 member_id
+    - name: saas-backend.auth_companymember.company_id
+      description: 事件携带 company_id 供下游系统路由
+    - name: saas-backend.projects_workspaceaccess.id
+      description: 事件携带 workspace_id 标识关联工作空间
+- name: cross-company-data-isolation
+  domain: 组织与成员
+  description: 多公司数据隔离 — tenant_id 强制作用域修复
+  steps:
+  - name: resolve-company-member-for-tenant
+    status: active
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.auth_companymember.company_id
+      description: resolve_company_member_for_tenant 强制 company_id=tenant_id 过滤，替换无作用域 .first()
+    - name: saas-backend.auth_companymember.user_id
+      description: 用户 ID 与 tenant_id 联合查询约束
+  - name: workspace-access-views-tenant-scope
+    status: active
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.projects_workspaceaccess.workspace_id
+      description: workspace-collaborators/permissions 经 tenant 作用域 company_member 校验
+    - name: saas-backend.projects_workspace.company_id
+      description: workspace.company 与 tenant 作用域公司一致性检查
+  - name: group-views-tenant-scope
+    status: active
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: saas-backend.auth_companygroup.company_id
+      description: 分组 queryset/create 经 tenant 作用域 company_member 过滤
+  - name: member-views-invite-tenant-scope
+    status: active
+    test_file: accounts/view_test/CompanyMemberViewSet_test.py
+    fields:
+    - name: saas-backend.auth_companymember.company_id
+      description: invite/pending_invitations/resend 经 tenant 作用域 company_member 过滤
+    - name: saas-backend.auth_invitation.company_id
+      description: 邀请公司归属与 tenant_id 一致性检查
+  - name: frontend-cross-tenant-query-cleanup
+    status: active
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: taskFE.runtime.company_switch_query_cleanup
+      description: Navbar switchCompany 切换公司时清除 workspace_id 等跨租户查询参数
+    - name: taskFE.runtime.workspace_id_resolution
+      description: WorkPanel initData API 返回值优先，不盲信 URL workspace_id；JSON 路径为组件内 ref currentWorkspace
+- name: recharge-sms-verification-status-fix
+  domain: 系统管理与策略
+  description: 充值 SMS 验证状态持久化 — Identity 缓存刷新 + 视图防御性兜底，消除验证成功但状态查询返回 false 的竞态
+  steps:
+  - name: identity-cache-invalidation-on-phone-upsert
+    status: active
+    test_file: tests/test_billing_recharge_validation.py
+    fields:
+    - name: task-auth.auth_login_method.identifier
+      description: upsert_phone_login_method 成功后清除 Django Identity 缓存 taskauth:identity:user:{uid}
+  - name: recharge-phone-status-defensive-sms-check
+    status: active
+    test_file: tests/test_billing_recharge_validation.py
+    fields:
+    - name: task-auth.auth_login_method.identifier
+      description: RechargePhoneStatusView 无论 has_phone 都调用 is_recharge_sms_verified_for_user 检查 billing_recharge_sms_ok 缓存
+
+- name: paypal-recharge-webhook-fix
+  domain: 系统管理与策略
+  description: PayPal 充值 Webhook URL 修复 + client capture 回退 + 日志/事件补充
+  steps:
+  - name: webhook-url-fix
+    status: active
+    test_file: tests/test_billing_recharge_validation.py
+    fields:
+    - name: saas-backend.paypal.webhook_id_sandbox
+      description: PayPal Sandbox Webhook ID 8J8371221D9377308，URL 在 PayPal 后台改为有效公网地址
+  - name: client-capture-fallback
+    status: planned
+    test_file: tests/test_paypal_client_side_capture_fallback.py
+    fields:
+    - name: task-bill.billing_transaction.transaction_id
+      description: capture 回退成功后写入 paypal:{order_id} 入账记录
+    - name: task-bill.billing_outbox_message.status
+      description: BILLING_TRANSACTION_CREATED outbox 事件
+  - name: domain-events-and-logging
+    status: planned
+    test_file: tests/test_billing_recharge_validation.py
+    fields:
+    - name: saas-backend.kafka_topics.paypal_order_created
+      description: PayPal 订单创建事件 (新增)
+    - name: saas-backend.kafka_topics.paypal_order_approved
+      description: PayPal 审批完成事件 (新增)
+    - name: saas-backend.kafka_topics.paypal_capture_completed
+      description: PayPal capture 完成事件 (新增)
+    - name: task-events-billing-transaction-created-1-process-billing-transaction.health.status
+      description: BILLING_TRANSACTION_CREATED 消费正常
+  - name: outbox-retry-and-ui
+    status: planned
+    test_file: tests/test_billing_recharge_validation.py
+    fields:
+    - name: task-bill.billing_outbox_message.status
+      description: outbox 重试机制将 pending→sent
+- name: deploy-mode-addressing
+  domain: 平台与本地开发
+  description: conf/base.yaml 域名+协议寻址 SSOT；scheme 默认 https，可用 PUBLIC_SCHEME 覆盖；BASE_DOMAIN 覆盖根域名
+  steps:
+  - name: python-config-resolution-core
+    status: active
+    test_file: ../../runAll/scripts/tests/test_base_yaml_loader.py
+    fields:
+    - name: saas-backend.runtime.base_yaml_resolution
+      description: load_base_yaml() 解析 scheme/baseDomain/subdomains + resolve_template_vars()
+    - name: saas-backend.runtime.base_domain_default
+      description: 默认 scheme=https、BASE_DOMAIN=daydaymoney.com；可通过环境变量覆盖
+  - name: gateway-routes-base-yaml
+    status: active
+    test_file: tests/test_taskgateway_routes_codegen.py
+    fields:
+    - name: task-gateway.routes.upstream_host_resolution
+      description: routes-to-apisix.py 上游节点用 loopback 或 docker.upstreamHost（推荐 host.docker.internal，禁止写死 bridge IP）；公网域名仅用于 CORS/Host；run.sh 以 codegen --check 判定是否重生 apisix.yaml
+    - name: task-gateway.runtime.public_base_template
+      description: publicBase 字段使用 ${subdomains.gateway} 模板变量
+  - name: service-config-l1-migration
+    status: active
+    test_file: tests/test_domain_events_port_config.py
+    fields:
+    - name: task-auth.runtime.oidc_issuer_template
+      description: oidc.issuer 使用 ${subdomains.gateway}（${scheme}://api.${baseDomain}）
+    - name: taskFE.config.api_base_url
+      description: apiBaseUrl / publicEntryOrigins 使用 ${scheme}://${subdomains.*} / ${baseDomain} 模板
+    - name: taskFE.config.public_base_url
+      description: publicBaseUrl 使用 ${scheme}://${subdomains.www} 模板
+    - name: git-service.runtime.public_url_template
+      description: publicUrl/allowedHost 使用 ${scheme}://${subdomains.gitlab} 模板
+  - name: django-conf-loader-domain-only
+    status: active
+    test_file: tests/test_taskgateway_routes_codegen.py
+    fields:
+    - name: saas-backend.runtime.conf_loader_domain_resolution
+      description: _load_domain_map() 解析 scheme/baseDomain/subdomains，忽略遗留 mode/local
+
+- name: sso-bridge-connectivity-fix
+  domain: 平台与本地开发
+  description: "SSO 桥接 Connection Refused 修复 — ai-provider 绑定 0.0.0.0:8010 + 配置路径修正 + E2E 验证"
+  steps:
+  - name: ai-provider-port-bind-fix
+    status: active
+    test_file: ../playwright/saas_ai_provider/tests/port8010-sso-connection-refused-fix.playwright.test.js
+    fields:
+    - name: ai-provider.config.host
+      description: "conf/ai/ai-provider/config.yaml host 改为 0.0.0.0（原 127.0.0.1 仅本地回环）"
+    - name: ai-provider.config.allowed_extend_hosts
+      description: "新增 allowedExtendHosts wildcard 防止外部 IP 访问 DisallowedHost 400"
+    - name: ai-provider.runtime.bind_addr
+      description: "port_config_loader.py 配置路径从 conf/ai-provider/ 修正为 conf/ai/ai-provider/"
+  - name: sso-bridge-e2e-verify
+    status: active
+    test_file: ../playwright/saas_ai_provider/tests/port8010-sso-connection-refused-fix.playwright.test.js
+    fields:
+    - name: saas-backend.accounts.sso_bridge_token
+      description: "主站签发 staff_bridge JWT → 302 redirect → ai-provider SPA 换票"
+    - name: ai-provider.runtime.sso_exchange_api
+      description: "POST /api/auth/sso/exchange/ 换票接口（拒绝无效/过期 bridge token）"
+    - name: taskFE.runtime.sso_bridge_hash
+      description: "AdminPortal.vue tryExchangeSsoFromHash() 处理 sso_bridge hash 换票"
+- name: ai-provider-oidc-login
+  domain: 用户与认证
+  description: AI Provider 厂商/管理员 OIDC RP 登录（Authorization Code + PKCE），对接 taskAuth OIDC Provider
+  steps:
+  - name: oidc-rp-backend
+    status: planned
+    test_file: apps/marketplace/tests/test_oidc_rp.py
+    fields:
+    - name: ai-provider.marketplace_vendor.saas_user_id
+      description: OIDC 首次登录绑定 saas_user_id（email 匹配 Vendor 后回写）
+    - name: ai-provider.marketplace_vendor.email
+      description: OIDC id_token email claim 匹配 Vendor.email（大小写不敏感）
+    - name: ai-provider.marketplace_vendor.is_active
+      description: OIDC 登录检查 Vendor 是否被禁用
+    - name: ai-provider.marketplace_platformstaff.saas_superadmin_id
+      description: OIDC sub claim 匹配 PlatformStaff（仅限 superuser）
+    - name: ai-provider.marketplace_platformstaff.is_active
+      description: OIDC 登录检查 PlatformStaff 是否被禁用
+    - name: task-auth.oidc.bootstrap_clients
+      description: taskAuth 注册 ai-provider OIDC client (clientId/clientSecret/redirectUri)
+    - name: task-auth.auth_login_method.identifier
+      description: taskAuth OIDC 认证后 id_token 中 email 来自登录方式 identifier
+    - name: ai-provider.runtime.oidc_rp_issuer
+      description: OIDC_RP_ISSUER 对齐 conf/base.yaml subdomains.gateway（https://api.<baseDomain>），authorize 路径 /api/oidc/authorize
+  - name: oidc-frontend-entry
+    status: planned
+    test_file: ../playwright/saas_ai_provider/tests/port8010-oidc-login.playwright.test.js
+    fields:
+    - name: taskFE.runtime.oidc_login_button
+      description: VendorPortal.vue / AdminPortal.vue OIDC 登录按钮 → authorize 重定向
+    - name: taskFE.runtime.oidc_callback_fragment
+      description: 前端处理 OIDC callback #token= 写入 localStorage
+  - name: oidc-taskauth-client-config
+    status: planned
+    test_file: apps/marketplace/tests/test_oidc_rp.py
+    fields:
+    - name: task-auth.config.oidc_bootstrap_clients
+      description: conf/auth/task-auth/config.yaml 新增 ai-provider bootstrap client 条目（taskAuth Go 代码适配后生效）
+- name: git-service-mkdir-permission-fix
+  domain: 基础设施
+  description: 修复 git-service 启动时 bootstrap 标记目录 mkdir 权限拒绝
+  steps:
+  - name: bootstrap-marks-writable-path
+    status: active
+    test_file: ../../gitService/run.sh
+    fields:
+    - name: git-service.runtime.bootstrap_marks_dir
+      description: bootstrap 标记目录由 gitlab_home/（root 所有）迁移至 .bootstrap_marks/（用户可写）
+- name: system-admin-dashboard-real-data
+  domain: 系统管理与策略
+  description: 系统管理仪表盘展示真实统计数据（用户数/云授权数/交付物系统数），替换硬编码 mock 数据
+  steps:
+  - name: dashboard-thin-slice
+    status: active
+    test_file: cloudSystemAdmin/tests/test_system_admin_dashboard.py
+    fields:
+    - name: task-auth.auth_user.id
+      description: 用户总数统计源（auth.db COUNT）
+    - name: task-cloud-service.cloud_cloudplatformauthorization.id
+      description: 云平台授权计数源
+    - name: saas-backend.projects_deliverablesystem.id
+      description: 交付物系统计数源
+  - name: dashboard-stats-aggregation
+    status: active
+    test_file: cloudSystemAdmin/tests/test_system_admin_dashboard.py
+    fields:
+    - name: saas-backend.core_system_feature_policy.updated_at
+      description: 策略更新时间（dashboard system_info.last_deploy_time 来源）
+- name: system-admin-user-management
+  domain: 系统管理与策略
+  description: 系统管理员查看/创建/编辑/禁用用户，用户列表采用真实 taskAuth 数据分页展示
+  steps:
+  - name: user-list-thin-slice
+    status: active
+    test_file: cloudSystemAdmin/tests/test_system_admin_users.py
+    fields:
+    - name: task-auth.auth_user.id
+      description: 用户唯一标识（Snowflake ID）
+    - name: task-auth.auth_user.is_active
+      description: 用户激活状态
+    - name: task-auth.auth_user.is_superuser
+      description: 超级管理员标记
+    - name: task-auth.auth_user.is_staff
+      description: 员工标记
+    - name: task-auth.auth_user.date_joined
+      description: 用户注册时间
+    - name: task-auth.auth_login_method.method_type
+      description: 登录方式类型（email/phone/username）
+    - name: task-auth.auth_login_method.identifier
+      description: 登录标识（邮箱地址/手机号），前端脱敏展示
+    - name: saas-backend.auth_companymember.user_id
+      description: 用户-公司归属关系（聚合到用户列表）
+  - name: user-crud-operations
+    status: active
+    test_file: cloudSystemAdmin/tests/test_system_admin_users.py
+    fields:
+    - name: task-auth.auth_user.is_active
+      description: CRUD 更新目标字段（软禁用）
+    - name: task-auth.auth_user.is_superuser
+      description: CRUD 更新目标字段（角色变更）
+    - name: task-auth.auth_user.is_staff
+      description: CRUD 更新目标字段
+    - name: task-auth.auth_login_method.identifier
+      description: 创建用户时写入的登录标识
+    - name: task-auth.auth_login_method.password_hash
+      description: 创建用户时写入的密码哈希
+  - name: user-self-lockout-guard
+    status: active
+    test_file: cloudSystemAdmin/tests/test_system_admin_users.py
+    fields:
+    - name: task-auth.auth_user.is_superuser
+      description: 自锁保护校验字段（禁止自我降级）
+    - name: task-auth.auth_user.is_active
+      description: 自锁保护校验字段（禁止自我禁用）
+  - name: user-management-regression-suite
+    status: active
+    test_file: cloudSystemAdmin/tests/test_system_admin_users.py
+    fields:
+    - name: task-auth.auth_user.id
+      description: 全链路回归（创建→列表→编辑→禁用）
+    - name: saas-backend.auth_companymember.id
+      description: post-register 链路创建的公司成员记录
+- name: feature-params-hierarchy
+  domain: 项目与工作空间
+  description: 功能参数多层级配置（公司→工作空间→个人），任务可选择配置来源，运行时审计快照
+  steps:
+  - name: fix-company-admin-guard
+    status: planned
+    test_file: tests/test_manage_feature_params.py
+    fields:
+    - name: saas-backend.projects_tenant_feature_params.providers
+      description: 现有 POST 增加 is_admin 强制校验
+    - name: saas-backend.auth_companymember.is_admin
+      description: 权限校验字段
+  - name: workspace-personal-config-governance
+    status: planned
+    test_file: tests/test_workspace_personal_config_governance.py
+    fields:
+    - name: saas-backend.projects_workspace.allow_personal_feature_params
+      description: 工作空间级治理开关，默认 false
+    - name: task-task-service.tasks.feature_params_source
+      description: resolver 治理检查的输入
+  - name: workspace-feature-params-model
+    status: planned
+    test_file: tests/test_workspace_feature_params.py
+    fields:
+    - name: saas-backend.projects_workspace_feature_params.use_company_default
+      description: 为 True 时完全继承公司配置
+    - name: saas-backend.projects_workspace_feature_params.providers
+      description: 工作空间级 LLM 供应商覆盖
+    - name: saas-backend.projects_workspace_feature_params.agent_model
+      description: 工作空间级 agent 模型覆盖
+    - name: saas-backend.projects_workspace_feature_params.agent_max_steps
+      description: 工作空间级最大迭代步数覆盖
+  - name: personal-feature-params-model
+    status: planned
+    test_file: tests/test_personal_feature_params_config.py
+    fields:
+    - name: saas-backend.projects_personal_feature_params_config.name
+      description: 用户命名配置名，同一用户同一公司下唯一
+    - name: saas-backend.projects_personal_feature_params_config.user_id
+      description: 配置所有者（taskAuth user_id），API 强制=request.user.id
+    - name: saas-backend.projects_personal_feature_params_config.company_id
+      description: 限定用户所属公司
+    - name: saas-backend.projects_personal_feature_params_config.providers
+      description: 个人完整配置（非增量覆盖）
+  - name: feature-params-resolution
+    status: planned
+    test_file: tests/test_feature_params_resolver.py
+    fields:
+    - name: task-task-service.tasks.feature_params_source
+      description: resolver 输入：company / workspace / personal
+    - name: task-task-service.tasks.personal_feature_params_config_id
+      description: source=personal 时指向个人配置
+    - name: saas-backend.projects_workspace_feature_params.id
+      description: resolver 读取工作空间覆盖配置
+    - name: saas-backend.projects_tenant_feature_params.providers
+      description: resolver 回退源
+  - name: feature-params-snapshot-audit
+    status: planned
+    test_file: tests/test_task_feature_params_snapshot.py
+    fields:
+    - name: saas-backend.projects_task_feature_params_snapshot.task_id
+      description: 审计快照关联的任务
+    - name: saas-backend.projects_task_feature_params_snapshot.source
+      description: 配置来源 company / workspace / personal
+    - name: saas-backend.projects_task_feature_params_snapshot.source_display_name
+      description: 人读配置名，如 "个人:低成本日常任务"
+    - name: saas-backend.projects_task_feature_params_snapshot.resolved_env
+      description: 容器实际收到的完整 env map（含 API key，查询脱敏）
+    - name: saas-backend.projects_task_feature_params_snapshot.providers_summary
+      description: 脱敏摘要 [{provider, base_url, api_key_hash}]
+  - name: task-feature-params-binding
+    status: planned
+    test_file: tests/test_task_feature_params_binding.py
+    fields:
+    - name: task-task-service.tasks.feature_params_source
+      description: 任务创建/编辑时指定配置来源
+    - name: task-task-service.tasks.personal_feature_params_config_id
+      description: personal source 时须校验：workspace 允许 + 属于用户 + 同公司
+- name: env-vars-settings-redesign
+  domain: 项目与工作空间
+  description: 环境变量设置页面重设计 — env 为主体、LLM 折叠、编辑器增强、预览修复
+  steps:
+  - name: env-var-table-editor
+    status: planned
+    test_file: tests/test_env_var_validation.py
+    fields:
+    - name: taskFE.runtime.env_var_table_editor
+      description: 三列编辑器 (key+value+description)，含校验、.env 导入导出、保留字警告、敏感值遮蔽
+    - name: saas-backend.projects_tenant_feature_params.extra_env_vars
+      description: schema 扩展 description 字段，key 校验 ^[A-Z_][A-Z0-9_]*$，禁止 TASK_*/ACCESS_TOKEN/BUSINESS_API_* 前缀
+  - name: collapsible-llm-config-panel
+    status: planned
+    test_file: ../../taskFE/tests/env-vars-editor.spec.ts
+    fields:
+    - name: taskFE.runtime.collapsible_llm_config_panel
+      description: 折叠面板包裹 LLM 供应商列表+模型选择+预算，默认折叠
+    - name: taskFE.runtime.merged_env_preview
+      description: 系统 TASK_* 变量 + 用户自定义变量合并预览，分隔线标识来源
+  - name: page-layout-redesign
+    status: planned
+    test_file: ../../taskFE/tests/env-vars-editor.spec.ts
+    fields:
+    - name: taskFE.runtime.tenant_env_vars_settings_page
+      description: 租户级页面 — 标题"环境变量设置"，env 主体 + LLM 折叠
+    - name: taskFE.runtime.workspace_env_vars_settings_page
+      description: 工作空间级页面 — 同布局，增加继承可视化
+    - name: taskFE.runtime.personal_env_vars_configs_page
+      description: 个人级页面 — 编辑弹窗内同布局
+  - name: backend-env-preview-fix
+    status: planned
+    test_file: tests/test_manage_feature_params.py
+    fields:
+    - name: saas-backend.projects_tenant_feature_params.extra_env_vars
+      description: env_preview 响应补全 extra_env_vars（修复当前仅含 TASK_* 的 bug）
+    - name: saas-backend.projects_workspace_feature_params.extra_env_vars
+      description: 工作空间级 env_preview 同样补全
+    - name: saas-backend.projects_personal_feature_params_config.extra_env_vars
+      description: 个人级 env_preview 同样补全
+- name: feature-params-source-selector
+  domain: 任务协作
+  description: 任务详情「镜像」区域功能参数来源选择器（公司/工作空间/个人；relayToTrae 时展示），个人配置可预览；启动写入 Todo 字段
+  steps:
+  - name: backend-env-preview-endpoint
+    status: active
+    test_file: cloud/view_test/test_feature_params_env_preview.py
+    fields:
+    - name: task-task-service.tasks.feature_params_source
+      description: 启动时写入（company/workspace/personal）
+    - name: task-task-service.tasks.personal_feature_params_config_id
+      description: source=personal 时写入配置ID，须校验归属（IDOR防护）
+    - name: saas-backend.projects_personal_feature_params_config.user_id
+      description: 预览端点归属校验 — config.user_id == request.user.id
+  - name: frontend-source-selector-ui
+    status: active
+    test_file: ../playwrig../../taskFE/tests/TaskDetail.feature-params-source-switching.playwright.test.js
+    fields:
+    - name: taskFE.runtime.feature_params_source_selector
+      description: 三选一下拉（公司默认/工作空间默认/个人配置）+ 个人配置二级选择 + 预览按钮
+    - name: taskFE.runtime.personal_config_env_preview_panel
+      description: 折叠式预览面板，展示解析后的 LLM 模型、providers、extra_env_vars
+- name: task-detail-machine-owner-hint
+  domain: 任务协作
+  description: 任务详情镜像区在容器运行时展示机器节点所属任务（同实例 CSC 绑定）
+  steps:
+  - name: runtime-status-machine-owner-fields
+    status: active
+    test_file: ../../taskCloudService/src/machine_owner_hint_test.go
+    fields:
+    - name: task-cloud-service.cloud_server_configs.task_id
+      description: 同 instance_id 绑定任务（machine_owner_task_ids）
+    - name: task-cloud-service.cloud_server_configs.server_url
+      description: 驱动 container_running 标志
+  - name: image-card-machine-owner-hint
+    status: active
+    test_file: ../../taskFE/app/src/components/ServerConfigMachineOwnerHint.test.js
+    fields:
+    - name: taskFE.runtime.machine_owner_hint
+      description: 镜像卡展示所属任务 ID；本任务标注；他任务可跳转 task-detail
+- name: relay-precheck-token-ssot
+  domain: 任务协作
+  description: relayToTrae 全链路 token 由 Go taskCredentialService 统一签发，消除 Django→Go SQLite 双写 hack
+  steps:
+  - name: token-init-calls-go
+    status: active
+    test_file: tests/test_relay_to_trae_proxy.py
+    fields:
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: Go IssueToken 签发，Django 不再写入（relayToTrae 路径）
+    - name: task-credential-service.credential_container_tokens.container_access_token_expires_at
+    - name: task-credential-service.credential_container_tokens.container_refresh_token
+  - name: precheck-two-phase-go
+    status: active
+    test_file: tests/test_relay_to_trae_proxy.py
+    fields:
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: precheck 先调 /v1/token/init/tenant/{tid}/workspace/{wid}/task/{tk} 再调 repo-clone-credentials，同一 token 复用
+  - name: start-calls-go-token-init
+    status: active
+    test_file: tests/test_relay_to_trae_proxy.py
+    fields:
+    - name: task-credential-service.credential_container_tokens.container_access_token
+      description: start 调 /v1/token/init/tenant/{tid}/workspace/{wid}/task/{tk} 替代 Django 自生成，注入 runtime_env 发给 go_relayToTrae
+  - name: remove-dual-write-hack
+    status: active
+    test_file: tests/test_relay_to_trae_proxy.py
+    fields:
+    - name: task-cloud-service.cloud_cloudserverconfig.container_access_token
+      description: relayToTrae 路径停止写入；_sync_token_to_credential_service / _sync_credential_service_token / _issue_relay_access_token 删除
+- name: vendor-cloud-test-credentials
+  domain: 镜像市场
+  description: 厂商门户自管云平台测试 AccessKey — taskCloudService SSOT + ai-provider 反代与 CloudSDK lookup
+  steps:
+  - name: vendor-configure-cloud-credential
+    status: active
+    test_file: ../playwright/saas_ai_provider/tests/port8010-vendor-cloud-credentials.playwright.test.js
+    fields:
+    - name: task-cloud-service.vendor_cloud_platform_credentials.vendor_id
+      description: Vendor JWT sub → 凭证行 vendor_id 隔离
+    - name: task-cloud-service.vendor_cloud_platform_credentials.secret_id
+      description: AccessKey ID（列表/响应脱敏）
+    - name: task-cloud-service.vendor_cloud_platform_credentials.secret_key
+      description: 加密存储；API 响应 mask，verify 时用明文
+    - name: task-cloud-service.vendor_cloud_platform_credentials.last_verified_at
+      description: POST verify-credentials 成功后写入
+    - name: task-cloud-service.vendor_cloud_platform_credentials.platform_type
+      description: Phase 1 唯一约束 aliyun 每厂商一条
+  - name: vendor-configure-cloud-credential-unit
+    status: active
+    test_file: ../../taskCloudService/src/vendor_credential_handlers_test.go
+    fields:
+    - name: task-cloud-service.vendor_cloud_platform_credentials.is_active
+      description: PATCH 启用/禁用；lookup 仅返回 active 凭证
+  - name: vendor-register-cloud-server-image
+    status: planned
+    test_file: ../../taskAiProvider/src/vendor_credential_handlers_test.go
+    fields:
+    - name: ai-provider.runtime.vendor_cloud_credential_lookup
+      description: internal GET /api/internal/vendor-cloud-credentials/lookup → resolve_vendor_cloud_credentials
+    - name: ai-provider.runtime.cloud_server_image_regions
+      description: regions/images/instance-types 使用厂商 AK 而非 env ALIYUN_ACCESS_KEY
+- name: vendor-docs-cos-presign
+  domain: 镜像市场
+  description: 厂商申请证照经腾讯云 COS 预签名直传；运营 GetObject 审阅；路径规则写回 conf
+  steps:
+  - name: applicant-presign-and-put
+    status: planned
+    test_file: ../../taskAiProvider/infrastructure/vendor_docs_test.go
+    fields:
+    - name: ai-provider.ai_provider_vendor.id_card_file_key
+      description: COS object key（或存量本地相对路径）
+    - name: ai-provider.ai_provider_vendor.business_license_file_key
+      description: COS object key（或存量本地相对路径）
+  - name: staff-get-and-path-rule
+    status: planned
+    test_file: ../../taskAiProvider/src/vendor_docs_cos_handler_test.go
+    fields:
+    - name: ai-provider.runtime.vendor_docs_path_rule
+      description: conf/ai/ai-provider/vendor-docs-path.yaml 的 pathRule
+- name: provider-image-demo-github-link
+  domain: 镜像市场
+  description: 厂商门户顶栏「镜像Demo」外链到 GitHub trae-agent 参考仓库
+  steps:
+  - name: nav-image-demo-href
+    status: active
+    test_file: ../../taskAiProvider/frontend/tests/imageDemoLink.unit.test.js
+    fields:
+    - name: ai-provider.runtime.image_demo_href
+      description: 顶栏真实 a[href] 指向 https://github.com/task2money/trae-agent
+- name: vendor-apply-on-provider-portal
+  domain: 镜像市场
+  description: 厂商认证申请入口迁到 provider 门户，租户镜像市场去掉申请 UI
+  steps:
+  - name: provider-apply-cta
+    status: active
+    test_file: ../../taskAiProvider/frontend/tests/vendorApplyCta.unit.test.js
+    fields:
+    - name: ai-provider.runtime.vendor_apply_cta
+      description: none→申请认证 / pending→审核中 / rejected→重新申请
+  - name: image-market-no-apply
+    status: active
+    test_file: ../../taskFE/app/src/views/ImageMarket.vendorStatus.test.js
+    fields:
+    - name: task-fe.runtime.image_market_vendor_apply_removed
+      description: 镜像市场不再渲染申请成为厂商门户按钮与表单
+- name: auto-run-steps-doc
+  domain: 镜像市场
+  description: 厂商保存镜像时从 OCI 抽取 /app/autoRunStep.md，catalog GET 回填空缓存
+  steps:
+  - name: vendor-save-extract
+    status: active
+    test_file: ../../taskAiProvider/src/vendor_container_auto_run_test.go
+    fields:
+    - name: ai-provider.ai_provider_vendorcontainerimage.auto_run_steps_md
+      description: 从镜像内 /app/autoRunStep.md 抽取的 Markdown 缓存
+    - name: ai-provider.ai_provider_vendorcontainerimage.auto_run_steps_extract_status
+      description: ok / not_found / pending / failed / auth_failed
+  - name: catalog-backfill-extract
+    status: active
+    test_file: ../../taskAiProvider/src/vendor_container_auto_run_test.go
+    fields:
+    - name: ai-provider.ai_provider_vendorcontainerimage.auto_run_steps_extract_status
+      description: catalog GET 对空或 pending 触发抽取回填
+  - name: oci-layer-extract
+    status: active
+    test_file: ../../taskAiProvider/infrastructure/extract_auto_run_steps_test.go
+    fields:
+    - name: ai-provider.ai_provider_vendorcontainerimage.auto_run_steps_md
+      description: OCI layer tar 中定位 /app/autoRunStep.md
+- name: vendor-container-image-lifecycle
+  domain: 镜像市场
+  description: 厂商在版本行下架已上架镜像或删除非激活版本
+  steps:
+  - name: domain-withdraw-delete-guards
+    status: active
+    test_file: ../../taskAiProvider/domain/entities_test.go
+    fields:
+    - name: ai-provider.ai_provider_vendorcontainerimage.status
+      description: withdraw 将 approved/pending_review 变为 draft
+    - name: ai-provider.ai_provider_vendorcontainerimage.is_active
+      description: 下架必须取消激活；激活版本禁止删除
+  - name: vendor-http-lifecycle
+    status: active
+    test_file: ../../taskAiProvider/src/vendor_container_lifecycle_test.go
+    fields:
+    - name: ai-provider.ai_provider_vendorcontainerimage.status
+      description: POST withdraw / DELETE 后的状态
+    - name: ai-provider.ai_provider_vendorcontainerimage.is_active
+      description: 下架后 is_active=0
+  - name: vendor-portal-version-row-actions
+    status: active
+    test_file: ../../taskAiProvider/frontend/tests/vendorVersionRowActions.unit.test.js
+    fields:
+    - name: ai-provider.ai_provider_vendorcontainerimage.status
+      description: 版本行操作矩阵按 status 显示下架/删除
+    - name: ai-provider.ai_provider_vendorcontainerimage.is_active
+      description: 激活行隐藏删除、展示下架
+- name: billing-transactions-resource-ledger
+  domain: 任务协作
+  description: 租户交易列表展示资源变动明细与瞬时账目
+  steps:
+  - name: api-change-display
+    status: active
+    test_file: ../../taskBill/src/transaction_change_enrich_test.go
+    fields:
+    - name: task-bill.billing_transaction.amount
+      description: 现金发生额（分），0 时走配额/赠送文案
+    - name: task-bill.billing_resource_grant.quantity
+      description: 赠送数量，展开为 change_display
+  - name: api-ledger-snapshot
+    status: active
+    test_file: ../../taskBill/src/transaction_ledger_snapshot_test.go
+    fields:
+    - name: task-bill.billing_transaction.balance_before
+      description: 瞬时现金 before（分）
+    - name: task-bill.billing_transaction.balance_after
+      description: 瞬时现金 after（分）
+    - name: task-bill.billing_account.task_post_quota
+      description: 未过滤回放任务帖剩余
+  - name: fe-ledger-columns
+    status: active
+    test_file: ../../taskFE/app/src/utils/transactionChangeDisplay.test.js
+    fields:
+    - name: task-bill.billing_transaction.balance_after
+      description: 前端格式化瞬时账目为元
+- name: tenant-billing-order-trade-no-query
+  domain: 计费
+  description: 租户订单列表按微信支付交易单号或商户订单号精确查询本租户订单
+  steps:
+  - name: api-tenant-trade-no
+    status: active
+    test_file: ../../taskBill/src/orders_list_trade_no_test.go
+    fields:
+    - name: task-bill.billing_resource_order.wechat_transaction_id
+      description: 微信支付交易单号等值匹配
+    - name: task-bill.billing_resource_order.out_trade_no
+      description: 商户订单号等值匹配
+    - name: task-bill.billing_resource_order.tenant_id
+      description: 查询强制本租户隔离
+  - name: fe-tenant-trade-no
+    status: active
+    test_file: ../../taskFE/app/src/views/BillingOrders.tradeNoSearch.test.js
+    fields:
+    - name: task-bill.billing_resource_order.wechat_transaction_id
+      description: 前端交易单号输入映射 order_number
+    - name: task-bill.billing_resource_order.out_trade_no
+      description: 前端商户单号输入映射 order_number
+- name: task-post-quota-source-and-order-consumption
+  domain: 任务协作
+  description: 任务帖配额区分赠送/购买，消耗归属到具体订单
+  steps:
+  - name: api-quota-split
+    status: active
+    test_file: ../../taskBill/src/task_post_quota_source_test.go
+    fields:
+    - name: task-bill.billing_account.task_post_quota
+      description: 任务帖剩余合计
+    - name: task-bill.billing_resource_grant.remaining
+      description: 赠送批次剩余，汇总为 gifted
+  - name: api-order-consumption
+    status: active
+    test_file: ../../taskBill/src/task_post_quota_source_test.go
+    fields:
+    - name: task-bill.billing_resource_grant.order_id
+      description: 购买/赠送批次归属订单
+    - name: task-bill.billing_transaction.source_grant_id
+      description: 配额消耗命中的批次
+    - name: task-bill.billing_transaction.related_order_id
+      description: 消耗归属的资源订单
+  - name: fe-quota-and-order-ui
+    status: active
+    test_file: ../../taskFE/app/src/views/BillingDashboard.quotaSplit.test.js
+    fields:
+    - name: task-bill.billing_account.task_post_quota
+      description: 账单卡合计与赠送/购买拆分
+- name: referral-channel-codes
+  domain: 用户与认证
+  description: 多渠道推荐码、分渠道人数与分账
+  steps:
+  - name: api-channel-crud
+    status: active
+    test_file: ../../taskReferral/src/referral_channel_test.go
+    fields:
+    - name: task-referral.referral_share_code.code
+      description: 渠道不透明 access_code
+    - name: task-referral.referral_share_code.channel_name
+      description: 用户侧渠道名
+  - name: api-bind-eligible
+    status: active
+    test_file: ../../taskReferral/src/referral_bind_test.go
+    fields:
+    - name: task-bill.billing_referral_edge.channel_code
+      description: 绑边快照所用码
+    - name: task-bill.billing_referral_edge.commission_eligible
+      description: 绑边当时分成资格
+  - name: api-stats-filter
+    status: active
+    test_file: ../../taskReferral/src/referral_stats_test.go
+    fields:
+    - name: task-bill.billing_referral_edge.referrer_user_id
+      description: 按渠道/时间统计人数
+    - name: task-bill.billing_referral_commission_accrual.commission_points
+      description: 按渠道/时间统计分账
+  - name: fe-channel-ui
+    status: active
+    test_file: ../../taskFE/app/src/components/ReferralChannelPanel.test.js
+    fields:
+    - name: task-referral.referral_share_code.code
+      description: 页面复制分渠道注册链接
+- name: tenant-selfhosted-gitlab-oidc-sso
+  domain: 用户与认证
+  description: 租户自建 GitLab 平台账号 OIDC SSO 签发与成员闸门
+  steps:
+  - name: authorize-membership-gate
+    status: active
+    test_file: ../../taskAuth/src/oidc_tenant_sso_gate_test.go
+    fields:
+    - name: task-auth.auth_oidc_client.client_id
+      description: gitlab-tenant-{company_id}
+    - name: task-auth.auth_oidc_client.owner_company_id
+      description: 成员闸门所用租户
+    - name: task-auth.auth_oidc_client.managed_by
+      description: tenant 行跳过 bootstrap 自愈
+  - name: issue-rotate-disable
+    status: active
+    test_file: ../../taskAuth/src/oidc_tenant_sso_gate_test.go
+    fields:
+    - name: task-auth.auth_oidc_client.client_id
+      description: 稳定 client_id
+    - name: task-auth.auth_oidc_client.purpose
+      description: tenant_gitlab_sso
+    - name: task-auth.auth_oidc_client.redirect_uris
+      description: "callback {base_url}/users/auth/openid_connect/callback"
+  - name: gitlab-connection-sso-ui
+    status: active
+    test_file: ../../taskFE/app/src/views/WorkspaceSettingsGitlabOidcSso.test.js
+    fields:
+    - name: task-auth.auth_oidc_client.client_id
+      description: 设置页展示的 SSO client
+- name: email-invite-unsubscribe
+  domain: 用户与认证
+  description: 邀请邮件退订列表；再发邮件邀请时跳过 SMTP 并提示复制链接
+  steps:
+  - name: public-unsubscribe-upsert
+    status: active
+    test_file: ../../taskAuth/src/auth_email_unsubscription_test.go
+    fields:
+    - name: task-auth.auth_email_unsubscription.email
+      description: 规范化邮箱退订集合主键语义 UNIQUE(email)
+  - name: skip-admin-invite-smtp
+    status: active
+    test_file: ../../taskAuth/src/auth_email_unsubscription_test.go
+    fields:
+    - name: task-auth.auth_email_registration_invite.delivery_status
+      description: skipped_unsubscribed 时不发 EMAIL_SENT
+  - name: skip-tenant-invite-smtp
+    status: active
+    test_file: ../../taskTenantService/src/invite_handlers_test.go
+    fields:
+    - name: task-tenant.tenant_invitation.delivery_status
+      description: 已退订邮箱仍建邀请，跳过 SMTP
+  - name: fe-copy-link-prompt
+    status: active
+    test_file: ../../taskFE/app/src/views/PeopleInvite.unsubscribe-skip.test.js
+    fields:
+    - name: task-tenant.tenant_invitation.invite_token
+      description: email_skipped 时前端展示可复制 invitation_url
+  - name: expire-due-pending-invites
+    status: active
+    test_file: ../../taskAuth/src/auth_email_invite_expire_test.go
+    fields:
+    - name: task-auth.auth_email_registration_invite.status
+      description: timer POST expire-due 将到期 pending 标为 expired
+- name: open-invite-link
+  domain: 组织与成员
+  description: 租户复制邀请链接可设为开放，同一 token 允许多人加入直至过期或人数上限
+  steps:
+  - name: create-open-invite
+    status: active
+    test_file: ../../taskTenantService/src/invite_open_test.go
+    fields:
+    - name: task-tenant.tenant_invitation.link_kind
+      description: single 默认；open 允许多次核销
+    - name: task-tenant.tenant_invitation.max_uses
+      description: 0 表示不限人数；单次强制 1
+  - name: multi-join-same-token
+    status: active
+    test_file: ../../taskTenantService/src/invite_open_test.go
+    fields:
+    - name: task-tenant.tenant_invitation.use_count
+      description: 每次成功 join 原子加一
+    - name: task-tenant.tenant_invitation_redemption.user_id
+      description: UNIQUE(invitation_id, user_id) 防止同用户重复核销
+  - name: fe-open-invite-toggle
+    status: active
+    test_file: ../../taskFE/app/src/components/InviteLinkMethodPanel.test.js
+    fields:
+    - name: task-tenant.tenant_invitation.link_kind
+      description: 邀请人页单次/开放开关写入 invite body
+- name: git-oauth-resource-grant-marker
+  domain: 云平台与资源
+  description: L1 仍一份 remote_userId 凭据；项目/评论 L2 标记后才允许换票；自动运行用启用者票
+  steps:
+  - name: project-l2-grant-badge
+    status: active
+    test_file: ../../taskProjectService/src/git_oauth_grant_test.go
+    fields:
+    - name: taskProjectService.project_git_oauth_grant.gitsite
+      description: 项目使用标记的 Git 站点主机
+    - name: taskProjectService.project_git_oauth_grant.remote_user_id
+      description: 标记绑定的远端账号
+    - name: taskProjectService.project_git_oauth_grant.task2app_user_id
+      description: 标记所属平台用户（不可转同事）
+  - name: comment-l2-grant-ticket
+    status: active
+    test_file: ../../taskGitOauth/src/grant_ticket_test.go
+    fields:
+    - name: taskGitOauth.git_oauth_grant_ticket.id
+      description: 发评前一次性 grant ticket
+    - name: taskTaskService.task_comments.oauth_granted_at
+      description: JSON path repo_identities[].oauth_granted_at
+  - name: queued-autorun-enabler-user
+    status: active
+    test_file: ../../taskTaskService/src/queued_schedule_oauth_actor_test.go
+    fields:
+    - name: taskTaskService.task_comments.created_by_id
+      description: 排队开火换票主体=自动运行评论作者
+    - name: taskTaskService.task_comments.oauth_granted_at
+      description: 该评论 L2；禁止 UserID=owner_id 覆盖
+  - name: create-task-oauth-session-ticket
+    status: active
+    test_file: ../../taskFE/app/src/utils/createTaskOauthGate.test.js
+    fields:
+    - name: taskGitOauth.git_oauth_grant_ticket.id
+      description: 创建自动运行门禁看启用者会话 ticket 而非项目 L2
+    - name: task-git-oauth.git_oauth_appusercredential.bind_status
+      description: L1 仍须 active 才能换票
+- name: tenant-feedback-links
+  domain: 组织与成员
+  description: 超管按租户累计消耗配置意见与建议外链组，达标租户侧栏可见
+  steps:
+  - name: admin-configure-groups
+    status: active
+    test_file: ../../taskBill/src/feedback_handlers_test.go
+    fields:
+    - name: task-bill.billing_feedback_link_group.name
+      description: 超管配置的链接组名（子菜单分段）
+    - name: task-bill.billing_feedback_link.url
+      description: 仅 https 的外链
+    - name: task-bill.billing_feedback_link_threshold.resource_kind
+      description: 组内 AND 阈值资源种类
+    - name: task-bill.billing_feedback_link_threshold.min_quantity
+      description: 达到即可见的下限
+  - name: tenant-sidebar-visible-links
+    status: active
+    test_file: ../../taskFE/app/src/components/TenantConsoleFeedbackNav.unit.test.js
+    fields:
+    - name: task-bill.billing_feedback_link_group.name
+      description: 租户侧栏按组名分段展示
+    - name: task-bill.billing_feedback_link.url
+      description: 真实 a href 外链
+- name: task-detail-gitlab-probe-split
+  domain: 任务协作
+  description: 任务/项目数据 GET 立即返回，GitLab 探活独立 POST
+  steps:
+  - name: get-project-db-only
+    status: active
+    test_file: ../../taskProjectService/src/project_get_db_only_test.go
+    fields:
+    - name: task-project-service.project_entries.id
+      description: GET 项目只读库内条目，不探 GitLab
+  - name: get-task-no-project-hang
+    status: active
+    test_file: ../../taskTaskService/src/task_get_detail_no_project_hang_test.go
+    fields:
+    - name: task-task-service.task_projects.repo_address
+      description: 详情 projects[].stored_repo_address 来自任务表
+  - name: task-detail-independent-probe
+    status: active
+    test_file: ../../taskFE/app/src/composables/taskDetail/useTaskLinkedRepoGitProbe.test.js
+    fields:
+    - name: task-project-service.git_repo_validate.token_status
+      description: 探活标记仅独立 POST validate-git-repos
+- name: image-market-vendor-apply
+  domain: 云平台与资源
+  description: 租户镜像市场恢复厂商申请四态；门户撤掉申请面板；SSO 仍仅 qualified
+  steps:
+  - name: imagemarket-cta-four-state
+    status: active
+    test_file: ../../taskFE/app/src/views/ImageMarket.vendorStatus.test.js
+    fields:
+    - name: ai-provider.ai_provider_vendor.is_active
+      description: qualified 时镜像市场渲染 SSO
+    - name: ai-provider.ai_provider_vendor.review_note
+      description: rejected 可重提；pending 无 SSO
+    - name: ai-provider.ai_provider_vendor.saas_user_id
+      description: 申请绑定主站用户而非租户
+  - name: imagemarket-submit-application
+    status: active
+    test_file: ../../taskAiProvider/src/vendor_docs_handlers_test.go
+    fields:
+    - name: ai-provider.ai_provider_vendor.company_name
+      description: POST vendor-application 写入申请单
+    - name: ai-provider.ai_provider_vendor.contact_phone
+      description: 短信验证后的 E.164
+  - name: provider-portal-no-apply-panel
+    status: active
+    test_file: ../../taskAiProvider/frontend/tests/vendorApplyCta.unit.test.js
+    fields:
+    - name: ai-provider.runtime.vendor_portal_apply_panel
+      description: VendorPortal.vue 不再挂载 VendorApplyPanel
+

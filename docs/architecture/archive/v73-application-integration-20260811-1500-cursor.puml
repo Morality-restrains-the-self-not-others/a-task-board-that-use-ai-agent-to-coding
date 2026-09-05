@@ -1,0 +1,53 @@
+' @title: 资源组授予效果层（view / operate）
+' @view: application-integration
+' @status: target
+' @version: 73
+' @iteration: rbac-resource-grant-effect-v73
+' @author: cursor
+' @based_on: v72 (v72-application-integration-20260811-1136-claude.puml)
+' @updated: 2026-08-11 15:00
+' @description: auth_role_resource_group.effect；PDP 注入 :view/:operate；RequireRegionOperate
+
+@startuml
+!include <archimate/Archimate>
+
+title v73 — Resource Grant Effect (view/operate) Target 2026-08-11 15:00
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v73 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v73 |
+endlegend
+
+Application_Component(taskFE, "taskFE (Vue SPA)")
+note right of taskFE
+  🟡 [MODIFIED v73]
+  访问管理：可访问 / 可编辑执行
+  hasRegionView / hasRegionOperate
+end note
+
+Application_Component(taskAuth, "taskAuth PDP + RBAC API")
+note right of taskAuth
+  🟡 [MODIFIED v73]
+  读 rrg.effect；注入
+  region:key:view|operate
+  + legacy region:key (operate)
+end note
+
+Application_Component(shareLib, "shareLib/authz")
+note right of shareLib
+  🟡 [MODIFIED v73]
+  HasRegionView / Operate
+  EmitLogicalRGCodes
+end note
+
+Application_DataObject(authRRG, "auth_role_resource_group")
+note right of authRRG
+  🟡 [MODIFIED v73]
+  + effect ENUM(view,operate)
+end note
+
+Rel_Flow(taskFE, taskAuth, "PUT grants[{key,effect}]")
+Rel_Flow(taskAuth, shareLib, "X-Tenant-Perms effect codes")
+Rel_Serving(authRRG, taskAuth, "effect column")
+
+@enduml

@@ -1,0 +1,8 @@
+# UserProfileAccountDeletionPanel 前往处理链接测试意图
+
+## 测试范围
+账号注销阻断列表中的「前往处理」必须渲染为真实 `<a href>`，且 href 为 taskFE 已注册路由。
+
+## 测试场景
+1. GitLab 有效订阅阻断：即使后端下发 `/billing/gitlab-resources/`，渲染为 `/settings/gitlab-connection/`
+2. 待完成支付阻断：即使后端下发 `/profile/`，渲染为对应租户 `/billing/`

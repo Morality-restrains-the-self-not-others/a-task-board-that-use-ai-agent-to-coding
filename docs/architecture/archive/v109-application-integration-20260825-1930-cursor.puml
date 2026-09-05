@@ -1,0 +1,64 @@
+' @title: 系统管理租户详情（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 109
+' @iteration: system-admin-tenant-detail
+' @author: cursor
+' @based_on: v108 (v108-application-integration-20260825-1735-cursor.puml)
+' @updated: 2026-08-25 19:55
+' @description: 超管从租户名链接进入详情页；并行 GET 公司头/配额/工作空间/订单（平台员工只读）
+
+@startuml
+!include <archimate/Archimate>
+
+title v109 — 系统管理租户详情 2026-08-25 19:55
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  租户名 <a href>；
+  /system-admin/tenants/:id/ 三块只读
+  @author: cursor @2026-08-25 19:55
+end note
+Application_Component(gw, "taskGateway / APISIX")
+note right of gw
+  tenant-quotas / tenant-workspaces URI
+  @author: cursor @2026-08-25 19:55
+end note
+Application_Component(tenant, "taskTenantService")
+note right of tenant
+  GET tenants/{id}/
+  @author: cursor @2026-08-25 19:55
+end note
+Application_Component(bill, "taskBill")
+note right of bill
+  GET tenant-quotas；orders?tenant_id=
+  @author: cursor @2026-08-25 19:55
+end note
+Application_Component(proj, "taskProjectService")
+note right of proj
+  GET tenant-workspaces（无 mine）
+  @author: cursor @2026-08-25 19:55
+end note
+Application_DataObject(co, "tenant_company")
+Application_DataObject(quota, "billing quotas / gitlab_resources")
+Application_DataObject(ws, "project_workspace_entries")
+Application_DataObject(ord, "billing_resource_order")
+
+Rel_Flow(taskFE, gw, "staff GET")
+Rel_Flow(gw, tenant, "tenants/{id}")
+Rel_Flow(gw, bill, "tenant-quotas + orders")
+Rel_Flow(gw, proj, "tenant-workspaces")
+Rel_Access(tenant, co, "R")
+Rel_Access(bill, quota, "R")
+Rel_Access(bill, ord, "R")
+Rel_Access(proj, ws, "R")
+
+Implementation_Plateau(plateauV108, "Plateau v108")
+Implementation_Plateau(plateauV109, "Plateau v109 租户详情")
+Implementation_Gap(gapTd, "Gap: 租户名不可点，超管无法看任意租户配额/工作空间/订单")
+Implementation_WorkPackage(wpTd, "WP-system-admin-tenant-detail")
+Rel_Triggering(plateauV108, gapTd, "identifies")
+Rel_Realization(wpTd, gapTd, "closes")
+Rel_Realization(wpTd, plateauV109, "delivers")
+
+@enduml

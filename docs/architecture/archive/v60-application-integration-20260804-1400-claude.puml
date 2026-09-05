@@ -1,0 +1,163 @@
+' @title: RBAC 集中授权架构 — Application Integration
+' @view: application-integration
+' @status: target
+' @version: 60
+' @iteration: rbac-identity-role-permission-system-v3
+' @author: claude
+' @based_on: v57 (v57-application-integration-20260730-0229-claude.puml) — v59 被跳过
+' @updated: 2026-08-04 14:00
+' @description: v3 迭代 — taskAuth 集中 PDP + shareLib 薄客户端 + 组角色继承 + CompanyCreated→creator 角色分配；替代 v59 shareLib 重引擎方案
+
+@startuml
+!include <archimate/Archimate>
+
+title v60 — RBAC 集中授权架构 (Target, 2026-08-04 14:00)
+
+legend right
+  |<#LightGreen>  </>| 🟢 [NEW v60] |
+  |<#LightYellow> </>| 🟡 [MODIFIED v60] |
+  |<#LightPink>   </>| 🔴 [DEPRECATED v60] |
+  |<#White>       </>| 未变 |
+endlegend
+
+' ═══ Services ═══
+
+Application_Component(taskAuth, "taskAuth (:8003)\n[PDP 集中授权]")
+note right of taskAuth
+  🟡 [MODIFIED v60]
+  + /api/internal/authz/check (PDP)
+  + /api/system-admin/roles/*
+  + /api/system-admin/employees/*
+  + Redis: authz:{uid}:roles
+  DB: +4 表
+end note
+
+Application_Component(taskGitOauth, "taskGitOauth (:8002)")
+Application_Component(taskTenant, "taskTenantService (:8020)")
+note right of taskTenant
+  🟡 [MODIFIED v60]
+  + tenant_member_role
+  + tenant_group_role 🆕
+  + /api/tenant/{cid}/groups/{gid}/role
+  + 替换 policy.go 鉴权
+end note
+
+Application_Component(taskProject, "taskProjectService (:8016)")
+Application_Component(taskTask, "taskTaskService (:8021)")
+Application_Component(taskAIComment, "taskAIComment (:8022)")
+
+Application_Component(taskCloud, "taskCloudService (:8018)")
+note right of taskCloud
+  🟡 替换 hand-rolled 鉴权
+  → authz.RequireRole()
+end note
+
+Application_Component(taskBill, "taskBill (:8004)")
+note right of taskBill
+  🟡 替换 hand-rolled 鉴权
+  → authz.RequireRole()
+end note
+
+Application_Component(taskEvents, "taskEvents (:8023)")
+note right of taskEvents
+  🟡 新增 consumer:
+  + CompanyCreated→creator 角色
+  + PlatformRoleAssigned→缓存失效
+  + TenantRoleChanged→缓存失效
+end note
+
+Application_Component(shareLibAuthz, "shareLib/authz\n(薄客户端)")
+note right of shareLibAuthz
+  🔄 [REFINED v60]
+  v59: 重引擎(内嵌判定逻辑)
+  v60: 薄客户端
+  - RequireRole() → 读 Context O(1)
+  - CheckPermission() → HTTP回退 taskAuth
+  - PermCode const 枚举
+end note
+
+Application_Component(kafkaConsumers, "Kafka Consumers (Go)")
+
+Application_Component(gateway, "APISIX Gateway (:18081)")
+note right of gateway
+  🟡 forward-auth → taskAuth PDP
+  注入: X-User-Roles
+        X-Tenant-Memberships
+end note
+
+' ═══ Data ═══
+Application_DataObject(kafkaBroker, "Kafka")
+Application_DataObject(taskAuthDB, "taskAuth DB\n+4表 (+role/perm/role_perm/user_role)")
+Application_DataObject(taskGitOauthDB, "taskGitOauth DB")
+Application_DataObject(taskTenantDB, "taskTenant DB\n+2表 (+member_role +group_role)")
+Application_DataObject(taskProjectDB, "taskProject DB")
+Application_DataObject(taskTaskDB, "taskTask DB")
+Application_DataObject(taskCloudDB, "taskCloud DB")
+Application_DataObject(taskBillDB, "taskBill DB")
+
+' ═══ Events ═══
+Application_Event(evtRoleAssigned, "PlatformRoleAssigned")
+Application_Event(evtRoleRevoked, "PlatformRoleRevoked")
+Application_Event(evtTenantRole, "TenantMemberRoleChanged")
+Application_Event(evtGroupRole, "TenantGroupRoleChanged 🆕")
+Application_Event(evtCompanyCreated, "CompanyCreated (已有)")
+
+' ═══ Deprecated ═══
+Application_Component(oldIsAdmin, "is_admin 直接鉴权 [DEPRECATED]")
+Application_Component(oldIsSuperuser, "is_superuser 直接鉴权 [DEPRECATED]")
+Application_Component(oldShareLib, "shareLib/authz 重引擎 [DEPRECATED v60]")
+note bottom of oldShareLib
+  🔴 v59 方案被跳过
+  → v60 改为薄客户端
+end note
+
+' ═══ Relationships ═══
+
+' Gateway → PDP
+Rel_Flow(gateway, taskAuth, "forward-auth\n→ /api/internal/authz/check\n← X-User-Roles, X-Tenant-Memberships")
+
+' Gateway → Services (with injected roles in Context)
+Rel_Flow(gateway, taskTenant, "/api/tenant/*")
+Rel_Flow(gateway, taskProject, "/api/tenant/*/projects/*")
+Rel_Flow(gateway, taskTask, "/api/tenant/*/todos/*")
+Rel_Flow(gateway, taskAIComment, "/api/tenant/*/ai-comments/*")
+Rel_Flow(gateway, taskCloud, "/api/system-admin/*\n/api/tenant/*/cloud/*")
+Rel_Flow(gateway, taskBill, "/api/billing/*\n/api/system-admin/*")
+
+' Services use authz thin client (read from Context, fallback to PDP)
+Rel_Serving(shareLibAuthz, taskAuth, "CheckPermission() HTTP fallback")
+Rel_Serving(shareLibAuthz, taskTenant, "RequireRole() / RequireTenantRole()")
+Rel_Serving(shareLibAuthz, taskCloud, "RequireRole()")
+Rel_Serving(shareLibAuthz, taskBill, "RequireRole()")
+Rel_Serving(shareLibAuthz, taskProject, "RequireRole()")
+Rel_Serving(shareLibAuthz, taskTask, "RequireRole()")
+
+' Kafka
+Rel_Flow(kafkaBroker, kafkaConsumers, "consume")
+Rel_Flow(kafkaConsumers, taskTenant, "company/user events\n🟡 +CompanyCreated→assign role")
+Rel_Flow(kafkaConsumers, taskAuth, "user profile events")
+Rel_Flow(kafkaConsumers, taskProject, "workspace events")
+Rel_Flow(kafkaConsumers, taskCloud, "cloud events")
+Rel_Flow(kafkaConsumers, taskEvents, "SSE dispatch\n🟡 +RoleChanged→cache invalidation")
+
+' Data ownership
+Rel_Access_w(taskAuth, taskAuthDB, "users, roles, permissions")
+Rel_Access_w(taskGitOauth, taskGitOauthDB, "git identities")
+Rel_Access_w(taskTenant, taskTenantDB, "companies, members, groups\n🟡 +member_roles, group_roles")
+Rel_Access_w(taskProject, taskProjectDB, "projects, workspaces, ACL")
+Rel_Access_w(taskTask, taskTaskDB, "todos")
+Rel_Access_w(taskCloud, taskCloudDB, "platforms, VPCs, images")
+Rel_Access_w(taskBill, taskBillDB, "billing, subscriptions")
+
+' Events
+Rel_Flow(taskAuth, evtRoleAssigned, "publish")
+Rel_Flow(taskAuth, evtRoleRevoked, "publish")
+Rel_Flow(taskTenant, evtTenantRole, "publish")
+Rel_Flow(taskTenant, evtGroupRole, "publish 🆕")
+Rel_Flow(evtCompanyCreated, kafkaBroker, "(已有) 🟡 新增 consumer 消费")
+Rel_Flow(evtRoleAssigned, kafkaBroker, "→")
+Rel_Flow(evtRoleRevoked, kafkaBroker, "→")
+Rel_Flow(evtTenantRole, kafkaBroker, "→")
+Rel_Flow(evtGroupRole, kafkaBroker, "→ 🆕")
+
+@enduml

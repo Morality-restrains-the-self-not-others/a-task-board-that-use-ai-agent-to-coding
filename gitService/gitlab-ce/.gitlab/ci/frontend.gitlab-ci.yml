@@ -1,0 +1,781 @@
+.with-fixtures-needs:
+  needs:
+    - "rspec-all frontend_fixture"
+    - "rspec-all frontend_fixture clickhouse"
+
+.with-graphql-schema-dump-needs:
+  needs:
+    - "graphql-schema-dump"
+
+.compile-assets-base:
+  extends:
+    - .default-retry
+    - .default-before_script
+    - .assets-compile-cache
+    - .with-ci-node-image
+  variables:
+    SETUP_DB: "false"
+    USE_BUNDLE_INSTALL: "false"  # skip bundle install from default prepare_build script
+    WEBPACK_VENDOR_DLL: "true"
+    # Disable warnings in browserslist which can break on backports
+    # https://github.com/browserslist/browserslist/blob/a287ec6/node.js#L367-L384
+    BROWSERSLIST_IGNORE_OLD_DATA: "true"
+    WEBPACK_COMPILE_LOG_PATH: "tmp/webpack-output.log"
+  stage: prepare
+  needs:
+    - cache:assets-hash
+    - job: compile-fe-islands
+      optional: true
+  script:
+    - scripts/compile_assets
+    - scripts/build_assets_image
+
+.fe-islands-parallel:
+  parallel:
+    matrix:
+      - FE_APP_DIR: ["duo_next"]
+
+compile-production-assets:
+  image: ${REGISTRY_HOST}/${REGISTRY_GROUP}/gitlab-build-images/ci/${BUILD_OS}-${OS_VERSION}-slim-ruby-${RUBY_VERSION}-node-${NODE_VERSION}:rubygems-${RUBYGEMS_VERSION}-git-${GIT_VERSION}-lfs-${LFS_VERSION}-yarn-${YARN_VERSION}-graphicsmagick-${GRAPHICSMAGICK_VERSION}-docker-${DOCKER_VERSION}
+  extends:
+    - .use-buildx
+    - .compile-assets-base
+    - .production
+    - .frontend:rules:compile-production-assets
+  tags:
+    - $GLCI_PRODUCTION_ASSETS_RUNNER_OPTIONAL
+  variables:
+    GLCI_BUILD_ASSETS_IMAGE: "true"
+    GLCI_ASSETS_TAG_ENV_FILE_PATH: "assets-tag-env.env"
+    ARCH: linux/amd64,linux/arm64
+    HEALTHCHECK_TCP_PORT: "2375"
+  before_script:
+    - !reference [.compile-assets-base, before_script]
+    - !reference [.buildx-setup, before_script]
+  after_script:
+    - !reference [.compile-assets-base, after_script]
+    - source scripts/utils.sh
+    - echo "GLCI_ASSETS_IMAGE_TAG=$(assets_image_tag)" > $GLCI_ASSETS_TAG_ENV_FILE_PATH
+  artifacts:
+    name: webpack-report
+    expire_in: 31d
+    paths:
+      # These assets are used in:
+      # - GitLab UI for integration tests: https://gitlab.com/gitlab-org/gitlab-ui/-/blob/e88493b3c855aea30bf60baee692a64606b0eb1e/.storybook/preview-head.pug#L1
+      - public/assets/
+      - ${WEBPACK_COMPILE_LOG_PATH}
+      - ${GLCI_GITLAB_ASSETS_HASH_FILE}
+    when: always
+    reports:
+      dotenv: $GLCI_ASSETS_TAG_ENV_FILE_PATH
+
+compile-production-assets as-if-foss:
+  extends:
+    - compile-production-assets
+    - .as-if-foss
+    - .qa:rules:test-on-omnibus-ce:follow-up
+
+compile-test-assets:
+  extends:
+    - .compile-assets-base
+    - .frontend:rules:compile-test-assets
+  artifacts:
+    expire_in: 7d
+    paths:
+      - public/assets/
+      - config/helpers/tailwind/  # Assets created during tailwind compilation
+      - "${WEBPACK_COMPILE_LOG_PATH}"
+    when: always
+
+compile-test-assets vue3:
+  extends:
+    - compile-test-assets
+    - .vue3
+
+build-vite-prod:
+  extends:
+    - .production
+    - .default-retry
+    - .with-ci-node-image
+    - .yarn-cache
+    - .frontend:rules:compile-production-assets
+  stage: prepare
+  needs:
+    - job: cache:node-modules
+      optional: true
+    - job: generate-js-routes
+      optional: true
+  script:
+    - source scripts/utils.sh
+    - yarn_install_script
+    - yarn vite-prod
+  artifacts:
+    expire_in: 1d
+    paths:
+      - public/assets/vite/
+
+build-vite-prod-vue3:
+  extends:
+    - build-vite-prod
+    - .vue3
+
+compile-fe-islands:
+  extends:
+    - .default-retry
+    - .with-ci-node-image
+    - .fe-islands-compile-cache
+    - .frontend:rules:update-fe-islands
+  needs: ["cache:fe-islands-hash"]
+  stage: prepare
+  variables:
+    USE_BUNDLE_INSTALL: "false"
+  script:
+    - scripts/build_frontend_islands
+  artifacts:
+    paths:
+      - ee/frontend_islands/apps/*/dist/main.js
+
+generate-js-routes:
+  extends:
+    - .default-retry
+    - .default-before_script
+    - .ruby-cache
+    - .repo-from-artifacts
+    - .frontend:rules:generate-js-routes
+  stage: prepare
+  needs:
+    - !reference [.repo-from-artifacts, needs]
+    - job: cache:ruby-gems
+      optional: true
+  variables:
+    SETUP_DB: "false"
+  script:
+    - bundle exec rake gitlab:js:routes
+  artifacts:
+    paths:
+      - app/assets/javascripts/lib/utils/path_helpers
+      - ee/app/assets/javascripts/lib/utils/path_helpers
+  # This job is not yet used. Once we verify that this job works in all
+  # environments we will remove this and add it as a dependency for test and
+  # build jobs.
+  allow_failure: true
+
+.frontend-fixtures-base:
+  extends:
+    - .default-retry
+    - .default-before_script
+    - .base-script
+    - .ruby-cache
+    - .repo-from-artifacts
+    - .cache-analytics
+  stage: fixtures
+  needs:
+    - setup-test-env
+    - retrieve-tests-metadata
+    - compile-test-assets
+    # it's ok to wait for the repo artifact as we're waiting for setup-test-env (which takes longer than clone-gitlab-repo) anyway
+    - !reference [.repo-from-artifacts, needs]
+  variables:
+    # Don't add `CRYSTALBALL: "false"` here as we're enabling Crystalball for scheduled pipelines (in `.gitlab-ci.yml`), so that we get coverage data
+    # for the `frontend fixture RSpec files` that will be added to the Crystalball mapping in `update-tests-metadata`.
+    # More information in https://gitlab.com/gitlab-org/gitlab/-/merge_requests/74003.
+    WEBPACK_VENDOR_DLL: "true"
+  artifacts:
+    name: frontend-fixtures
+    expire_in: 31d
+    when: always
+    paths:
+      - crystalball/
+      - knapsack/
+      - log/*.log
+      - tmp/tests/frontend/**/*
+
+# Builds FOSS, and EE fixtures in the EE project.
+# Builds FOSS fixtures in the FOSS project.
+rspec-all frontend_fixture:
+  extends:
+    - .use-pg17
+    - .frontend-fixtures-base
+    - .frontend:rules:frontend_fixture
+  script:
+    - !reference [.frontend-fixtures-base, script]
+    - rspec_parallelized_job "--tag ~click_house"
+  parallel: 8
+
+rspec-all frontend_fixture clickhouse:
+  extends:
+    - .use-pg17-clickhouse25
+    - .frontend-fixtures-base
+    - .frontend:rules:frontend_fixture
+  script:
+    - !reference [.clickhouse-setup, script]
+    - !reference [.frontend-fixtures-base, script]
+    - rspec_parallelized_job "--tag click_house"
+
+# Uploads fixtures to package registry if running in canonical project
+upload-frontend-fixtures:
+  extends:
+    - .default-retry
+    - .with-ruby-slim-image
+    - .frontend:rules:update-frontend-fixtures
+  stage: fixtures
+  needs:
+    - !reference [.with-fixtures-needs, needs]
+  script:
+    - source scripts/gitlab_component_helpers.sh
+    - |
+      fixtures_archive_doesnt_exist || { echo "Exiting early as package exists!"; exit 0; }
+      create_fixtures_package
+      upload_fixtures_package
+
+# Cleans up older fixtures packages
+cleanup-frontend-fixtures:
+  extends:
+    - .default-retry
+    - .with-ruby-slim-image
+    - .frontend:rules:fixtures-packages-cleanup
+  stage: fixtures
+  before_script:
+    - source scripts/utils.sh
+    - install_gitlab_gem
+  script:
+    - scripts/packages/automated_cleanup.rb
+
+graphql-schema-dump:
+  variables:
+    SETUP_DB: "false"
+  extends:
+    - .default-retry
+    - .ruby-cache
+    - .default-before_script
+    - .frontend:rules:default-frontend-jobs
+  stage: fixtures
+  needs:
+    - job: cache:ruby-gems
+      optional: true
+  script:
+    - bundle exec rake gitlab:graphql:schema:dump
+  artifacts:
+    expire_in: 30 days
+    name: graphql-schema
+    paths:
+      - tmp/tests/graphql/gitlab_schema.graphql
+      - tmp/tests/graphql/gitlab_schema.json
+
+upload-graphql-schema-dump:
+  stage: fixtures
+  variables:
+    SETUP_DB: "false"
+  extends:
+    - .default-retry
+    - .ruby-cache
+    - .default-before_script
+    - .frontend:rules:upload-graphql-schema-dump
+    - .with-graphql-schema-dump-needs
+  script:
+    - source scripts/gitlab_component_helpers.sh
+    - create_and_upload_graphql_schema_package
+
+.frontend-test-base:
+  extends:
+    - .default-retry
+    - .with-ci-node-image
+  variables:
+    # Disable warnings in browserslist which can break on backports
+    # https://github.com/browserslist/browserslist/blob/a287ec6/node.js#L367-L384
+    BROWSERSLIST_IGNORE_OLD_DATA: "true"
+    USE_BUNDLE_INSTALL: "false"
+    SETUP_DB: "false"
+  before_script:
+    - !reference [.default-before_script, before_script]
+    - yarn_install_script
+  stage: test-frontend
+  cache:
+    - !reference [.yarn-cache, cache]
+  needs:
+    - job: generate-js-routes
+      optional: true
+    - job: compile-fe-islands
+      optional: true
+
+jest-build-cache:
+  extends:
+    - .frontend-test-base
+    - .frontend:rules:jest
+  artifacts:
+    name: jest-cache
+    expire_in: 12h
+    when: always
+    paths:
+      - tmp/cache/jest/
+  script:
+    - scripts/frontend/warm_jest_cache.mjs
+  variables:
+    # Propagate exit code correctly. See https://gitlab.com/groups/gitlab-org/-/epics/6074.
+    FF_USE_NEW_BASH_EVAL_STRATEGY: 'true'
+    FORCE_COLOR: '1'
+  allow_failure:
+    # In merge requests, failures exit with 2, so fail the pipeline. Otherwise,
+    # they exit with 1, so as not to break master and other pipelines.
+    exit_codes: 1
+
+.vue3:
+  variables:
+    VUE_VERSION: 3
+    NODE_OPTIONS: --max-old-space-size=7680
+  allow_failure: true
+
+test-fe-islands:
+  stage: test-frontend
+  extends:
+    - .frontend-test-base
+    - .frontend:rules:fe-islands:test
+    - .fe-islands-parallel
+  needs:
+    - job: validate-fe-islands-ci
+      optional: true
+  script:
+    - cd ee/frontend_islands/apps/${FE_APP_DIR} && yarn run test
+  cache:
+    - !reference [.frontend-test-base, cache]
+    - !reference [.fe-islands-yarn-cache, cache]
+  artifacts:
+    name: coverage-frontend
+    expire_in: 31d
+    when: always
+    paths:
+      - ee/frontend_islands/apps/${FE_APP_DIR}/coverage/
+      - ee/frontend_islands/apps/${FE_APP_DIR}/junit_jest.xml
+    reports:
+      junit: junit_jest.xml
+
+.with-jest-build-cache-vue3-ensure-compilable-sfcs-needs:
+  needs:
+    - job: jest-build-cache-vue3-ensure-compilable-sfcs
+      optional: true
+
+jest-build-cache-vue3-ensure-compilable-sfcs:
+  extends:
+    - .vue3
+    # Make sure allow_failure is set by jest-build-cache rather than .vue3.
+    # Failures should not be allowed in merge requests.
+    - jest-build-cache
+    - .frontend:rules:jest
+
+jest:
+  extends:
+    - .frontend-test-base
+    - .frontend:rules:jest
+  needs:
+    - !reference [.frontend-test-base, needs]
+    - job: jest-build-cache
+      optional: true
+  artifacts:
+    name: coverage-frontend
+    expire_in: 31d
+    when: always
+    paths:
+      - coverage-frontend/
+      - junit_jest.xml
+      - jest-reports/
+      - jest-test-mapping/
+      - tmp/tests/frontend/
+    reports:
+      junit: junit_jest.xml
+  parallel: 11
+  script:
+    - scripts/frontend/jest_ci.js
+
+jest-with-fixtures:
+  extends:
+    - jest
+    - .repo-from-artifacts
+    - .frontend:rules:jest
+  needs:
+    - !reference [jest, needs]
+    # it's ok to wait for the repo artifact as we're waiting for the fixtures (which wait for the repo artifact) anyway
+    - !reference [.repo-from-artifacts, needs]
+    - !reference [.with-fixtures-needs, needs]
+  parallel: 2
+  script:
+    - scripts/frontend/jest_ci.js --fixtures
+
+jest vue3:
+  extends:
+    - .frontend-test-base
+    - .frontend:rules:jest
+    - .vue3
+  needs:
+    - !reference [.frontend-test-base, needs]
+    - !reference [.with-jest-build-cache-vue3-ensure-compilable-sfcs-needs, needs]
+  artifacts:
+    name: vue3-mr-junit
+    expire_in: 31d
+    when: always
+    paths:
+      - junit_jest.xml
+      - jest-reports/
+  parallel: !reference [jest, parallel]
+  script:
+    - scripts/frontend/jest_ci.js --vue3
+  allow_failure: false
+
+jest-with-fixtures vue3:
+  extends:
+    - jest vue3
+    - .repo-from-artifacts
+  needs:
+    - !reference [.frontend-test-base, needs]
+    - !reference [.with-jest-build-cache-vue3-ensure-compilable-sfcs-needs, needs]
+    # it's ok to wait for the repo artifact as we're waiting for the fixtures (which wait for the repo artifact) anyway
+    - !reference [.repo-from-artifacts, needs]
+    - !reference [.with-fixtures-needs, needs]
+  artifacts:
+    name: vue3-mr-junit
+    expire_in: 31d
+    when: always
+    paths:
+      - junit_jest.xml
+      - jest-reports/
+  parallel: !reference [jest-with-fixtures, parallel]
+  script:
+    - scripts/frontend/jest_ci.js --vue3 --fixtures
+
+jest predictive:
+  extends:
+    - jest
+    - .frontend:rules:jest:predictive
+  needs:
+    - !reference [jest, needs]
+    - "detect-tests"
+  script:
+    - |
+      if [[ -s "$GLCI_PREDICTIVE_CHANGED_FILES_PATH" ]] || [[ -s "$GLCI_PREDICTIVE_MATCHING_JS_FILES_PATH" ]]; then
+        scripts/frontend/jest_ci.js --predictive
+      fi
+
+  parallel: 4
+
+jest-with-fixtures predictive:
+  extends:
+    - jest-with-fixtures
+    - .frontend:rules:jest:predictive
+  needs:
+    - !reference [jest-with-fixtures, needs]
+    - "detect-tests"
+  script:
+    - |
+      if [[ -s "$GLCI_PREDICTIVE_CHANGED_FILES_PATH" ]] || [[ -s "$GLCI_PREDICTIVE_MATCHING_JS_FILES_PATH" ]]; then
+        scripts/frontend/jest_ci.js --predictive --fixtures
+      fi
+
+jest vue3 predictive:
+  extends:
+    - jest vue3
+    - .frontend:rules:jest:predictive
+  needs:
+    - !reference [jest vue3, needs]
+    - "detect-tests"
+  script:
+    - |
+      if [[ -s "$GLCI_PREDICTIVE_CHANGED_FILES_PATH" ]] || [[ -s "$GLCI_PREDICTIVE_MATCHING_JS_FILES_PATH" ]]; then
+        scripts/frontend/jest_ci.js --vue3 --predictive
+      fi
+  parallel: !reference [jest predictive, parallel]
+
+jest-with-fixtures vue3 predictive:
+  extends:
+    - jest-with-fixtures vue3
+    - .frontend:rules:jest:predictive
+  needs:
+    - !reference [jest-with-fixtures vue3, needs]
+    - "detect-tests"
+  script:
+    - |
+      if [[ -s "$GLCI_PREDICTIVE_CHANGED_FILES_PATH" ]] || [[ -s "$GLCI_PREDICTIVE_MATCHING_JS_FILES_PATH" ]]; then
+        scripts/frontend/jest_ci.js --vue3 --predictive --fixtures;
+      fi
+  parallel: !reference [jest-with-fixtures predictive, parallel]
+  allow_failure: false
+
+jest vue3 check quarantined predictive:
+  extends:
+    - jest vue3
+    - .frontend:rules:jest:predictive
+  needs:
+    - !reference [jest vue3, needs]
+    - "detect-tests"
+  script:
+    - |
+      if [[ -s "$GLCI_PREDICTIVE_CHANGED_FILES_PATH" ]] || [[ -s "$GLCI_PREDICTIVE_MATCHING_JS_FILES_PATH" ]]; then
+        ./scripts/frontend/check_jest_vue3_quarantine.js
+      fi
+  parallel: 1
+  artifacts:
+    name: quarantined_tests_output
+    expire_in: 31d
+    when: always
+    paths:
+      - tmp/tests/frontend/jest_stderr
+      - tmp/tests/frontend/jest_results.json
+
+jest-with-fixtures vue3 check quarantined predictive:
+  extends:
+    - jest vue3 check quarantined predictive
+  parallel: 1
+  variables:
+    JEST_FIXTURE_JOBS_ONLY: 1
+
+jest vue3 check quarantined:
+  extends:
+    - jest vue3 check quarantined predictive
+    - .frontend:rules:jest-vue3-check-quarantined
+  parallel: 1
+  script:
+    - |
+      if [[ -s "$GLCI_PREDICTIVE_CHANGED_FILES_PATH" ]] || [[ -s "$GLCI_PREDICTIVE_MATCHING_JS_FILES_PATH" ]]; then
+        ./scripts/frontend/check_jest_vue3_quarantine.js --all
+      fi
+
+jest-with-fixtures vue3 check quarantined:
+  extends:
+    - jest vue3 check quarantined
+  parallel: 1
+  variables:
+    JEST_FIXTURE_JOBS_ONLY: 1
+
+# Jest integration tests with Mock Service Worker
+jest-msw-integration:
+  extends:
+    - .frontend-test-base
+    - .repo-from-artifacts
+    - .frontend:rules:jest-msw-integration
+  script:
+    - yarn jest:msw-integration --ci --passWithNoTests
+  needs:
+    # it's ok to wait for the repo artifact as we're waiting for the fixtures (which wait for the repo artifact) anyway
+    - !reference [.repo-from-artifacts, needs]
+    - !reference [.with-fixtures-needs, needs]
+    - !reference [.with-graphql-schema-dump-needs, needs]
+    - job: compile-fe-islands
+      optional: true
+
+jest-integration:
+  extends:
+    - .frontend-test-base
+    - .repo-from-artifacts
+    - .frontend:rules:jest-integration
+  script:
+    - yarn jest:integration --ci
+  needs:
+    # it's ok to wait for the repo artifact as we're waiting for the fixtures (which wait for the repo artifact) anyway
+    - !reference [.frontend-test-base, needs]
+    - !reference [.repo-from-artifacts, needs]
+    - !reference [.with-fixtures-needs, needs]
+    - !reference [.with-graphql-schema-dump-needs, needs]
+
+jest-snapshot-vue3:
+  extends:
+    - .frontend-test-base
+    - .repo-from-artifacts
+    - .frontend:rules:jest-snapshot-vue3
+  needs:
+    # it's ok to wait for the repo artifact as we're waiting for the fixtures (which wait for the repo artifact) anyway
+    - !reference [.frontend-test-base, needs]
+    - !reference [.repo-from-artifacts, needs]
+    - !reference [.with-fixtures-needs, needs]
+  variables:
+    VUE_VERSION: 3
+    JEST_REPORT: jest-test-report.json
+    SNAPSHOT_TEST_REPORT: jest-snapshot-test-report.json
+  script:
+    - |
+      yarn jest:snapshots --ci --json --outputFile="${JEST_REPORT}" || echo 'Proceed to parsing test report...'
+      echo $(ruby -rjson -e 'puts JSON.generate(JSON.parse(File.read(ENV["JEST_REPORT"])).dig("snapshot"))') > "${SNAPSHOT_TEST_REPORT}"
+
+      echo " ============= snapshot test report start =============="
+      cat "${SNAPSHOT_TEST_REPORT}"
+      echo " ============= snapshot test report end ================"
+
+      snapshot_test_failed=$(ruby -rjson -e 'puts JSON.parse(File.read(ENV["SNAPSHOT_TEST_REPORT"])).dig("failure")')
+      if [[ "${snapshot_test_failed}" == "true" ]]
+      then
+        echo "You have failed snapshot tests! Exiting 1..."
+        exit 1
+      else
+        echo 'All snapshot tests passed! Exiting 0...'
+        exit 0
+      fi
+  artifacts:
+    name: snapshot_tests
+    expire_in: 31d
+    when: always
+    paths:
+      - jest-snapshot-test-match.json
+      - jest-snapshot-test-report.json
+
+test-linters:
+  extends:
+    - .frontend-test-base
+    - .frontend:rules:test-linters
+  script:
+    - yarn vitest:eslint
+
+test-infection-scanner:
+  extends:
+    - .frontend-test-base
+    - .frontend:rules:test-infection-scanner
+  script:
+    - yarn vitest:infection-scanner
+
+coverage-frontend:
+  extends:
+    - .default-retry
+    - .default-utils-before_script
+    - .yarn-cache
+    - .repo-from-artifacts
+    - .frontend:rules:coverage-frontend
+  needs:
+    - !reference [.repo-from-artifacts, needs]
+    - job: "jest"
+      optional: true
+    - job: "jest-with-fixtures"
+      optional: true
+    - job: "jest predictive"
+      optional: true
+  stage: post-test
+  script:
+    - yarn_install_script
+    - yarn node scripts/frontend/merge_coverage_frontend.js
+    # Removing the individual coverage results, as we just merged them.
+    - if ls coverage-frontend/jest-* > /dev/null 2>&1; then
+        rm -r coverage-frontend/jest-*;
+      fi
+  coverage: '/^Statements\s*:\s*?(\d+(?:\.\d+)?)%/'
+  artifacts:
+    name: coverage-frontend
+    expire_in: 31d
+    paths:
+      - coverage-frontend/
+      - jest-reports/
+      - jest-test-mapping/
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage-frontend/cobertura-coverage.xml
+
+webpack-dev-server:
+  extends:
+    - .default-retry
+    - .default-utils-before_script
+    - .yarn-cache
+    - .repo-from-artifacts
+    - .frontend:rules:default-frontend-jobs
+  stage: test-frontend
+  variables:
+    WEBPACK_MEMORY_TEST: "true"
+    WEBPACK_VENDOR_DLL: "true"
+  script:
+    - yarn_install_script
+    - retry yarn webpack-vendor
+    - node --expose-gc node_modules/.bin/webpack-dev-server --config config/webpack.config.js
+  artifacts:
+    name: webpack-dev-server
+    expire_in: 31d
+    paths:
+      - webpack-dev-server.json
+
+compile-storybook:
+  extends:
+    - .frontend-test-base
+    - .storybook-yarn-cache-pull-push
+    - .repo-from-artifacts
+    - .frontend:rules:compile-storybook
+  stage: pages
+  needs:
+    # it's ok to wait for the repo artifact as we're waiting for the fixtures (which wait for the repo artifact) anyway
+    - !reference [.frontend-test-base, needs]
+    - !reference [.repo-from-artifacts, needs]
+    - !reference [.with-fixtures-needs, needs]
+    - !reference [.with-graphql-schema-dump-needs, needs]
+  artifacts:
+    name: storybook
+    expire_in: 31d
+    when: always
+    paths:
+      - storybook/public
+  script:
+    - yarn_install_script_storybook
+    - yarn run storybook:build
+
+test-storybook:
+  extends:
+    - .frontend-test-base
+    - .storybook-yarn-cache
+    - .repo-from-artifacts
+    - .frontend:rules:test-storybook
+  stage: test-frontend
+  needs:
+    # it's ok to wait for the repo artifact as we're waiting for the fixtures (which wait for the repo artifact) anyway
+    - !reference [.frontend-test-base, needs]
+    - !reference [.repo-from-artifacts, needs]
+    - !reference [.with-fixtures-needs, needs]
+    - !reference [.with-graphql-schema-dump-needs, needs]
+  allow_failure: true
+  timeout: 60m
+  artifacts:
+    name: storybook-test-results
+    access: developer
+    expire_in: 31d
+    when: always
+    paths:
+      - storybook/storybook-results.json
+  script:
+    - yarn_install_script_storybook
+    - yarn --cwd ./storybook playwright install --with-deps chromium
+    - yarn run storybook:start &
+    - STORYBOOK_PID=$!
+    - until curl -f http://localhost:6006 >/dev/null 2>&1; do sleep 1; done  # Wait for Storybook to start
+    - yarn run storybook:dev:test
+    - kill $STORYBOOK_PID || true
+
+bundle-size-review:
+  extends:
+    - .default-retry
+    - .default-before_script
+    - .assets-compile-cache-pull
+    - .frontend:rules:bundle-size-review
+  stage: test-frontend
+  needs:
+    - job: generate-js-routes
+      optional: true
+    - job: compile-fe-islands
+      optional: true
+    - job: compile-production-assets
+      optional: true
+  variables:
+    SETUP_DB: "false"
+  script:
+    - yarn_install_script
+    - scripts/bundle_size_review
+  cache:
+    - !reference [.yarn-cache, cache]
+    - !reference [.fe-islands-yarn-cache, cache]
+  artifacts:
+    when: always
+    name: bundle-size-review
+    expire_in: 31d
+    paths:
+      - bundle-size-review/
+
+untamper-fe-islands-lockfile:
+  extends: untamper-my-lockfile
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+      changes:
+        - ee/frontend_islands/yarn.lock
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - ee/frontend_islands/yarn.lock
+  after_script:
+    - untamper-my-lockfile --lockfile ee/frontend_islands/yarn.lock

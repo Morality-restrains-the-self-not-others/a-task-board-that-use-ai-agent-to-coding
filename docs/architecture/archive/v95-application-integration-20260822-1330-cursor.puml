@@ -1,0 +1,71 @@
+' @title: 推荐分账资格取消与操作审计
+' @view: application-integration
+' @status: target
+' @version: 95
+' @iteration: referral-qualification-revoke
+' @author: cursor
+' @based_on: v94 (v94-application-integration-20260822-1120-cursor.puml)
+' @updated: 2026-08-22 13:30
+' @description: 超管可取消活跃分账资格；通过/拒绝/取消强制理由并写入审计表；taskBill 关闭边资格并作废 pending 计提
+
+@startuml
+!include <archimate/Archimate>
+
+title v95 Target — 推荐分账资格取消与审计 2026-08-22 13:30
+
+Application_Component(fe, "taskFE Vue SPA")
+note right of fe
+  🟢 取消资格 + 理由弹窗
+  审计历史抽屉
+end note
+
+Application_Component(ref, "taskReferral")
+note right of ref
+  🟡 approve/reject 强制 reason
+  🟢 POST revoke
+  🟢 GET audit
+  REFERRAL_QUALIFICATION_REVOKED
+end note
+
+Application_Component(bill, "taskBill")
+note right of bill
+  🟢 disable-eligibility
+  pending 计提 void
+end note
+
+Application_DataObject(code, "referral_code")
+note right of code
+  🟡 status += revoked
+end note
+
+Application_DataObject(aud, "referral_qualification_audit")
+note right of aud
+  🟢 追加型审计
+end note
+
+Application_DataObject(edge, "billing_referral_edge")
+Application_DataObject(accrual, "billing_referral_commission_accrual")
+Technology_Node(mysqlR, "MySQL task_referral utf8mb4")
+Technology_Node(mysqlB, "MySQL task_bill utf8mb4")
+
+Rel_Flow(fe, ref, "approve/reject/revoke + reason")
+Rel_Flow(fe, ref, "GET audit")
+Rel_Flow(ref, code, "status revoked")
+Rel_Flow(ref, aud, "insert audit")
+Rel_Flow(ref, bill, "disable-eligibility")
+Rel_Flow(bill, edge, "commission_eligible=0")
+Rel_Flow(bill, accrual, "void pending")
+Rel_Serving(mysqlR, code, "InnoDB")
+Rel_Serving(mysqlR, aud, "InnoDB")
+Rel_Serving(mysqlB, edge, "InnoDB")
+Rel_Serving(mysqlB, accrual, "InnoDB")
+
+Implementation_Plateau(plateauV94, "Plateau v94")
+Implementation_Plateau(plateauV95, "Plateau v95 referral revoke audit")
+Implementation_Gap(gapRev, "Gap: 已通过资格无法取消且无理由审计")
+Implementation_WorkPackage(wpRev, "WP-referral-qualification-revoke")
+Rel_Triggering(plateauV94, gapRev, "identifies")
+Rel_Realization(wpRev, gapRev, "closes")
+Rel_Realization(wpRev, plateauV95, "delivers")
+
+@enduml

@@ -1,0 +1,14 @@
+# gitlab_region_capacity_test.go 测试意图
+
+## 测试范围
+GitLab 区域带宽共享标记、总带宽与剩余带宽的 clamp 及管理端列表 JSON。
+
+## 关键业务断言
+- remaining > total 时 clamp 为 total；负数为 0
+- attachDeployInfo 输出 `bandwidth_shared` / `total_bandwidth_mbps` / `remaining_bandwidth_mbps`
+
+## 破坏信号
+管理端区域列表缺少上述三字段，或剩余带宽大于总量。
+
+## 回归验证
+`go test -count=1 ./src -run 'TestAttachDeployInfo_IncludesBandwidth|TestClampRemainingBandwidth|TestRemainingCapacity'`

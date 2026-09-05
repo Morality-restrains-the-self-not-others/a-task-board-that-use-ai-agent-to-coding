@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v88 diff (v85→v88)" id="id-v88aidiff01">
+  <folder name="Application" id="id-v88aid-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v88-app-fe" name="taskFE Vue SPA"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v88-app-gw" name="API Gateway APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v88-app-cloud" name="taskCloudService [MODIFIED v88]"/>
+    <element xsi:type="archimate:DataObject" id="id-v88-do-legacy" name="cloud_comment_container_binding_logs [DEPRECATED v88]"/>
+    <element xsi:type="archimate:DataObject" id="id-v88-do-shards" name="cloud_comment_container_binding_logs_00..15 [NEW v88]"/>
+  </folder>
+  <folder name="Technology" id="id-v88aid-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v88-tech-mysql" name="MySQL task_cloud utf8mb4"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v88aid-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v88-pl-v85" name="Plateau v85"/>
+    <element xsi:type="archimate:Plateau" id="id-v88-pl-v88" name="Plateau v88"/>
+    <element xsi:type="archimate:Gap" id="id-v88-gap" name="Gap: 启动日志单表全工作空间混存"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v88-wp" name="WP-ccb-logs-workspace-shard"/>
+  </folder>
+  <folder name="Relations" id="id-v88aid-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v88-rel-fe-gw" source="id-v88-app-fe" target="id-v88-app-gw" name="GET comment-container-bindings"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v88-rel-gw-cloud" source="id-v88-app-gw" target="id-v88-app-cloud" name="X-Workspace-Id"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v88-rel-cloud-shards" source="id-v88-app-cloud" target="id-v88-do-shards" name="INSERT/SELECT 按 workspace 选表"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v88-rel-cloud-legacy" source="id-v88-app-cloud" target="id-v88-do-legacy" name="[DEPRECATED] 停止写入"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v88-rel-mysql-shards" source="id-v88-tech-mysql" target="id-v88-do-shards" name="16 预创建物理表"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v88-rel-mysql-legacy" source="id-v88-tech-mysql" target="id-v88-do-legacy" name="遗留单表"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v88-rel-pl85-gap" source="id-v88-pl-v85" target="id-v88-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v88-rel-wp-gap" source="id-v88-wp" target="id-v88-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v88-rel-wp-pl88" source="id-v88-wp" target="id-v88-pl-v88"/>
+  </folder>
+  <folder name="Views" id="id-v88aid-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v88-view-mig" name="架构变迁 v85→v88 — ccb-logs-workspace-shard">
+      <child xsi:type="archimate:DiagramObject" id="id-v88-do-pl85" archimateElement="id-v88-pl-v85">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v88-c-pl85-gap" source="id-v88-do-pl85" target="id-v88-do-gap" archimateRelationship="id-v88-rel-pl85-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v88-do-gap" targetConnections="id-v88-c-pl85-gap id-v88-c-wp-gap" archimateElement="id-v88-gap">
+        <bounds x="240" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v88-do-wp" archimateElement="id-v88-wp">
+        <bounds x="240" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v88-c-wp-gap" source="id-v88-do-wp" target="id-v88-do-gap" archimateRelationship="id-v88-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v88-c-wp-pl88" source="id-v88-do-wp" target="id-v88-do-pl88" archimateRelationship="id-v88-rel-wp-pl88"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v88-do-pl88" targetConnections="id-v88-c-wp-pl88" archimateElement="id-v88-pl-v88">
+        <bounds x="620" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v88-view-flow" name="v88 Target — CCB 启动日志 workspace 分表">
+      <child xsi:type="archimate:DiagramObject" id="id-v88-d-fe" archimateElement="id-v88-app-fe">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v88-c-fe-gw" source="id-v88-d-fe" target="id-v88-d-gw" archimateRelationship="id-v88-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v88-d-gw" targetConnections="id-v88-c-fe-gw" archimateElement="id-v88-app-gw">
+        <bounds x="260" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v88-c-gw-cloud" source="id-v88-d-gw" target="id-v88-d-cloud" archimateRelationship="id-v88-rel-gw-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v88-d-cloud" targetConnections="id-v88-c-gw-cloud" archimateElement="id-v88-app-cloud">
+        <bounds x="500" y="48" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v88-c-cloud-shards" source="id-v88-d-cloud" target="id-v88-d-shards" archimateRelationship="id-v88-rel-cloud-shards"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v88-c-cloud-legacy" source="id-v88-d-cloud" target="id-v88-d-legacy" archimateRelationship="id-v88-rel-cloud-legacy"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v88-d-shards" targetConnections="id-v88-c-cloud-shards id-v88-c-mysql-shards" archimateElement="id-v88-do-shards">
+        <bounds x="500" y="140" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v88-d-legacy" targetConnections="id-v88-c-cloud-legacy id-v88-c-mysql-legacy" archimateElement="id-v88-do-legacy">
+        <bounds x="500" y="220" width="320" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v88-d-mysql" archimateElement="id-v88-tech-mysql">
+        <bounds x="48" y="140" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v88-c-mysql-shards" source="id-v88-d-mysql" target="id-v88-d-shards" archimateRelationship="id-v88-rel-mysql-shards"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v88-c-mysql-legacy" source="id-v88-d-mysql" target="id-v88-d-legacy" archimateRelationship="id-v88-rel-mysql-legacy"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

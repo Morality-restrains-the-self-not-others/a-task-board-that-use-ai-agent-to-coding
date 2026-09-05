@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v10-ai-20260707-1016">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v8 Target</name>
+  <purpose>Phase 2d 任务域 Go 真源 — Django Todo/Comment 已删 (migration 0052)；AITaskComment 仍驻 saas-backend，taskAIComment stub :8019</purpose>
+
+  <folder name="Application" id="f-app" type="application"/>
+  <folder name="Relations" id="f-rel" type="relations"/>
+
+  <!-- Frontend -->
+  <element xsi:type="archimate:ApplicationComponent" name="Vue Frontend (:4000)" id="VUE"/>
+  <!-- Gateway -->
+  <element xsi:type="archimate:ApplicationComponent" name="APISIX Gateway (:18081)" id="GW"/>
+  <!-- Platform (已有) -->
+  <element xsi:type="archimate:ApplicationComponent" name="saas-backend Django (:8001) [MODIFIED v8 internal + AITaskComment]" id="BE"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskAuth Go (:8003)" id="AUTH"/>
+  <element xsi:type="archimate:ApplicationComponent" name="git-oauth Django (:8002)" id="GOAUTH"/>
+  <element xsi:type="archimate:ApplicationComponent" name="task-bill Go (:8004)" id="BILL"/>
+  <element xsi:type="archimate:ApplicationComponent" name="task-sse Node.js (:8007)" id="SSE"/>
+  <element xsi:type="archimate:ApplicationComponent" name="task-agent-support Go (:8011)" id="AGT"/>
+  <element xsi:type="archimate:ApplicationComponent" name="task-ai-endpoint Go (:8013)" id="AIEP"/>
+  <!-- New v6 -->
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 task-project-service Go (:8016) SQLite 真源 [MODIFIED v7]" id="TPS"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟢 task-task-service Go (:8017) Task/Comment SQLite [MODIFIED v8]" id="TTS"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟢 task-cloud-service Go (:8018) [NEW v6]" id="TCS"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟢 taskAIComment Go (:8019) stub [NEW v8]" id="TAI"/>
+  <!-- Container Stack -->
+  <element xsi:type="archimate:ApplicationComponent" name="task-container-gateway Go (:8014)" id="CGW"/>
+  <element xsi:type="archimate:ApplicationComponent" name="task-credential-service Go (:8015)" id="CRED"/>
+  <element xsi:type="archimate:ApplicationComponent" name="go-relay Go (:8797)" id="RELAY"/>
+  <!-- External -->
+  <element xsi:type="archimate:ApplicationComponent" name="onlineServiceJS (:8765)" id="OSJS"/>
+  <element xsi:type="archimate:ApplicationComponent" name="Upstream LLM" id="LLM"/>
+  <element xsi:type="archimate:ApplicationComponent" name="Aliyun ECS API" id="ALI"/>
+  <element xsi:type="archimate:DataObject" name="SQLite task_project.db [NEW v7]" id="SQLITE"/>
+  <!-- BE_PROJ removed in v7 (migration 0051) -->
+  <element xsi:type="archimate:ApplicationComponent" name="🔴 [DEPRECATED] Django cloud/views" id="BE_CLOUD"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🔴 [DEPRECATED] Django cloud/providers/aliyun" id="BE_ALI"/>
+
+  <!-- RELATIONS — v6 NEW flows -->
+  <element xsi:type="archimate:FlowRelationship" id="ra1" source="VUE" target="GW"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra2" source="GW" target="TPS"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra3" source="GW" target="TTS"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra4" source="GW" target="TCS"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra5" source="TPS" target="AUTH"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra6" source="TTS" target="AUTH"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra7" source="TCS" target="AUTH"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra8" source="TPS" target="BE"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra9" source="TTS" target="BE"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra10" source="TCS" target="BE"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra11" source="TTS" target="TPS"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra12" source="TCS" target="TPS"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra13" source="TCS" target="TTS"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra14" source="TCS" target="ALI"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra33" source="TTS" target="BILL"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra34" source="GW" target="BE"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra35" source="GW" target="TAI"/>
+  <!-- Existing flows (v1-v5) -->
+  <element xsi:type="archimate:FlowRelationship" id="ra15" source="CGW" target="OSJS"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra16" source="CGW" target="BE"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra17" source="OSJS" target="AGT"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra18" source="OSJS" target="CRED"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra19" source="AGT" target="BE"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra20" source="AGT" target="SSE"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra21" source="AIEP" target="LLM"/>
+  <element xsi:type="archimate:FlowRelationship" id="ra22" source="AIEP" target="CRED"/>
+  <element xsi:type="archimate:AccessRelationship" id="ra27" source="TPS" target="SQLITE"/>
+  <!-- Deprecation removed v7 — BE_PROJ deleted -->
+  <element xsi:type="archimate:AssociationRelationship" id="ra25" source="TCS" target="BE_CLOUD"/>
+  <element xsi:type="archimate:AssociationRelationship" id="ra26" source="TCS" target="BE_ALI"/>
+
+  <folder name="Implementation" id="f-impl" type="implementation_migration"/>
+  <element xsi:type="archimate:Plateau" name="Plateau v6 — 3-Service design" id="platV6"/>
+  <element xsi:type="archimate:Plateau" name="Plateau v7 — Phase 1 Delivered" id="platV7"/>
+  <element xsi:type="archimate:Gap" name="Gap: Project in Django (closed)" id="gapProj"/>
+  <element xsi:type="archimate:Gap" name="Gap: Phase 1b endpoints" id="gapRem"/>
+  <element xsi:type="archimate:WorkPackage" name="WP Phase 1 ✅ taskProjectService" id="wp1"/>
+  <element xsi:type="archimate:WorkPackage" name="WP Phase 1b — API parity" id="wp1b"/>
+  <element xsi:type="archimate:RealizationRelationship" id="ra28" source="wp1" target="gapProj"/>
+  <element xsi:type="archimate:RealizationRelationship" id="ra29" source="wp1" target="platV7"/>
+  <element xsi:type="archimate:RealizationRelationship" id="ra30" source="wp1b" target="gapRem"/>
+  <element xsi:type="archimate:CompositionRelationship" id="ra31" source="platV7" target="TPS"/>
+  <element xsi:type="archimate:AssociationRelationship" id="ra32" source="platV6" target="gapProj"/>
+  <element xsi:type="archimate:Plateau" name="🎯 Plateau v8 — Phase 2d Task Go 真源" id="platV8"/>
+  <element xsi:type="archimate:Gap" name="Gap: Task/Comment in Django (closed)" id="gapTask"/>
+  <element xsi:type="archimate:WorkPackage" name="WP Phase 2 ✅ taskTaskService" id="wp2"/>
+  <element xsi:type="archimate:RealizationRelationship" id="ra36" source="wp2" target="gapTask"/>
+  <element xsi:type="archimate:RealizationRelationship" id="ra37" source="wp2" target="platV8"/>
+  <element xsi:type="archimate:CompositionRelationship" id="ra38" source="platV8" target="TTS"/>
+  <folder name="Views" id="f-views" type="diagrams">
+    <!-- v6 核心数据流视图 — 应用拓扑 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v7 Target — Application Service Topology" id="view-topo">
+      <!-- Frontend → Gateway -->
+      <child xsi:type="archimate:DiagramObject" id="do-VUE" archimateElement="VUE">
+        <bounds x="48" y="200" width="130" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-vue-gw" source="do-VUE" target="do-GW" archimateRelationship="ra1"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-GW" archimateElement="GW" targetConnections="conn-vue-gw">
+        <bounds x="240" y="200" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-tps" source="do-GW" target="do-TPS" archimateRelationship="ra2"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-tts" source="do-GW" target="do-TTS" archimateRelationship="ra3"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-tcs" source="do-GW" target="do-TCS" archimateRelationship="ra4"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-be" source="do-GW" target="do-BE" archimateRelationship="ra34"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-gw-tai" source="do-GW" target="do-TAI" archimateRelationship="ra35"/>
+      </child>
+      <!-- New Go Services -->
+      <child xsi:type="archimate:DiagramObject" id="do-TPS" archimateElement="TPS" targetConnections="conn-gw-tps conn-tts-tps conn-tcs-tps">
+        <bounds x="460" y="60" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tps-auth" source="do-TPS" target="do-AUTH" archimateRelationship="ra5"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tps-be" source="do-TPS" target="do-BE" archimateRelationship="ra8"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tps-sqlite" source="do-TPS" target="do-SQLITE" archimateRelationship="ra27"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-TTS" archimateElement="TTS" targetConnections="conn-gw-tts conn-tcs-tts">
+        <bounds x="460" y="200" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tts-tps" source="do-TTS" target="do-TPS" archimateRelationship="ra11"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tts-auth" source="do-TTS" target="do-AUTH" archimateRelationship="ra6"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tts-be" source="do-TTS" target="do-BE" archimateRelationship="ra9"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tts-bill" source="do-TTS" target="do-BILL" archimateRelationship="ra33"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-TCS" archimateElement="TCS" targetConnections="conn-gw-tcs conn-tcs-tps conn-tcs-tts">
+        <bounds x="460" y="340" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tcs-tps" source="do-TCS" target="do-TPS" archimateRelationship="ra12"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tcs-tts" source="do-TCS" target="do-TTS" archimateRelationship="ra13"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tcs-auth" source="do-TCS" target="do-AUTH" archimateRelationship="ra7"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tcs-be" source="do-TCS" target="do-BE" archimateRelationship="ra10"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-tcs-ali" source="do-TCS" target="do-ALI" archimateRelationship="ra14"/>
+      </child>
+      <!-- Auth -->
+      <child xsi:type="archimate:DiagramObject" id="do-AUTH" archimateElement="AUTH" targetConnections="conn-tps-auth conn-tts-auth conn-tcs-auth">
+        <bounds x="700" y="140" width="140" height="55"/>
+      </child>
+      <!-- Django internal + AITaskComment (prod path) -->
+      <child xsi:type="archimate:DiagramObject" id="do-BE" archimateElement="BE" targetConnections="conn-tps-be conn-tts-be conn-tcs-be conn-gw-be">
+        <bounds x="700" y="280" width="180" height="55"/>
+      </child>
+      <!-- taskAIComment stub (future APISIX target) -->
+      <child xsi:type="archimate:DiagramObject" id="do-TAI" archimateElement="TAI" targetConnections="conn-gw-tai">
+        <bounds x="700" y="360" width="180" height="55"/>
+      </child>
+      <!-- Billing -->
+      <child xsi:type="archimate:DiagramObject" id="do-BILL" archimateElement="BILL" targetConnections="conn-tts-bill">
+        <bounds x="700" y="200" width="140" height="55"/>
+      </child>
+      <!-- Aliyun -->
+      <child xsi:type="archimate:DiagramObject" id="do-ALI" archimateElement="ALI" targetConnections="conn-tcs-ali">
+        <bounds x="920" y="400" width="140" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-SQLITE" archimateElement="SQLITE" targetConnections="conn-tps-sqlite">
+        <bounds x="460" y="140" width="160" height="40"/>
+      </child>
+      <!-- Deprecated cloud (Phase 3 pending) -->
+      <child xsi:type="archimate:DiagramObject" id="do-BE_CLOUD" archimateElement="BE_CLOUD">
+        <bounds x="900" y="160" width="160" height="40"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-BE_ALI" archimateElement="BE_ALI">
+        <bounds x="900" y="260" width="160" height="40"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v6→v7 — 项目域 Go 真源" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-platV6" archimateElement="platV6">
+        <bounds x="48" y="120" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v6-gap" source="do-platV6" target="do-gapProj" archimateRelationship="ra32"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gapProj" archimateElement="gapProj" targetConnections="conn-v6-gap conn-wp1-gap">
+        <bounds x="280" y="120" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp1" archimateElement="wp1" targetConnections="conn-wp1-gap conn-wp1-v7">
+        <bounds x="520" y="80" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp1-gap" source="do-wp1" target="do-gapProj" archimateRelationship="ra28"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp1-v7" source="do-wp1" target="do-platV7" archimateRelationship="ra29"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-platV7" archimateElement="platV7" targetConnections="conn-wp1-v7 conn-v7-tps">
+        <bounds x="760" y="80" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v7-tps" source="do-platV7" target="do-TPS-m" archimateRelationship="ra31"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-TPS-m" archimateElement="TPS" targetConnections="conn-v7-tps">
+        <bounds x="760" y="160" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gapRem" archimateElement="gapRem" targetConnections="conn-wp1b-gap">
+        <bounds x="520" y="200" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp1b" archimateElement="wp1b">
+        <bounds x="280" y="200" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp1b-gap" source="do-wp1b" target="do-gapRem" archimateRelationship="ra30"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

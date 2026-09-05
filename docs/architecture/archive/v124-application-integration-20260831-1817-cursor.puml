@@ -1,0 +1,58 @@
+' @title: 新节点 clone-run 加载链（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 124
+' @iteration: daydaymoney-deploy-new-node-clone
+' @author: cursor
+' @based_on: v123 (v123-application-integration-20260831-1703-cursor.puml)
+' @updated: 2026-08-31 18:55
+' @description: up.sh 自动 deploy-sync；conf-local 含 PEM；taskGateway/taskAuth 改读路径
+
+@startuml
+!include <archimate/Archimate>
+
+title clone-run 加载链 — v124 Current Architecture (2026-08-31 18:55)
+
+Application_Component(upsh, "scripts/up.sh")
+note right of upsh
+  只 overlay conf-local
+  再 gh download runAll + deploy-sync
+end note
+
+Application_Component(sync, "deploy-sync")
+note right of sync
+  钉含 MergeConfLocal 的新 tag
+end note
+
+Application_Component(confload, "confload / conf_loader")
+Application_Component(gw, "taskGateway")
+Application_Component(auth, "taskAuth")
+Application_Component(svc, "其余 Go / taskEvents / taskFE")
+
+Application_DataObject(skel, "conf/rel 骨架")
+Application_DataObject(conflocal, "conf-local/rel + PEM")
+note right of conflocal
+  含 gateway TLS 与 oidc_signing_key
+end note
+
+Application_DataObject(pins, "releases.yaml 新 tag")
+
+Rel_Flow(upsh, conflocal, "rsync overlay")
+Rel_Flow(upsh, sync, "有 bin/runAll 后")
+Rel_Access_r(sync, pins, "读钉")
+Rel_Flow(sync, svc, "ELF unpack")
+Rel_Access_r(confload, skel, "1 读")
+Rel_Access_r(confload, conflocal, "2 合并")
+Rel_Flow(confload, svc, "注入 YAML")
+Rel_Flow(gw, conflocal, "staging PEM → certs/")
+Rel_Access_r(auth, conflocal, "签名钥")
+
+Implementation_Plateau(p123, "Plateau v123")
+Implementation_Plateau(p124, "Plateau v124 clone-run")
+Implementation_Gap(gap, "Gap: PEM 树外 + 旧 ELF + seed 漂移")
+Implementation_WorkPackage(wp, "WP-daydaymoney-deploy-new-node-clone")
+Rel_Triggering(p123, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p124, "delivers")
+
+@enduml

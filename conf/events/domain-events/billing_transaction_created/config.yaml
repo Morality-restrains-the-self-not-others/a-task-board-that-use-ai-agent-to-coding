@@ -1,0 +1,13 @@
+intents:
+  1_process_billing_transaction:
+    host: 0.0.0.0
+    port: 18020
+    groupId: task-events-billing-transaction-created-1-process-billing-transaction
+    events:
+    - BILLING_TRANSACTION_CREATED
+  2_mark_user_tenant:
+    host: 0.0.0.0
+    port: 18053
+    groupId: task-events-billing-transaction-created-2-mark-user-tenant
+    events:
+    - BILLING_TRANSACTION_CREATED

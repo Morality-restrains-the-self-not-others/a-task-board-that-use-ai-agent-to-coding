@@ -1,0 +1,19 @@
+# ProjectDetail.inline-edit-smoke — 测试意图
+
+## 对应功能意图
+
+`task2app/docs/intents/frontend/project_detail/001_inline_edit_tags_autorun_image.intent.md`
+
+## 冒烟场景
+
+1. 注入 `userId` cookie，Mock `/accounts/users/me/` 与 profile（不依赖网关登录，避免 502）
+2. Mock 项目 GET + installed-images 后打开详情页
+3. 点击 `project-tags-display` → 可见 `project-tags-edit` / `project-tags-input` / `project-tags-save`
+4. 点击 `project-default-auto-run-display` → 可见 `project-default-auto-run-edit` 与 checkbox
+5. 点击 `project-container-image-display` → 可见 select 与保存按钮
+
+## 运行
+
+```bash
+bash task2app/playwright/front_project/tests/ProjectDetail.inline-edit-smoke.playwright.test.sh
+```

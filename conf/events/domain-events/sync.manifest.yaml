@@ -1,0 +1,13 @@
+version: "1"
+fragments:
+  - from: ../../infra/docker-infra/config.yaml
+    to: docker-infra.yaml
+    pick: [redis, kafka]
+  # OPT-20260806-057: django 目录退役；真源 conf/core/email.yaml，
+  # 去掉 internalApiBase/host/port 死 pick（Django 退役），片段更名 email.yaml
+  - from: ../../core/email/config.yaml
+    to: email.yaml
+    pick: [email, email2]
+  - from: ../../core/sms/config.yaml
+    to: sms.yaml
+    pick: [sms]

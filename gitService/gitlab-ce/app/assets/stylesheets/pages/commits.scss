@@ -1,0 +1,155 @@
+@use "sass:color";
+
+.branch-info .commit-icon {
+  svg {
+    top: 3px;
+  }
+}
+
+/*
+ * Commit message textarea for web editor and
+ * custom merge request message
+ */
+.commit-message-container {
+  @apply gl-bg-default;
+  position: relative;
+  font-family: $monospace-font;
+  $left: 12px;
+
+  .max-width-marker {
+    width: 72ch;
+    color: $commit-max-width-marker-color;
+    font-family: inherit;
+    left: $left;
+    height: 100%;
+    border-right: 1px solid color.mix($input-border, $white);
+    position: absolute;
+    z-index: 1;
+  }
+
+  textarea {
+    background-color: $commit-message-text-area-bg;
+    font-family: inherit;
+    padding-left: $left;
+    position: relative;
+    z-index: 2;
+  }
+}
+
+.commit-row-title {
+  .str-truncated {
+    max-width: 70%;
+  }
+}
+
+.commit-content {
+  padding-right: 10px;
+  white-space: normal;
+  min-width: 0;
+
+  .commit-title {
+    display: flex;
+    align-items: center;
+  }
+
+  .committer {
+    @apply gl-text-subtle;
+
+    .commit-author-link {
+      @apply gl-text-default;
+    }
+
+    // stylelint-disable-next-line gitlab/no-gl-class
+    &.gl-inline-flex {
+      gap: 0.5ch;
+    }
+
+    .commit-author-link {
+      max-width: 19ch;
+    }
+  }
+}
+
+.commit-nav-buttons {
+  margin: 0 0.5rem;
+
+  a.btn,
+  button {
+    // See: https://gitlab.com/gitlab-org/gitlab-services/design.gitlab.com/-/issues/2569
+    &:last-child > svg {
+      margin-left: 0.25rem;
+      margin-right: 0;
+    }
+  }
+}
+
+.commit,
+.generic-commit-status {
+  a {
+    @apply gl-text-default;
+  }
+
+  .commit-row-description {
+    display: none;
+    flex: 1;
+
+    a {
+      color: $blue-600;
+    }
+  }
+
+  &.inline-commit {
+    .commit-row-title {
+      font-size: $code-font-size-fixed;
+    }
+  }
+}
+
+.branch-commit {
+  .commit-icon {
+    text-align: center;
+    display: inline-block;
+
+    svg {
+      height: 14px;
+      width: 14px;
+      vertical-align: middle;
+      @apply gl-fill-icon-subtle;
+    }
+  }
+}
+
+.commit,
+.generic-commit-status,
+.branch-commit {
+  .commit-sha {
+    @apply gl-text-link;
+  }
+}
+
+.signature-badge {
+  &:hover {
+    text-decoration: none;
+  }
+
+  .header-main-content & {
+    margin-right: $gl-spacing-scale-2;
+  }
+}
+
+.gpg-popover-certificate-details {
+  ul {
+    padding-left: $gl-padding;
+  }
+
+  li.unstyled {
+    list-style-type: none;
+  }
+}
+
+.signature-popover {
+  display: flex;
+  align-items: center;
+  font-weight: $gl-font-weight-normal;
+  line-height: 1.5;
+}

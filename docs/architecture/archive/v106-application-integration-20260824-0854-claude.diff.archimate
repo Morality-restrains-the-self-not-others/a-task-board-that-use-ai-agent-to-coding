@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v106 变迁 (v104→v106)" id="id-v106aidiff01">
+  <folder name="Application" id="id-v106ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v106-app-edge" name="边缘 nginx (Host :443) [MODIFIED v106]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v106-app-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v106-app-fe" name="taskFE SPA"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v106-app-cloud" name="taskCloudService"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v106-app-django" name="saas-backend (Django legacy)"/>
+  </folder>
+  <folder name="Motivation" id="id-v106ai-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" id="id-v106-c-hsts" name="HSTS 阶梯灰度 + 证书续签监控 [NEW v106]"/>
+    <element xsi:type="archimate:Constraint" id="id-v106-c-csp" name="CSP Report-Only 灰度后 enforce [NEW v106]"/>
+    <element xsi:type="archimate:Constraint" id="id-v106-c-ref" name="Referrer-Policy 保留 Origin [NEW v106]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v106ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v106-pl-v104" name="Plateau v104"/>
+    <element xsi:type="archimate:Plateau" id="id-v106-pl-v106" name="Plateau v106 安全头+HTTPS 跳转"/>
+    <element xsi:type="archimate:Gap" id="id-v106-gap" name="Gap: 公网响应无安全头、无强制 HTTPS"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v106-wp" name="WP-security-headers-hsts"/>
+  </folder>
+  <folder name="Relations" id="id-v106ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v106-rel-edge-gw" source="id-v106-app-edge" target="id-v106-app-gw" name="HTTPS /api/* + /*"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v106-rel-gw-fe" source="id-v106-app-gw" target="id-v106-app-fe" name="SPA catch-all"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v106-rel-gw-cloud" source="id-v106-app-gw" target="id-v106-app-cloud" name="forward"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v106-rel-gw-django" source="id-v106-app-gw" target="id-v106-app-django" name="forward legacy"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v106-rel-hsts-edge" source="id-v106-c-hsts" target="id-v106-app-edge"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v106-rel-csp-edge" source="id-v106-c-csp" target="id-v106-app-edge"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v106-rel-ref-edge" source="id-v106-c-ref" target="id-v106-app-edge"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v106-rel-pl104-gap" source="id-v106-pl-v104" target="id-v106-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v106-rel-wp-gap" source="id-v106-wp" target="id-v106-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v106-rel-wp-pl106" source="id-v106-wp" target="id-v106-pl-v106"/>
+  </folder>
+  <folder name="Views" id="id-v106ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v106-view-mig" name="架构变迁 v104→v106 — security-headers-hsts-https-redirect">
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-pl104" archimateElement="id-v106-pl-v104">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-pl104-gap" source="id-v106-do-pl104" target="id-v106-do-gap" archimateRelationship="id-v106-rel-pl104-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-gap" targetConnections="id-v106-c-pl104-gap id-v106-c-wp-gap" archimateElement="id-v106-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-wp" archimateElement="id-v106-wp">
+        <bounds x="240" y="160" width="400" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-wp-gap" source="id-v106-do-wp" target="id-v106-do-gap" archimateRelationship="id-v106-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-wp-pl106" source="id-v106-do-wp" target="id-v106-do-pl106" archimateRelationship="id-v106-rel-wp-pl106"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-pl106" targetConnections="id-v106-c-wp-pl106" archimateElement="id-v106-pl-v106">
+        <bounds x="680" y="160" width="160" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v106-view-topo" name="v106 Target — 边缘安全头 + HTTPS 跳转">
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-edge" archimateElement="id-v106-app-edge">
+        <bounds x="48" y="48" width="180" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-edge-gw" source="id-v106-do-edge" target="id-v106-do-gw" archimateRelationship="id-v106-rel-edge-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-gw" targetConnections="id-v106-c-edge-gw" archimateElement="id-v106-app-gw">
+        <bounds x="300" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-gw-fe" source="id-v106-do-gw" target="id-v106-do-fe" archimateRelationship="id-v106-rel-gw-fe"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-gw-cloud" source="id-v106-do-gw" target="id-v106-do-cloud" archimateRelationship="id-v106-rel-gw-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-gw-django" source="id-v106-do-gw" target="id-v106-do-django" archimateRelationship="id-v106-rel-gw-django"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-fe" targetConnections="id-v106-c-gw-fe" archimateElement="id-v106-app-fe">
+        <bounds x="520" y="16" width="140" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-cloud" targetConnections="id-v106-c-gw-cloud" archimateElement="id-v106-app-cloud">
+        <bounds x="520" y="96" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-django" targetConnections="id-v106-c-gw-django" archimateElement="id-v106-app-django">
+        <bounds x="520" y="176" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-hsts" archimateElement="id-v106-c-hsts">
+        <bounds x="48" y="200" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-hsts-edge" source="id-v106-do-hsts" target="id-v106-do-edge" archimateRelationship="id-v106-rel-hsts-edge"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-csp" archimateElement="id-v106-c-csp">
+        <bounds x="48" y="280" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-csp-edge" source="id-v106-do-csp" target="id-v106-do-edge" archimateRelationship="id-v106-rel-csp-edge"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v106-do-ref" archimateElement="id-v106-c-ref">
+        <bounds x="48" y="360" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v106-c-ref-edge" source="id-v106-do-ref" target="id-v106-do-edge" archimateRelationship="id-v106-rel-ref-edge"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

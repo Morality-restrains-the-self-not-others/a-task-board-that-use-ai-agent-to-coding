@@ -1,0 +1,16 @@
+provider: gitlab
+service_provider: tencent-sh-1
+target:
+  website: ${scheme}://${subdomains.gitlabTencentSh1}
+  client_id: ''
+  client_secret: ""
+  # v2 回调契约：base 域 /redirect/gitsite/<gitsite>/oauth/callback/（gitsite = target.website 主机名）。
+  redirect_uri: ${scheme}://${subdomains.base}/redirect/gitsite/${subdomains.gitlabTencentSh1}/oauth/callback/
+  # git-over-HTTP push 需要 write_repository；api 只管 REST，不含 git push。
+  scope: read_repository write_repository api read_user
+service:
+  allowedHost: ${scheme}://${subdomains.base}
+  # gitoauth_base：taskProjectService 换票桥接内网地址（见 OPT-20260807-071）。
+  gitoauth_base: http://127.0.0.1:8002
+  host: 0.0.0.0
+  port: 8002

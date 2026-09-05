@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v79 全量 (post-change)" id="id-v79els-full01">
+  <folder name="Application" id="id-v79elsf-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v79elsf-gw" name="API Gateway (APISIX)"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v79elsf-auth" name="taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v79elsf-aip" name="taskAiProvider [MODIFIED v79]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v79elsf-fe" name="taskFE [MODIFIED v79]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v79elsf-cloud" name="taskCloudService"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v79elsf-events" name="taskEvents"/>
+    <element xsi:type="archimate:ApplicationService" id="id-v79elsf-imapi" name="Image Marketplace API"/>
+    <element xsi:type="archimate:DataObject" id="id-v79elsf-aipdb" name="taskAiProvider DB"/>
+  </folder>
+  <folder name="Technology" id="id-v79elsf-tech" type="technology">
+    <element xsi:type="archimate:TechnologyService" id="id-v79elsf-cos" name="Tencent COS ai-provider-1259712831 [NEW v79]"/>
+    <element xsi:type="archimate:TechnologyService" id="id-v79elsf-aliyun" name="Aliyun ECS/STS API"/>
+    <element xsi:type="archimate:TechnologyService" id="id-v79elsf-kafka" name="Kafka"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v79elsf-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v79elsf-pl13" name="Plateau v13"/>
+    <element xsi:type="archimate:Plateau" id="id-v79elsf-pl79" name="Plateau v79"/>
+    <element xsi:type="archimate:Gap" id="id-v79elsf-gap" name="Gap: vendor docs on local disk"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v79elsf-wp" name="WP-vendor-docs-cos-presign"/>
+  </folder>
+  <folder name="Relations" id="id-v79elsf-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v79elsf-rel-gw-aip" source="id-v79elsf-gw" target="id-v79elsf-aip" name="/api/ai-provider/*"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v79elsf-rel-gw-fe" source="id-v79elsf-gw" target="id-v79elsf-fe" name="SPA"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v79elsf-rel-aip-api" source="id-v79elsf-aip" target="id-v79elsf-imapi" name="serves"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v79elsf-rel-aip-db" source="id-v79elsf-aip" target="id-v79elsf-aipdb" name="R/W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v79elsf-rel-put" source="id-v79elsf-fe" target="id-v79elsf-cos" name="presigned PUT"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v79elsf-rel-sdk" source="id-v79elsf-aip" target="id-v79elsf-cos" name="sign / Head / Get"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v79elsf-rel-aip-cloud" source="id-v79elsf-aip" target="id-v79elsf-cloud" name="credential lookup"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v79elsf-rel-aip-aliyun" source="id-v79elsf-aip" target="id-v79elsf-aliyun" name="CloudSDKProxy"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v79elsf-rel-ev-kafka" source="id-v79elsf-events" target="id-v79elsf-kafka" name="consume/publish"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v79elsf-rel-pl13-gap" source="id-v79elsf-pl13" target="id-v79elsf-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v79elsf-rel-wp-gap" source="id-v79elsf-wp" target="id-v79elsf-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v79elsf-rel-wp-pl79" source="id-v79elsf-wp" target="id-v79elsf-pl79"/>
+  </folder>
+  <folder name="Views" id="id-v79elsf-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v79elsf-view-topo" name="v79 全量拓扑 — vendor-docs-cos-presign">
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-gw" archimateElement="id-v79elsf-gw">
+        <bounds x="48" y="24" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsf-c-gw-aip" source="id-v79elsf-d-gw" target="id-v79elsf-d-aip" archimateRelationship="id-v79elsf-rel-gw-aip"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsf-c-gw-fe" source="id-v79elsf-d-gw" target="id-v79elsf-d-fe" archimateRelationship="id-v79elsf-rel-gw-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-fe" targetConnections="id-v79elsf-c-gw-fe" archimateElement="id-v79elsf-fe">
+        <bounds x="48" y="120" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsf-c-put" source="id-v79elsf-d-fe" target="id-v79elsf-d-cos" archimateRelationship="id-v79elsf-rel-put"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-aip" targetConnections="id-v79elsf-c-gw-aip" archimateElement="id-v79elsf-aip">
+        <bounds x="280" y="120" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsf-c-sdk" source="id-v79elsf-d-aip" target="id-v79elsf-d-cos" archimateRelationship="id-v79elsf-rel-sdk"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsf-c-db" source="id-v79elsf-d-aip" target="id-v79elsf-d-db" archimateRelationship="id-v79elsf-rel-aip-db"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsf-c-api" source="id-v79elsf-d-aip" target="id-v79elsf-d-imapi" archimateRelationship="id-v79elsf-rel-aip-api"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsf-c-cloud" source="id-v79elsf-d-aip" target="id-v79elsf-d-cloud" archimateRelationship="id-v79elsf-rel-aip-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsf-c-aliyun" source="id-v79elsf-d-aip" target="id-v79elsf-d-aliyun" archimateRelationship="id-v79elsf-rel-aip-aliyun"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-cos" targetConnections="id-v79elsf-c-put id-v79elsf-c-sdk" archimateElement="id-v79elsf-cos">
+        <bounds x="520" y="120" width="240" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-db" targetConnections="id-v79elsf-c-db" archimateElement="id-v79elsf-aipdb">
+        <bounds x="280" y="200" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-imapi" targetConnections="id-v79elsf-c-api" archimateElement="id-v79elsf-imapi">
+        <bounds x="280" y="40" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-cloud" targetConnections="id-v79elsf-c-cloud" archimateElement="id-v79elsf-cloud">
+        <bounds x="520" y="200" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-aliyun" targetConnections="id-v79elsf-c-aliyun" archimateElement="id-v79elsf-aliyun">
+        <bounds x="720" y="200" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-events" archimateElement="id-v79elsf-events">
+        <bounds x="48" y="280" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsf-c-kafka" source="id-v79elsf-d-events" target="id-v79elsf-d-kafka" archimateRelationship="id-v79elsf-rel-ev-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-kafka" targetConnections="id-v79elsf-c-kafka" archimateElement="id-v79elsf-kafka">
+        <bounds x="280" y="280" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-auth" archimateElement="id-v79elsf-auth">
+        <bounds x="48" y="200" width="160" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v79elsf-view-mig" name="架构变迁 v13→v79 — vendor-docs-cos-presign">
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-pl13" archimateElement="id-v79elsf-pl13">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsf-c-pl13-gap" source="id-v79elsf-d-pl13" target="id-v79elsf-d-gap" archimateRelationship="id-v79elsf-rel-pl13-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-gap" targetConnections="id-v79elsf-c-pl13-gap id-v79elsf-c-wp-gap" archimateElement="id-v79elsf-gap">
+        <bounds x="240" y="48" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-wp" archimateElement="id-v79elsf-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsf-c-wp-gap" source="id-v79elsf-d-wp" target="id-v79elsf-d-gap" archimateRelationship="id-v79elsf-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v79elsf-c-wp-pl79" source="id-v79elsf-d-wp" target="id-v79elsf-d-pl79" archimateRelationship="id-v79elsf-rel-wp-pl79"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v79elsf-d-pl79" targetConnections="id-v79elsf-c-wp-pl79" archimateElement="id-v79elsf-pl79">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

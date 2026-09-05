@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.archimatetool.com/archimate"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    identifier="model-v57-django-retired-final">
+  <name xml:lang="en">v57 Django 完全退役 — 纯 Go 微服务</name>
+  <purpose>v56 制定的 8 Phase Strangler Fig 迁移已全部完成。Django saas-backend 进程已下线，所有数据已迁至各 Go 服务 MySQL。本架构反映最终 pure-Go 状态。</purpose>
+
+  <!-- IMPLEMENTATION LAYER -->
+  <folder name="Implementation" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v57 (current) — Django 退役，纯 Go 微服务" id="p57"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v56 (target) — Django 退役路线图 [ACHIEVED]" id="p56"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v55 — Django 仍在 [HISTORICAL]" id="p55"/>
+  </folder>
+
+  <!-- APPLICATION LAYER -->
+  <folder name="Application" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="taskAuth — users, profiles, SSO, sessions" id="task-auth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskGitOauth — git identities, OAuth" id="task-gitoauth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTenantService — companies, members, groups" id="task-tenant"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskProjectService — projects, workspaces, ACL, GitLab" id="task-project"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTaskService — todos CRUD" id="task-task"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskAIComment — comment import" id="task-aicomment"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskCloudService — platforms, VPC, images, OAuth, CSC" id="task-cloud"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskBill — billing, subscriptions, pricing, refund" id="task-bill"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskEvents — Kafka consumers, SSE dispatch" id="task-events-go"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Kafka Consumers (Go) — 16 intent handlers" id="kafka-consumers"/>
+    <element xsi:type="archimate:ApplicationComponent" name="APISIX Gateway (:18081)" id="gateway"/>
+    <element xsi:type="archimate:DataObject" name="Kafka — Domain Events Bus" id="kafka-broker"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Django saas-backend [REMOVED v57]" id="django-removed"/>
+  </folder>
+
+  <!-- RELATIONSHIPS -->
+  <folder name="Relations" type="relations">
+    <!-- Plateau progression -->
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-p55-p56" source="p55" target="p56"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-p56-p57" source="p56" target="p57"/>
+
+    <!-- Gateway → Go services (Flow) -->
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-auth" source="gateway" target="task-auth"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-gitoauth" source="gateway" target="task-gitoauth"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-tenant" source="gateway" target="task-tenant"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-project" source="gateway" target="task-project"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-task" source="gateway" target="task-task"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-aicomment" source="gateway" target="task-aicomment"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-cloud" source="gateway" target="task-cloud"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-gw-bill" source="gateway" target="task-bill"/>
+
+    <!-- Kafka event flows -->
+    <element xsi:type="archimate:FlowRelationship" id="rel-kafka-consumers" source="kafka-broker" target="kafka-consumers"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-kc-tenant" source="kafka-consumers" target="task-tenant"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-kc-auth" source="kafka-consumers" target="task-auth"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-kc-project" source="kafka-consumers" target="task-project"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-kc-cloud" source="kafka-consumers" target="task-cloud"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-kc-events" source="kafka-consumers" target="task-events-go"/>
+  </folder>
+
+  <!-- VIEWS -->
+  <folder name="Views" type="diagrams">
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- View 1: 架构变迁 v55 → v56 → v57 -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v55→v56→v57 — Django 退役完成" id="view-migration">
+      <!-- Plateau v55 (historical) -->
+      <node xsi:type="archimate:DiagramObject" id="do-p55" archimateElement="p55">
+        <bounds x="24" y="24" width="220" height="55"/>
+      </node>
+      <!-- Plateau v56 (achieved) -->
+      <node xsi:type="archimate:DiagramObject" id="do-p56" archimateElement="p56" targetConnections="conn-p55-p56">
+        <bounds x="300" y="24" width="220" height="55"/>
+      </node>
+      <!-- Plateau v57 (current) -->
+      <node xsi:type="archimate:DiagramObject" id="do-p57" archimateElement="p57" targetConnections="conn-p56-p57">
+        <bounds x="576" y="24" width="220" height="55"/>
+      </node>
+
+      <!-- Django removed marker -->
+      <node xsi:type="archimate:DiagramObject" id="do-django-removed" archimateElement="django-removed">
+        <bounds x="576" y="110" width="220" height="45"/>
+      </node>
+
+      <!-- Plateau connections -->
+      <sourceConnection xsi:type="archimate:Connection" id="conn-p55-p56" source="do-p55" target="do-p56" archimateRelationship="rel-p55-p56"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-p56-p57" source="do-p56" target="do-p57" archimateRelationship="rel-p56-p57"/>
+    </element>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- View 2: v57 Current — 数据流拓扑 -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="v57 Current — 数据流拓扑" id="view-topology">
+      <!-- Gateway -->
+      <node xsi:type="archimate:DiagramObject" id="do-gateway" archimateElement="gateway">
+        <bounds x="300" y="24" width="170" height="55"/>
+      </node>
+
+      <!-- Row 1: Core Go services -->
+      <node xsi:type="archimate:DiagramObject" id="do-task-auth" archimateElement="task-auth" targetConnections="conn-gw-auth conn-kc-auth">
+        <bounds x="20" y="120" width="155" height="55"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-gitoauth" archimateElement="task-gitoauth" targetConnections="conn-gw-gitoauth">
+        <bounds x="195" y="120" width="155" height="55"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-tenant" archimateElement="task-tenant" targetConnections="conn-gw-tenant conn-kc-tenant">
+        <bounds x="370" y="120" width="155" height="55"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-project" archimateElement="task-project" targetConnections="conn-gw-project conn-kc-project">
+        <bounds x="545" y="120" width="155" height="55"/>
+      </node>
+
+      <!-- Row 2: More Go services -->
+      <node xsi:type="archimate:DiagramObject" id="do-task-task" archimateElement="task-task" targetConnections="conn-gw-task">
+        <bounds x="20" y="210" width="155" height="55"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-aicomment" archimateElement="task-aicomment" targetConnections="conn-gw-aicomment">
+        <bounds x="195" y="210" width="155" height="55"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-cloud" archimateElement="task-cloud" targetConnections="conn-gw-cloud conn-kc-cloud">
+        <bounds x="370" y="210" width="155" height="55"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-bill" archimateElement="task-bill" targetConnections="conn-gw-bill">
+        <bounds x="545" y="210" width="155" height="55"/>
+      </node>
+
+      <!-- Row 3: Kafka + Events -->
+      <node xsi:type="archimate:DiagramObject" id="do-kafka-broker" archimateElement="kafka-broker">
+        <bounds x="20" y="310" width="180" height="50"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-kafka-consumers" archimateElement="kafka-consumers" targetConnections="conn-kafka-flow">
+        <bounds x="230" y="310" width="180" height="50"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-task-events-go" archimateElement="task-events-go" targetConnections="conn-kc-events">
+        <bounds x="440" y="310" width="180" height="50"/>
+      </node>
+
+      <!-- Gateway → Go services (Flow) -->
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-auth" source="do-gateway" target="do-task-auth" archimateRelationship="rel-gw-auth"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-gitoauth" source="do-gateway" target="do-task-gitoauth" archimateRelationship="rel-gw-gitoauth"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-tenant" source="do-gateway" target="do-task-tenant" archimateRelationship="rel-gw-tenant"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-project" source="do-gateway" target="do-task-project" archimateRelationship="rel-gw-project"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-task" source="do-gateway" target="do-task-task" archimateRelationship="rel-gw-task"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-aicomment" source="do-gateway" target="do-task-aicomment" archimateRelationship="rel-gw-aicomment"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-cloud" source="do-gateway" target="do-task-cloud" archimateRelationship="rel-gw-cloud"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-gw-bill" source="do-gateway" target="do-task-bill" archimateRelationship="rel-gw-bill"/>
+
+      <!-- Kafka → Consumers → Go services (Flow) -->
+      <sourceConnection xsi:type="archimate:Connection" id="conn-kafka-flow" source="do-kafka-broker" target="do-kafka-consumers" archimateRelationship="rel-kafka-consumers"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-kc-tenant" source="do-kafka-consumers" target="do-task-tenant" archimateRelationship="rel-kc-tenant"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-kc-auth" source="do-kafka-consumers" target="do-task-auth" archimateRelationship="rel-kc-auth"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-kc-project" source="do-kafka-consumers" target="do-task-project" archimateRelationship="rel-kc-project"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-kc-cloud" source="do-kafka-consumers" target="do-task-cloud" archimateRelationship="rel-kc-cloud"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-kc-events" source="do-kafka-consumers" target="do-task-events-go" archimateRelationship="rel-kc-events"/>
+    </element>
+  </folder>
+
+</archimate:model>

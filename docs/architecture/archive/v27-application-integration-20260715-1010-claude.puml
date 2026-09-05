@@ -1,0 +1,69 @@
+' @title: Application Integration — 任务终态硬释放 + 镜像容器迁移
+' @view: application-integration
+' @status: archived
+' @version: 27
+' @author: claude
+' @based_on: v25 (v25-application-integration-20260714-2055-claude.puml); parallel with v26
+' @updated: 2026-07-15 10:30
+' @description: 终态禁止 idle reuse；共享实例上外任务容器先迁回所属任务机器再硬释放；真实 ECS 走 start-vm-auto
+' @iteration: terminal-hard-release-container-migrate
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v27 — Terminal Hard Release + Container Migrate (2026-07-15 10:30)
+
+rectangle "Motivation" {
+  Motivation_Constraint(hardRel, "Constraint\n终态机器硬释放\n禁止再 reuse")
+}
+
+rectangle "Application" {
+  Application_Component(vue, "Vue TaskDetail\nprogress PATCH")
+  Application_Component(gw, "task-gateway")
+  Application_Component(task, "taskTaskService\nTASK_STATUS_CHANGED")
+  Application_Component(events, "taskEvents\n1_release + migrate")
+  Application_Component(cloud, "taskCloudService\nbindings/migrate/reuse")
+  Application_Component(cgw, "taskContainerGateway\n+ relay/mock")
+  Application_DataObject(csc, "cloud_server_configs\nterminal_released")
+  Application_DataObject(evt, "TASK_STATUS_CHANGED")
+}
+
+rectangle "Technology" {
+  Technology_Node(kafka, "Kafka")
+  Technology_Node(ecs, "Aliyun ECS")
+  Technology_Node(docker, "镜像容器\nrelay/mock")
+}
+
+note top of events
+  终态：list siblings →
+  migrate foreign busy → stop self →
+  CLOUD_SERVER_STOPPED + mark terminal_released
+  @author: claude @2026-07-15 10:30
+end note
+
+note top of cloud
+  internal APIs；reuse 解绑 source；
+  排除 terminal_released；
+  真实 ECS start-vm-auto + 原镜像拉起
+  @author: claude @2026-07-15 10:30
+end note
+
+note right of hardRel
+  完成/取消后节点不可复用
+end note
+
+Rel_Flow(vue, gw, "PATCH todos")
+Rel_Flow(gw, task, "update task")
+Rel_Flow(task, kafka, "TASK_STATUS_CHANGED")
+Rel_Flow(kafka, events, "consume")
+Rel_Flow(events, cloud, "bindings+migrate+mark")
+Rel_Access_W(cloud, csc, "W terminal_released")
+Rel_Flow(events, kafka, "CLOUD_SERVER_STOPPED")
+Rel_Flow(cloud, ecs, "stop or start-vm-auto")
+Rel_Flow(events, cgw, "stop/start container")
+Rel_Flow(cgw, docker, "migrate = stop+recreate")
+Rel_Access_W(task, evt, "W event")
+Rel_Influence(hardRel, cloud, "reuse 排除终态")
+Rel_Influence(hardRel, events, "先迁后释")
+
+@enduml

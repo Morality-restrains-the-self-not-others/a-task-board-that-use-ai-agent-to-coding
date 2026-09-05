@@ -1,0 +1,41 @@
+' @title: 管理员模拟登录（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 102
+' @iteration: admin-user-impersonation
+' @author: cursor
+' @based_on: v101 (v101-enterprise-landscape-20260823-0210-cursor.puml)
+' @updated: 2026-08-23 06:50
+' @description: 平台运维可以目标用户角色进入业务面并退出恢复
+
+@startuml
+!include <archimate/Archimate>
+
+title v102 landscape — admin impersonation 2026-08-23 06:20
+
+Business_Actor(admin, "平台管理员 / 员工")
+Business_Actor(endUser, "目标用户")
+Business_Service(impSvc, "以用户角色查看")
+note right of impSvc
+  模拟登录能力
+end note
+Business_Service(biz, "用户工作台")
+
+Application_Component(taskFE, "taskFE")
+Application_Component(taskAuth, "taskAuth")
+
+Rel_Assignment(admin, impSvc)
+Rel_Serving(taskFE, impSvc)
+Rel_Serving(taskAuth, impSvc)
+Rel_Serving(biz, endUser)
+Rel_Flow(impSvc, biz, "临时以目标身份")
+
+Implementation_Plateau(p101, "v101")
+Implementation_Plateau(p102, "v102")
+Implementation_Gap(g, "无法以用户视角排障")
+Implementation_WorkPackage(wp, "WP-admin-user-impersonation")
+Rel_Triggering(p101, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p102, "delivers")
+
+@enduml

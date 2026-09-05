@@ -1,0 +1,15 @@
+intents:
+  1_release_servers_on_terminal:
+    host: 0.0.0.0
+    port: 18043
+    groupId: task-events-task-status-changed-1-release-servers-on-terminal
+    events:
+    - TASK_STATUS_CHANGED
+  2_fanout_work_panel_sse:
+    host: 0.0.0.0
+    port: 18048
+    groupId: task-events-task-status-changed-2-fanout-work-panel-sse
+    events:
+    - TASK_STATUS_CHANGED
+    - TASK_CREATED
+    - TASK_DELETED

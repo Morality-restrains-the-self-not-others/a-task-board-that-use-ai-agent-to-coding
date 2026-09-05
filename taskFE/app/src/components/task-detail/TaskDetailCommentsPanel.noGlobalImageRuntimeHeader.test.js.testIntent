@@ -1,0 +1,25 @@
+# TaskDetailCommentsPanel.noGlobalImageRuntimeHeader.test.js
+
+## 意图
+
+守住任务详情评论区顶端不再出现全局「镜像运行状态」header（`image-runtime-entry`）。启动日志、SSE、镜像关联只属于对应评论的「执行细节」。
+
+## 关键业务断言
+
+- 挂载 Panel 时不存在 `data-testid=image-runtime-entry` / `image-runtime-entries-section`
+- 文案不含「镜像运行状态」
+- `#comments-container` 与「评论」标题仍在
+- Panel / Section / TaskDetail / bindings / helpers 源码不再含 `buildImageRuntimeEntries` 或 `imageRuntimeEntries` 透传
+
+## 典型破坏信号
+
+- 评论 Feed 顶部再次插入镜像/SSE/启动日志总览卡
+- 重新引入 `buildImageRuntimeEntries` 并把结果传给评论区
+
+## 回归验证
+
+在 `taskFE/app` 执行：
+
+```bash
+npx vitest run src/components/task-detail/TaskDetailCommentsPanel.noGlobalImageRuntimeHeader.test.js
+```

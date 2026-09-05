@@ -1,0 +1,12 @@
+测试目标：
+- 手机号注册提交后，若 POST /api/accounts/users/phone_register/ 返回 400 且 body 为通用 `error`/`message`（如「验证码无效或已过期」），页面必须展示该文案，不得静默。
+
+关键业务断言：
+- `[data-testid="register-submit-error"]` 可见并包含后端错误文案。
+- 错误节点 `data-traceId` 等于响应 `trace_id` / `X-Trace-Id`。
+
+典型破坏信号：
+- 通用错误被写入 `errors.email`，手机表单不渲染邮箱字段，用户看不到任何提示。
+
+回归验证要点：
+- 运行 `AuthRegister.phone-register-error-visible.playwright.test.sh`。

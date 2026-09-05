@@ -1,0 +1,90 @@
+' @title: 个人账号注销（PIPL）
+' @view: application-integration
+' @status: target
+' @version: 86
+' @iteration: user-account-deletion-pipl-v86
+' @author: cursor
+' @based_on: v85 (v85-application-integration-20260818-1439-cursor.puml)
+' @updated: 2026-08-19 17:50
+' @description: 个人账号注销自助入口 + 跨服务 blockers 聚合 + execute-due timer + Kafka 事件
+
+@startuml
+!include <archimate/Archimate>
+
+title v86 — Personal account deletion (PIPL) Target 2026-08-19 17:50
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v86 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v86 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v86 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(fe, "taskFE UserProfile 危险区")
+note right of fe
+  🟡 [MODIFIED v86]
+  危险区入口 + blockers 展示
+  三条须知 + 冷却期可撤回
+  @author: cursor @2026-08-19 17:50
+end note
+
+Application_Component(auth, "taskAuth 自助注销 API + precheck 聚合")
+note right of auth
+  🟡 [MODIFIED v86]
+  /api/accounts/users/me/account-deletion/*
+  并行调 bill/tenant/cloud internal blockers
+  状态机 + execute-due 幂等
+  @author: cursor @2026-08-19 17:50
+end note
+
+Application_Component(bill, "taskBill internal blockers")
+note right of bill
+  🟡 [MODIFIED v86]
+  GET /api/internal/taskbill/users/{id}/account-deletion-blockers/
+end note
+
+Application_Component(tenant, "taskTenantService internal blockers")
+note right of tenant
+  🟡 [MODIFIED v86]
+  GET /api/internal/tenant/users/{id}/account-deletion-blockers/
+end note
+
+Application_Component(cloud, "taskCloudService internal blockers")
+note right of cloud
+  🟡 [MODIFIED v86]
+  GET /api/internal/cloud/users/{id}/account-deletion-blockers/
+end note
+
+Application_Component(events, "taskEvents timer worker")
+note right of events
+  🟡 [MODIFIED v86]
+  execute-due timer + Kafka topics/DLT
+end note
+
+Application_DataObject(request, "auth_account_deletion_request")
+note right of request
+  🟢 [NEW v86]
+  请求/状态/冷却期字段
+  归档 + 脱敏（非物理 DELETE）
+end note
+
+Application_Event(ev, "AccountDeletionRequested (Kafka)")
+note right of ev
+  🟢 [NEW v86]
+  Kafka 五事件编排
+end note
+
+Technology_Node(timer, "timer intent account-deletion-execute-due")
+note right of timer
+  🟢 [NEW v86]
+  taskEvents timer 幂等触发
+end note
+
+fe -[#LightYellow]-> auth : precheck / 提交注销 / 冷却撤回
+auth -[#LightYellow]-> bill : internal blockers
+auth -[#LightYellow]-> tenant : internal blockers
+auth -[#LightYellow]-> cloud : internal blockers
+auth -[#LightGreen]-> request : 写请求/状态/冷却
+auth -[#LightGreen]-> ev : 注销请求已受理
+timer -[#LightGreen]-> auth : POST execute-due
+@enduml

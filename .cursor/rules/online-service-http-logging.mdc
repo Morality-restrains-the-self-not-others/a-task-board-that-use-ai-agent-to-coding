@@ -1,0 +1,27 @@
+---
+description: Trae 业务服务（onlineServiceJS）HTTP 请求日志约定
+globs:
+  - "trae-agent/onlineServiceJS/**"
+  - "onlineServiceJS/**"
+alwaysApply: false
+---
+
+# Trae 业务服务 HTTP 请求日志（元规则）
+
+在线业务实现为 **`onlineServiceJS/`**（Node / Express）。改动或新增网络相关代码时，应维持下列约定，避免入站或出站请求漏记。
+
+## onlineServiceJS（Node / Express）
+
+### 入站（客户端 → 本服务）
+
+- **位置**：`{ONLINE_PROJECT_STATE_ROOT}/logs/requests.log`（默认 `{REPO_ROOT}/onlineProject_state/logs/requests.log`），见 `src/server.mjs` 中 `accessLogPath()` + `logReq`。
+- **不要**移除该 `finish` 钩子或另起入口而不写访问日志。
+
+### 出站（本服务 → 外部 HTTP）
+
+- **位置**：`{ONLINE_PROJECT_STATE_ROOT}/reqLogs/`（与 `src/paths.mjs` 的 `reqLogsDir()` 一致）。
+- 新增对外 `fetch`/HTTP 客户端调用时，应经与现有实现一致的日志与脱敏路径；避免裸请求且不落盘。
+
+## 维护提示
+
+若将出站日志逻辑抽到独立模块，本规则中的文件名（`accessLogPath`、`logReq` 等）应同步更新描述，但**目录与「凡出站必记、必脱敏」要求不变**。

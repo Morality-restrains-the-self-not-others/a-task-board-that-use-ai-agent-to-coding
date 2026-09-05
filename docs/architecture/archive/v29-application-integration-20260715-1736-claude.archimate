@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v29-gitoauth-go-20260715-1736">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v29 Target (gitOauth → Go)</name>
+  <purpose>Replace Django gitOauth with taskGitOauth Go on :8002; same DB ownership and HTTP contracts; remove Python</purpose>
+
+  <folder name="Motivation" id="id-v29-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="🟢 Go-first APIs 废止 git-oauth Non-Goal [NEW v29]" id="id-v29-constraint-go"/>
+    <element xsi:type="archimate:Constraint" name="单表所有权 db/git-oauth" id="id-v29-constraint-owner"/>
+  </folder>
+  <folder name="Application" id="id-v29-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Vue git-site-oauth" id="id-v29-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v29-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟢 taskGitOauth :8002 Go [NEW v29]" id="id-v29-go"/>
+    <element xsi:type="archimate:ApplicationComponent" name="saas-backend internal/bind" id="id-v29-django"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskCredentialService" id="id-v29-cred"/>
+    <element xsi:type="archimate:ApplicationComponent" name="[DEPRECATED v29] Django gitOauth" id="id-v29-py"/>
+    <element xsi:type="archimate:DataObject" name="api_gitoauth* SQLite" id="id-v29-db"/>
+  </folder>
+  <folder name="Technology" id="id-v29-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="db/git-oauth" id="id-v29-sqlite"/>
+    <element xsi:type="archimate:Node" name="GitHub OAuth" id="id-v29-gh"/>
+    <element xsi:type="archimate:Node" name="GitLab OAuth" id="id-v29-gl"/>
+  </folder>
+  <folder name="Relations" id="id-v29-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v29-flow-vue-gw" source="id-v29-vue" target="id-v29-gw" name="oauth"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v29-flow-gw-go" source="id-v29-gw" target="id-v29-go" name="upstream :8002"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v29-flow-go-gh" source="id-v29-go" target="id-v29-gh" name="authorize/token"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v29-flow-go-gl" source="id-v29-go" target="id-v29-gl" name="authorize/token"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v29-flow-go-django" source="id-v29-go" target="id-v29-django" name="internal/bind"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v29-acc-go-db" source="id-v29-go" target="id-v29-db" name="W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v29-flow-cred-go" source="id-v29-cred" target="id-v29-go" name="access-for-user"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v29-flow-py-go" source="id-v29-py" target="id-v29-go" name="replaced by"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v29-inf-go" source="id-v29-constraint-go" target="id-v29-go" name="新建 Go"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v29-inf-owner" source="id-v29-constraint-owner" target="id-v29-go" name="唯一直连"/>
+  </folder>
+  <folder name="Implementation" id="id-v29-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v27 — terminal-hard-release (current)" id="id-v29-plat-v27"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v29 — gitoauth-go-migration" id="id-v29-plat-v29"/>
+    <element xsi:type="archimate:Gap" name="Gap: gitOauth 仍为 Django，无法清理 Python" id="id-v29-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v29-gitoauth-go-migration" id="id-v29-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v29-rel-plat27-gap" source="id-v29-plat-v27" target="id-v29-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v29-rel-wp-gap" source="id-v29-wp" target="id-v29-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v29-rel-wp-plat29" source="id-v29-wp" target="id-v29-plat-v29"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v29-rel-plat29-go" source="id-v29-plat-v29" target="id-v29-go"/>
+  </folder>
+  <folder name="Views" id="id-v29-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v27→v29 — gitoauth-go-migration" id="id-v29-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-plat27" archimateElement="id-v29-plat-v27">
+        <bounds x="48" y="100" width="300" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-plat27-gap"
+          source="id-v29-do-plat27" target="id-v29-do-gap"
+          archimateRelationship="id-v29-rel-plat27-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-gap" archimateElement="id-v29-gap"
+        targetConnections="id-v29-conn-plat27-gap id-v29-conn-wp-gap">
+        <bounds x="400" y="100" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-wp" archimateElement="id-v29-wp">
+        <bounds x="860" y="60" width="340" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-wp-gap"
+          source="id-v29-do-wp" target="id-v29-do-gap"
+          archimateRelationship="id-v29-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-wp-plat29"
+          source="id-v29-do-wp" target="id-v29-do-plat29"
+          archimateRelationship="id-v29-rel-wp-plat29"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-plat29" archimateElement="id-v29-plat-v29"
+        targetConnections="id-v29-conn-wp-plat29">
+        <bounds x="860" y="160" width="340" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-plat29-go"
+          source="id-v29-do-plat29" target="id-v29-do-go-m"
+          archimateRelationship="id-v29-rel-plat29-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-go-m" archimateElement="id-v29-go"
+        targetConnections="id-v29-conn-plat29-go">
+        <bounds x="860" y="250" width="340" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v29 Target — taskGitOauth 替换 Django gitOauth" id="id-v29-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-vue" archimateElement="id-v29-vue">
+        <bounds x="40" y="80" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-vue-gw"
+          source="id-v29-do-vue" target="id-v29-do-gw"
+          archimateRelationship="id-v29-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-gw" archimateElement="id-v29-gw"
+        targetConnections="id-v29-conn-vue-gw">
+        <bounds x="220" y="80" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-gw-go"
+          source="id-v29-do-gw" target="id-v29-do-go"
+          archimateRelationship="id-v29-flow-gw-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-go" archimateElement="id-v29-go"
+        targetConnections="id-v29-conn-gw-go id-v29-conn-cred-go id-v29-conn-py-go id-v29-conn-inf-go id-v29-conn-inf-owner">
+        <bounds x="400" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-go-gh"
+          source="id-v29-do-go" target="id-v29-do-gh"
+          archimateRelationship="id-v29-flow-go-gh"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-go-gl"
+          source="id-v29-do-go" target="id-v29-do-gl"
+          archimateRelationship="id-v29-flow-go-gl"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-go-django"
+          source="id-v29-do-go" target="id-v29-do-django"
+          archimateRelationship="id-v29-flow-go-django"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-go-db"
+          source="id-v29-do-go" target="id-v29-do-db"
+          archimateRelationship="id-v29-acc-go-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-gh" archimateElement="id-v29-gh"
+        targetConnections="id-v29-conn-go-gh">
+        <bounds x="680" y="20" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-gl" archimateElement="id-v29-gl"
+        targetConnections="id-v29-conn-go-gl">
+        <bounds x="680" y="90" width="140" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-django" archimateElement="id-v29-django"
+        targetConnections="id-v29-conn-go-django">
+        <bounds x="680" y="160" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-db" archimateElement="id-v29-db"
+        targetConnections="id-v29-conn-go-db">
+        <bounds x="420" y="180" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-cred" archimateElement="id-v29-cred">
+        <bounds x="40" y="200" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-cred-go"
+          source="id-v29-do-cred" target="id-v29-do-go"
+          archimateRelationship="id-v29-flow-cred-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-py" archimateElement="id-v29-py">
+        <bounds x="40" y="280" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-py-go"
+          source="id-v29-do-py" target="id-v29-do-go"
+          archimateRelationship="id-v29-flow-py-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-c-go" archimateElement="id-v29-constraint-go">
+        <bounds x="40" y="20" width="220" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-inf-go"
+          source="id-v29-do-c-go" target="id-v29-do-go"
+          archimateRelationship="id-v29-inf-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v29-do-c-owner" archimateElement="id-v29-constraint-owner">
+        <bounds x="280" y="20" width="180" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v29-conn-inf-owner"
+          source="id-v29-do-c-owner" target="id-v29-do-go"
+          archimateRelationship="id-v29-inf-owner"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

@@ -1,0 +1,19 @@
+#!/bin/bash
+# conf.git 配置质量钩子：仅 git-oauth client_id 实时校验（OPT-20260807-041a）。
+# 不部署随机单测 / commit-msg 模板（SKIP_HOOK_REPOS）。
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+META_ROOT="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
+LIVE_CHECK="$META_ROOT/db/scripts/ci/check_git_oauth_client_id_live.py"
+if [[ -f "$LIVE_CHECK" ]]; then
+  if git diff --cached --name-only | grep -Eq 'auth/(git-oauth|task-credential)/.*\.ya?ml$'; then
+    if ! python3 "$LIVE_CHECK" --all; then
+      echo "ERROR: git-oauth client_id 实时校验未通过（见上方详情），请修复凭据后重试。" >&2
+      exit 1
+    fi
+  fi
+else
+  echo "WARN: $LIVE_CHECK 未找到，跳过 git-oauth client_id 实时校验（OPT-20260807-041a）。"
+fi

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v84 全量 (post-change)" id="id-v84full01">
+  <folder name="Application" id="id-v84full-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v84f-app-fe" name="taskFE TaskDetail runtime panel [MOD v84]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v84f-app-cloud" name="taskCloudService [MOD v84]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v84f-app-sse" name="taskSSE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v84f-app-ctr" name="Comment-scoped container [NEW v84]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v84f-app-poll" name="FE/BE UI poll [DEPRECATED v84]"/>
+    <element xsi:type="archimate:DataObject" id="id-v84f-do-snap" name="per-comment runtime snapshot [MOD v84]"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v84f-ev-hb" name="container_heartbeat"/>
+    <element xsi:type="archimate:ApplicationEvent" id="id-v84f-ev-st" name="server_status_update [MOD v84]"/>
+  </folder>
+  <folder name="Technology" id="id-v84full-tech" type="technology">
+    <element xsi:type="archimate:TechnologyService" id="id-v84f-tech-aliyun" name="Aliyun DescribeInstances [MOD v84]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v84full-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v84f-pl-v81" name="Plateau v81"/>
+    <element xsi:type="archimate:Plateau" id="id-v84f-pl-v84" name="Plateau v84"/>
+    <element xsi:type="archimate:Gap" id="id-v84f-gap" name="Gap: UI poll Describe 卡死泄漏"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v84f-wp" name="WP: comment-runtime-push-sync"/>
+  </folder>
+  <folder name="Relations" id="id-v84full-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v84f-rel-ctr-hb" source="id-v84f-app-ctr" target="id-v84f-ev-hb" name="push heartbeat"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v84f-rel-hb-sse" source="id-v84f-ev-hb" target="id-v84f-app-sse" name="to SSE"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v84f-rel-cloud-st" source="id-v84f-app-cloud" target="id-v84f-ev-st" name="SSE + runtime_status"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v84f-rel-st-sse" source="id-v84f-ev-st" target="id-v84f-app-sse" name="to SSE"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v84f-rel-sse-fe" source="id-v84f-app-sse" target="id-v84f-app-fe" name="apply snapshot"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v84f-rel-fe-snap" source="id-v84f-app-fe" target="id-v84f-do-snap" name="write comment_id"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v84f-rel-fe-cloud" source="id-v84f-app-fe" target="id-v84f-app-cloud" name="refresh button GET"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v84f-rel-cloud-aliyun" source="id-v84f-app-cloud" target="id-v84f-tech-aliyun" name="Describe once"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v84f-rel-poll-aliyun" source="id-v84f-app-poll" target="id-v84f-tech-aliyun" name="DEPRECATED ticker"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v84f-rel-pl81-gap" source="id-v84f-pl-v81" target="id-v84f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v84f-rel-wp-gap" source="id-v84f-wp" target="id-v84f-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v84f-rel-wp-pl84" source="id-v84f-wp" target="id-v84f-pl-v84"/>
+  </folder>
+  <folder name="Views" id="id-v84full-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v84f-view-topo" name="v84 全量拓扑 — comment runtime push-sync">
+      <child xsi:type="archimate:DiagramObject" id="id-v84f-d-ctr" archimateElement="id-v84f-app-ctr">
+        <bounds x="48" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v84f-c-ctr-hb" source="id-v84f-d-ctr" target="id-v84f-d-hb" archimateRelationship="id-v84f-rel-ctr-hb"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v84f-d-hb" targetConnections="id-v84f-c-ctr-hb" archimateElement="id-v84f-ev-hb">
+        <bounds x="280" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v84f-c-hb-sse" source="id-v84f-d-hb" target="id-v84f-d-sse" archimateRelationship="id-v84f-rel-hb-sse"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v84f-d-cloud" archimateElement="id-v84f-app-cloud">
+        <bounds x="48" y="140" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v84f-c-cloud-st" source="id-v84f-d-cloud" target="id-v84f-d-st" archimateRelationship="id-v84f-rel-cloud-st"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v84f-c-cloud-aliyun" source="id-v84f-d-cloud" target="id-v84f-d-aliyun" archimateRelationship="id-v84f-rel-cloud-aliyun"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v84f-d-st" targetConnections="id-v84f-c-cloud-st" archimateElement="id-v84f-ev-st">
+        <bounds x="280" y="140" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v84f-c-st-sse" source="id-v84f-d-st" target="id-v84f-d-sse" archimateRelationship="id-v84f-rel-st-sse"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v84f-d-sse" targetConnections="id-v84f-c-hb-sse id-v84f-c-st-sse" archimateElement="id-v84f-app-sse">
+        <bounds x="500" y="96" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v84f-c-sse-fe" source="id-v84f-d-sse" target="id-v84f-d-fe" archimateRelationship="id-v84f-rel-sse-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v84f-d-fe" targetConnections="id-v84f-c-sse-fe" archimateElement="id-v84f-app-fe">
+        <bounds x="680" y="96" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v84f-c-fe-snap" source="id-v84f-d-fe" target="id-v84f-d-snap" archimateRelationship="id-v84f-rel-fe-snap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v84f-c-fe-cloud" source="id-v84f-d-fe" target="id-v84f-d-cloud" archimateRelationship="id-v84f-rel-fe-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v84f-d-snap" targetConnections="id-v84f-c-fe-snap" archimateElement="id-v84f-do-snap">
+        <bounds x="680" y="200" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v84f-d-aliyun" targetConnections="id-v84f-c-cloud-aliyun id-v84f-c-poll-aliyun" archimateElement="id-v84f-tech-aliyun">
+        <bounds x="48" y="260" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v84f-d-poll" archimateElement="id-v84f-app-poll">
+        <bounds x="300" y="260" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v84f-c-poll-aliyun" source="id-v84f-d-poll" target="id-v84f-d-aliyun" archimateRelationship="id-v84f-rel-poll-aliyun"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v84f-view-mig" name="架构变迁 v81→v84 — comment-runtime-push-sync">
+      <child xsi:type="archimate:DiagramObject" id="id-v84f-do-pl81" archimateElement="id-v84f-pl-v81">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v84f-conn-pl81-gap" source="id-v84f-do-pl81" target="id-v84f-do-gap" archimateRelationship="id-v84f-rel-pl81-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v84f-do-gap" targetConnections="id-v84f-conn-pl81-gap id-v84f-conn-wp-gap" archimateElement="id-v84f-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v84f-do-wp" archimateElement="id-v84f-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v84f-conn-wp-gap" source="id-v84f-do-wp" target="id-v84f-do-gap" archimateRelationship="id-v84f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v84f-conn-wp-pl84" source="id-v84f-do-wp" target="id-v84f-do-pl84" archimateRelationship="id-v84f-rel-wp-pl84"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v84f-do-pl84" targetConnections="id-v84f-conn-wp-pl84" archimateElement="id-v84f-pl-v84">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

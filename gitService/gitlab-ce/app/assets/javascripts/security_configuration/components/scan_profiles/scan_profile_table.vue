@@ -1,0 +1,190 @@
+<script>
+import {
+  GlTable,
+  GlButtonGroup,
+  GlButton,
+  GlIcon,
+  GlPopover,
+  GlLink,
+  GlSkeletonLoader,
+  GlSprintf,
+} from '@gitlab/ui';
+import { __ } from '~/locale';
+import { PROMO_URL } from '~/constants';
+import { helpPagePath } from '~/helpers/help_page_helper';
+import { SCAN_PROFILE_CATEGORIES, SCAN_PROFILE_I18N } from '~/security_configuration/constants';
+
+export default {
+  name: 'ScanProfileTable',
+  components: {
+    GlTable,
+    GlButtonGroup,
+    GlButton,
+    GlIcon,
+    GlPopover,
+    GlLink,
+    GlSkeletonLoader,
+    GlSprintf,
+  },
+  props: {
+    tableItems: {
+      type: Array,
+      required: true,
+    },
+    loading: {
+      type: Boolean,
+      required: true,
+    },
+  },
+  computed: {
+    tableFields() {
+      return [
+        { key: 'scanType', label: __('Scanner') },
+        { key: 'name', label: __('Profile'), tdClass: '!gl-align-middle' },
+        { key: 'status', label: __('Scanner health'), tdClass: '!gl-align-middle' },
+        { key: 'lastScan', label: __('Last scan'), tdClass: '!gl-align-middle' },
+        { key: 'actions', label: '' },
+      ];
+    },
+    scanProfileHelpPath() {
+      return helpPagePath(
+        '/user/application_security/configuration/security_configuration_profiles',
+      );
+    },
+  },
+  methods: {
+    getScannerMetadata(scanType) {
+      return SCAN_PROFILE_CATEGORIES[scanType] || {};
+    },
+  },
+  LEARN_MORE_LINK: `${PROMO_URL}/solutions/application-security-testing/`,
+  SCAN_PROFILE_I18N,
+};
+</script>
+
+<template>
+  <gl-table :items="tableItems" :fields="tableFields" stacked="sm" :busy="loading">
+    <template #table-busy>
+      <gl-skeleton-loader :width="490" :height="35">
+        <rect width="105" height="15" rx="4" />
+        <rect x="110" width="120" height="15" rx="4" />
+        <rect x="235" width="90" height="15" rx="4" />
+        <rect x="330" width="105" height="15" rx="4" />
+        <rect x="440" width="50" height="15" rx="4" />
+
+        <rect y="20" width="105" height="15" rx="4" />
+        <rect y="20" x="110" width="120" height="15" rx="4" />
+        <rect y="20" x="235" width="90" height="15" rx="4" />
+        <rect y="20" x="330" width="105" height="15" rx="4" />
+        <rect y="20" x="440" width="50" height="15" rx="4" />
+      </gl-skeleton-loader>
+    </template>
+
+    <template #head(name)="data">
+      <div class="gl-flex gl-items-center">
+        <span>{{ data.label }}</span>
+        <gl-icon
+          id="profile-info-icon"
+          name="information-o"
+          variant="info"
+          class="gl-ml-2 gl-text-subtle"
+        />
+        <gl-popover
+          target="profile-info-icon"
+          placement="top"
+          :title="$options.SCAN_PROFILE_I18N.profileHelpTitle"
+        >
+          <gl-sprintf :message="$options.SCAN_PROFILE_I18N.profileHelpDescription">
+            <template #link="{ content }">
+              <gl-link :href="scanProfileHelpPath" target="_blank">{{ content }}</gl-link>
+            </template>
+          </gl-sprintf>
+        </gl-popover>
+      </div>
+    </template>
+
+    <template #cell(scanType)="{ item }">
+      <div class="gl-flex gl-items-center">
+        <div
+          class="gl-border gl-mr-3 gl-flex gl-h-7 gl-w-7 gl-items-center gl-justify-center gl-rounded-lg gl-p-2"
+          :class="
+            item.isConfigured
+              ? 'gl-border-green-500 gl-bg-green-100 gl-text-green-800'
+              : 'gl-border-dashed gl-border-strong gl-bg-default gl-text-strong'
+          "
+        >
+          <span class="gl-font-weight-bold gl-text-xs">{{
+            getScannerMetadata(item.scanType).label
+          }}</span>
+        </div>
+        <span class="gl-font-bold">{{ getScannerMetadata(item.scanType).displayName }}</span>
+        <gl-icon
+          :id="`scanner-info-${item.scanType}`"
+          name="information-o"
+          variant="info"
+          class="gl-ml-2"
+        />
+        <gl-popover
+          :target="`scanner-info-${item.scanType}`"
+          placement="top"
+          :title="getScannerMetadata(item.scanType).helpTitle"
+        >
+          <gl-sprintf :message="getScannerMetadata(item.scanType).helpDescription">
+            <template #link="{ content }">
+              <gl-link :href="getScannerMetadata(item.scanType).helpLink" target="_blank">{{
+                content
+              }}</gl-link>
+            </template>
+          </gl-sprintf>
+        </gl-popover>
+      </div>
+    </template>
+
+    <template #cell(name)="{ item }">
+      <slot v-if="$scopedSlots['cell(name)']" name="cell(name)" v-bind="{ item }"></slot>
+      <div v-else class="gl-flex gl-items-center">
+        <span class="gl-text-subtle">
+          {{ $options.SCAN_PROFILE_I18N.noProfile }}
+        </span>
+      </div>
+    </template>
+
+    <template #cell(status)="{ item }">
+      <slot v-if="$scopedSlots['cell(status)']" name="cell(status)" v-bind="{ item }"></slot>
+      <div v-else class="gl-flex gl-flex-col">
+        <span class="gl-font-weight-bold">
+          {{ __('Available with Ultimate') }}
+        </span>
+        <span class="gl-mt-1 gl-text-sm gl-text-subtle">
+          <gl-link
+            :href="$options.LEARN_MORE_LINK"
+            target="_blank"
+            data-testid="learn-more-ultimate-link"
+          >
+            {{ __('Learn more about the Ultimate security suite') }}
+            <gl-icon name="external-link" :aria-label="__('(external link)')" />
+          </gl-link>
+        </span>
+      </div>
+    </template>
+
+    <template #cell(lastScan)="{ item }">
+      <slot v-if="$scopedSlots['cell(last-scan)']" name="cell(last-scan)" v-bind="{ item }"></slot>
+      <span v-else>{{ item.lastScan || '—' }}</span>
+    </template>
+
+    <template #cell(actions)="{ item }">
+      <slot v-if="$scopedSlots['cell(actions)']" name="cell(actions)" v-bind="{ item }"></slot>
+      <div v-else>
+        <gl-button-group>
+          <!-- Apply button -->
+          <gl-button disabled>
+            {{ $options.SCAN_PROFILE_I18N.applyDefault }}
+          </gl-button>
+          <!-- Preview button -->
+          <gl-button icon="eye" disabled />
+        </gl-button-group>
+      </div>
+    </template>
+  </gl-table>
+</template>

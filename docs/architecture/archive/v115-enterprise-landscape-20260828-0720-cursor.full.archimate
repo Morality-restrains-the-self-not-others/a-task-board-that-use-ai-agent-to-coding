@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v115 全量 (post-change)" id="id-v115elfull01">
+  <folder name="Business" id="id-v115el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v115-el-user" name="工作空间成员"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v115-el-now" name="查看当前时段与槽位"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v115-el-hist" name="查看调度历史 [NEW v115]"/>
+  </folder>
+  <folder name="Application" id="id-v115el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v115-el-fe" name="taskFE 工作台 [MODIFIED v115]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v115-el-tts" name="taskTaskService [MODIFIED v115]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v115el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v115-el-p114" name="Plateau v114"/>
+    <element xsi:type="archimate:Plateau" id="id-v115-el-p115" name="Plateau v115"/>
+    <element xsi:type="archimate:Gap" id="id-v115-el-gap" name="Gap: 无调度历史"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v115-el-wp" name="WP-queue-schedule-history"/>
+  </folder>
+  <folder name="Relations" id="id-v115el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v115-el-rel-user-now" source="id-v115-el-user" target="id-v115-el-now"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v115-el-rel-user-hist" source="id-v115-el-user" target="id-v115-el-hist"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v115-el-rel-user-fe" source="id-v115-el-user" target="id-v115-el-fe" name="云端开发 / 自动调度安排"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v115-el-rel-fe-tts" source="id-v115-el-fe" target="id-v115-el-tts" name="queue-schedule"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v115-el-rel-tts-hist" source="id-v115-el-tts" target="id-v115-el-hist" name="recent_history / history page"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v115-el-rel-p114-gap" source="id-v115-el-p114" target="id-v115-el-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v115-el-rel-wp-gap" source="id-v115-el-wp" target="id-v115-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v115-el-rel-wp-p115" source="id-v115-el-wp" target="id-v115-el-p115"/>
+  </folder>
+  <folder name="Views" id="id-v115el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v115-el-view-mig" name="架构变迁 v114→v115 — 调度历史">
+      <child xsi:type="archimate:DiagramObject" id="id-v115-el-do-p114" archimateElement="id-v115-el-p114">
+        <bounds x="48" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-el-c-p114-gap" source="id-v115-el-do-p114" target="id-v115-el-do-gap" archimateRelationship="id-v115-el-rel-p114-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-el-do-gap" targetConnections="id-v115-el-c-p114-gap id-v115-el-c-wp-gap" archimateElement="id-v115-el-gap">
+        <bounds x="280" y="48" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-el-do-wp" archimateElement="id-v115-el-wp">
+        <bounds x="280" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-el-c-wp-gap" source="id-v115-el-do-wp" target="id-v115-el-do-gap" archimateRelationship="id-v115-el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-el-c-wp-p115" source="id-v115-el-do-wp" target="id-v115-el-do-p115" archimateRelationship="id-v115-el-rel-wp-p115"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-el-do-p115" targetConnections="id-v115-el-c-wp-p115" archimateElement="id-v115-el-p115">
+        <bounds x="600" y="160" width="180" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v115-el-view-topo" name="v115 Target — 查看调度历史">
+      <child xsi:type="archimate:DiagramObject" id="id-v115-el-do-user" archimateElement="id-v115-el-user">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-el-c-user-now" source="id-v115-el-do-user" target="id-v115-el-do-now" archimateRelationship="id-v115-el-rel-user-now"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-el-c-user-hist" source="id-v115-el-do-user" target="id-v115-el-do-histp" archimateRelationship="id-v115-el-rel-user-hist"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-el-c-user-fe" source="id-v115-el-do-user" target="id-v115-el-do-fe" archimateRelationship="id-v115-el-rel-user-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-el-do-now" targetConnections="id-v115-el-c-user-now" archimateElement="id-v115-el-now">
+        <bounds x="240" y="16" width="200" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-el-do-histp" targetConnections="id-v115-el-c-user-hist id-v115-el-c-tts-hist" archimateElement="id-v115-el-hist">
+        <bounds x="240" y="80" width="200" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-el-do-fe" targetConnections="id-v115-el-c-user-fe" archimateElement="id-v115-el-fe">
+        <bounds x="480" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-el-c-fe-tts" source="id-v115-el-do-fe" target="id-v115-el-do-tts" archimateRelationship="id-v115-el-rel-fe-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-el-do-tts" targetConnections="id-v115-el-c-fe-tts" archimateElement="id-v115-el-tts">
+        <bounds x="680" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-el-c-tts-hist" source="id-v115-el-do-tts" target="id-v115-el-do-histp" archimateRelationship="id-v115-el-rel-tts-hist"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

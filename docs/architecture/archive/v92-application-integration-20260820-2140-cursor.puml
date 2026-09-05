@@ -1,0 +1,75 @@
+' @title: 多渠道推荐码与分渠道分账
+' @view: application-integration
+' @status: archived
+' @version: 92
+' @iteration: referral-channel-codes
+' @author: cursor
+' @based_on: v91 (v91-application-integration-20260820-1910-cursor.puml)
+' @updated: 2026-08-20 21:40
+' @description: 一用户多渠道 access_code；边快照渠道与资格；统计按渠道/时间
+
+@startuml
+!include <archimate/Archimate>
+
+title v92 Current — 多渠道推荐码 2026-08-20 21:40
+
+Application_Component(fe, "taskFE Vue SPA")
+note right of fe
+  渠道列表/创建
+  分渠道人数与分账
+end note
+
+Application_Component(gw, "API Gateway APISIX")
+Application_Component(auth, "taskAuth")
+Application_Component(ref, "taskReferral")
+note right of ref
+  referral_share_code 多渠道
+  bind-from-code
+end note
+
+Application_Component(bill, "taskBill")
+note right of bill
+  edge snapshot
+  accrue if eligible
+end note
+
+Application_DataObject(code, "referral_share_code")
+note right of code
+  user+channel_name unique
+  opaque code PK
+end note
+
+Application_DataObject(edge, "billing_referral_edge")
+note right of edge
+  channel_code
+  commission_eligible
+end note
+
+Application_DataObject(accrual, "billing_referral_commission_accrual")
+note right of accrual
+  channel_code copy
+end note
+
+Technology_Node(mysqlR, "MySQL task_referral utf8mb4")
+Technology_Node(mysqlB, "MySQL task_bill utf8mb4")
+
+Rel_Flow(fe, gw, "channels/stats")
+Rel_Flow(gw, ref, "X-User-Id")
+Rel_Flow(auth, ref, "bind-from-code")
+Rel_Flow(ref, bill, "sync-edge")
+Rel_Flow(ref, code, "CRUD")
+Rel_Flow(bill, edge, "upsert snapshot")
+Rel_Flow(bill, accrual, "accrue if eligible")
+Rel_Serving(mysqlR, code, "InnoDB")
+Rel_Serving(mysqlB, edge, "InnoDB")
+Rel_Serving(mysqlB, accrual, "InnoDB")
+
+Implementation_Plateau(plateauV91, "Plateau v91")
+Implementation_Plateau(plateauV92, "Plateau v92 referral channels")
+Implementation_Gap(gapCh, "Gap: 单码无法分渠道统计/分账")
+Implementation_WorkPackage(wpCh, "WP-referral-channel-codes")
+Rel_Triggering(plateauV91, gapCh, "identifies")
+Rel_Realization(wpCh, gapCh, "closes")
+Rel_Realization(wpCh, plateauV92, "delivers")
+
+@enduml

@@ -1,0 +1,10 @@
+# SSO 桥接密钥与 SSH 登录白名单（OPT-20260806-057：从 conf/core/django/config.yaml 迁出）
+# 消费方：
+#   - runAll conf_loader（snapshot-json 的 task2appSsoJwtSecret / ssh_login_allowed_addresses）
+#   - taskAuth resolveSSOJwtSecret（SSO bridge 签发，sso_bridge.go）
+#   - taskAiProvider LoadConfig SSOJwtSecret 回退链（config_jwt.go）
+# 密钥轮换：三方同源，仅需更新此处 + TASK2APP_SSO_JWT_SECRET env（可选覆盖）。
+# OPT-20260806-062: 2026-08-07 由 dev 默认值轮换为强随机值（openssl rand -hex 32）；
+# 轮换后 bridge JWT 时效仅 300s，不影响在途会话；旧会话需重新登录一次。
+ssoJwtSecret: ""
+ssh_login_allowed_addresses: 27.149.83.20

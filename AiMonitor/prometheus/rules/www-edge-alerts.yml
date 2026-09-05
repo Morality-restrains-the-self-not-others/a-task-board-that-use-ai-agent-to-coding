@@ -1,0 +1,52 @@
+groups:
+  - name: www-edge
+    interval: 30s
+    rules:
+      # www.daydaymoney.com 首页/登录页 SPA 探活（OPT-20260811-090）。
+      # 2026-08-11 故障：v75 提交遗漏 saveSubjectResourceAccess.js 等文件 → build 先删 dist 再失败
+      # → 首页 302 空 /static/assets/ → 404，而 /health 仍 200 掩盖故障。此处断言最终 200 + HTML，
+      # 非任意 2xx/3xx，可在 dist 被抹掉后分钟级告警。
+      - alert: WwwHomepageDown
+        expr: probe_success{job="www-public"} == 0
+        for: 3m
+        labels:
+          severity: critical
+          component: www-edge
+          category: infrastructure
+        annotations:
+          summary: "www.daydaymoney.com 首页不可达或非 SPA HTML"
+          description: >
+            Blackbox 探活 https://www.daydaymoney.com/ 已失败 3 分钟（期望最终 200 且 body 含
+            <!DOCTYPE html>）。2026-08-11 曾出现 dist 被并发 build 抹掉后 302 空 /static/assets/
+            而 /health 仍 200 的故障。检查 taskFE dist（taskFE/app/dist）与 nginx/隧道/网关。
+            复现：curl -sL https://www.daydaymoney.com/ | head -c 200
+
+      # 首页 302 → 空 /static/assets/ 断链的专项告警（不跟随重定向断言 Location）。
+      - alert: WwwHomepageAssetsRedirect
+        expr: probe_success{job="www-public-redirect"} == 0
+        for: 3m
+        labels:
+          severity: critical
+          component: www-edge
+          category: infrastructure
+        annotations:
+          summary: "www.daydaymoney.com 首页被重定向到空 /static/assets/"
+          description: >
+            Blackbox 断言首页 Location 不指向 /static/assets/ 已失败 3 分钟：首页发出 302 →
+            /static/assets/，通常意味着 vite dist 缺失或被并发 build 抹掉（2026-08-11 故障模式）。
+            立即检查 taskFE dist 与 runAll build 是否失败。复现：curl -sI https://www.daydaymoney.com/
+
+      # www 登录页探活 — 登录失败影响所有租户。
+      - alert: WwwLoginDown
+        expr: probe_success{job="www-login"} == 0
+        for: 3m
+        labels:
+          severity: warning
+          component: www-edge
+          category: infrastructure
+        annotations:
+          summary: "www.daydaymoney.com/auth/login/ 不可达"
+          description: >
+            Blackbox 探活 https://www.daydaymoney.com/auth/login/ 已失败 3 分钟（期望 200 + HTML）。
+            登录页为网关 forward-auth 前置的 SPA 路由，失败可能影响所有租户登录。
+            复现：curl -s -o /dev/null -w '%{http_code}' https://www.daydaymoney.com/auth/login/

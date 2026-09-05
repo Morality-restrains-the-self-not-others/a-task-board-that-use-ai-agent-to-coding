@@ -1,0 +1,11 @@
+- add_page_specific_style 'page_bundles/ci_status'
+
+- breadcrumb_title s_('Terraform|Terraform states')
+- page_title s_('Terraform|Terraform states')
+
+= render ::Layouts::PageHeadingComponent.new(s_('Terraform|Terraform states'))
+
+- if show_period_in_terraform_state_name_alert?(@project)
+  = render partial: 'period_in_terraform_state_name_alert'
+
+#js-terraform-list{ data: js_terraform_list_data(current_user, @project) }

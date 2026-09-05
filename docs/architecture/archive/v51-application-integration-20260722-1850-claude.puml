@@ -1,0 +1,66 @@
+' @title: Application Integration — 评论级执行细节
+' @view: application-integration
+' @status: archived
+' @version: 51
+' @author: claude
+' @based_on: v48 current
+' @updated: 2026-07-22 19:00
+' @description: 容器连接状态 + 任务关联迁入评论 ExecutionDetails；CommentExecutionContext 前端契约
+' @iteration: comment-execution-details
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v51 — Comment Execution Details (2026-07-22 18:50)
+
+legend right
+  | <#LightGreen> </> | 🟢 [NEW] v51 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v51 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+rectangle "Motivation" {
+  Motivation_Principle(commentAffinity, "Principle\n执行状态归属评论")
+  Motivation_Principle(futureParallel, "Principle\n依赖模式可扩展并行编排")
+  Motivation_Constraint(frontendMvp, "Constraint\nMVP 纯前端；无新 HTTP")
+}
+
+rectangle "Application" {
+  Application_Component(vueDetail, "🟡 Vue TaskDetail\nFeed + Runtime 重组")
+  Application_Component(vueExecDetails, "🟢 TaskDetailCommentExecutionDetails\n折叠 + dependency badge")
+  Application_Component(vueConnStatus, "🟢 TaskDetailContainerConnectionStatus\n抽自 ServerStartStatus")
+  Application_Component(vueServerStart, "🟡 TaskDetailServerStartStatusPanel\n仅启动 + SSE")
+  Application_Component(vueLayer, "🟡 TaskDetailTaskLayerAssociationPanel\n迁入 active 评论")
+  Application_DataObject(ctx, "🟢 CommentExecutionContext\ncommentId + dependencyMode")
+  Application_DataObject(binding, "🟢 CommentExecutionBinding\nwaitPrevious + containerRef?")
+  Application_Component(tac, "taskAIComment\ncontainer_agent 读")
+  Application_Component(tts, "taskTaskService\njob/layer 既有")
+}
+
+rectangle "Technology" {
+  Technology_Artifact(sse, "server-startup-status-sse")
+  Technology_Artifact(hb, "container heartbeat probe")
+}
+
+note right of vueExecDetails
+  [NEW v51]
+  activeExecutionCommentId 启发式
+  wait_previous | independent
+  @author: claude @2026-07-22 18:50
+end note
+
+Rel_Flow(vueDetail, vueExecDetails, "per top-level comment")
+Rel_Composition(vueExecDetails, vueConnStatus, "active only")
+Rel_Composition(vueExecDetails, vueLayer, "activeExecutionCommentId")
+Rel_Flow(vueDetail, vueServerStart, "Runtime SSE")
+Rel_Access_R(vueExecDetails, ctx, "R/W local")
+Rel_Realization(ctx, binding, "maps")
+Rel_Flow(vueDetail, tac, "read comments/agents")
+Rel_Flow(vueLayer, tts, "layer jobs 既有")
+Rel_Flow(vueConnStatus, sse, "subscribe")
+Rel_Flow(vueConnStatus, hb, "probe")
+Rel_Influence(commentAffinity, vueExecDetails, "挂载点")
+Rel_Influence(futureParallel, binding, "dependencyMode")
+Rel_Influence(frontendMvp, vueDetail, "无新 API")
+
+@enduml

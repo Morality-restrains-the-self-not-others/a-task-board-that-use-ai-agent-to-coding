@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v13-el-20260806-0008">
+
+  <name xml:lang="en">daydaymoney Enterprise Landscape v13 Current</name>
+  <purpose>Git Hooks 入库与统一管理 — 全仓 .githooks/ 入库真源 + core.hooksPath 激活 + scripts/hooks/templates 模板 SSOT + 单一分发/校验器（HOOK_VERSION）；.git/hooks/ 复制模式退役</purpose>
+
+  <folder name="Business" id="f-biz" type="business"/>
+  <folder name="Application" id="f-app" type="application"/>
+  <folder name="Technology" id="f-tech" type="technology"/>
+  <folder name="Implementation" id="f-impl" type="implementation_migration"/>
+  <folder name="Relations" id="f-rel" type="relations"/>
+
+  <!-- Business Layer -->
+  <element xsi:type="archimate:BusinessActor" name="Developer" id="developer"/>
+
+  <!-- Technology Layer -->
+  <element xsi:type="archimate:Artifact" name="Git Hooks 模板 SSOT (scripts/hooks/templates/)" id="hooksSSOT"/>
+  <element xsi:type="archimate:Artifact" name="Hooks 分发/校验器 (install-hooks-all.sh + --check/deploy, HOOK_VERSION)" id="hooksDeploy"/>
+  <element xsi:type="archimate:Artifact" name=".githooks/ 入库真源 ×38 仓 (core.hooksPath)" id="repoGitHooks"/>
+  <element xsi:type="archimate:TechnologyService" name="GitLab CE (:8012)" id="gitlab"/>
+
+  <!-- Implementation & Migration -->
+  <element xsi:type="archimate:Plateau" name="Plateau v12 — 基线回填 (2026-08-05)" id="plateauV12"/>
+  <element xsi:type="archimate:Plateau" name="✅ Plateau v13 — Git Hooks 入库 (2026-08-06)" id="plateauV13"/>
+  <element xsi:type="archimate:Gap" name="Gap: 钩子不入库 → 内容/部署/版本不可跟踪；4 套部署机制漂移" id="gapHooks"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-git-hooks-vc (P0 主仓 → P1 docs → P2 FE/Referral → P3 全量子仓 → P4 文档/CI)" id="wpHooks"/>
+
+  <!-- Relationships -->
+  <element xsi:type="archimate:FlowRelationship" id="rel-ssot-deploy" source="hooksSSOT" target="hooksDeploy"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-deploy-repo" source="hooksDeploy" target="repoGitHooks"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-dev-deploy" source="developer" target="hooksDeploy"/>
+  <element xsi:type="archimate:FlowRelationship" id="rel-repo-gitlab" source="repoGitHooks" target="gitlab"/>
+  <element xsi:type="archimate:TriggeringRelationship" id="rel-trigger" source="plateauV12" target="gapHooks"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wpHooks" target="gapHooks"/>
+  <element xsi:type="archimate:RealizationRelationship" id="rel-wp-plat" source="wpHooks" target="plateauV13"/>
+
+  <folder name="Views" id="f-views" type="diagrams">
+    <!-- 视图 1: 架构变迁 v12→v13 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="架构变迁 v12→v13 — Git Hooks 入库" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV12" archimateElement="plateauV12">
+        <bounds x="48" y="120" width="220" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v12-gap" source="do-plateauV12" target="do-gapHooks" archimateRelationship="rel-trigger"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gapHooks" archimateElement="gapHooks" targetConnections="conn-v12-gap conn-wp-gap">
+        <bounds x="300" y="120" width="300" height="60"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wpHooks" archimateElement="wpHooks">
+        <bounds x="640" y="80" width="300" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wpHooks" target="do-gapHooks" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-v13" source="do-wpHooks" target="do-plateauV13" archimateRelationship="rel-wp-plat"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-plateauV13" archimateElement="plateauV13" targetConnections="conn-wp-v13">
+        <bounds x="640" y="180" width="300" height="50"/>
+      </child>
+    </element>
+
+    <!-- 视图 2: 目标拓扑 v13 — Git Hooks 部署流 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="目标拓扑 v13 — Git Hooks 部署流" id="view-topology">
+      <child xsi:type="archimate:DiagramObject" id="do-developer" archimateElement="developer">
+        <bounds x="40" y="60" width="140" height="40"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-dev-deploy" source="do-developer" target="do-hooksDeploy" archimateRelationship="rel-dev-deploy"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-hooksSSOT" archimateElement="hooksSSOT">
+        <bounds x="260" y="30" width="260" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-ssot-deploy" source="do-hooksSSOT" target="do-hooksDeploy" archimateRelationship="rel-ssot-deploy"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-hooksDeploy" archimateElement="hooksDeploy" targetConnections="conn-dev-deploy conn-ssot-deploy">
+        <bounds x="260" y="130" width="260" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-deploy-repo" source="do-hooksDeploy" target="do-repoGitHooks" archimateRelationship="rel-deploy-repo"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-repoGitHooks" archimateElement="repoGitHooks" targetConnections="conn-deploy-repo">
+        <bounds x="260" y="230" width="260" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-repo-gitlab" source="do-repoGitHooks" target="do-gitlab" archimateRelationship="rel-repo-gitlab"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gitlab" archimateElement="gitlab" targetConnections="conn-repo-gitlab">
+        <bounds x="260" y="330" width="260" height="40"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

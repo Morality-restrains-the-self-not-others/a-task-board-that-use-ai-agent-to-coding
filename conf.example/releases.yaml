@@ -1,0 +1,69 @@
+# Artifact pins for source-less deploy (ADR-0052).
+# sha = file content SHA-256. @tag = GitHub Release tag.
+artifacts:
+  go_relayToTrae:
+    package: github://task2money/daydaymoney-deploy/go_relayToTrae@deploy-20260831-conf-local
+    sha: df07ab0e92493df2f7e0349ce942e3f1fc9364a90120f3324117163f39739033
+  runAll:
+    package: github://task2money/daydaymoney-deploy/runAll@deploy-20260831-conf-local
+    sha: a0a6a9cfe78eb9632f4b30b40120932072f4bd3102ded8975bcec57f835f8485
+  taskAIComment:
+    package: github://task2money/daydaymoney-deploy/taskAIComment@deploy-20260831-conf-local
+    sha: 49e09afb3709b9000e526b1fa6676d1c3a2dbce081ae907afce6efa6c352d267
+  taskAIEndPoint:
+    package: github://task2money/daydaymoney-deploy/taskAIEndPoint@deploy-20260831-conf-local
+    sha: d9150d9bacd2aee7bf810a0a5977613455a68e6fd5e5c4b7a46044feeea0a47d
+  taskAgentSupport:
+    package: github://task2money/daydaymoney-deploy/taskAgentSupport@deploy-20260831-conf-local
+    sha: 101dc25af4787f3c33385f794912bdd62ffa76c21025f30ae3d6371dff6a5ac4
+  taskAiProvider:
+    package: github://task2money/daydaymoney-deploy/taskAiProvider@deploy-20260831-conf-local
+    sha: b9918a877803976c349de3bce98859ab22e834cb4da2385bb2a4e7b59caef705
+  taskAuth:
+    package: github://task2money/daydaymoney-deploy/taskAuth@deploy-20260831-conf-local
+    sha: 09e28f4fdb843f6f39f058f0cc6c0e6858415228076301c4528eccec4f686d84
+  taskBill:
+    package: github://task2money/daydaymoney-deploy/taskBill@deploy-20260831-conf-local
+    sha: f06f61d8a18b4fa4f5420653560c2cab9c055f88185ad1659ab00a0431ebaa16
+  taskCloudService:
+    package: github://task2money/daydaymoney-deploy/taskCloudService@deploy-20260831-conf-local
+    sha: cf1c25a5cc9d4516141c303098ed04a103896dde51b4dabe7471c95536295ccf
+  taskContainerGateway:
+    package: github://task2money/daydaymoney-deploy/taskContainerGateway@deploy-20260831-conf-local
+    sha: ca0c92e62f93b6066680a879a19bb82a28e8ae0f8f2b59c50422ff1b60af3dc4
+  taskCredentialService:
+    package: github://task2money/daydaymoney-deploy/taskCredentialService@deploy-20260831-conf-local
+    sha: 4af82120f5101c81972874b09a9e0e689e32ad22dd6b7f0ec8e8efe93dcfc26f
+  taskGitOauth:
+    package: github://task2money/daydaymoney-deploy/taskGitOauth@deploy-20260831-conf-local
+    sha: 4831c3dcfb965bd2e0255096958106cc9dcde054479d2697f08d42fd4f17b891
+  taskProjectService:
+    package: github://task2money/daydaymoney-deploy/taskProjectService@deploy-20260831-conf-local
+    sha: c0e3f2895c691eb513e91c79ab039ef7df8af776a6a10f80522e412c2881c2bd
+  taskReferral:
+    package: github://task2money/daydaymoney-deploy/taskReferral@deploy-20260831-conf-local
+    sha: 5cd80de80e462f5cde52d87d376d04fa43a9b2290f46b45bf5f2b5e4525cb7e4
+  taskTaskService:
+    package: github://task2money/daydaymoney-deploy/taskTaskService@deploy-20260831-conf-local
+    sha: 5ce445860ed69d900fa63e56836df3481bfe33ca41faa6737e37db8c5bdf7272
+  taskTenantService:
+    package: github://task2money/daydaymoney-deploy/taskTenantService@deploy-20260831-conf-local
+    sha: 30469aaf1efb56c15cbb1140fe915274614be4346c28b2395988f9ca1f6c3e61
+  valueStream:
+    package: github://task2money/daydaymoney-deploy/valueStream@deploy-20260831-conf-local
+    sha: 8c8e92f6a104daa345a30fb165655e68d3fa91e2f5203e48a51332897eeb50c9
+  taskEvents-bin:
+    package: github://task2money/daydaymoney-deploy/taskEvents-bin.tar.gz@deploy-20260831-conf-local
+    sha: 6b171073e6cfe27a7e185da8dc2ed5a2a4b2d3c626e0cc80f919ff710710adeb
+    dest: taskEvents/bin
+    unpack: tar.gz
+  taskFE-dist:
+    package: github://task2money/daydaymoney-deploy/taskFE-dist.tar.gz@deploy-20260831-conf-local
+    sha: 232f564a0c20f0befac8d041480e8045bd2e10e2af32318f428b746b1b058106
+    dest: taskFE/app/public
+    unpack: tar.gz
+  taskAiProvider-frontend-dist:
+    package: github://task2money/daydaymoney-deploy/taskAiProvider-frontend-dist.tar.gz@deploy-20260831-conf-local
+    sha: a0cdfaf721a7b0b33cb97c1730665230f6c4ddae2fed8e7bc3dbe28383f3fe4c
+    dest: taskAiProvider/frontend/dist
+    unpack: tar.gz

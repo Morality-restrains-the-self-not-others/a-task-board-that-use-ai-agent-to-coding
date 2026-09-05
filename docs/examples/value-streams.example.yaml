@@ -1,0 +1,65 @@
+# 示例：价值流单元测试编排配置（精简 2 流）
+# 完整五条流（planned + active）见 conf/value-stream.yaml
+# 用法: ./valueStream --config /path/to/this-file.yaml
+# steps[].status: active（默认）| planned — 见 valueStream/README.md
+#
+# 字段命名: <runAll服务名>.<数据库表名>.<字段名>
+# runAll 服务名见 runAll/config.yaml（git-oauth, saas-backend, ...）
+
+version: "1"
+
+runall_config: ../../config.yaml
+
+runner:
+  working_dir: ../../task2app/Saas_project
+  pytest_bin: pytest
+  env:
+    DJANGO_SETTINGS_MODULE: saas_project.settings_test
+
+value_streams:
+  - name: user-auth
+    domain: 用户与认证
+    description: 用户注册与认证
+    steps:
+      - name: email-register
+        test_file: accounts/view_test/UserViewSet_email_register_test.py
+        fields:
+          - name: saas-backend.accounts_user.email
+          - name: saas-backend.accounts_user.password
+
+      - name: activate
+        test_file: accounts/view_test/UserViewSet_activate_test.py
+        fields:
+          - name: saas-backend.accounts_user.is_active
+          - name: saas-backend.accounts_user.activation_token
+
+      - name: login
+        test_file: accounts/view_test/UserViewSet_login_test.py
+        fields:
+          - name: saas-backend.accounts_user.email
+          - name: saas-backend.accounts_user.password
+          - name: saas-backend.authtoken_token.key
+            description: 登录返回的认证令牌
+
+      - name: reset-password
+        test_file: accounts/view_test/UserViewSet_reset_password_test.py
+        fields:
+          - name: saas-backend.accounts_user.email
+          - name: saas-backend.accounts_user.password_reset_token
+
+  - name: company-management
+    domain: 组织与成员
+    description: 公司与成员管理
+    steps:
+      - name: company-crud
+        test_file: accounts/view_test/CompanyViewSet_test.py
+        fields:
+          - name: saas-backend.accounts_company.name
+          - name: saas-backend.accounts_company.owner_id
+
+      - name: member-crud
+        test_file: accounts/view_test/CompanyMemberViewSet_test.py
+        fields:
+          - name: saas-backend.accounts_companymember.company_id
+          - name: saas-backend.accounts_companymember.user_id
+          - name: saas-backend.accounts_companymember.role

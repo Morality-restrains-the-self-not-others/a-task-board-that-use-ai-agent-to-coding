@@ -1,0 +1,261 @@
+2026-02-11 Version: 4.7.10
+- Update API ListImage: add response parameters Body.Data.$.SnapshotList.
+- Update API ListWuyingServer: add request parameters BizType.
+- Update API ListWuyingServer: add request parameters ProductType.
+- Update API ListWuyingServer: add request parameters Users.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.AliUid.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.Bandwidth.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.FotaVersion.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.PolicyGroupIdList.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.ResourceSessionStatus.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.Sessions.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.SystemDiskId.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.TimerGroupId.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.Users.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.DataDisk.$.DataDiskId.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.DataDisk.$.DataDiskNo.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.ServerInstanceTypeInfo.GpuSpec.
+- Update API ModifyWuyingServerAttribute: add request parameters ProductType.
+- Update API RestartWuyingServer: add request parameters ProductType.
+- Update API StartWuyingServer: add request parameters ProductType.
+- Update API StopWuyingServer: add request parameters ProductType.
+
+
+2026-02-06 Version: 4.7.9
+- Update API CreateImageByInstance: add request parameters TagList.
+
+
+2026-01-27 Version: 4.7.8
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.VirtualKubeletIp.
+
+
+2026-01-21 Version: 4.7.7
+- Update API ModifyBrowserInstanceGroup: add request parameters Policy.ClipboardPolicy.ClipboardSizeUnit.
+
+
+2026-01-08 Version: 4.7.6
+- Update API ListImage: add response parameters Body.Data.$.EnvironmentId.
+- Update API ListImage: add response parameters Body.Data.$.ImageIconUrl.
+- Update API ListImage: add response parameters Body.Data.$.Rating.
+- Update API ListImage: add response parameters Body.Data.$.TagList.
+
+
+2025-12-26 Version: 4.7.5
+- Update API CreateWuyingServer: add request parameters MaxPrice.
+- Update API CreateWuyingServer: add request parameters SubPayType.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.MaxPrice.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.SubPayType.
+
+
+2025-12-17 Version: 4.7.4
+- Generated python 2021-09-01 for appstream-center.
+
+2025-12-17 Version: 4.7.3
+- Update API DescribeWuyingServerEipInfo: add response parameters Body.EipInfoModel.EipId.
+
+
+2025-12-15 Version: 4.7.2
+- Update API CreateWuyingServer: add request parameters HostName.
+
+
+2025-12-08 Version: 4.7.1
+- Update API ListImage: add response parameters Body.Data.$.Scene.
+
+
+2025-12-05 Version: 4.7.0
+- Support API UpdateWuyingServerImage.
+- Update API ListAppInstances: add response parameters Body.AppInstanceModels.$.NetworkInterfaceId.
+
+
+2025-11-27 Version: 4.6.0
+- Support API ModifyBrowserInstanceGroup.
+- Update API CreateAppInstanceGroup: add request parameters UserGroupIds.
+- Update API CreateWuyingServer: add request parameters SavingPlanId.
+- Update API GetAppInstanceGroup: add response parameters Body.AppInstanceGroupModels.SupportUserGroupMixedAuth.
+- Update API GetAppInstanceGroup: add response parameters Body.AppInstanceGroupModels.UserGroupAuthMode.
+- Update API GetConnectionTicket: add request parameters EnvironmentConfig.
+- Update API ListAppInstanceGroup: add request parameters ExcludedUserGroupIds.
+- Update API ListAppInstanceGroup: add request parameters UserGroupIds.
+- Update API ListAppInstanceGroup: add response parameters Body.AppInstanceGroupModels.$.SupportUserGroupMixedAuth.
+- Update API ListAppInstanceGroup: add response parameters Body.AppInstanceGroupModels.$.UserGroupAuthMode.
+
+
+2025-10-20 Version: 4.5.0
+- Support API DeleteImage.
+- Support API StartTaskForDistributeImage.
+- Update API CreateWuyingServer: add request parameters ServerPortRange.
+
+
+2025-10-16 Version: 4.4.0
+- Support API CreateImageByInstance.
+- Support API ListImage.
+
+
+2025-10-13 Version: 4.3.0
+- Support API DescribeWuyingServerEipInfo.
+- Update API CreateWuyingServer: add request parameters Bandwidth.
+- Update API CreateWuyingServer: add request parameters NetworkStrategyType.
+
+
+2025-10-04 Version: 4.2.0
+- Support API DeleteWuyingServer.
+- Update API CreateWuyingServer: add request parameters IdempotenceToken.
+
+
+2025-08-29 Version: 4.1.1
+- Update API CreateWuyingServer: add request parameters VirtualNodePoolId.
+- Update API ListWuyingServer: add request parameters AddVirtualNodePoolStatusList.
+- Update API ListWuyingServer: add request parameters VirtualNodePoolId.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.AddVirtualNodePoolStatus.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.SecurityGroupIds.
+- Update API ListWuyingServer: add response parameters Body.WuyingServerList.$.VirtualNodePoolId.
+
+
+2025-08-18 Version: 4.1.0
+- Support API CreateWuyingServer.
+- Support API ListWuyingServer.
+- Support API ModifyWuyingServerAttribute.
+- Support API RenewWuyingServer.
+- Support API RestartWuyingServer.
+- Support API StartWuyingServer.
+- Support API StopWuyingServer.
+
+
+2025-07-10 Version: 4.0.1
+- Update API RenewAppInstanceGroup: add request parameters RenewAmount.
+- Update API RenewAppInstanceGroup: add request parameters RenewMode.
+- Update API RenewAppInstanceGroup: add request parameters RenewNodes.
+
+
+2025-06-25 Version: 4.0.0
+- Support API ListAuthorizedUserGroups.
+- Delete API AccessPageSetAcl.
+- Delete API AskSessionPackagePrice.
+- Delete API BuySessionPackage.
+- Delete API CreateAccessPage.
+- Delete API DeleteAccessPage.
+- Delete API GetAccessPageSession.
+- Delete API ListAccessPages.
+- Delete API ListSessionPackages.
+- Update API AuthorizeInstanceGroup: add request parameters AuthorizeUserGroupIds.
+- Update API AuthorizeInstanceGroup: add request parameters AvatarId.
+- Update API AuthorizeInstanceGroup: add request parameters UnAuthorizeUserGroupIds.
+- Update API GetAppInstanceGroup: add response parameters Body.AppInstanceGroupModels.AccessType.
+- Update API GetAppInstanceGroup: add response parameters Body.AppInstanceGroupModels.AuthMode.
+- Update API GetConnectionTicket: add request parameters AppPolicyId.
+- Update API GetConnectionTicket: add response parameters Body.AvatarId.
+- Update API ListAppInstanceGroup: add response parameters Body.AppInstanceGroupModels.$.AccessType.
+- Update API ListAppInstanceGroup: add response parameters Body.AppInstanceGroupModels.$.AuthMode.
+
+
+2025-04-27 Version: 3.2.4
+- Update API GetAppInstanceGroup: add response parameters Body.AppInstanceGroupModels.Tags.
+
+
+2025-04-25 Version: 3.2.3
+- Update API ListAppInstanceGroup: add request parameters Tag.
+- Update API ListAppInstanceGroup: add response parameters Body.AppInstanceGroupModels.$.Tags.
+
+
+2025-04-11 Version: 3.2.2
+- Generated python 2021-09-01 for appstream-center.
+
+2025-04-07 Version: 3.2.1
+- Update API GetConnectionTicket: add request parameters AccessType.
+
+
+2025-03-28 Version: 3.2.0
+- Support API ListPersistentAppInstances.
+
+
+2025-03-27 Version: 3.1.1
+- Update API AuthorizeInstanceGroup: add request parameters AppInstancePersistentId.
+- Update API CreateAppInstanceGroup: add request parameters AuthMode.
+- Update API CreateAppInstanceGroup: add request parameters RuntimePolicy.PersistentAppInstanceScheduleMode.
+
+
+2025-03-13 Version: 3.1.0
+- Support API ListNodes.
+- Support API ListTagCloudResources.
+- Support API ModifyNodePoolAmount.
+- Support API TagCloudResources.
+- Support API UntagCloudResources.
+
+
+2025-03-12 Version: 3.0.3
+- Update API ListAppInstanceGroup: update response param.
+- Update API ListAppInstances: update response param.
+
+
+2024-10-22 Version: 2.0.4
+- Update API AuthorizeInstanceGroup: add param UserMeta.
+- Update API CreateAppInstanceGroup: update param AppInstanceGroupName.
+- Update API CreateAppInstanceGroup: update param Network.
+- Update API GetAppInstanceGroup: update response param.
+- Update API ListAppInstanceGroup: add param OfficeSiteId.
+- Update API ListAppInstanceGroup: update response param.
+- Update API ListNodeInstanceType: add param Cpu.
+- Update API ListNodeInstanceType: add param Gpu.
+- Update API ListNodeInstanceType: add param GpuMemory.
+- Update API ListNodeInstanceType: add param Memory.
+- Update API ListNodeInstanceType: add param NodeInstanceTypeFamily.
+- Update API ListNodeInstanceType: add param OrderBy.
+- Update API ListNodeInstanceType: add param SortType.
+- Update API ListNodeInstanceType: update response param.
+
+
+2024-09-12 Version: 2.0.3
+- Update API CreateAppInstanceGroup: update param NodePool.
+- Update API GetAppInstanceGroup: update response param.
+- Update API ListAppInstanceGroup: update response param.
+- Update API ModifyNodePoolAttribute: update param NodePoolStrategy.
+
+
+2024-08-02 Version: 2.0.2
+- Update API AuthorizeInstanceGroup: update param AuthorizeUserIds.
+- Update API AuthorizeInstanceGroup: update param UnAuthorizeUserIds.
+- Update API ListRegions: add param BizSource.
+
+
+2024-07-23 Version: 2.0.1
+- Generated python 2021-09-01 for appstream-center.
+
+2024-07-22 Version: 2.0.0
+- Support API ModifyAppPolicy.
+- Update API BuySessionPackage: add param AutoPay.
+- Update API CreateAppInstanceGroup: add param UserDefinePolicy.
+- Update API CreateAppInstanceGroup: add param VideoPolicy.
+- Update API ListAppInstanceGroup: add param RegionId.
+- Update API ListRegions: add param ProductType.
+
+
+2024-01-15 Version: 1.1.0
+- Generated python 2021-09-01 for appstream-center.
+
+2023-08-22 Version: 1.0.8
+- Generated python 2021-09-01 for appstream-center.
+
+2023-05-09 Version: 1.0.7
+- Modify ListAppInstance.
+
+2023-04-03 Version: 1.0.6
+- Add ListAppInstances Open API.
+
+2023-03-22 Version: 1.0.5
+- Add ListAppInstances Open API.
+
+2023-03-21 Version: 1.0.4
+- Add Unbind Open API.
+
+2023-03-10 Version: 1.0.3
+- Add Unbind Open API.
+
+2023-03-09 Version: 1.0.2
+- Add GetConnectionTicket Open API.
+
+2023-01-30 Version: 1.0.1
+- For new api version.
+
+2022-11-01 Version: 1.0.0
+- For new api version.
+

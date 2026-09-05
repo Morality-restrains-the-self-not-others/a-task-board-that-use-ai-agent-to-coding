@@ -1,0 +1,106 @@
+{
+  "manifest_version": 3,
+  "name": "云端Coding: 自动创新助手",
+  "version": "1.8.26",
+  "description": "在云端自动增加功能，修改bug，指哪改哪",
+  "commands": {
+    "toggle-element-picker": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+X",
+        "mac": "Command+Shift+X"
+      },
+      "description": "切换指针选择模式（选取页面元素加入任务描述）"
+    }
+  },
+  "permissions": [
+    "storage",
+    "webRequest",
+    "activeTab",
+    "tabs",
+    "webNavigation",
+    "cookies",
+    "alarms"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "云端Coding: 自动创新助手",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "devtools_page": "devtools/devtools.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "lib/storage.js",
+        "lib/dom-trace.js",
+        "lib/create-task-git-identity.js",
+        "lib/branch-datalist.js",
+        "lib/create-task-payload.js",
+        "lib/element-picker.js",
+        "lib/plugin-brand.js",
+        "lib/user-guide.js",
+        "lib/float-workspace-select.js",
+        "lib/workspace-list.js",
+        "lib/project-auto-run-label.js",
+        "lib/workspace-auto-schedule.js",
+        "lib/float-panel-markup.js",
+        "lib/float-panel-after-create.js",
+        "lib/daydaymoney-meta.js",
+        "lib/hot-path-guards.js",
+        "lib/visibility-interval.js",
+        "lib/auth-refresh-debounce.js",
+        "content/float-boot.js",
+        "content/float-pick.js",
+        "content/float-drag-auth.js",
+        "content/float-form.js",
+        "content/float-snapshot.js",
+        "content/content.js"
+      ],
+      "css": [
+        "content/content.css",
+        "content/content-form.css"
+      ],
+      "run_at": "document_end",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "lib/element-picker.js",
+        "content/pick-frame.js"
+      ],
+      "run_at": "document_end",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/*.png",
+        "oauth-callback.html"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

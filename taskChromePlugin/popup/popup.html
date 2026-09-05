@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="trae-service" content="taskChromePlugin" />
+  <title>云端Coding: 自动创新助手</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="popup-header">
+      <h1>🔧 云端Coding: 自动创新助手</h1>
+      <div id="headerUserArea" style="display:none">
+        <span id="headerUser" class="header-user"></span>
+        <button id="btnLogout" class="btn btn-sm btn-danger">🚪</button>
+      </div>
+      <span id="popupStatus" class="badge badge-disconnected">加载中...</span>
+    </header>
+
+    <!-- 悬浮球开关：登录与未登录均可见，便于浮窗 × 关闭后重新打开 -->
+    <section id="floatBallSection" class="section" style="display:none">
+      <div class="float-ball-row">
+        <label class="tracking-toggle" for="floatBallToggle">
+          <input type="checkbox" id="floatBallToggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="float-ball-label">显示悬浮球</span>
+      </div>
+      <p class="float-ball-hint">关闭后隐藏页内右下角悬浮球。浮窗顶部「×」只收起面板，不会关掉悬浮球。</p>
+    </section>
+
+    <!-- 加载中 -->
+    <div id="loadingSpinner" class="loading-section">
+      <div class="spinner"></div>
+      <p id="loadingText">正在检查登录状态...</p>
+      <button id="btnRetryInit" class="btn btn-sm" style="display:none;margin-top:8px;">🔄 重试</button>
+    </div>
+
+    <!-- 登录区域 — OAuth2+PKCE（OPT-20260808-024）-->
+    <section id="loginSection" class="section" style="display:none">
+      <h3>🔐 登录</h3>
+      <p id="loginHint" class="hint" style="margin-bottom:12px">通过网页端授权登录（OAuth2+PKCE）。</p>
+      <div class="form-row">
+        <label>服务器地址</label>
+        <input type="text" id="baseUrl" class="form-input" placeholder="https://daydaymoney.com" autocomplete="url">
+      </div>
+      <button id="btnLogin" class="btn btn-primary btn-full">🔓 OAuth 登录</button>
+      <div id="loginResult" class="result"></div>
+    </section>
+
+    <!-- DevTools 引导横幅 -->
+    <section id="devtoolsGuide" class="section devtools-guide" style="display:none">
+      <div class="guide-icon">🛠️</div>
+      <div class="guide-text">
+        <strong>按 F12 打开 DevTools</strong>
+        <p>切换到 <b>云端Coding: 自动创新助手</b> 面板即可创建任务、批量捕获错误请求</p>
+      </div>
+      <div class="guide-steps">
+        <span class="step">1️⃣ <kbd>F12</kbd> 打开开发者工具</span>
+        <span class="step">2️⃣ 点击 <b>云端Coding: 自动创新助手</b> 标签页</span>
+        <span class="step">3️⃣ 选择请求 → 填写信息 → 创建任务</span>
+      </div>
+    </section>
+
+    <!-- 快捷键说明（默认收起，点击「展开」后显示） -->
+    <section id="shortcutsSection" class="section shortcuts-section" style="display:none">
+      <h3 class="shortcuts-title">⌨️ 快捷键 <button id="btnToggleShortcuts" class="btn btn-sm btn-link">展开</button></h3>
+      <div id="shortcutsBody" style="display:none">
+        <div class="shortcuts-list">
+          <div class="shortcut-item">
+            <kbd id="pickShortcutKey">⌘/Ctrl+Shift+X</kbd>
+            <span class="shortcut-desc">切换指针选择模式</span>
+          </div>
+          <div class="shortcut-item">
+            <kbd>F12</kbd>
+            <span class="shortcut-desc">打开 DevTools → 云端Coding: 自动创新助手 面板</span>
+          </div>
+          <div class="shortcut-item">
+            <kbd>Esc</kbd>
+            <span class="shortcut-desc">取消指针选择 / 清空多选</span>
+          </div>
+          <div class="shortcut-item">
+            <kbd>⌘/Ctrl + 点击</kbd>
+            <span class="shortcut-desc">多选不关联元素（指针模式下）</span>
+          </div>
+          <div class="shortcut-item">
+            <kbd>Enter</kbd>
+            <span class="shortcut-desc">确认多选（指针模式下）</span>
+          </div>
+        </div>
+
+        <!-- 元素拾取快捷键自定义（默认 mac ⌘+Shift+X / 其他 Ctrl+Shift+X；浏览器级经 chrome.commands.update 改绑，页内兜底跟随） -->
+        <div class="shortcut-choice">
+          <p class="shortcut-choice-title">🎯 唤起元素拾取：</p>
+          <div class="shortcut-custom-row">
+            <kbd id="pickShortcutCustomKey">⌘/Ctrl+Shift+X</kbd>
+            <button id="btnPickShortcutEdit" class="btn btn-sm">✏️ 修改</button>
+            <button id="btnPickShortcutReset" class="btn btn-sm" title="恢复默认快捷键">↩️ 恢复默认</button>
+          </div>
+          <p id="pickShortcutCaptureHint" class="shortcut-choice-note" style="display:none">请按下新的快捷键组合（须包含 Ctrl/Alt/Command，可选 Shift）… 按 <kbd>Esc</kbd> 取消</p>
+          <p id="pickShortcutResult" class="shortcut-choice-note"></p>
+          <p id="pickShortcutDiffHint" class="shortcut-choice-note err" style="display:none"></p>
+          <p class="shortcut-choice-note">💡 默认 Mac 为 ⌘+Shift+X、其他系统为 Ctrl+Shift+X（Chrome 限制 ⌘ 仅 macOS 可用）。修改后浏览器级键位与页内兜底监听同步生效；若键位被其他扩展占用会提示更换。</p>
+        </div>
+
+        <p class="shortcuts-hint">💡 在任意页面按 <kbd id="pickShortcutHintKey">⌘/Ctrl+Shift+X</kbd> 即可进入指针选择模式，选取元素加入任务描述。</p>
+        <p class="shortcuts-hint" style="margin-top:2px">⚠️ 快捷键无效？<a href="#" id="taskplugin-shortcut-settings">点此检查 chrome://extensions/shortcuts 中的键位绑定</a>（默认 Mac ⌘+Shift+X / 其他 Ctrl+Shift+X，可能被其他扩展占用）。</p>
+      </div>
+    </section>
+
+    <!-- 使用说明（SSOT: lib/user-guide.js） -->
+    <section id="popupGuideSection" class="section" style="display:none">
+      <div id="popup-user-guide" class="tcp-guide-host"></div>
+    </section>
+
+    <!-- 请求列表（仅查看/过滤） -->
+    <section id="requestsSection" class="section" style="display:none">
+      <h3>📌 请求预览 <span id="requestCountBadge" class="hint-inline"></span> <button id="btnToggleRequests" class="btn btn-sm btn-link">展开</button></h3>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <label class="tracking-toggle">
+          <input type="checkbox" id="trackingToggle">
+          <span class="toggle-slider"></span>
+        </label>
+        <span style="font-size:10px;color:#6c7086">跟踪请求（保留刷新前的记录）</span>
+      </div>
+      <div id="requestsBody" style="display:none">
+        <div class="search-bar">
+          <input type="text" id="reqSearch" class="form-input search-input" placeholder="🔍 URL / 方法...">
+          <select id="reqStatusFilter" class="form-select search-select">
+            <option value="">全部</option>
+            <option value="5xx">5xx</option>
+            <option value="4xx">4xx</option>
+            <option value="2xx">2xx</option>
+            <option value="3xx">3xx</option>
+            <option value="canceled">Canceled</option>
+          </select>
+          <select id="reqSort" class="form-select search-select" aria-label="请求排序">
+            <option value="timestamp">时间</option>
+            <option value="status">状态</option>
+            <option value="url">URL</option>
+          </select>
+        </div>
+        <div class="btn-row" style="margin-bottom:6px">
+          <button id="btnRefreshReqs" class="btn btn-sm">🔄 刷新</button>
+          <button id="btnClearReqs" class="btn btn-sm btn-danger">清空</button>
+        </div>
+        <div id="requestList" class="popup-req-list">
+          <p class="placeholder">暂无捕获的请求。打开网页后错误请求将自动出现在这里。</p>
+        </div>
+        <!-- 选中请求详情 -->
+        <div id="popupReqDetail" class="popup-req-detail" style="display:none"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="../lib/storage.js"></script>
+  <script src="../lib/dom-trace.js"></script>
+  <script src="../lib/api-http.js"></script>
+  <script src="../lib/api.js"></script>
+  <script src="../lib/async-timeout.js"></script>
+  <script src="../lib/plugin-brand.js"></script>
+  <script src="../lib/user-guide.js"></script>
+  <script src="../lib/hot-path-guards.js"></script>
+  <script src="../lib/visibility-interval.js"></script>
+  <script src="../lib/request-list-query.js"></script>
+  <script src="popup-auth.js"></script>
+  <script src="popup-shortcut.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

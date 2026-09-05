@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>daydaymoney-product-design — DESIGN.md preview</title>
+<style>
+  :root {
+    --color-primary: #7241F2;
+    --color-primary-dark: #5C2DC7;
+    --color-primary-light: #E6E0FF;
+    --color-on-primary: #ffffff;
+    --color-accent: #FF324D;
+    --color-text: #1A1A1A;
+    --color-text-light: #4B5563;
+    --color-background: #F7F9FC;
+    --color-secondary: #F1F2F6;
+    --color-surface: #ffffff;
+    --color-hairline: #E5E7EB;
+    --color-focus-ring: #A855F7;
+    --color-success: #16A34A;
+    --color-warning: #D97706;
+    --color-error: #FF324D;
+    --radius-control: 6px;
+    --radius-card: 8px;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    --app-navbar-h: 74px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    color: var(--color-text);
+    background: var(--color-background);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .nav {
+    height: var(--app-navbar-h);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 0 24px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .nav .brand { font-weight: 700; font-size: 18px; color: var(--color-text); }
+  .nav a { color: var(--color-text-light); text-decoration: none; font-size: 14px; }
+  .nav a.active { color: var(--color-primary); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .sub { color: var(--color-text-light); margin: 0 0 28px; }
+  h2 { font-size: 18px; margin: 36px 0 12px; border-bottom: 1px solid var(--color-hairline); padding-bottom: 8px; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .swatch { border: 1px solid var(--color-hairline); border-radius: var(--radius-card); background: var(--color-surface); overflow: hidden; }
+  .swatch .chip { height: 56px; }
+  .swatch .meta { padding: 8px 10px; font-size: 12px; }
+  .swatch .meta b { display: block; font-size: 12px; }
+  .swatch .meta code { font-family: var(--mono); color: var(--color-text-light); }
+  .scale { display: flex; flex-direction: column; gap: 6px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  button { font: inherit; cursor: pointer; border-radius: var(--radius-control); }
+  .btn-primary { background: var(--color-primary); color: var(--color-on-primary); border: 0; padding: 8px 16px; font-weight: 600; }
+  .btn-primary:hover { background: var(--color-primary-dark); }
+  .btn-secondary { background: var(--color-secondary); color: var(--color-text); border: 1px solid transparent; padding: 8px 16px; }
+  .btn-accent { background: var(--color-accent); color: #ffffff; border: 0; padding: 8px 16px; font-weight: 600; }
+  .card { background: var(--color-surface); border: 1px solid var(--color-hairline); border-radius: var(--radius-card); box-shadow: 0 1px 2px rgba(0,0,0,0.04); padding: 20px; margin: 12px 0; }
+  .card h3 { margin: 0 0 8px; font-size: 15px; }
+  .card p { margin: 0; color: var(--color-text-light); }
+  .input { width: 100%; max-width: 360px; border: 1px solid #d1d5db; border-radius: var(--radius-control); padding: 8px 12px; font: inherit; background: var(--color-surface); color: var(--color-text); }
+  .input:focus { outline: 2px solid var(--color-focus-ring); outline-offset: 0; border-color: var(--color-primary); }
+  label { display: block; font-size: 13px; margin: 12px 0 4px; color: var(--color-text); }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+  .badge.ok { background: var(--color-primary-light); color: var(--color-primary-dark); }
+  .badge.warn { background: #FEF3C7; color: var(--color-warning); }
+  .badge.err { background: #FEE2E2; color: var(--color-error); }
+  code, .mono { font-family: var(--mono); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <span class="brand">daydaymoney</span>
+    <a href="#" class="active">工作台</a>
+    <a href="#">租户控制台</a>
+    <a href="#">Billing</a>
+    <a href="#">Auth</a>
+  </nav>
+  <main class="wrap">
+    <h1>Product DESIGN.md preview</h1>
+    <p class="sub">Cool gray canvas, near-black ink, one chromatic brand — 紫曜 purple <code>#7241F2</code>.</p>
+
+    <h2>Colors</h2>
+    <div class="swatches">
+      <div class="swatch"><div class="chip" style="background:#7241F2"></div><div class="meta"><b>primary</b><code>#7241F2</code></div></div>
+      <div class="swatch"><div class="chip" style="background:#5C2DC7"></div><div class="meta"><b>primary-dark</b><code>#5C2DC7</code></div></div>
+      <div class="swatch"><div class="chip" style="background:#E6E0FF"></div><div class="meta"><b>primary-light</b><code>#E6E0FF</code></div></div>
+      <div class="swatch"><div class="chip" style="background:#FF324D"></div><div class="meta"><b>accent</b><code>#FF324D</code></div></div>
+      <div class="swatch"><div class="chip" style="background:#1A1A1A"></div><div class="meta"><b>ink</b><code>#1A1A1A</code></div></div>
+      <div class="swatch"><div class="chip" style="background:#4B5563"></div><div class="meta"><b>ink-muted</b><code>#4B5563</code></div></div>
+      <div class="swatch"><div class="chip" style="background:#F7F9FC"></div><div class="meta"><b>canvas</b><code>#F7F9FC</code></div></div>
+      <div class="swatch"><div class="chip" style="background:#F1F2F6"></div><div class="meta"><b>secondary</b><code>#F1F2F6</code></div></div>
+      <div class="swatch"><div class="chip" style="background:#ffffff"></div><div class="meta"><b>surface</b><code>#ffffff</code></div></div>
+      <div class="swatch"><div class="chip" style="background:#16A34A"></div><div class="meta"><b>semantic-success</b><code>#16A34A</code></div></div>
+      <div class="swatch"><div class="chip" style="background:#D97706"></div><div class="meta"><b>semantic-warning</b><code>#D97706</code></div></div>
+      <div class="swatch"><div class="chip" style="background:#FF324D"></div><div class="meta"><b>semantic-error</b><code>#FF324D</code></div></div>
+    </div>
+
+    <h2>Typography</h2>
+    <div class="scale">
+      <span style="font-size:24px;font-weight:600">Page title · 24px semibold</span>
+      <span style="font-size:18px;font-weight:600">Section title · 18px semibold</span>
+      <span style="font-size:15px">Body · 15px regular — product-app density, line-height 1.5.</span>
+      <span class="mono" style="font-size:13px;color:var(--color-text-light)">task_882968373028220928 · ui-monospace, SFMono-Regular</span>
+    </div>
+
+    <h2>Buttons</h2>
+    <div class="btns">
+      <button class="btn-primary">主要操作</button>
+      <button class="btn-secondary">次要操作</button>
+      <button class="btn-accent">删除</button>
+    </div>
+
+    <h2>Cards &amp; panels</h2>
+    <div class="grid2">
+      <div class="card"><h3>任务详情</h3><p>信息优先的工作台密度；圆角卡片、白色表面、hairline 描边。</p></div>
+      <div class="card"><h3>Billing 用量</h3><p>面层级分隔，无玻璃拟态、无渐变描边。</p></div>
+    </div>
+
+    <h2>Inputs</h2>
+    <label for="demo-input">仓库地址</label>
+    <input id="demo-input" class="input" placeholder="git@gitlab.example:group/repo.git" value="">
+
+    <h2>Semantic badges</h2>
+    <div class="badges">
+      <span class="badge ok">Git OAuth · 已绑定</span>
+      <span class="badge warn">未绑定 Git 授权</span>
+      <span class="badge err">container-http-unreachable</span>
+    </div>
+  </main>
+</body>
+</html>

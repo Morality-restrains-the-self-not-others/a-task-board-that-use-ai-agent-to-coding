@@ -1,0 +1,26 @@
+# TaskDetail.start-vm-auto-mock-ui.playwright.test.js
+
+## 测试目标
+
+任务详情页在 `@镜像` 后展开硬件配置，提交评论时 POST `server_run_template`（浏览器不再直接 POST start-vm）。
+
+## 关键业务断言
+
+- `@` 选镜像后出现硬件卡，且无 `#start-server-btn`
+- 选择实例 / 自动创建安全组后点击「提交并运行」
+- 捕获 POST `/comments/` body 含 `mentions` 与完整 `server_run_template`
+
+## 典型破坏信号
+
+- 硬件卡重新挂上启停按钮
+- 临时配置未写入评论 POST
+
+## 回归验证
+
+```bash
+E2E_EMAIL=... E2E_PASSWORD=... \
+npx playwright test tests/TaskDetail.start-vm-auto-mock-ui.playwright.test.js \
+  --config=playwright.config.chromium.js
+```
+
+全 API mock，不创建真实云资源。

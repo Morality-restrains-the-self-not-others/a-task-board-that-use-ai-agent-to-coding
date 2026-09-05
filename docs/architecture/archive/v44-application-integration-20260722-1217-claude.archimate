@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v44-schedule-rhythm-auto-close-20260722-1217">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v44 Target (schedule-rhythm-auto-close)</name>
+  <purpose>ScheduleRhythm.auto_close: T-5min closing-soon notify; window-end shutdown/stop-vm for queued slots</purpose>
+
+  <folder name="Motivation" id="id-v44-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="Constraint 新增接口默认 Go" id="id-v44-constraint"/>
+    <element xsi:type="archimate:Principle" name="Principle 窗口结束回收排队机器" id="id-v44-principle"/>
+  </folder>
+  <folder name="Application" id="id-v44-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue Task Detail [MODIFIED v44]" id="id-v44-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v44-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskTaskService AutoCloser [MODIFIED v44]" id="id-v44-tts"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskCloudService [MODIFIED v44]" id="id-v44-tcs"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskContainerGateway [MODIFIED v44]" id="id-v44-cgw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟢 onlineServiceJS closing-soon [NEW v44]" id="id-v44-agent"/>
+    <element xsi:type="archimate:DataObject" name="🟡 schedule_rhythms auto_close" id="id-v44-rhythm"/>
+    <element xsi:type="archimate:DataObject" name="queued_machine_slots" id="id-v44-slots"/>
+  </folder>
+  <folder name="Technology" id="id-v44-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="Kafka" id="id-v44-kafka"/>
+  </folder>
+  <folder name="Relations" id="id-v44-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v44-flow-vue-gw" source="id-v44-vue" target="id-v44-gw" name="PATCH schedule_rhythm"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v44-flow-gw-tts" source="id-v44-gw" target="id-v44-tts" name="JWT"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v44-acc-tts-rhythm" source="id-v44-tts" target="id-v44-rhythm" name="R/W"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v44-acc-tts-slots" source="id-v44-tts" target="id-v44-slots" name="R/W clear"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v44-flow-tts-tcs" source="id-v44-tts" target="id-v44-tcs" name="closing-soon / shutdown / stop-vm"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v44-flow-tcs-cgw" source="id-v44-tcs" target="id-v44-cgw" name="proxy lifecycle"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v44-flow-cgw-agent" source="id-v44-cgw" target="id-v44-agent" name="container API"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v44-flow-tts-kafka" source="id-v44-tts" target="id-v44-kafka" name="ScheduleAutoClose*"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v44-inf-c" source="id-v44-constraint" target="id-v44-tts" name="落点"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v44-inf-p" source="id-v44-principle" target="id-v44-tts" name="回收"/>
+  </folder>
+  <folder name="Implementation" id="id-v44-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v41 — current" id="id-v44-plat-v41"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v44 — schedule-rhythm-auto-close (target)" id="id-v44-plat-v44"/>
+    <element xsi:type="archimate:Gap" name="Gap: 无窗口自动关闭/预告释放" id="id-v44-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v44-schedule-rhythm-auto-close" id="id-v44-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v44-rel-plat41-gap" source="id-v44-plat-v41" target="id-v44-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v44-rel-wp-gap" source="id-v44-wp" target="id-v44-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v44-rel-wp-plat44" source="id-v44-wp" target="id-v44-plat-v44"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v44-rel-plat44-tts" source="id-v44-plat-v44" target="id-v44-tts"/>
+  </folder>
+  <folder name="Views" id="id-v44-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v41→v44 — schedule-rhythm-auto-close" id="id-v44-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-plat41" archimateElement="id-v44-plat-v41">
+        <bounds x="48" y="100" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-plat41-gap"
+          source="id-v44-do-plat41" target="id-v44-do-gap"
+          archimateRelationship="id-v44-rel-plat41-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-gap" archimateElement="id-v44-gap"
+        targetConnections="id-v44-conn-plat41-gap id-v44-conn-wp-gap">
+        <bounds x="380" y="100" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-wp" archimateElement="id-v44-wp">
+        <bounds x="800" y="60" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-wp-gap"
+          source="id-v44-do-wp" target="id-v44-do-gap"
+          archimateRelationship="id-v44-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-wp-plat44"
+          source="id-v44-do-wp" target="id-v44-do-plat44"
+          archimateRelationship="id-v44-rel-wp-plat44"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-plat44" archimateElement="id-v44-plat-v44"
+        targetConnections="id-v44-conn-wp-plat44">
+        <bounds x="800" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-plat44-tts"
+          source="id-v44-do-plat44" target="id-v44-do-tts-m"
+          archimateRelationship="id-v44-rel-plat44-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-tts-m" archimateElement="id-v44-tts"
+        targetConnections="id-v44-conn-plat44-tts">
+        <bounds x="800" y="250" width="320" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v44 Target — auto-close 数据流" id="id-v44-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-vue" archimateElement="id-v44-vue">
+        <bounds x="40" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-vue-gw"
+          source="id-v44-do-vue" target="id-v44-do-gw"
+          archimateRelationship="id-v44-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-gw" archimateElement="id-v44-gw"
+        targetConnections="id-v44-conn-vue-gw">
+        <bounds x="230" y="80" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-gw-tts"
+          source="id-v44-do-gw" target="id-v44-do-tts"
+          archimateRelationship="id-v44-flow-gw-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-tts" archimateElement="id-v44-tts"
+        targetConnections="id-v44-conn-gw-tts id-v44-conn-inf-c id-v44-conn-inf-p">
+        <bounds x="390" y="80" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-tts-rhythm"
+          source="id-v44-do-tts" target="id-v44-do-rhythm"
+          archimateRelationship="id-v44-acc-tts-rhythm"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-tts-slots"
+          source="id-v44-do-tts" target="id-v44-do-slots"
+          archimateRelationship="id-v44-acc-tts-slots"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-tts-tcs"
+          source="id-v44-do-tts" target="id-v44-do-tcs"
+          archimateRelationship="id-v44-flow-tts-tcs"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-tts-kafka"
+          source="id-v44-do-tts" target="id-v44-do-kafka"
+          archimateRelationship="id-v44-flow-tts-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-rhythm" archimateElement="id-v44-rhythm"
+        targetConnections="id-v44-conn-tts-rhythm">
+        <bounds x="390" y="200" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-slots" archimateElement="id-v44-slots"
+        targetConnections="id-v44-conn-tts-slots">
+        <bounds x="590" y="200" width="160" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-tcs" archimateElement="id-v44-tcs"
+        targetConnections="id-v44-conn-tts-tcs">
+        <bounds x="650" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-tcs-cgw"
+          source="id-v44-do-tcs" target="id-v44-do-cgw"
+          archimateRelationship="id-v44-flow-tcs-cgw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-cgw" archimateElement="id-v44-cgw"
+        targetConnections="id-v44-conn-tcs-cgw">
+        <bounds x="890" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-cgw-agent"
+          source="id-v44-do-cgw" target="id-v44-do-agent"
+          archimateRelationship="id-v44-flow-cgw-agent"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-agent" archimateElement="id-v44-agent"
+        targetConnections="id-v44-conn-cgw-agent">
+        <bounds x="890" y="180" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-kafka" archimateElement="id-v44-kafka"
+        targetConnections="id-v44-conn-tts-kafka">
+        <bounds x="230" y="200" width="120" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-constraint" archimateElement="id-v44-constraint">
+        <bounds x="40" y="280" width="200" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-inf-c"
+          source="id-v44-do-constraint" target="id-v44-do-tts"
+          archimateRelationship="id-v44-inf-c"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v44-do-principle" archimateElement="id-v44-principle">
+        <bounds x="260" y="280" width="220" height="45"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v44-conn-inf-p"
+          source="id-v44-do-principle" target="id-v44-do-tts"
+          archimateRelationship="id-v44-inf-p"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

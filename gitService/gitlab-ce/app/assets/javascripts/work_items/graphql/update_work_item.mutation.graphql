@@ -1,0 +1,10 @@
+#import "ee_else_ce/work_items/graphql/work_item.fragment.graphql"
+
+mutation workItemUpdate($input: WorkItemUpdateInput!, $useWorkItemFeatures: Boolean = false) {
+  workItemUpdate(input: $input) {
+    workItem {
+      ...WorkItem
+    }
+    errors
+  }
+}

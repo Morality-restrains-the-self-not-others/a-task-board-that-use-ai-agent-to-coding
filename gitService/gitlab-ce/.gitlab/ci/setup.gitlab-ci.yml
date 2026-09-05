@@ -1,0 +1,264 @@
+# Insurance in case a gem needed by one of our releases gets yanked from rubygems.org in the future.
+backup gems:
+  extends:
+    - .default-retry
+    - .ruby-cache
+    - .default-before_script
+    - .setup:rules:backup-gems
+  stage: prepare
+  needs:
+    - job: cache:ruby-gems
+      optional: true
+  variables:
+    BUNDLE_WITHOUT: ""
+    BUNDLE_WITH: "development:test"
+    SETUP_DB: "false"
+  script:
+    - echo -e "\e[0Ksection_start:`date +%s`:bundle-package[collapsed=true]\r\e[0KPackaging gems"
+    - bundle config set cache_all true
+    - bundle package --all-platforms
+    - echo -e "\e[0Ksection_end:`date +%s`:bundle-package\r\e[0K"
+  artifacts:
+    paths:
+      - vendor/cache
+    expire_in: 31d
+
+.predictive-job:
+  extends:
+    - .default-retry
+  needs: []
+
+.absolutely-predictive-job:
+  extends:
+    - .predictive-job
+  image: ${GITLAB_DEPENDENCY_PROXY_ADDRESS}alpine:latest
+  variables:
+    GIT_STRATEGY: none
+
+dont-interrupt-me:
+  extends:
+    - .absolutely-predictive-job
+    - .setup:rules:dont-interrupt-me
+  stage: sync
+  interruptible: false
+  script:
+    - echo "This jobs makes sure this pipeline won't be interrupted! See https://docs.gitlab.com/ci/yaml/#interruptible."
+
+clone-gitlab-repo:
+  extends:
+    - .absolutely-predictive-job
+    - .setup:rules:clone-gitlab-repo
+  stage: sync
+  script:
+    - echo OK
+  variables:
+    GIT_STRATEGY: clone
+  artifacts:
+    paths:
+      - '*'
+    expire_in: '12 hours'
+
+set-pipeline-name:
+  extends:
+    - .predictive-job
+    - .setup:rules:set-pipeline-name
+    - .fast-no-clone-job
+  needs:
+    # Wait for danger-review to complete so we can fetch labels it adds
+    - job: danger-review
+      optional: true
+  variables:
+    # We use > instead of | because we want the files to be space-separated.
+    FILES_TO_DOWNLOAD: >
+      scripts/utils.sh
+      scripts/pipeline/set_pipeline_name.rb
+  image: ${GITLAB_DEPENDENCY_PROXY_ADDRESS}ruby:${RUBY_VERSION}-alpine3.21
+  stage: prepare
+  before_script:
+    - apk add --no-cache --update curl  # Not present in ruby-alpine, so we add it manually
+    - !reference [".fast-no-clone-job", before_script]
+  script:
+    - install_gitlab_gem
+    - chmod u+x scripts/pipeline/set_pipeline_name.rb && scripts/pipeline/set_pipeline_name.rb
+  allow_failure:
+    exit_codes:
+      - 3
+
+gitlab_git_test:
+  extends:
+    - .predictive-job
+    - .setup:rules:gitlab_git_test
+  stage: test
+  script:
+    - spec/support/prepare-gitlab-git-test-for-commit --check-for-changes
+
+verify-tests-yml:
+  extends:
+    - .setup:rules:verify-tests-yml
+  image: ${GITLAB_DEPENDENCY_PROXY_ADDRESS}ruby:${RUBY_VERSION}-alpine3.21
+  stage: preflight
+  needs: []
+  script:
+    - source scripts/utils.sh
+    - install_tff_gem
+    - scripts/verify-tff-mapping
+
+verify-approvals:
+  extends:
+    - .predictive-job
+    - .setup:rules:jh-contribution
+  script:
+    - source scripts/utils.sh
+    - install_gitlab_gem
+    - tooling/bin/find_app_sec_approval
+
+validate-fe-islands-ci:
+  extends:
+    - .predictive-job
+    - .frontend:rules:fe-islands
+  stage: preflight
+  variables:
+    USE_BUNDLE_INSTALL: "false"
+  script:
+    - ruby scripts/validate_fe_islands_ci.rb
+
+type-check-fe-islands:
+  extends:
+    - .predictive-job
+    - .frontend:rules:fe-islands
+    - .fe-islands-parallel
+  stage: preflight
+  variables:
+    USE_BUNDLE_INSTALL: "false"
+  needs: ["cache:fe-islands-node-modules"]
+  cache:
+    - !reference [.fe-islands-yarn-cache, cache]
+  script:
+    - cd ee/frontend_islands/apps/${FE_APP_DIR}
+    - yarn run lint:types
+
+generate-frontend-fixtures-mapping:
+  extends:
+    - .setup:rules:generate-frontend-fixtures-mapping
+    - .use-pg17
+    - .ruby-cache
+  needs: ["setup-test-env"]
+  stage: prepare
+  before_script:
+    - !reference [.default-before_script, before_script]
+    - source ./scripts/rspec_helpers.sh
+    - section_start "gitaly-test-spawn" "Spawning Gitaly"; scripts/gitaly-test-spawn; section_end "gitaly-test-spawn";  # Do not use 'bundle exec' here
+  script:
+    - generate_frontend_fixtures_mapping
+  artifacts:
+    expire_in: 7d
+    paths:
+      - ${GLCI_PREDICTIVE_FRONTEND_FIXTURES_MAPPING_PATH}
+
+detect-tests:
+  extends:
+    - .rails:rules:detect-tests
+    - .with-ruby-slim-image
+  needs: []
+  stage: prepare
+  script:
+    - |
+      # $FIND_CHANGES_MERGE_REQUEST_IID is defined in as-if-foss.gitlab-ci.yml
+      if [ -n "$CI_MERGE_REQUEST_IID" ] || [ -n "$FIND_CHANGES_MERGE_REQUEST_IID" ]; then
+        tooling/bin/predictive_tests \
+          --ci \
+          --with-crystalball-mappings \
+          --mapping-type described_class \
+          --with-frontend-fixture-mappings \
+          --frontend-fixtures-mapping-path $GLCI_PREDICTIVE_FRONTEND_FIXTURES_MAPPING_PATH \
+          --matching-foss-rspec-test-files-path $GLCI_PREDICTIVE_RSPEC_MATCHING_TESTS_FOSS_PATH \
+          --matching-ee-rspec-test-files-path $GLCI_PREDICTIVE_RSPEC_MATCHING_TESTS_EE_PATH \
+          --matching-js-files-path $GLCI_PREDICTIVE_MATCHING_JS_FILES_PATH \
+          --changed-files-path $GLCI_PREDICTIVE_CHANGED_FILES_PATH
+      fi
+  artifacts:
+    expire_in: 7d
+    paths:
+      - ${GLCI_PREDICTIVE_FRONTEND_FIXTURES_MAPPING_PATH}
+      - ${GLCI_PREDICTIVE_CHANGED_FILES_PATH}
+      - ${GLCI_PREDICTIVE_MATCHING_JS_FILES_PATH}
+      - ${GLCI_PREDICTIVE_RSPEC_MATCHING_TESTS_EE_PATH}
+      - ${GLCI_PREDICTIVE_RSPEC_MATCHING_TESTS_FOSS_PATH}
+
+detect-system-tests-duo-experiment:
+  extends:
+    - .with-ci-node-image
+  needs: []
+  stage: prepare
+  rules:
+    - if: '$CI_PROJECT_PATH != "gitlab-org/gitlab"'
+      when: never
+    - !reference [.prevent-tier-2-and-below, rules] # only needed in tier 3, as predictions are not yet used
+    - !reference [.rails:rules:detect-tests, rules]
+  before_script:
+    - npm install -g @gitlab/duo-cli
+  script:
+    - |
+      if [ -n "$CI_MERGE_REQUEST_IID" ] || [ -n "$FIND_CHANGES_MERGE_REQUEST_IID" ]; then
+        tooling/bin/predictive_tests \
+          --use-duo \
+          --ci \
+          --debug \
+          --duo-system-test-files-path $GLCI_PREDICTIVE_DUO_SYSTEM_TESTS_PATH \
+          --changed-files-path $GLCI_PREDICTIVE_CHANGED_FILES_PATH
+
+        echo "=== Duo Test Selection Results ==="
+        echo "System test specs: $(cat $GLCI_PREDICTIVE_DUO_SYSTEM_TESTS_PATH | wc -l)"
+      fi
+  artifacts:
+    access: developer
+    expire_in: 7d
+    paths:
+      - ${GLCI_PREDICTIVE_DUO_SYSTEM_TESTS_PATH}
+      - tmp/.duo_last_output.txt
+      - duo_feature_specs.json
+    when: always
+  allow_failure: true
+
+detect-previous-failed-tests:
+  extends:
+    - detect-tests
+    - .rails:rules:detect-previous-failed-tests
+  variables:
+    PREVIOUS_FAILED_TESTS_DIR: tmp/previous_failed_tests/
+  before_script:
+    - source ./scripts/utils.sh
+    - source ./scripts/rspec_helpers.sh
+  script:
+    - retrieve_failed_tests "${PREVIOUS_FAILED_TESTS_DIR}" "oneline" "previous"
+  artifacts:
+    expire_in: 7d
+    paths:
+      - ${PREVIOUS_FAILED_TESTS_DIR}
+
+e2e-test-pipeline-generate:
+  extends:
+    - .qa-job-base
+    - .needs-e2e-gem-cache
+    - .predictive-job
+    - .qa:rules:determine-e2e-tests
+  stage: prepare
+  variables:
+    COLORIZED_LOGS: "true"
+    GENERATED_PIPELINE_PATH: "${CI_PROJECT_DIR}/qa/tmp"
+  script:
+    - bundle exec rake "ci:generate_e2e_pipelines[$GENERATED_PIPELINE_PATH]"
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - "${GENERATED_PIPELINE_PATH}/*-pipeline.yml"
+
+# This is the start of the chain of E2E jobs for CE
+# After playing this, it'll follow up with:
+# compile-production-assets as-if-foss --\
+#                                                                         \-> e2e:test-on-omnibus-ce
+# build-qa-image as-if-foss ----------------------------------------------/
+e2e-test-pipeline-generate as-if-foss:
+  extends:
+    - e2e-test-pipeline-generate
+    - .qa:rules:test-on-omnibus-ce:start

@@ -1,0 +1,197 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "icon": "dashboard",
+      "title": "HTTP API Latency",
+      "type": "link",
+      "url": "/d/http-api-latency/http-api-latency"
+    },
+    {
+      "icon": "dashboard",
+      "title": "Lightweight APM",
+      "type": "link",
+      "url": "/d/lightweight-apm/lightweight-apm"
+    },
+    {
+      "icon": "dashboard",
+      "title": "Distributed Trace View",
+      "type": "link",
+      "url": "/d/distributed-trace-view/distributed-trace-view"
+    }
+  ],
+  "panels": [
+    {
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "content": "### Intended catalog (config SSOT) + runtime overlay\n\nGrafana here is the **browse + runtime** layer. Intended URLs come from `routes.yaml` + `api_route_ownership.yaml` + taskFE router — regenerate with `python3 db/scripts/ci/build_service_url_api_catalog.py`.\n\n- API routes: **312** (core **195**, orphaned **2**)\n- SPA pages: **111** (core **34**)\n- Upstreams with routes: **13**\n\nLeft: Tempo **service map** = observed call graph. Right/below: Prometheus request rate = empirical hot paths. Declared core ≠ high QPS.\n",
+        "mode": "markdown"
+      },
+      "title": "Catalog decision",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 2,
+      "options": {
+        "nodes": {}
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "queryType": "serviceMap",
+          "refId": "A"
+        }
+      ],
+      "title": "Runtime service map (Tempo)",
+      "type": "nodeGraph"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 3,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "topk(15, sum by (service, path) (rate({__name__=~\".*_http_requests_total\"}[$__rate_interval])))",
+          "legendFormat": "{{service}} {{path}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Empirical hot paths (HTTP rate by path)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      },
+      "id": 4,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (service) (rate({__name__=~\".*_http_requests_total\"}[$__rate_interval]))",
+          "legendFormat": "{{service}} {{path}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Request rate by service",
+      "type": "timeseries"
+    },
+    {
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "id": 5,
+      "options": {
+        "content": "### By upstream\n\n| service | core | supporting | ops | internal | orphaned |\n|---|---:|---:|---:|---:|---:|\n| (none) | 0 | 0 | 0 | 0 | 1 |\n| gitOauth | 4 | 1 | 0 | 0 | 0 |\n| null-upstream | 0 | 0 | 0 | 0 | 1 |\n| taskAIComment | 0 | 1 | 0 | 0 | 0 |\n| taskAgentSupport | 0 | 0 | 0 | 6 | 0 |\n| taskAiProvider | 0 | 6 | 0 | 0 | 0 |\n| taskAuth | 73 | 43 | 2 | 0 | 0 |\n| taskBill | 68 | 10 | 0 | 14 | 0 |\n| taskCloudService | 18 | 1 | 0 | 1 | 0 |\n| taskFE | 0 | 1 | 0 | 0 | 0 |\n| taskProjectService | 7 | 12 | 0 | 0 | 0 |\n| taskReferral | 16 | 0 | 0 | 0 | 0 |\n| taskSse | 1 | 0 | 0 | 0 | 0 |\n| taskTaskService | 7 | 5 | 0 | 0 | 0 |\n| taskTenantService | 1 | 12 | 0 | 0 | 0 |",
+        "mode": "markdown"
+      },
+      "title": "Intended routes by service",
+      "type": "text"
+    },
+    {
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 6,
+      "options": {
+        "content": "### Declared core APIs\n\n| uri | upstream | stream |\n|---|---|---|\n| /api/workspace/settings | taskProjectService | project |\n| /api/workspace/settings/ | taskProjectService | project |\n| /api/workspace/settings/* | taskProjectService | project |\n| /api/workspace/info | taskProjectService | project |\n| /api/workspace/info/ | taskProjectService | project |\n| /api/workspace/info/* | taskProjectService | project |\n| /api/sse/* | taskSse | task |\n| /api/git-oauth/github-callback/* | gitOauth | git-oauth |\n| /api/git-oauth/gitlab-callback/* | gitOauth | git-oauth |\n| /api/git-oauth/* | gitOauth | git-oauth |\n| /api/accounts/*/oauth/callback/ | gitOauth | user-auth |\n| /api/accounts/users/logout/ | taskAuth | user-auth |\n| /api/accounts/users/logout/* | taskAuth | user-auth |\n| /api/accounts/users/bind_phone/ | taskAuth | user-auth |\n| /api/accounts/users/bind_phone/* | taskAuth | user-auth |\n| /api/accounts/users/bind_email/ | taskAuth | user-auth |\n| /api/accounts/users/bind_email/* | taskAuth | user-auth |\n| /api/accounts/sso | taskAuth | user-auth |\n| /api/accounts/sso/ | taskAuth | user-auth |\n| /api/accounts/sso/* | taskAuth | user-auth |\n| /api/auth/user-roles/ | taskAuth | user-auth |\n| /api/auth/user-roles | taskAuth | user-auth |\n| /api/auth/user-roles/user_id/* | taskAuth | user-auth |\n| /api/auth/user-permissions/ | taskAuth | user-auth |\n| /api/auth/user-permissions | taskAuth | user-auth |\n| /api/auth/role-users/* | taskAuth | user-auth |\n| /api/auth/roles/* | taskAuth | user-auth |\n| /api/auth/resource-groups/ | taskAuth | user-auth |\n| /api/auth/resource-groups/* | taskAuth | user-auth |\n| /api/auth/verify | taskAuth | user-auth |\n| /api/auth/wechat/mp/callback/ | taskAuth | user-auth |\n| /api/auth/wechat/mp/callback | taskAuth | user-auth |\n| /api/auth/wechat/mp/callback/* | taskAuth | user-auth |\n| /api/auth/wechat/mp/follow-status/ | taskAuth | user-auth |\n| /api/auth/wechat/mp/follow-status | taskAuth | user-auth |\n| /api/auth/wechat/mp/follow-status/* | taskAuth | user-auth |\n| /api/auth/wechat/mp/follow-qr/ | taskAuth | user-auth |\n| /api/auth/wechat/mp/follow-qr | taskAuth | user-auth |\n| /api/auth/wechat/mp/follow-qr/* | taskAuth | user-auth |\n| /api/auth/impersonation/stop/ | taskAuth | user-auth |\n| /api/auth/impersonation/status/ | taskAuth | user-auth |\n| /api/auth/inbox/ | taskAuth | user-auth |\n| /api/auth/inbox/* | taskAuth | user-auth |\n| /api/auth/login-history/ | taskAuth | user-auth |\n| /api/auth/login-history/* | taskAuth | user-auth |\n| /api/auth/ | taskAuth | user-auth |\n| /api/auth/* | taskAuth | user-auth |\n| /api/accounts/users/login/ | taskAuth | user-auth |\n| /api/accounts/users/email_register/ | taskAuth | user-auth |\n| /api/accounts/users/phone_register/ | taskAuth | user-auth |\n| /api/accounts/users/resend_activation_email/ | taskAuth | user-auth |\n| /api/accounts/users/send_password_reset_link/ | taskAuth | user-auth |\n| /api/accounts/users/send_password_reset_code/ | taskAuth | user-auth |\n| /api/accounts/users/reset_password_with_code/ | taskAuth | user-auth |\n| /api/accounts/users/send_verification_code/ | taskAuth | user-auth |\n| /api/accounts/users/login-with-access-token/ | taskAuth | user-auth |\n| /api/accounts/users/activate-session/ | taskAuth | user-auth |\n| /api/accounts/users/activate-session/* | taskAuth | user-auth |\n| /api/accounts/users/access-tokens/ | taskAuth | user-auth |\n| /api/accounts/users/access-tokens/* | taskAuth | user-auth |\n| /api/accounts/users/me/account-deletion/ | taskAuth | user-auth |\n| /api/accounts/users/me/account-deletion/* | taskAuth | user-auth |\n| /api/accounts/users/me/personal-data-export/ | taskAuth | user-auth |\n| /api/accounts/users/me/personal-data-export/* | taskAuth | user-auth |\n| /api/accounts/users/client-ip/ | taskAuth | user-auth |\n| /api/accounts/users/client-ip/* | taskAuth | user-auth |\n| /api/accounts/users/confirm_activation/* | taskAuth | user-auth |\n| /api/accounts/users/reset-password-with-link/* | taskAuth | user-auth |\n| /api/accounts/users/get-reset-user-info/* | taskAuth | user-auth |\n| /api/user/* | taskTaskService | referral |\n| /api/accounts/users/profile/* | taskAuth | user-auth |\n| /api/accounts/users/* | taskAuth | user-auth |\n| /api/billing/* | taskBill | billing |\n| /api/tenant/*/billing/* | taskBill | billing |\n| /api/tenant/*/gitlab-oidc-sso | taskAuth | user-auth |\n| /api/tenant/*/gitlab-oidc-sso/ | taskAuth | user-auth |\n| /api/tenant/*/gitlab-oidc-sso/* | taskAuth | user-auth |\n| /api/tenant/*/workspace/*/queue-schedule | taskTaskService | project |",
+        "mode": "markdown"
+      },
+      "title": "Declared core API prefixes",
+      "type": "text"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "aimonitor",
+    "catalog",
+    "gateway",
+    "core-path"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "Prometheus",
+          "value": "Prometheus"
+        },
+        "hide": 2,
+        "name": "DS_PROMETHEUS",
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Service URL / API Catalog",
+  "uid": "service-url-api-catalog",
+  "version": 1
+}

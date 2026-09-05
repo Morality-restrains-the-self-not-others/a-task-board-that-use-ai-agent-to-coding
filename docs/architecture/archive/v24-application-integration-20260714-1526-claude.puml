@@ -1,0 +1,56 @@
+' @title: Application Integration — 导航栏多账号切换
+' @view: application-integration
+' @status: target
+' @version: 24
+' @author: claude
+' @based_on: v21 (v21-application-integration-20260714-0130-claude.puml)
+' @updated: 2026-07-14 15:26
+' @description: Navbar 多账号槽 + taskAuth activate-session；仅一账号激活
+' @iteration: navbar-multi-account-switcher
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v24 — Navbar Multi-Account Switcher (2026-07-14 15:26)
+
+' ═══════════════════════════════════════
+' Change Legend — v24 变更图例
+' ═══════════════════════════════════════
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v24 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v24 — 本次修改 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(vue, "🟡 Vue Frontend\nNavbar + Login\n[MODIFIED v24]")
+Application_Component(gw, "task-gateway")
+Application_Component(taskAuth, "🟡 taskAuth\n:8003 [MODIFIED v24]")
+Application_Component(django, "saas-backend\nenrich-login")
+
+Application_DataObject(slots, "🟢 savedAccounts\nlocalStorage [NEW v24]")
+Application_DataObject(tokens, "accounts_customtoken\nauth.db")
+
+note top of vue
+  [NEW v24] AccountSwitcher 下拉
+  单击开 / 双击关；切换后整页刷新
+  @author: claude @2026-07-14 15:26
+end note
+
+note top of taskAuth
+  [NEW v24] POST /api/accounts/users/activate-session/
+  校验 Token → enrich-login → 返回 user+token
+  @author: claude @2026-07-14 15:26
+end note
+
+note right of slots
+  [NEW v24] 最多 5 槽
+  {userId, username, avatarUrl, token, addedAt}
+end note
+
+Rel_Flow(vue, gw, "activate-session / login")
+Rel_Flow(gw, taskAuth, "POST activate-session")
+Rel_Flow(taskAuth, django, "internal enrich-login")
+Rel_Access_RW(vue, slots, "RW 账号槽")
+Rel_Access_R(taskAuth, tokens, "R validate token")
+
+@enduml

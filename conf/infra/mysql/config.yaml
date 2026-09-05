@@ -1,0 +1,19 @@
+# MySQL 连接地址。默认 127.0.0.1（同节点）；多节点部署时设置环境变量 INFRA_HOST=<内网IP>。
+# 参见 .ai/01_project_constraints/39_network_topology_aware_config.md
+host: ${INFRA_HOST:-10.2.150.68}
+port: 3306
+logging.log_file: logs/infra/docker-mysql.log
+
+# --- 本机 docker-mysql 可调参数（SSOT；dockerInfra/mysql/run.sh 导出给 compose）---
+# 本实例被 runAll 与大量 Go 单测共用。每测例独立建库重放 dataMigrate 时，
+# 默认 innodb_flush_log_at_trx_commit=1 + sync_binlog=1 会产生 10 万级 fsync/s，打满 CPU。
+# 官方语义：https://dev.mysql.com/doc/refman/8.0/en/innodb-parameters.html#sysvar_innodb_flush_log_at_trx_commit
+# value 2：每次 commit 写入 OS 缓存，约每秒 fsync；OS/掉电最多丢 1 秒，mysqld 崩溃不丢。
+# 本机单节点无副本、无 PITR 需求；禁止把下列值改回 1 除非已改为模板克隆且测过 CPU。
+maxConnections: 500
+innodbBufferPoolSize: 256M
+innodbLogFileSize: 128M
+innodbFlushLogAtTrxCommit: 2
+syncBinlog: 0
+# 关闭 binlog：本机无复制；保留 binlog 只会放大测试 DDL 写放大并撑满 datadir。
+skipLogBin: true

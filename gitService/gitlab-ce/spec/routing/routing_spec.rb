@@ -1,0 +1,438 @@
+# frozen_string_literal: true
+
+require 'spec_helper'
+
+# user                       GET    /:username
+# user_ssh_keys              GET    /:username.keys
+# user_gpg_keys              GET    /:username.gpg
+# user_groups                GET    /users/:username/groups(.:format)
+# user_projects              GET    /users/:username/projects(.:format)
+# user_contributed_projects  GET    /users/:username/contributed(.:format)
+# user_snippets              GET    /users/:username/snippets(.:format)
+# user_calendar              GET    /users/:username/calendar(.:format)
+# user_calendar_activities   GET    /users/:username/calendar_activities(.:format)
+RSpec.describe UsersController, "routing" do
+  specify "to #show" do
+    allow_any_instance_of(::Users::UserUrlConstraint).to receive(:matches?).and_return(true)
+
+    expect(get("/User")).to route_to('users#show', username: 'User')
+  end
+
+  specify "to #show with username starting with o." do
+    allow_any_instance_of(::Users::UserUrlConstraint).to receive(:matches?).and_return(true)
+
+    expect(get("/o.redka")).to route_to('users#show', username: 'o.redka')
+  end
+
+  specify "to #gpg_keys" do
+    allow_any_instance_of(::Users::UserUrlConstraint).to receive(:matches?).and_return(true)
+
+    expect(get("/User.gpg")).to route_to('users#gpg_keys', username: 'User')
+  end
+
+  specify "to #groups" do
+    expect(get("/users/User/groups")).to route_to('users#groups', username: 'User')
+  end
+
+  specify "to #projects" do
+    expect(get("/users/User/projects")).to route_to('users#projects', username: 'User')
+  end
+
+  specify "to #contributed" do
+    expect(get("/users/User/contributed")).to route_to('users#contributed', username: 'User')
+  end
+
+  specify "to #snippets" do
+    expect(get("/users/User/snippets")).to route_to('users#snippets', username: 'User')
+  end
+
+  # get all the ssh-keys of a user
+  specify "to #ssh_keys" do
+    allow_any_instance_of(::Users::UserUrlConstraint).to receive(:matches?).and_return(true)
+
+    expect(get("/User.keys")).to route_to('users#ssh_keys', username: 'User')
+  end
+
+  specify "to #calendar" do
+    expect(get("/users/User/calendar")).to route_to('users#calendar', username: 'User')
+  end
+
+  specify "to #calendar_activities" do
+    expect(get("/users/User/calendar_activities")).to route_to('users#calendar_activities', username: 'User')
+  end
+end
+
+# search GET    /search(.:format) search#show
+RSpec.describe SearchController, "routing" do
+  specify "to #show" do
+    expect(get("/search")).to route_to('search#show')
+  end
+end
+
+# gitlab_api /api         API::API
+#            /:path       Grack
+RSpec.describe "Mounted Apps", "routing" do
+  specify "to API" do
+    expect(get("/api/issues")).to be_routable
+  end
+end
+
+#     snippets GET    /snippets(.:format)          snippets#index
+#  new_snippet GET    /snippets/new(.:format)      snippets#new
+# edit_snippet GET    /snippets/:id/edit(.:format) snippets#edit
+#      snippet GET    /snippets/:id(.:format)      snippets#show
+RSpec.describe SnippetsController, "routing" do
+  specify "to #raw" do
+    expect(get("/-/snippets/1/raw")).to route_to('snippets#raw', id: '1')
+  end
+
+  specify "to #index" do
+    expect(get("/-/snippets")).to route_to('snippets#index')
+  end
+
+  specify "to #new" do
+    expect(get("/-/snippets/new")).to route_to('snippets#new')
+  end
+
+  specify "to #edit" do
+    expect(get("/-/snippets/1/edit")).to route_to('snippets#edit', id: '1')
+  end
+
+  specify "to #show" do
+    expect(get("/-/snippets/1")).to route_to('snippets#show', id: '1')
+  end
+
+  specify 'to #raw from unscoped routing' do
+    expect(get("/snippets/1/raw")).to route_to('snippets#raw', id: '1')
+  end
+
+  it_behaves_like 'redirecting a legacy path', '/snippets/1', '/-/snippets/1'
+end
+
+#            help GET /help(.:format)                 help#index
+#       help_page GET /help/*path(.:format)           help#show
+#  help_shortcuts GET /help/shortcuts(.:format)       help#shortcuts
+RSpec.describe HelpController, "routing" do
+  specify "to #index" do
+    expect(get("/help")).to route_to('help#index')
+  end
+
+  specify 'to #show' do
+    path = '/help/user/markdown.md'
+    expect(get(path)).to route_to('help#show', path: 'user/markdown', format: 'md')
+
+    path = '/help/user/markdown/markdown_logo_v17_11.png'
+    expect(get(path)).to route_to('help#show', path: 'user/markdown/markdown_logo_v17_11', format: 'png')
+  end
+end
+
+#             profile_account GET    /-/profile/account(.:format)             profile#account
+#             profile_history GET    /-/profile/history(.:format)             profile#history
+#               profile_token GET    /-/profile/token(.:format)               profile#token
+#       user_settings_profile GET    /-/user_settings/profile(.:format)       user_settings/profile#show
+#       user_settings_profile PUT    /-/user_settings/profile(.:format)       user_settings/profile#update
+#       user_settings_profile PATCH  /-/user_settings/profile(.:format)       user_settings/profile#update
+RSpec.describe ProfilesController, "routing" do
+  specify "to #account" do
+    expect(get("/-/profile/account")).to route_to('profiles/accounts#show')
+  end
+
+  specify "to #reset_feed_token" do
+    expect(put("/-/profile/reset_feed_token")).to route_to('profiles#reset_feed_token')
+  end
+
+  specify "to #show" do
+    expect(get("/-/user_settings/profile")).to route_to('user_settings/profiles#show')
+  end
+
+  specify "to #update" do
+    expect(put("/-/user_settings/profile")).to route_to('user_settings/profiles#update')
+    expect(patch("/-/user_settings/profile")).to route_to('user_settings/profiles#update')
+  end
+end
+
+# profile_preferences GET      /-/profile/preferences(.:format) profiles/preferences#show
+#                     PATCH    /-/profile/preferences(.:format) profiles/preferences#update
+#                     PUT      /-/profile/preferences(.:format) profiles/preferences#update
+RSpec.describe Profiles::PreferencesController, 'routing' do
+  specify 'to #show' do
+    expect(get('/-/profile/preferences')).to route_to('profiles/preferences#show')
+  end
+
+  specify 'to #update' do
+    expect(put('/-/profile/preferences')).to   route_to('profiles/preferences#update')
+    expect(patch('/-/profile/preferences')).to route_to('profiles/preferences#update')
+  end
+end
+
+#     keys GET    /-/user_settings/ssh_keys(.:format)          keys#index
+#          POST   /-/user_settings/ssh_keys(.:format)          keys#create
+# edit_key GET    /-/user_settings/ssh_keys/:id/edit(.:format) keys#edit
+#      key GET    /-/user_settings/ssh_keys/:id(.:format)      keys#show
+#          PUT    /-/user_settings/ssh_keys/:id(.:format)      keys#update
+#          DELETE /-/user_settings/ssh_keys/:id(.:format)      keys#destroy
+RSpec.describe UserSettings::SshKeysController, "routing", feature_category: :system_access do
+  specify "to #index" do
+    expect(get("/-/user_settings/ssh_keys")).to route_to('user_settings/ssh_keys#index')
+  end
+
+  specify "to #create" do
+    expect(post("/-/user_settings/ssh_keys")).to route_to('user_settings/ssh_keys#create')
+  end
+
+  specify "to #show" do
+    expect(get("/-/user_settings/ssh_keys/1")).to route_to('user_settings/ssh_keys#show', id: '1')
+  end
+
+  specify "to #destroy" do
+    expect(delete("/-/user_settings/ssh_keys/1")).to route_to('user_settings/ssh_keys#destroy', id: '1')
+  end
+end
+
+# keys GET    /-/profile/gpg_keys      gpg_keys#index
+#  key POST   /-/profile/gpg_keys      gpg_keys#create
+#      PUT    /-/profile/gpg_keys/:id  gpg_keys#revoke
+#      DELETE /-/profile/gpg_keys/:id  gpg_keys#desroy
+RSpec.describe UserSettings::GpgKeysController, "routing", feature_category: :system_access do
+  specify "to #index" do
+    expect(get("/-/user_settings/gpg_keys")).to route_to('user_settings/gpg_keys#index')
+  end
+
+  specify "to #create" do
+    expect(post("/-/user_settings/gpg_keys")).to route_to('user_settings/gpg_keys#create')
+  end
+
+  specify "to #destroy" do
+    expect(delete("/-/user_settings/gpg_keys/1")).to route_to('user_settings/gpg_keys#destroy', id: '1')
+  end
+end
+
+#   emails GET    /-/profile/emails(.:format)        emails#index
+#          POST   /-/profile/emails(.:format)          emails#create
+#          DELETE /-/profile/emails/:id(.:format)      keys#destroy
+RSpec.describe Profiles::EmailsController, "routing" do
+  specify "to #index" do
+    expect(get("/-/profile/emails")).to route_to('profiles/emails#index')
+  end
+
+  specify "to #create" do
+    expect(post("/-/profile/emails")).to route_to('profiles/emails#create')
+  end
+
+  specify "to #destroy" do
+    expect(delete("/-/profile/emails/1")).to route_to('profiles/emails#destroy', id: '1')
+  end
+end
+
+# profile_avatar DELETE /-/profile/avatar(.:format) profiles/avatars#destroy
+RSpec.describe Profiles::AvatarsController, "routing" do
+  specify "to #destroy" do
+    expect(delete("/-/profile/avatar")).to route_to('profiles/avatars#destroy')
+  end
+end
+
+#                dashboard GET    /dashboard(.:format)                dashboard#show
+#         dashboard_issues GET    /dashboard/issues(.:format)         dashboard#issues
+# dashboard_merge_requests GET    /dashboard/merge_requests(.:format) dashboard#merge_requests
+RSpec.describe DashboardController, "routing" do
+  specify "to #index" do
+    expect(get("/dashboard")).to route_to('dashboard/projects#index')
+    expect(get("/dashboard/projects")).to route_to('dashboard/projects#index')
+    expect(get("/dashboard/projects/contributed")).to route_to('dashboard/projects#index')
+    expect(get("/dashboard/projects/personal")).to route_to('dashboard/projects#index')
+    expect(get("/dashboard/projects/member")).to route_to('dashboard/projects#index')
+    expect(get("/dashboard/projects/inactive")).to route_to('dashboard/projects#index')
+  end
+
+  specify "to #issues" do
+    expect(get("/dashboard/issues.html")).to route_to('dashboard#issues', format: 'html')
+  end
+
+  specify "to #calendar_issues" do
+    expect(get("/dashboard/issues.ics")).to route_to('dashboard#issues_calendar', format: 'ics')
+  end
+
+  specify "to #merge_requests" do
+    expect(get("/dashboard/merge_requests")).to route_to('dashboard#merge_requests')
+  end
+end
+
+#                     root        /                                   root#show
+RSpec.describe RootController, 'routing' do
+  specify 'to #index' do
+    expect(get('/')).to route_to('root#index')
+  end
+end
+
+RSpec.describe "Authentication", "routing" do
+  it "GET /users/sign_in" do
+    expect(get("/users/sign_in")).to route_to('sessions#new')
+  end
+
+  it "POST /users/sign_in" do
+    expect(post("/users/sign_in")).to route_to('sessions#create')
+  end
+
+  it "POST /users/sign_out" do
+    expect(post("/users/sign_out")).to route_to('sessions#destroy')
+  end
+
+  it "POST /users/password" do
+    expect(post("/users/password")).to route_to('passwords#create')
+  end
+
+  it "GET /users/password/new" do
+    expect(get("/users/password/new")).to route_to('passwords#new')
+  end
+
+  it "GET /users/password/edit" do
+    expect(get("/users/password/edit")).to route_to('passwords#edit')
+  end
+
+  it "PUT /users/password" do
+    expect(put("/users/password")).to route_to('passwords#update')
+  end
+
+  context 'with LDAP configured' do
+    include LdapHelpers
+
+    let(:ldap_settings) { { enabled: true } }
+
+    before do
+      stub_ldap_setting(ldap_settings)
+      Rails.application.reload_routes!
+    end
+
+    after(:all) do
+      Rails.application.reload_routes!
+    end
+
+    it 'POST /users/auth/ldapmain/callback' do
+      expect(post("/users/auth/ldapmain/callback")).to route_to('ldap/omniauth_callbacks#ldapmain')
+    end
+
+    context 'with LDAP sign-in disabled' do
+      let(:ldap_settings) { { enabled: true, prevent_ldap_sign_in: true } }
+
+      it 'prevents POST /users/auth/ldapmain/callback' do
+        expect(post("/users/auth/ldapmain/callback")).not_to be_routable
+      end
+    end
+
+    context 'with multiple LDAP providers configured' do
+      let(:ldap_settings) do
+        {
+          enabled: true,
+          servers: {
+            main: { 'provider_name' => 'ldapmain' },
+            secondary: { 'provider_name' => 'ldapsecondary' }
+          }
+        }
+      end
+
+      it 'POST /users/auth/ldapmain/callback' do
+        expect(post("/users/auth/ldapmain/callback")).to route_to('ldap/omniauth_callbacks#ldapmain')
+      end
+
+      it 'POST /users/auth/ldapsecondary/callback' do
+        expect(post("/users/auth/ldapsecondary/callback")).to route_to('ldap/omniauth_callbacks#ldapsecondary')
+      end
+    end
+  end
+end
+
+RSpec.describe HealthCheckController, 'routing' do
+  specify 'to #index' do
+    expect(get('/health_check')).to route_to('health_check#index')
+  end
+
+  it 'also supports passing checks in the url' do
+    expect(get('/health_check/email')).to route_to('health_check#index', checks: 'email')
+  end
+end
+
+RSpec.describe InvitesController, 'routing' do
+  let_it_be(:member) { create(:project_member, :invited) }
+
+  specify 'to #show' do
+    expect(get("/-/invites/#{member.invite_token}")).to route_to('invites#show', id: member.invite_token)
+  end
+end
+
+RSpec.describe SentNotificationsController, 'routing' do
+  specify 'to #unsubscribe' do
+    expect(get("/-/sent_notifications/4bee17d4a63ed60cf5db53417e9aeb4c/unsubscribe"))
+      .to route_to('sent_notifications#unsubscribe', id: '4bee17d4a63ed60cf5db53417e9aeb4c')
+  end
+end
+
+RSpec.describe AutocompleteController, 'routing' do
+  specify 'to #users' do
+    expect(get("/-/autocomplete/users")).to route_to('autocomplete#users')
+  end
+
+  specify 'to #projects' do
+    expect(get("/-/autocomplete/projects")).to route_to('autocomplete#projects')
+  end
+
+  specify 'to #award_emojis' do
+    expect(get("/-/autocomplete/award_emojis")).to route_to('autocomplete#award_emojis')
+  end
+
+  specify 'to #merge_request_target_branches' do
+    expect(get("/-/autocomplete/merge_request_target_branches")).to route_to('autocomplete#merge_request_target_branches')
+  end
+end
+
+RSpec.describe SandboxController, 'routing' do
+  specify 'to #mermaid_v10' do
+    expect(get("/-/sandbox/mermaid_v10")).to route_to('sandbox#mermaid_v10')
+  end
+
+  specify 'to #mermaid_v11' do
+    expect(get("/-/sandbox/mermaid_v11")).to route_to('sandbox#mermaid_v11')
+  end
+end
+
+RSpec.describe Snippets::BlobsController, "routing" do
+  specify "to #raw" do
+    expect(get('/-/snippets/1/raw/master/lib/version.rb'))
+      .to route_to('snippets/blobs#raw', snippet_id: '1', ref: 'master', path: 'lib/version.rb')
+  end
+
+  context 'when reference has special symbols' do
+    specify "to #raw" do
+      expect(get('/-/snippets/1/raw/0.0.x-rc/lib/version.rb'))
+        .to route_to('snippets/blobs#raw', snippet_id: '1', ref: '0.0.x-rc', path: 'lib/version.rb')
+    end
+  end
+end
+
+RSpec.describe RunnerSetupController, 'routing' do
+  specify 'to #platforms' do
+    expect(get("/-/runner_setup/platforms")).to route_to('runner_setup#platforms')
+  end
+end
+
+# jwks  GET /-/jwks(.:format)  jwks#index
+RSpec.describe JwksController, "routing" do
+  specify "to #index" do
+    expect(get('/-/jwks')).to route_to('jwks#index')
+  end
+end
+
+# user_settings_authentication_log GET  /-/user_settings/authentication_log(.:format) user_settings/user_settings#authentication_log
+
+RSpec.describe UserSettings::UserSettingsController, 'routing', feature_category: :system_access do
+  specify 'to #authentication_log' do
+    expect(get('/-/user_settings/authentication_log')).to route_to('user_settings/user_settings#authentication_log')
+  end
+end
+
+# user_settings_active_sessions_log GET /-/user_settings_active_sessions_log(.:format)  user_settings/active_sessions#index#
+
+RSpec.describe UserSettings::ActiveSessionsController, 'routing', feature_category: :system_access do
+  specify 'to #index' do
+    expect(get('/-/user_settings/active_sessions')).to route_to('user_settings/active_sessions#index')
+  end
+end

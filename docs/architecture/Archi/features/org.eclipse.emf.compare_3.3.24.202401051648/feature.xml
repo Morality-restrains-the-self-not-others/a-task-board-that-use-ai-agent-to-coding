@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="org.eclipse.emf.compare"
+      label="%featureName"
+      version="3.3.24.202401051648"
+      provider-name="%providerName"
+      plugin="org.eclipse.emf.compare">
+
+   <description>
+      %description
+   </description>
+
+   <copyright url="%copyrightURL">
+      %copyright
+   </copyright>
+
+   <license url="%licenseURL">
+      %license
+   </license>
+
+   <plugin
+         id="org.eclipse.emf.compare"
+         download-size="608"
+         install-size="1358"
+         version="3.5.3.202401051648"
+         unpack="false"/>
+
+</feature>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v99 变迁 (v98→v99)" id="id-v99aidiff01">
+  <folder name="Application" id="id-v99aid-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v99-app-fe" name="taskFE Vue SPA [MODIFIED v99]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v99-app-gw" name="APISIX taskGateway [MODIFIED v99]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v99-app-bill" name="taskBill [MODIFIED v99]"/>
+    <element xsi:type="archimate:DataObject" id="id-v99-do-ps" name="billing_profit_sharing [NEW v99 read model]"/>
+  </folder>
+  <folder name="Technology" id="id-v99aid-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v99-tech-mysql" name="MySQL task_bill utf8mb4"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v99aid-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v99-pl-v98" name="Plateau v98"/>
+    <element xsi:type="archimate:Plateau" id="id-v99-pl-v99" name="Plateau v99"/>
+    <element xsi:type="archimate:Gap" id="id-v99-gap" name="Gap: Tab 栏无待分账队列"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v99-wp" name="WP-admin-pending-profit-sharing-list"/>
+  </folder>
+  <folder name="Relations" id="id-v99aid-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v99-rel-fe-gw" source="id-v99-app-fe" target="id-v99-app-gw" name="GET profit-sharing list"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v99-rel-gw-bill" source="id-v99-app-gw" target="id-v99-app-bill" name="forward-auth staff"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v99-rel-bill-ps" source="id-v99-app-bill" target="id-v99-do-ps" name="list queue by status"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v99-rel-mysql-ps" source="id-v99-tech-mysql" target="id-v99-do-ps" name="InnoDB"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v99-rel-pl98-gap" source="id-v99-pl-v98" target="id-v99-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v99-rel-wp-gap" source="id-v99-wp" target="id-v99-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v99-rel-wp-pl99" source="id-v99-wp" target="id-v99-pl-v99"/>
+  </folder>
+  <folder name="Views" id="id-v99aid-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v99-view-mig" name="架构变迁 v98→v99 — admin-pending-profit-sharing-list">
+      <child xsi:type="archimate:DiagramObject" id="id-v99-do-pl98" archimateElement="id-v99-pl-v98">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-c-pl98-gap" source="id-v99-do-pl98" target="id-v99-do-gap" archimateRelationship="id-v99-rel-pl98-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-do-gap" targetConnections="id-v99-c-pl98-gap id-v99-c-wp-gap" archimateElement="id-v99-gap">
+        <bounds x="240" y="48" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-do-wp" archimateElement="id-v99-wp">
+        <bounds x="240" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-c-wp-gap" source="id-v99-do-wp" target="id-v99-do-gap" archimateRelationship="id-v99-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-c-wp-pl99" source="id-v99-do-wp" target="id-v99-do-pl99" archimateRelationship="id-v99-rel-wp-pl99"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-do-pl99" targetConnections="id-v99-c-wp-pl99" archimateElement="id-v99-pl-v99">
+        <bounds x="600" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v99-view-flow" name="v99 Target — 待分账订单列表">
+      <child xsi:type="archimate:DiagramObject" id="id-v99-d-fe" archimateElement="id-v99-app-fe">
+        <bounds x="48" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-c-fe-gw" source="id-v99-d-fe" target="id-v99-d-gw" archimateRelationship="id-v99-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-d-gw" targetConnections="id-v99-c-fe-gw" archimateElement="id-v99-app-gw">
+        <bounds x="280" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-c-gw-bill" source="id-v99-d-gw" target="id-v99-d-bill" archimateRelationship="id-v99-rel-gw-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-d-bill" targetConnections="id-v99-c-gw-bill" archimateElement="id-v99-app-bill">
+        <bounds x="510" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-c-bill-ps" source="id-v99-d-bill" target="id-v99-d-ps" archimateRelationship="id-v99-rel-bill-ps"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-d-ps" targetConnections="id-v99-c-bill-ps id-v99-c-mysql-ps" archimateElement="id-v99-do-ps">
+        <bounds x="510" y="160" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v99-d-mysql" archimateElement="id-v99-tech-mysql">
+        <bounds x="48" y="160" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v99-c-mysql-ps" source="id-v99-d-mysql" target="id-v99-d-ps" archimateRelationship="id-v99-rel-mysql-ps"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

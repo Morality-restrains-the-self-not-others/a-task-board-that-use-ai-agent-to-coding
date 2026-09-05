@@ -1,0 +1,322 @@
+' @title: ztree 执行日志服务端持久化
+' @view: enterprise-landscape
+' @status: target
+' @version: 89
+' @iteration: ztree-exec-log-server-persist
+' @author: cursor
+' @based_on: v88 (v88-enterprise-landscape-20260820-1520-cursor.puml)
+' @updated: 2026-08-20 15:49
+' @description: 层图快照落 task_cloud；关容器后 ztree hydrate；不存克隆日志
+
+@startuml
+!include <archimate/Archimate>
+
+title daydaymoney Platform — Enterprise Landscape v89 Target (2026-08-20 15:49)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v89 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v89 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v89 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+' ═══════════════════════════════════════════════════════════
+' Business Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Business" {
+  Business_Actor(developer, "Developer")
+  Business_Actor(admin, "Platform Admin")
+  Business_Actor(enterprise, "Enterprise Customer")
+  Business_Actor(vendor, "Marketplace Vendor")
+
+  Business_Service(ideSvc, "IDE Workspace Service")
+  Business_Service(taskMgmt, "Task Management Service")
+  Business_Service(cloudRes, "Cloud Resource Service")
+  Business_Service(billingSvc, "Billing & License Service")
+  Business_Service(llmSvc, "LLM AI Service")
+  Business_Service(projMgmt, "Project Management Service")
+  Business_Service(imageMarket, "Image Marketplace Service")
+  Business_Service(identitySvc, "Identity & Access Service (RBAC)" )
+  Business_Service(referralSvc, "Referral & Growth Service")
+
+  Business_Process(devFlow, "Development Workflow")
+  Business_Process(vendorOnboard, "Vendor Image Onboarding")
+
+  Business_Object(project, "Project")
+  Business_Object(workspace, "Workspace")
+  Business_Object(vendorCred, "Vendor Cloud Test Credential")
+  Business_Object(tenantPerm, "Tenant Role / Permission")
+  Business_Object(wxIdentity, "WeChat Identity (openid/unionid)")
+  Business_Object(taskDisplaySeq, "Workspace Task Seq (#N)")
+  note right of taskDisplaySeq
+    无标记 — v81 已交付人读序号
+  end note
+}
+
+' ═══════════════════════════════════════════════════════════
+' Application Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Application" {
+  Application_Component(gateway, "API Gateway (APISIX :18081)")
+  Application_Component(authSvc, "taskAuth (Go :8003)\n[PDP 集中授权 + 微信身份]")
+  Application_Component(gitOauthSvc, "taskGitOauth (Go :8002)")
+  Application_Component(billSvc, "taskBill (Go :8004)")
+  note right of billSvc
+    区域路由开通；无静默默认 region
+  end note
+  Application_Component(referralSvc, "taskReferral (Go :8025)")
+  Application_Component(aiProvider, "taskAiProvider (Go :8010)")
+  Application_Component(agentSupport, "taskAgentSupport (Go :8011)")
+  Application_Component(aiEndpoint, "taskAIEndPoint (Go :8013)\n[LLM 网关]")
+  Application_Component(containerGW, "taskContainerGateway (Go :8014)")
+  Application_Component(credSvc, "taskCredentialService (Go :8015)")
+  Application_Component(taskProjectSvc, "taskProjectService (Go :8016)")
+  Application_Component(taskTaskSvc, "taskTaskService (Go :8017)")
+  Application_Component(taskCloudSvc, "taskCloudService (Go :8018)")
+  Application_Component(taskAICommentSvc, "taskAIComment (Go :8019)")
+  Application_Component(tenantSvc, "taskTenantService (Go :8020)")
+  Application_Component(sseSvc, "taskSSE (Go :8007)")
+  Application_Component(eventsSvc, "taskEvents (Kafka intents)")
+  Application_Component(feSvc, "taskFE (Vue SPA)")
+  Application_Component(shareLibAuthz, "shareLib/authz\n(薄客户端)")
+
+  Application_Service(authAPI, "Authentication & RBAC API")
+  Application_Service(projectAPI, "Project Management API")
+  Application_Service(taskAPI, "Task Management API")
+  Application_Service(cloudAPI, "Cloud Resource API")
+  Application_Service(vendorCredAPI, "Vendor Cloud Credential API")
+  Application_Service(imageMarketAPI, "Image Marketplace API")
+  Application_Service(tenantAPI, "Tenant/Member/Group API")
+  Application_Service(billingAPI, "Billing & Payment API")
+  Application_Service(gitOauthAPI, "Git OAuth API")
+  Application_Service(sseAPI, "SSE Realtime API")
+
+  Application_DataObject(authDB, "taskAuth DB\n(+wechat_identity)")
+  Application_DataObject(gitOauthDB, "taskGitOauth DB")
+  Application_DataObject(billDB, "taskBill DB\n(+billing_gitlab_region multi-instance)")
+  note right of billDB
+    region 注册表为可插拔 SSOT
+  end note
+  Application_DataObject(referralDB, "taskReferral DB")
+  Application_DataObject(projectDB, "taskProject DB")
+  Application_DataObject(taskDB, "taskTask DB\n(+workspace_seq + task_workspace_seq)")
+  Application_DataObject(cloudDB, "taskCloud DB")
+  Application_DataObject(layerSnap, "cloud_layer_graph_snapshot")
+  note right of layerSnap
+    🟢 [NEW v89] 层图 last-write-wins JSON
+    访问键 workspace_id + task_id + comment_id
+    不存克隆日志
+    @author: cursor @2026-08-20 15:49
+  end note
+  Application_DataObject(aiProviderDB, "taskAiProvider DB")
+  Application_DataObject(tenantDB, "taskTenant DB\n(+RBAC 组/资源表)")
+  Application_DataObject(credDB, "taskCredentialService DB")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Technology Layer
+' ═══════════════════════════════════════════════════════════
+rectangle "Technology" {
+  Technology_Node(appNode, "Application Host")
+  Technology_SystemSoftware(goRuntime, "Go Runtime")
+
+  Technology_Service(postgres, "PostgreSQL")
+  Technology_Service(sqlite, "SQLite (per-service)")
+  Technology_Service(redis, "Redis")
+  Technology_Service(kafka, "Kafka")
+  Technology_Service(gitlab, "GitLab CE 现网 (:8012)\ngitlab.${baseDomain}")
+  note right of gitlab
+    无标记 — 保留现网实例 / region tencent-shanghai-5
+  end note
+  Technology_Service(gitlabSh1, "GitLab CE SH-1 (:8014)\ngitlab-tencent-sh-1.${baseDomain}")
+  note right of gitlabSh1
+    独立 CE；SSH host :2223；精简 2g
+    region slug: tencent-sh-1
+  end note
+  Technology_Node(shEdge, "SH Edge nginx (1.117.67.121)")
+  note right of shEdge
+    vhost gitlab-tencent-sh-1 → :8014
+  end note
+  Technology_Node(commentContainer, "Comment-scoped container")
+  note right of commentContainer
+    无标记 — v84 已交付 push heartbeat
+  end note
+  Technology_Service(upstreamCloud, "Aliyun ECS/STS API")
+  Technology_Service(upstreamLLM, "Upstream LLM (DeepSeek/OpenAI)")
+  Technology_Service(observability, "Grafana/Loki (DaydaymoneyGrafana)")
+  Technology_Service(tencentCOS, "Tencent COS\nai-provider-1259712831")
+  note right of tencentCOS
+    🟢 [NEW v79] 厂商证照私有桶
+    SSE-COS AES256 / ap-shanghai
+    @author: cursor @2026-08-14 13:33
+  end note
+
+  Technology_Artifact(djangoArt, "Django saas-backend [RETIRED]")
+
+  ' ── v13: Git Hooks 开发工具链 ──────────────────────────
+  Technology_Artifact(hooksSSOT, "Git Hooks 模板 SSOT\nscripts/hooks/templates/\n(6 语言 pre-commit + random_test_runner.sh)")
+  Technology_Artifact(hooksDeploy, "Hooks 分发/校验器\ninstall-hooks-all.sh +\ncommit_with_submodules.py --check/deploy\n(HOOK_VERSION 版本戳)")
+  Technology_Artifact(repoGitHooks, ".githooks/ 入库真源 ×38 仓\ncore.hooksPath 激活\n(commit-msg/pre-commit/pre-push)")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Implementation & Migration
+' ═══════════════════════════════════════════════════════════
+rectangle "Implementation & Migration" {
+  Implementation_Plateau(plateauV88, "Plateau v88 — CCB logs workspace shards")
+  Implementation_Plateau(plateauV89, "Plateau v89 — layer-graph snapshot persist")
+  Implementation_Gap(gapLayerMem, "Gap: 层图仅 SSE 不落库；关容器 ztree 空")
+  Implementation_WorkPackage(wpSnap, "WP-ztree-exec-log-server-persist")
+}
+
+' ═══════════════════════════════════════════════════════════
+' Cross-Layer Relationships
+' ═══════════════════════════════════════════════════════════
+' Gateway → Services
+Rel_Flow(gateway, authSvc, "forward-auth → PDP")
+Rel_Flow(gateway, tenantSvc, "/api/tenant/*")
+Rel_Flow(gateway, taskProjectSvc, "projects/*")
+Rel_Flow(gateway, taskTaskSvc, "todos/*")
+Rel_Flow(gateway, taskCloudSvc, "cloud/*")
+Rel_Flow(gateway, billSvc, "billing/*")
+Rel_Flow(gateway, feSvc, "SPA 静态资源")
+
+' Services → Business Services
+Rel_Serving(authAPI, identitySvc, "enables")
+Rel_Serving(projectAPI, projMgmt, "enables")
+Rel_Serving(taskAPI, taskMgmt, "enables")
+Rel_Serving(cloudAPI, cloudRes, "enables")
+Rel_Serving(billingAPI, billingSvc, "enables")
+Rel_Serving(imageMarketAPI, imageMarket, "enables")
+Rel_Serving(gitOauthAPI, ideSvc, "enables")
+Rel_Serving(sseAPI, taskMgmt, "realtime status")
+
+' Services realize APIs
+Rel_Realization(authSvc, authAPI, "serves")
+Rel_Realization(taskProjectSvc, projectAPI, "serves")
+Rel_Realization(taskTaskSvc, taskAPI, "serves")
+Rel_Realization(taskCloudSvc, cloudAPI, "serves")
+Rel_Realization(taskCloudSvc, vendorCredAPI, "serves")
+Rel_Realization(aiProvider, imageMarketAPI, "serves")
+Rel_Realization(tenantSvc, tenantAPI, "serves")
+Rel_Realization(billSvc, billingAPI, "serves")
+Rel_Realization(gitOauthSvc, gitOauthAPI, "serves")
+Rel_Realization(sseSvc, sseAPI, "serves")
+
+' Data ownership
+Rel_Access(authSvc, authDB, "reads/writes")
+Rel_Access(gitOauthSvc, gitOauthDB, "reads/writes")
+Rel_Access(billSvc, billDB, "reads/writes")
+Rel_Access(referralSvc, referralDB, "reads/writes")
+Rel_Access(taskProjectSvc, projectDB, "reads/writes")
+Rel_Access(taskTaskSvc, taskDB, "reads/writes")
+Rel_Access(taskCloudSvc, cloudDB, "reads/writes")
+Rel_Access_w(taskCloudSvc, layerSnap, "🟢 UPSERT snapshot")
+Rel_Flow(commentContainer, taskCloudSvc, "🟢 layer-graph-push persist")
+Rel_Flow(feSvc, taskCloudSvc, "🟡 GET hydrate 层图 + job 步骤")
+Rel_Access(aiProvider, aiProviderDB, "reads/writes")
+Rel_Access(tenantSvc, tenantDB, "reads/writes")
+Rel_Access(credSvc, credDB, "reads/writes")
+
+' Cross-service
+Rel_Serving(shareLibAuthz, authSvc, "CheckPerm() HTTP fallback")
+Rel_Serving(shareLibAuthz, tenantSvc, "RequireGroupAdmin")
+Rel_Serving(shareLibAuthz, taskProjectSvc, "RequirePerm")
+Rel_Serving(shareLibAuthz, taskTaskSvc, "RequirePerm")
+Rel_Serving(shareLibAuthz, taskCloudSvc, "RequirePerm")
+Rel_Serving(shareLibAuthz, billSvc, "RequirePerm")
+
+Rel_Serving(aiProvider, taskCloudSvc, "credential lookup")
+Rel_Serving(aiEndpoint, upstreamLLM, "LLM proxy")
+Rel_Serving(aiProvider, upstreamCloud, "CloudSDKProxy")
+Rel_Flow(feSvc, tencentCOS, "🟢 presigned PUT 证照")
+Rel_Flow(aiProvider, tencentCOS, "🟢 sign / Head / Get")
+Rel_Serving(eventsSvc, kafka, "consume/publish")
+Rel_Serving(sseSvc, redis, "pub/sub")
+Rel_Flow(commentContainer, sseSvc, "🟢 heartbeat + comment_id")
+Rel_Flow(taskCloudSvc, sseSvc, "🟢 start/stop SSE + runtime_status")
+Rel_Flow(sseSvc, feSvc, "🟢 apply per-comment snapshot")
+Rel_Flow(feSvc, taskCloudSvc, "🟡 刷新按钮 Describe 一次")
+Rel_Flow(taskCloudSvc, upstreamCloud, "🟡 仅按钮/启动命令路径")
+
+' ── v13: Git Hooks 部署流 ─────────────────────────────────
+Rel_Flow(hooksSSOT, hooksDeploy, "模板渲染 + 版本戳")
+Rel_Flow(hooksDeploy, repoGitHooks, "分发/校验\n(38 仓 .githooks/ + hooksPath)")
+Rel_Flow(developer, hooksDeploy, "一键激活\ninstall-hooks-all.sh")
+Rel_Flow(repoGitHooks, gitlab, "钩子入库提交")
+Rel_Flow(shEdge, gitlab, "gitlab.${baseDomain} → :8012")
+Rel_Flow(shEdge, gitlabSh1, "gitlab-tencent-sh-1 → :8014")
+Rel_Flow(billSvc, gitlab, "Admin API by region")
+Rel_Flow(billSvc, gitlabSh1, "Admin API by region")
+
+Rel_Association(taskDisplaySeq, taskMgmt, "human label")
+Rel_Access_W(taskTaskSvc, taskDB, "allocate workspace_seq")
+
+' 架构变迁 v88→v89
+Rel_Triggering(plateauV88, gapLayerMem, "identifies")
+Rel_Realization(wpSnap, gapLayerMem, "closes")
+Rel_Realization(wpSnap, plateauV89, "delivers")
+
+' ═══════════════════════════════════════════════════════════
+' v13 Change Notes
+' ═══════════════════════════════════════════════════════════
+note bottom of authSvc
+  多 GitLab OIDC client / redirect
+  既有：PDP 集中授权 + wechat_identity
+end note
+
+note bottom of tenantSvc
+  🟢 [NEW v12] taskTenantService (:8020)
+  members/groups/RBAC 组资源 (v39/v63)
+  @author: claude @2026-08-05 18:00
+end note
+
+note bottom of aiProvider
+  🟡 [MODIFIED v79] 证照预签名 / Head / Get COS
+  原 v12：Go 化 ai-provider — 目录/云SDK/厂商密钥
+  @author: cursor @2026-08-14 13:33
+end note
+
+note bottom of djangoArt
+  🔴 [DEPRECATED v12] Django saas-backend
+  v57 完全退役 (2026-07-30) — task2app/ 已删除
+  @author: claude @2026-08-05 18:00
+end note
+
+note bottom of taskCloudSvc
+  🟡 [MODIFIED v89] layer-graph-push 落库；GET hydrate
+  不存克隆日志（用户锁定）
+  既有：启动成功 SSE runtime_status
+  @author: cursor @2026-08-20 15:49
+end note
+
+note bottom of cloudDB
+  无标记 — v80 已交付两计数列
+end note
+
+note bottom of taskTaskSvc
+  无标记 — v81 已交付 workspace_seq 发号
+end note
+
+note bottom of taskDB
+  无标记 — v81 已交付 workspace_seq 表
+end note
+
+note bottom of feSvc
+  🟡 [MODIFIED v89] 关容器仍展示层图快照与 job 步骤
+  克隆区允许空白
+  @author: cursor @2026-08-20 15:49
+end note
+
+note bottom of sseSvc
+  🟡 [MODIFIED v84] 直播通道：comment_id + runtime_status
+  @author: cursor @2026-08-16 13:28
+end note
+
+note bottom of plateauV89
+  层图快照服务端持久化
+  不存克隆日志
+  @author: cursor @2026-08-20
+end note
+
+@enduml

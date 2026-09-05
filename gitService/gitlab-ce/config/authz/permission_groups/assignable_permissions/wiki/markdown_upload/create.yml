@@ -1,0 +1,7 @@
+---
+name: create_markdown_upload
+description: Grants the ability to create markdown uploads
+boundaries:
+  - project
+permissions:
+  - create_markdown_upload

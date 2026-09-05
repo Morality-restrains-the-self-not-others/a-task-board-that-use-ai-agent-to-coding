@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v97 全量 (post-change)" id="id-v97elfull01">
+  <folder name="Business" id="id-v97elf-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v97f-biz-author" name="评论作者"/>
+    <element xsi:type="archimate:BusinessService" id="id-v97f-biz-clone" name="评论容器克隆仓库"/>
+    <element xsi:type="archimate:BusinessService" id="id-v97f-biz-ex" name="按 Git 站点换 AccessToken [NEW v97]"/>
+  </folder>
+  <folder name="Application" id="id-v97elf-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v97f-el-go" name="taskGitOauth [MODIFIED v97]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v97elf-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v97f-el-pl96" name="Plateau v96"/>
+    <element xsi:type="archimate:Plateau" id="id-v97f-el-pl97" name="Plateau v97"/>
+    <element xsi:type="archimate:Gap" id="id-v97f-el-gap" name="Gap: 换票 URL 只有 github|gitlab 两族"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v97f-el-wp" name="WP-gitsite-access-for-user"/>
+  </folder>
+  <folder name="Relations" id="id-v97elf-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v97f-rel-author-clone" source="id-v97f-biz-author" target="id-v97f-biz-clone"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v97f-rel-clone-ex" source="id-v97f-biz-clone" target="id-v97f-biz-ex" name="need git credential"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v97f-rel-go-ex" source="id-v97f-el-go" target="id-v97f-biz-ex"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v97f-rel-el-pl96-gap" source="id-v97f-el-pl96" target="id-v97f-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v97f-rel-el-wp-gap" source="id-v97f-el-wp" target="id-v97f-el-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v97f-rel-el-wp-pl97" source="id-v97f-el-wp" target="id-v97f-el-pl97"/>
+  </folder>
+  <folder name="Views" id="id-v97elf-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v97f-el-view-mig" name="架构变迁 v96→v97 — gitsite-access-for-user-path">
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-eld-pl96" archimateElement="id-v97f-el-pl96">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-elc-pl96-gap" source="id-v97f-eld-pl96" target="id-v97f-eld-gap" archimateRelationship="id-v97f-rel-el-pl96-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-eld-gap" targetConnections="id-v97f-elc-pl96-gap id-v97f-elc-wp-gap" archimateElement="id-v97f-el-gap">
+        <bounds x="240" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-eld-wp" archimateElement="id-v97f-el-wp">
+        <bounds x="240" y="160" width="300" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-elc-wp-gap" source="id-v97f-eld-wp" target="id-v97f-eld-gap" archimateRelationship="id-v97f-rel-el-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-elc-wp-pl97" source="id-v97f-eld-wp" target="id-v97f-eld-pl97" archimateRelationship="id-v97f-rel-el-wp-pl97"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-eld-pl97" targetConnections="id-v97f-elc-wp-pl97" archimateElement="id-v97f-el-pl97">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v97f-el-view-flow" name="v97 全量拓扑 — 按 Git site 换票">
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-eld-author" archimateElement="id-v97f-biz-author">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-elc-author-clone" source="id-v97f-eld-author" target="id-v97f-eld-clone" archimateRelationship="id-v97f-rel-author-clone"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-eld-clone" targetConnections="id-v97f-elc-author-clone" archimateElement="id-v97f-biz-clone">
+        <bounds x="240" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-elc-clone-ex" source="id-v97f-eld-clone" target="id-v97f-eld-ex" archimateRelationship="id-v97f-rel-clone-ex"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-eld-ex" targetConnections="id-v97f-elc-clone-ex id-v97f-elc-go-ex" archimateElement="id-v97f-biz-ex">
+        <bounds x="480" y="48" width="260" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v97f-eld-go" archimateElement="id-v97f-el-go">
+        <bounds x="480" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v97f-elc-go-ex" source="id-v97f-eld-go" target="id-v97f-eld-ex" archimateRelationship="id-v97f-rel-go-ex"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

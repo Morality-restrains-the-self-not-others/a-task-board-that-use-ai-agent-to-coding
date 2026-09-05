@@ -1,0 +1,75 @@
+' @title: 阿里云 GitLab 区域目录先行（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 128
+' @iteration: aliyun-gitlab-region-manual-node
+' @author: cursor
+' @based_on: v127 (v127-enterprise-landscape-20260902-1335-cursor.puml)
+' @updated: 2026-09-02 14:20
+' @description: 购买页可选阿里云地域；运维人工建节点挂载后开通；pending_node 禁止 Admin API
+
+@startuml
+!include <archimate/Archimate>
+
+title 阿里云 GitLab pending_node — v128 (2026-09-02 14:20)
+
+rectangle "Business" {
+  Business_Actor(vip, "VIP1 租户")
+  Business_Process(buy, "购买 GitLab 资源")
+  note right of buy
+    下拉含阿里云地域
+    @author: cursor @2026-09-02 14:10
+  end note
+  Business_Actor(ops, "平台运维")
+  Business_Process(node, "人工创建阿里云 GitLab 节点")
+  note right of node
+    建机、挂盘、填 API
+    @author: cursor @2026-09-02 14:10
+  end note
+  Business_Process(open, "开通租户 GitLab 组")
+}
+
+rectangle "Application" {
+  Application_Component(fe, "taskFE OrderCreate")
+  note top of fe
+    optgroup 阿里云
+    @author: cursor @2026-09-02 14:10
+  end note
+  Application_Component(bill, "taskBill")
+  note top of bill
+    infra_status 门闩
+    @author: cursor @2026-09-02 14:10
+  end note
+  Application_Component(admin, "taskFE SystemAdmin GitLab")
+}
+
+rectangle "Technology" {
+  Technology_Node(tx, "腾讯云 GitLab CE ready")
+  Technology_Node(ali, "阿里云 GitLab CE")
+  note right of ali
+    pending_node 直至人工部署
+    @author: cursor @2026-09-02 14:10
+  end note
+}
+
+Rel_Assignment(vip, buy)
+Rel_Flow(buy, fe, "选区域下单")
+Rel_Flow(fe, bill, "POST orders")
+Rel_Assignment(ops, node)
+Rel_Flow(node, ali, "部署 CE")
+Rel_Flow(ops, admin, "PUT infra_status=ready")
+Rel_Flow(admin, bill, "登记 API/token")
+Rel_Assignment(ops, open)
+Rel_Flow(open, bill, "provision 仅 ready")
+Rel_Serving(tx, bill, "hybrid Admin API")
+Rel_Serving(ali, bill, "就绪后 Admin API")
+
+Implementation_Plateau(p127, "Plateau v127 部署 9999")
+Implementation_Plateau(p128, "Plateau v128 阿里云 pending_node")
+Implementation_Gap(gap, "Gap: 购买页无阿里云区域")
+Implementation_WorkPackage(wp, "WP-aliyun-gitlab-region-manual-node")
+Rel_Triggering(p127, gap, "identifies")
+Rel_Realization(wp, gap, "closes")
+Rel_Realization(wp, p128, "delivers")
+
+@enduml

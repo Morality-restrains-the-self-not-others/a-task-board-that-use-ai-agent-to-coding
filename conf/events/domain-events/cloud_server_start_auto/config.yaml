@@ -1,0 +1,7 @@
+intents:
+  1_process_server_start_auto:
+    host: 0.0.0.0
+    port: 18036
+    groupId: task-events-cloud-server-start-auto-1-process-server-start-auto
+    events:
+    - CLOUD_SERVER_START_AUTO

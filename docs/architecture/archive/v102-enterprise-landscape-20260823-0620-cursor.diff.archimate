@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v102 变迁 (v101→v102)" id="id-v102eldiff01">
+  <folder name="Business" id="id-v102eld-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v102-biz-admin" name="平台管理员 / 员工"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v102-biz-user" name="目标用户"/>
+    <element xsi:type="archimate:BusinessService" id="id-v102-biz-imp" name="以用户角色查看"/>
+    <element xsi:type="archimate:BusinessService" id="id-v102-biz-wp" name="用户工作台"/>
+  </folder>
+  <folder name="Application" id="id-v102eld-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v102el-app-fe" name="taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v102el-app-auth" name="taskAuth"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v102eld-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v102el-pl-v101" name="Plateau v101"/>
+    <element xsi:type="archimate:Plateau" id="id-v102el-pl-v102" name="Plateau v102"/>
+    <element xsi:type="archimate:Gap" id="id-v102el-gap" name="Gap: 无法以用户视角排障"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v102el-wp" name="WP-admin-user-impersonation"/>
+  </folder>
+  <folder name="Relations" id="id-v102eld-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v102el-rel-as" source="id-v102-biz-admin" target="id-v102-biz-imp"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v102el-rel-fe" source="id-v102el-app-fe" target="id-v102-biz-imp"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v102el-rel-auth" source="id-v102el-app-auth" target="id-v102-biz-imp"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v102el-rel-biz" source="id-v102-biz-wp" target="id-v102-biz-user"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v102el-rel-flow" source="id-v102-biz-imp" target="id-v102-biz-wp" name="临时以目标身份"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v102el-rel-pl-gap" source="id-v102el-pl-v101" target="id-v102el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v102el-rel-wp-gap" source="id-v102el-wp" target="id-v102el-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v102el-rel-wp-pl" source="id-v102el-wp" target="id-v102el-pl-v102"/>
+  </folder>
+  <folder name="Views" id="id-v102eld-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v102el-view-mig" name="架构变迁 v101→v102 — admin-user-impersonation">
+      <child xsi:type="archimate:DiagramObject" id="id-v102el-do-pl101" archimateElement="id-v102el-pl-v101">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102el-c-pl-gap" source="id-v102el-do-pl101" target="id-v102el-do-gap" archimateRelationship="id-v102el-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102el-do-gap" targetConnections="id-v102el-c-pl-gap id-v102el-c-wp-gap" archimateElement="id-v102el-gap">
+        <bounds x="240" y="48" width="320" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102el-do-wp" archimateElement="id-v102el-wp">
+        <bounds x="240" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102el-c-wp-gap" source="id-v102el-do-wp" target="id-v102el-do-gap" archimateRelationship="id-v102el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102el-c-wp-pl" source="id-v102el-do-wp" target="id-v102el-do-pl102" archimateRelationship="id-v102el-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102el-do-pl102" targetConnections="id-v102el-c-wp-pl" archimateElement="id-v102el-pl-v102">
+        <bounds x="600" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v102el-view-flow" name="v102 Target — 以用户角色查看">
+      <child xsi:type="archimate:DiagramObject" id="id-v102el-d-admin" archimateElement="id-v102-biz-admin">
+        <bounds x="48" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102el-c-as" source="id-v102el-d-admin" target="id-v102el-d-imp" archimateRelationship="id-v102el-rel-as"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102el-d-imp" targetConnections="id-v102el-c-as id-v102el-c-fe id-v102el-c-auth" archimateElement="id-v102-biz-imp">
+        <bounds x="280" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102el-c-flow" source="id-v102el-d-imp" target="id-v102el-d-wp" archimateRelationship="id-v102el-rel-flow"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102el-d-wp" targetConnections="id-v102el-c-flow" archimateElement="id-v102-biz-wp">
+        <bounds x="520" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102el-c-biz" source="id-v102el-d-wp" target="id-v102el-d-user" archimateRelationship="id-v102el-rel-biz"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102el-d-user" targetConnections="id-v102el-c-biz" archimateElement="id-v102-biz-user">
+        <bounds x="520" y="160" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102el-d-fe" archimateElement="id-v102el-app-fe">
+        <bounds x="48" y="160" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102el-c-fe" source="id-v102el-d-fe" target="id-v102el-d-imp" archimateRelationship="id-v102el-rel-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v102el-d-auth" archimateElement="id-v102el-app-auth">
+        <bounds x="48" y="240" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v102el-c-auth" source="id-v102el-d-auth" target="id-v102el-d-imp" archimateRelationship="id-v102el-rel-auth"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

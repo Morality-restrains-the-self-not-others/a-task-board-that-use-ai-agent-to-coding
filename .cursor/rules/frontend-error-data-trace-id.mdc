@@ -1,0 +1,29 @@
+---
+description: 请求报错展示 DOM 须带 data-traceId，便于按链路排障
+globs: "**/*.{vue,tsx,jsx,ts,js,html},**/front_project/**/*,**/onlineServiceJS/**/*"
+alwaysApply: false
+---
+
+# 请求报错展示须带 data-traceId（元规则）
+
+适用于整个 monorepo **前端**（含 SPA、扩展 popup、在线服务管理页等）。细则见 `.ai/01_project_constraints/24_frontend_error_data_trace_id.md`。
+
+## 强制要求
+
+- 因**请求失败**而展示给用户的错误 UI（toast、inline 错误、错误页/弹层等），承载错误的 DOM 节点（或其可查询根节点）**必须**设置 **`data-traceId="<该次请求的 traceId>"`**。
+- traceId 取值顺序：响应头 `X-Trace-Id` → 本端请求头已发的 `X-Trace-Id` → 响应体 `trace_id` / `traceId`。
+- 确无 traceId 时**省略**属性；禁止 `"unknown"` 等占位。
+- 纯前端校验（未发请求）**不得**伪造 `data-traceId`。
+- 属性名固定为 **`data-traceId`**，禁止用 `data-trace-id` 等别名作为项目约定。
+- **Agent 排障读取**：从快照/HTML/用户指令提取时须**忽略大小写**（`data-traceid`、`data-TraceId`、文案中的 `traceid`/`TraceId`/`trace_id` 等均有效）；写入前端仍只用字面 `data-traceId`。详见 brainstorming 技能「检测 traceId」。
+- **有 data-traceId 时日志优先（硬门禁）**：提取 ID 后**必须先**查 Loki/Grafana，按时间线重建整条错误路径；**禁止**未查日志就凭文案猜根因或直接改代码。短规范：`.claude/skills/1-brainstorming-design-docs/references/traceid-log-first-diagnosis.md`。
+
+## 验收
+
+```bash
+# 模拟失败后，错误节点应可被选中
+# Playwright: page.locator('[data-traceId="<id>"]')
+# DevTools: document.querySelector('[data-traceId]')
+# 快照中也可能是 data-traceid（HTML 小写化）— Agent 读取须大小写不敏感
+# 排障：有 data-traceId → 先 Loki `{job=~".+"} | json | trace_id="<id>"` 再建路径，再改代码
+```

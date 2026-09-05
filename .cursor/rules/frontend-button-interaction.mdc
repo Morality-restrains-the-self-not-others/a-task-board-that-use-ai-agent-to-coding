@@ -1,0 +1,13 @@
+---
+description: 前端按钮需状态反馈与防重放（指向元规则 52）
+globs: "**/*.{tsx,jsx,vue,html}"
+alwaysApply: false
+---
+
+# 按钮交互与防重放
+
+打开 Vue/React 按钮文件时执行。权威细则：`.ai/01_project_constraints/57_frontend_button_anti_replay.md`（alwaysApply：`.cursor/rules/frontend-button-anti-replay.mdc`）。
+
+- 写操作：`createClickGuard().run`（或等价同步门闩）+ `disabled`/`aria-busy` + `Idempotency-Key`。
+- 禁止只设 `pending.value = true` 而无同步锁；禁止每次 HTTP 新建幂等键。
+- 纯 UI / 真实 `<a href>` / 只读刷新：注释 `Anti-Replay-OK: …`。

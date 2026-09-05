@@ -1,0 +1,46 @@
+' @title: 管理端待分账订单列表（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 99
+' @iteration: admin-pending-profit-sharing-list
+' @author: cursor
+' @based_on: v98 (v98-enterprise-landscape-20260822-1555-cursor.puml)
+' @updated: 2026-08-22 21:55
+' @description: 平台员工在订单与退款页查看待分账队列
+
+@startuml
+!include <archimate/Archimate>
+
+title v99 landscape — pending profit-sharing list 2026-08-22 21:55
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v99 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v99 |
+endlegend
+
+Business_Actor(staff, "平台员工")
+Business_Service(opsOrders, "订单与退款运营")
+Business_Service(psQueue, "待分账队列")
+note right of psQueue
+  [NEW v99] Tab「待分账」
+  只读；不发起微信分账
+end note
+
+Application_Component(fe, "taskFE")
+Application_Component(bill, "taskBill")
+
+Rel_Assignment(staff, opsOrders)
+Rel_Assignment(staff, psQueue)
+Rel_Serving(fe, opsOrders)
+Rel_Serving(fe, psQueue)
+Rel_Flow(psQueue, bill, "GET /api/system-admin/profit-sharing/")
+
+Implementation_Plateau(p98, "v98")
+Implementation_Plateau(p99, "v99")
+Implementation_Gap(g, "运营看不到待分账订单总览")
+Implementation_WorkPackage(wp, "WP-admin-pending-profit-sharing-list")
+Rel_Triggering(p98, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p99, "delivers")
+
+@enduml

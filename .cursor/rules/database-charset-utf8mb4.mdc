@@ -1,0 +1,122 @@
+---
+description: 数据库字符集强制规范 — 所有 MySQL/MariaDB 必须使用 utf8mb4，禁止 utf8/latin1 等遗留字符集
+globs: "**/*.go,**/*.py,**/*.sql,**/*.yaml,**/*.yml,**/docker-compose*.yml,**/Dockerfile*,settings*.py,conf/**"
+alwaysApply: true
+---
+
+# 数据库字符集强制规范：utf8mb4（元规则）
+
+适用于整个 monorepo 的所有服务（Go / Python / 未来语言）。本规则是**元规则**，优先级高于各语言局部惯例。
+
+## 核心原则
+
+**所有 MySQL/MariaDB 数据库、表、连接必须统一使用 `utf8mb4` 字符集。禁止使用 `utf8`（MySQL 中 `utf8` 是 `utf8mb3` 的别名，仅支持 3 字节 BMP 字符，无法存储 emoji 和部分 CJK 扩展字符）、`latin1` 或任何其他遗留字符集。**
+
+## 为什么是 utf8mb4 而非 utf8
+
+| 字符集 | 每字符最大字节 | 支持范围 |
+|--------|-------------|---------|
+| `utf8` (utf8mb3) | 3 字节 | 仅 BMP（基本多文种平面），不含 emoji (🍕🎉)、部分 CJK 扩展 (𠮷) |
+| `utf8mb4` | 4 字节 | 完整 Unicode，含所有 emoji、CJK 扩展 B~F、数学符号等 |
+
+使用 `utf8`（utf8mb3）会导致：
+- 插入 emoji 时报 `Incorrect string value` 错误
+- 插入罕见汉字（如人名用字 𬱖）时数据截断
+- 与 MySQL 8.0 默认行为不一致（MySQL 8.0 默认 `utf8mb4`）
+
+## 强制要求
+
+### 1. MySQL 服务器级字符集
+
+Docker Compose / 容器启动参数必须设置：
+
+```yaml
+# docker-compose.yml
+environment:
+  MYSQL_CHARACTER_SET_SERVER: utf8mb4
+  MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+command:
+  - --character-set-server=utf8mb4
+  - --collation-server=utf8mb4_unicode_ci
+```
+
+强制约束：
+- **`character-set-server`** 必须为 `utf8mb4`（不是 `utf8`）
+- **`collation-server`** 必须为 `utf8mb4_unicode_ci`（推荐）或 `utf8mb4_general_ci`
+- `MYSQL_CHARACTER_SET_SERVER` 环境变量（MySQL 8.0 官方镜像）必须与命令行参数一致
+- 禁止使用 `utf8mb4_0900_ai_ci`（MySQL 8.0 默认 collation）作为服务器级设置 — 与现有 schema 中的 `utf8mb4_unicode_ci` 不一致会导致 JOIN/子查询 collation 冲突
+
+### 2. CREATE TABLE / ALTER TABLE（DDL）
+
+所有 DDL 语句必须显式声明字符集：
+
+```sql
+CREATE TABLE IF NOT EXISTS example (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+强制约束：
+- **每个 `CREATE TABLE`** 必须包含 `DEFAULT CHARSET=utf8mb4`
+- **推荐同时声明 `COLLATE=utf8mb4_unicode_ci`**（显式优于隐式，防止继承服务器默认值）
+- **`ALTER TABLE` 修改/新增表时**，如果目标表不是 `utf8mb4`，必须先执行 `ALTER TABLE ... CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+- `VARCHAR`/`TEXT` 列如果不需要 4 字节字符，不可降级为 `utf8`，必须保持 `utf8mb4`（一致性优先于微小的存储优化）
+- 所有 `dataMigrate/` 目录下的 `.sql` 文件均须遵守此规则
+
+### 3. 连接字符串（Go DSN）
+
+Go 服务连接 MySQL 时必须通过 DSN 参数指定客户端字符集：
+
+```go
+dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=true&loc=Local",
+    user, pass, host, port, dbName)
+```
+
+强制约束：
+- **`charset=utf8mb4`** — 必须在 DSN 查询参数中显式指定，不可省略
+- 禁止 `charset=utf8`（Go MySQL driver 会将其发送为客户端字符集，导致服务端进行不必要的字符集转换）
+- 共享 DSN 构建函数（`db/load/registry.go` 的 `ResolveMySQLDSN()`）已内置 `charset=utf8mb4`，各服务通过该函数获取 DSN 即可自动满足
+- 直接构造 DSN 字符串的服务（如测试辅助函数、独立 tool）也必须使用 `charset=utf8mb4`
+
+### 4. Python/Django 服务
+
+Django `DATABASES` 配置中的 `OPTIONS` 必须指定字符集：
+
+```python
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
+    }
+}
+```
+
+强制约束：
+- `OPTIONS['charset']` 必须为 `'utf8mb4'`（不是 `'utf8'`）
+- 推荐同时设置 `init_command` 确保会话级严格模式
+- Django 模型中的 `CharField`/`TextField` 不包含字符集设置（由表级继承），但不应覆盖为其他值
+
+### 5. 所有语言通用约束
+
+- **禁止 `utf8` 别名** — 在 MySQL 上下文中，`utf8` 一律指代 `utf8mb3`（3 字节），不是真正的 UTF-8
+- **禁止 `latin1`** — 即使是纯 ASCII 数据的表，也应统一使用 `utf8mb4`（一致性和未来兼容性优先）
+- **禁止 `utf8mb3`** — 明确弃用的字符集名称
+- 新增数据库、表、列时，Code Review 必须检查是否使用 `utf8mb4`
+- CI 静态检查：扫描 SQL 文件中 `CHARSET=` 或 `CHARACTER SET` 是否引用了被禁字符集
+
+## 推荐做法
+
+- **Collation 选择**：通用场景 `utf8mb4_unicode_ci`（Unicode 标准排序，不区分大小写）；如需区分大小写或二进制比较，使用 `utf8mb4_bin`
+- **索引前缀**：`VARCHAR(255)` 的 utf8mb4 索引在 InnoDB 中需要 1020 字节（255×4），超过 767 字节限制时需要启用 `innodb_large_prefix`（MySQL 5.7+ 默认）或使用前缀索引
+- **迁移检查清单**：从旧字符集迁移时：(1) 备份，(2) `ALTER TABLE ... CONVERT TO`，(3) 验证数据完整性（检查转换后行数一致），(4) 更新应用连接字符串
+
+## 合规检查
+
+- **手工检查**：`grep -rPn "(?<!mb4)\butf8\b(?!mb4)" dataMigrate/`（排除 `unicode/utf8` 等 Go 包名）
+- **MySQL 验证**：连接后执行 `SHOW VARIABLES LIKE 'character_set%'`，确认 `character_set_server`/`character_set_database`/`character_set_client` 均为 `utf8mb4`
+- **CI 门禁**：新增 SQL 文件必须通过字符集检查脚本；`CREATE TABLE` 无 `CHARSET=utf8mb4` 则阻断合并
+- **Code Review**：检查清单须包含「数据库字符集为 utf8mb4」项

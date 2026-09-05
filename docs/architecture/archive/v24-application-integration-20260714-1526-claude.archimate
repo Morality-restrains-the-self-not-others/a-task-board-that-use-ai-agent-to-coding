@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v24-ai-20260714-1526">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v24 Target</name>
+  <purpose>Navbar multi-account switcher with taskAuth activate-session</purpose>
+
+  <folder name="Application" id="id-v24-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue Frontend Navbar+Login" id="id-v24-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v24-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskAuth activate-session" id="id-v24-auth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="saas-backend enrich-login" id="id-v24-django"/>
+    <element xsi:type="archimate:DataObject" name="🟢 savedAccounts localStorage" id="id-v24-slots"/>
+    <element xsi:type="archimate:DataObject" name="accounts_customtoken auth.db" id="id-v24-tokens"/>
+  </folder>
+  <folder name="Relations" id="id-v24-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v24-flow-vue-gw" source="id-v24-vue" target="id-v24-gw" name="activate-session / login"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v24-flow-gw-auth" source="id-v24-gw" target="id-v24-auth" name="POST activate-session"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v24-flow-auth-django" source="id-v24-auth" target="id-v24-django" name="internal enrich-login"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v24-acc-vue-slots" source="id-v24-vue" target="id-v24-slots" name="RW slots"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v24-acc-auth-tokens" source="id-v24-auth" target="id-v24-tokens" name="R validate"/>
+  </folder>
+  <folder name="Implementation" id="id-v24-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v21 — single session Token" id="id-v24-plat-v21"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v24 — multi-account switcher" id="id-v24-plat-v24"/>
+    <element xsi:type="archimate:Gap" name="Gap: 无多账号切换；昵称不可下拉" id="id-v24-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v24-navbar-multi-account" id="id-v24-wp"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v24-rel-plat21-gap" source="id-v24-plat-v21" target="id-v24-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v24-rel-wp-gap" source="id-v24-wp" target="id-v24-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v24-rel-wp-plat24" source="id-v24-wp" target="id-v24-plat-v24"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v24-rel-plat24-auth" source="id-v24-plat-v24" target="id-v24-auth"/>
+  </folder>
+  <folder name="Views" id="id-v24-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v21→v24 — multi-account" id="id-v24-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v24-do-plat21" archimateElement="id-v24-plat-v21">
+        <bounds x="48" y="120" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v24-conn-plat21-gap"
+          source="id-v24-do-plat21" target="id-v24-do-gap"
+          archimateRelationship="id-v24-rel-plat21-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v24-do-gap" archimateElement="id-v24-gap"
+        targetConnections="id-v24-conn-plat21-gap id-v24-conn-wp-gap">
+        <bounds x="380" y="120" width="320" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v24-do-wp" archimateElement="id-v24-wp">
+        <bounds x="760" y="80" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v24-conn-wp-gap"
+          source="id-v24-do-wp" target="id-v24-do-gap"
+          archimateRelationship="id-v24-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v24-conn-wp-plat24"
+          source="id-v24-do-wp" target="id-v24-do-plat24"
+          archimateRelationship="id-v24-rel-wp-plat24"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v24-do-plat24" archimateElement="id-v24-plat-v24"
+        targetConnections="id-v24-conn-wp-plat24">
+        <bounds x="760" y="180" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v24-conn-plat24-auth"
+          source="id-v24-do-plat24" target="id-v24-do-auth-m"
+          archimateRelationship="id-v24-rel-plat24-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v24-do-auth-m" archimateElement="id-v24-auth"
+        targetConnections="id-v24-conn-plat24-auth">
+        <bounds x="760" y="260" width="280" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v24 Target — activate-session 数据流" id="id-v24-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v24-do-vue" archimateElement="id-v24-vue">
+        <bounds x="40" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v24-conn-vue-gw"
+          source="id-v24-do-vue" target="id-v24-do-gw"
+          archimateRelationship="id-v24-flow-vue-gw"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v24-conn-vue-slots"
+          source="id-v24-do-vue" target="id-v24-do-slots"
+          archimateRelationship="id-v24-acc-vue-slots"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v24-do-slots" archimateElement="id-v24-slots"
+        targetConnections="id-v24-conn-vue-slots">
+        <bounds x="40" y="200" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v24-do-gw" archimateElement="id-v24-gw"
+        targetConnections="id-v24-conn-vue-gw">
+        <bounds x="280" y="80" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v24-conn-gw-auth"
+          source="id-v24-do-gw" target="id-v24-do-auth"
+          archimateRelationship="id-v24-flow-gw-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v24-do-auth" archimateElement="id-v24-auth"
+        targetConnections="id-v24-conn-gw-auth">
+        <bounds x="480" y="80" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v24-conn-auth-django"
+          source="id-v24-do-auth" target="id-v24-do-django"
+          archimateRelationship="id-v24-flow-auth-django"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v24-conn-auth-tokens"
+          source="id-v24-do-auth" target="id-v24-do-tokens"
+          archimateRelationship="id-v24-acc-auth-tokens"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v24-do-django" archimateElement="id-v24-django"
+        targetConnections="id-v24-conn-auth-django">
+        <bounds x="760" y="80" width="200" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v24-do-tokens" archimateElement="id-v24-tokens"
+        targetConnections="id-v24-conn-auth-tokens">
+        <bounds x="480" y="200" width="220" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

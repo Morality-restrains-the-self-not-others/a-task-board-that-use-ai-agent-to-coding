@@ -1,0 +1,76 @@
+' @title: 任务与项目内容历史版本（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 120
+' @iteration: task-project-entity-revisions
+' @author: cursor
+' @based_on: v118 (v118-application-integration-20260829-1832-cursor.puml)
+' @updated: 2026-08-30 01:00
+' @description: 快照表 + GET revisions + TASK/PROJECT_REVISION_RECORDED
+
+@startuml
+!include <archimate/Archimate>
+
+title v120 Current — 任务与项目内容历史版本 2026-08-30 01:00
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  历史面板 GET
+  @author: cursor @2026-08-30 01:00
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+Application_Component(task, "taskTaskService")
+note right of task
+  创建/更新同事务快照
+end note
+
+Application_Component(proj, "taskProjectService")
+note right of proj
+  创建/更新同事务快照
+end note
+
+Application_Component(ev, "taskEvents")
+note right of ev
+  1_observe 18072/18073
+end note
+
+Application_DataObject(tr, "task_revision")
+note right of tr
+  月分区快照
+end note
+
+Application_DataObject(pr, "project_revision")
+note right of pr
+  月分区快照
+end note
+
+Business_Event(evT, "TASK_REVISION_RECORDED")
+note right of evT
+  payload 无正文
+end note
+
+Business_Event(evP, "PROJECT_REVISION_RECORDED")
+note right of evP
+  payload 无正文
+end note
+
+Rel_Flow(taskFE, gw, "revisions GET / content PATCH")
+Rel_Flow(gw, task, "task routes")
+Rel_Flow(gw, proj, "project routes")
+Rel_Access(task, tr, "insert / select")
+Rel_Access(proj, pr, "insert / select")
+Rel_Flow(task, evT, "after commit")
+Rel_Flow(proj, evP, "after commit")
+Rel_Flow(task, ev, "publish Kafka")
+Rel_Flow(proj, ev, "publish Kafka")
+
+Implementation_Plateau(plateauV118, "Plateau v118 无内容历史")
+Implementation_Plateau(plateauV120, "Plateau v120 不可变快照")
+Implementation_Gap(gapRev, "Gap: 热表覆盖丢失旧标题正文")
+Implementation_WorkPackage(wpRev, "WP-entity-revisions")
+Rel_Triggering(plateauV118, gapRev, "identifies")
+Rel_Realization(wpRev, gapRev, "closes")
+Rel_Realization(wpRev, plateauV120, "delivers")
+
+@enduml

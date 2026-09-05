@@ -1,0 +1,15 @@
+测试目标：
+- 在系统管理页验证策略依赖约束：手机号登录关闭时，不允许开启“充值前手机号验证”。
+
+关键业务断言：
+- 当策略接口返回 `enable_phone_login=false` 时，`enable-recharge-phone-verification-switch` 必须禁用。
+- 禁用状态下该开关应保持未勾选。
+- 页面需显示依赖提示“需先开启手机号登录”。
+
+典型破坏信号：
+- 充值前验证开关在手机号登录关闭时仍可点击。
+- 禁用状态提示缺失，导致管理员误以为系统异常。
+
+回归验证要点：
+- 运行 `SystemAdmin.phone-policy-settings.playwright.test.sh`，确认依赖联动行为稳定。
+

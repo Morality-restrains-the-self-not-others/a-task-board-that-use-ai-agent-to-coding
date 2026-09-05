@@ -1,0 +1,6 @@
+# submitLayerGraphCommand.test.js
+
+- **目标**：ztree 命令面板「发送给AI」失败时，禁止只显示裸 `HTTP 403`；须解析 `_errorData` 并挂 `layerGraphCmdErrorTraceId`（对应 DOM `data-traceId`）。
+- **关键断言**：`{message}` 403 展示 message；`forbidden scope` 映射为容器配置文案；HTML 403 且 `text()` 已不可读时仍有友好中文；traceId 来自 `response.traceId`。
+- **破坏信号**：重新只读 `j.detail`，或成功路径未清空 traceId 导致串请求。
+- **回归**：改 `submitLayerGraphCommand.js` / `httpError.js` / `formatLayerGraphCommandErrorForUser` 后跑本文件。

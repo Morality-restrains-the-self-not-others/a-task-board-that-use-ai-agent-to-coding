@@ -1,0 +1,19 @@
+intents:
+  0_create_company:
+    host: 0.0.0.0
+    port: 18025
+    groupId: task-events-user-created-0-create-company
+    events:
+    - USER_CREATED
+  1_send_welcome_email:
+    host: 0.0.0.0
+    port: 18026
+    groupId: task-events-user-created-1-send-welcome-email
+    events:
+    - USER_CREATED
+  2_sync_user_profile:
+    host: 0.0.0.0
+    port: 18038
+    groupId: task-events-user-created-2-sync-user-profile
+    events:
+    - USER_CREATED

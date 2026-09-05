@@ -1,0 +1,20 @@
+host: 0.0.0.0
+port: 8798
+logging:
+  log_file: logs/task-sse/task-sse.log
+secret: ""
+# 浏览器 SSE 须带网关注入的 X-TaskGateway-Internal-Secret；空则 fail-closed。
+# 运行时只读本目录 overlay：conf-local/gateway/task-sse/config.yaml（同源 APISIX proxy-rewrite，
+# OPT-20260902-001）。禁止跨 app 直读 conf-local/gateway/task-gateway。
+gatewayInternalSecret: ""
+transport: redis
+enabled: true
+heartbeatIntervalSec: 5
+# Dev guardrail: reject new SSE when process holds this many connections (0 = unlimited).
+maxConnections: 500
+redis:
+  channelPrefix: 'sse:'
+kafka:
+  topic: sse-message
+  groupId: task-sse-consumer
+_doc_infra: 'redis.host/port and kafka.bootstrapServers from conf/task-sse/docker-infra.yaml'

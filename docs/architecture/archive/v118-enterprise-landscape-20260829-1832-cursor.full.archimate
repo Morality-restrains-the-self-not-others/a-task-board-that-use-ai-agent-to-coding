@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v118 全量 (post-change)" id="id-v118elfull01">
+  <folder name="Business" id="id-v118el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v118-el-enabler" name="启用自动运行的人 / 发评人 [NEW v118]"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v118-el-projuser" name="项目页使用者 [NEW v118]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v118-el-markp" name="项目页 OAuth 回流打标 [NEW v118]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v118-el-markc" name="评论 / 自动运行 OAuth 回流打标 [NEW v118]"/>
+  </folder>
+  <folder name="Application" id="id-v118el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v118-el-fe" name="taskFE"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v118-el-go" name="taskGitOauth [MODIFIED v118]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v118-el-proj" name="taskProjectService [MODIFIED v118]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v118-el-task" name="taskTaskService [MODIFIED v118]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v118el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v118-el-pl117" name="Plateau v117"/>
+    <element xsi:type="archimate:Plateau" id="id-v118-el-pl118" name="Plateau v118"/>
+    <element xsi:type="archimate:Gap" id="id-v118-el-gap" name="Gap: 有 L1 票即可在任意项目/评论换票"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v118-el-wp" name="WP-git-oauth-resource-grant"/>
+  </folder>
+  <folder name="Relations" id="id-v118el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v118-el-rel-as-p" source="id-v118-el-projuser" target="id-v118-el-markp"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v118-el-rel-as-c" source="id-v118-el-enabler" target="id-v118-el-markc"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-el-rel-pu-fe" source="id-v118-el-projuser" target="id-v118-el-fe" name="project OAuth"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-el-rel-en-fe" source="id-v118-el-enabler" target="id-v118-el-fe" name="comment / auto_run OAuth"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-el-rel-fe-go" source="id-v118-el-fe" target="id-v118-el-go" name="start-from-gateway"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-el-rel-go-proj" source="id-v118-el-go" target="id-v118-el-proj" name="MarkGrant project"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v118-el-rel-go-task" source="id-v118-el-go" target="id-v118-el-task" name="MarkGrant comment / ticket"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v118-el-rel-pl-gap" source="id-v118-el-pl117" target="id-v118-el-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v118-el-rel-wp-gap" source="id-v118-el-wp" target="id-v118-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v118-el-rel-wp-pl" source="id-v118-el-wp" target="id-v118-el-pl118"/>
+  </folder>
+  <folder name="Views" id="id-v118el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v118-el-view-mig" name="架构变迁 v117→v118 — git-oauth-resource-grant">
+      <child xsi:type="archimate:DiagramObject" id="id-v118-el-do-pl117" archimateElement="id-v118-el-pl117">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-el-c-pl-gap" source="id-v118-el-do-pl117" target="id-v118-el-do-gap" archimateRelationship="id-v118-el-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-el-do-gap" targetConnections="id-v118-el-c-pl-gap id-v118-el-c-wp-gap" archimateElement="id-v118-el-gap">
+        <bounds x="280" y="48" width="400" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-el-do-wp" archimateElement="id-v118-el-wp">
+        <bounds x="280" y="140" width="400" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-el-c-wp-gap" source="id-v118-el-do-wp" target="id-v118-el-do-gap" archimateRelationship="id-v118-el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-el-c-wp-pl" source="id-v118-el-do-wp" target="id-v118-el-do-pl118" archimateRelationship="id-v118-el-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-el-do-pl118" targetConnections="id-v118-el-c-wp-pl" archimateElement="id-v118-el-pl118">
+        <bounds x="720" y="140" width="200" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v118-el-view-topo" name="v118 Target — Git OAuth 资源使用标记">
+      <child xsi:type="archimate:DiagramObject" id="id-v118-el-do-pu" archimateElement="id-v118-el-projuser">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-el-c-as-p" source="id-v118-el-do-pu" target="id-v118-el-do-markp" archimateRelationship="id-v118-el-rel-as-p"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-el-c-pu-fe" source="id-v118-el-do-pu" target="id-v118-el-do-fe" archimateRelationship="id-v118-el-rel-pu-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-el-do-en" archimateElement="id-v118-el-enabler">
+        <bounds x="48" y="120" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-el-c-as-c" source="id-v118-el-do-en" target="id-v118-el-do-markc" archimateRelationship="id-v118-el-rel-as-c"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-el-c-en-fe" source="id-v118-el-do-en" target="id-v118-el-do-fe" archimateRelationship="id-v118-el-rel-en-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-el-do-markp" targetConnections="id-v118-el-c-as-p" archimateElement="id-v118-el-markp">
+        <bounds x="280" y="48" width="240" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-el-do-markc" targetConnections="id-v118-el-c-as-c" archimateElement="id-v118-el-markc">
+        <bounds x="280" y="120" width="240" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-el-do-fe" targetConnections="id-v118-el-c-pu-fe id-v118-el-c-en-fe" archimateElement="id-v118-el-fe">
+        <bounds x="560" y="80" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-el-c-fe-go" source="id-v118-el-do-fe" target="id-v118-el-do-go" archimateRelationship="id-v118-el-rel-fe-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-el-do-go" targetConnections="id-v118-el-c-fe-go" archimateElement="id-v118-el-go">
+        <bounds x="740" y="80" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-el-c-go-proj" source="id-v118-el-do-go" target="id-v118-el-do-proj" archimateRelationship="id-v118-el-rel-go-proj"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v118-el-c-go-task" source="id-v118-el-do-go" target="id-v118-el-do-task" archimateRelationship="id-v118-el-rel-go-task"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-el-do-proj" targetConnections="id-v118-el-c-go-proj" archimateElement="id-v118-el-proj">
+        <bounds x="940" y="40" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v118-el-do-task" targetConnections="id-v118-el-c-go-task" archimateElement="id-v118-el-task">
+        <bounds x="940" y="120" width="200" height="50"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

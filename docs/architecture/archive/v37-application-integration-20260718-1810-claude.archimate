@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="v37 Target — work-panel-task-status-sse" id="id-v37-model">
+  <folder name="Application" id="id-v37-folder-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue WorkPanel" id="id-v37-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v37-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTaskService" id="id-v37-tts"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskEvents fanout" id="id-v37-te"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskSSE work-panel-events-sse" id="id-v37-sse"/>
+    <element xsi:type="archimate:DataObject" name="tasks" id="id-v37-tasks"/>
+  </folder>
+  <folder name="Technology" id="id-v37-folder-tech" type="technology">
+    <element xsi:type="archimate:Node" name="Kafka task-status-changed" id="id-v37-kafka"/>
+    <element xsi:type="archimate:Node" name="Redis sse:workspace" id="id-v37-redis"/>
+  </folder>
+  <folder name="Motivation" id="id-v37-folder-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="初载拉取后续推送" id="id-v37-constraint"/>
+    <element xsi:type="archimate:Principle" name="业务路径不直接SSE" id="id-v37-principle"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v37-folder-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v36" id="id-v37-plat36"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v37 — work-panel-task-status-sse" id="id-v37-plat37"/>
+    <element xsi:type="archimate:Gap" name="Gap: 看板无任务状态推送" id="id-v37-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v37-work-panel-task-status-sse" id="id-v37-wp"/>
+  </folder>
+  <folder name="Relations" id="id-v37-folder-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" name="HTTP+SSE" id="id-v37-rel-vue-gw" source="id-v37-vue" target="id-v37-gw"/>
+    <element xsi:type="archimate:FlowRelationship" name="todos" id="id-v37-rel-gw-tts" source="id-v37-gw" target="id-v37-tts"/>
+    <element xsi:type="archimate:FlowRelationship" name="SSE" id="id-v37-rel-gw-sse" source="id-v37-gw" target="id-v37-sse"/>
+    <element xsi:type="archimate:AccessRelationship" name="R/W" id="id-v37-rel-tts-tasks" source="id-v37-tts" target="id-v37-tasks"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="id-v37-rel-tts-kafka" source="id-v37-tts" target="id-v37-kafka"/>
+    <element xsi:type="archimate:FlowRelationship" name="consume" id="id-v37-rel-kafka-te" source="id-v37-kafka" target="id-v37-te"/>
+    <element xsi:type="archimate:FlowRelationship" name="PUBLISH" id="id-v37-rel-te-redis" source="id-v37-te" target="id-v37-redis"/>
+    <element xsi:type="archimate:FlowRelationship" name="pSubscribe" id="id-v37-rel-redis-sse" source="id-v37-redis" target="id-v37-sse"/>
+    <element xsi:type="archimate:FlowRelationship" name="push" id="id-v37-rel-sse-vue" source="id-v37-sse" target="id-v37-vue"/>
+    <element xsi:type="archimate:InfluenceRelationship" name="UX" id="id-v37-rel-c-vue" source="id-v37-constraint" target="id-v37-vue"/>
+    <element xsi:type="archimate:InfluenceRelationship" name="fan-out" id="id-v37-rel-p-te" source="id-v37-principle" target="id-v37-te"/>
+    <element xsi:type="archimate:TriggeringRelationship" name="exposes" id="id-v37-rel-p36-gap" source="id-v37-plat36" target="id-v37-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" name="addresses" id="id-v37-rel-wp-gap" source="id-v37-wp" target="id-v37-gap"/>
+    <element xsi:type="archimate:TriggeringRelationship" name="realizes" id="id-v37-rel-wp-p37" source="id-v37-wp" target="id-v37-plat37"/>
+  </folder>
+  <folder name="Views" id="id-v37-folder-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="目标拓扑 v37 — work-panel-task-status-sse" id="id-v37-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-vue" archimateElement="id-v37-vue">
+        <bounds x="20" y="100" width="150" height="70"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-vue-gw" source="id-v37-do-vue" target="id-v37-do-gw" archimateRelationship="id-v37-rel-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-gw" archimateElement="id-v37-gw" targetConnections="id-v37-sc-vue-gw">
+        <bounds x="200" y="100" width="130" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-gw-tts" source="id-v37-do-gw" target="id-v37-do-tts" archimateRelationship="id-v37-rel-gw-tts"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-gw-sse" source="id-v37-do-gw" target="id-v37-do-sse" archimateRelationship="id-v37-rel-gw-sse"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-tts" archimateElement="id-v37-tts" targetConnections="id-v37-sc-gw-tts">
+        <bounds x="380" y="40" width="150" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-tts-tasks" source="id-v37-do-tts" target="id-v37-do-tasks" archimateRelationship="id-v37-rel-tts-tasks"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-tts-kafka" source="id-v37-do-tts" target="id-v37-do-kafka" archimateRelationship="id-v37-rel-tts-kafka"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-tasks" archimateElement="id-v37-tasks" targetConnections="id-v37-sc-tts-tasks">
+        <bounds x="580" y="40" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-kafka" archimateElement="id-v37-kafka" targetConnections="id-v37-sc-tts-kafka">
+        <bounds x="380" y="140" width="150" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-kafka-te" source="id-v37-do-kafka" target="id-v37-do-te" archimateRelationship="id-v37-rel-kafka-te"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-te" archimateElement="id-v37-te" targetConnections="id-v37-sc-kafka-te">
+        <bounds x="580" y="140" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-te-redis" source="id-v37-do-te" target="id-v37-do-redis" archimateRelationship="id-v37-rel-te-redis"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-redis" archimateElement="id-v37-redis" targetConnections="id-v37-sc-te-redis">
+        <bounds x="780" y="140" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-redis-sse" source="id-v37-do-redis" target="id-v37-do-sse" archimateRelationship="id-v37-rel-redis-sse"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-sse" archimateElement="id-v37-sse" targetConnections="id-v37-sc-gw-sse id-v37-sc-redis-sse">
+        <bounds x="200" y="220" width="180" height="70"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-sse-vue" source="id-v37-do-sse" target="id-v37-do-vue" archimateRelationship="id-v37-rel-sse-vue"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-constraint" archimateElement="id-v37-constraint">
+        <bounds x="20" y="300" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-c-vue" source="id-v37-do-constraint" target="id-v37-do-vue" archimateRelationship="id-v37-rel-c-vue"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-principle" archimateElement="id-v37-principle">
+        <bounds x="580" y="220" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-p-te" source="id-v37-do-principle" target="id-v37-do-te" archimateRelationship="id-v37-rel-p-te"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v36→v37 — work-panel-task-status-sse" id="id-v37-view-mig">
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-plat36" archimateElement="id-v37-plat36">
+        <bounds x="40" y="60" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-p36-gap" source="id-v37-do-plat36" target="id-v37-do-gap" archimateRelationship="id-v37-rel-p36-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-gap" archimateElement="id-v37-gap" targetConnections="id-v37-sc-p36-gap">
+        <bounds x="240" y="60" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-wp" archimateElement="id-v37-wp">
+        <bounds x="240" y="160" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-wp-gap" source="id-v37-do-wp" target="id-v37-do-gap" archimateRelationship="id-v37-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v37-sc-wp-p37" source="id-v37-do-wp" target="id-v37-do-plat37" archimateRelationship="id-v37-rel-wp-p37"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v37-do-plat37" archimateElement="id-v37-plat37" targetConnections="id-v37-sc-wp-p37">
+        <bounds x="520" y="160" width="260" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

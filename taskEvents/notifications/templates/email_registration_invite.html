@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>注册邀请 - SaaS平台</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #7241F2; color: white; padding: 10px 20px; border-radius: 5px 5px 0 0; }
+        .content { background-color: #fff; padding: 20px; border: 1px solid #ddd; border-top: none; }
+        .invite-btn { display: inline-block; background-color: #7241F2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 15px 0; font-size: 16px; }
+        .expire-note { color: #666; font-size: 14px; }
+        .footer { margin-top: 20px; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>SaaS平台 — 注册邀请</h2>
+        </div>
+        <div class="content">
+            <p>您好！</p>
+            <p>管理员邀请您注册SaaS平台账户（{{.Email}}）。</p>
+            <p>请点击下方按钮完成注册：</p>
+            <p><a href="{{.InviteURL}}" class="invite-btn">立即注册</a></p>
+            <p class="expire-note">该邀请链接将在 <strong>7天</strong> 后失效。</p>
+            <p>如果按钮无法点击，请复制以下链接到浏览器：</p>
+            <p style="word-break: break-all; color: #7241F2;">{{.InviteURL}}</p>
+            <p>如果您没有收到此邀请，请忽略此邮件。</p>
+            <p>祝好！</p>
+            <p>SaaS平台团队</p>
+        </div>
+        <div class="footer">
+            <p>这是一封自动发送的邮件，请勿回复。</p>
+            {{if .UnsubscribeURL}}
+            <p><a href="{{.UnsubscribeURL}}" style="color:#666;">退订邮件邀请</a></p>
+            {{end}}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="model-v21-ai-20260714-0130">
+
+  <name xml:lang="en">AI Dev Platform — Application Integration v21 Target</name>
+  <purpose>Migrate cloud_server_events and IAM associations to taskCloudService; retire Django persist</purpose>
+
+  <folder name="Application" id="id-v21-f-app" type="application"/>
+  <folder name="Technology" id="id-v21-f-tech" type="technology"/>
+  <folder name="Relations" id="id-v21-f-rel" type="relations"/>
+  <folder name="Implementation" id="id-v21-f-impl" type="implementation_migration"/>
+
+  <element xsi:type="archimate:ApplicationComponent" name="Vue TaskDetail" id="id-v21-vue"/>
+  <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v21-gw"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 taskCloudService [MODIFIED v21]" id="id-v21-cloud"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskCredentialService" id="id-v21-cred"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskBill" id="id-v21-bill"/>
+  <element xsi:type="archimate:ApplicationComponent" name="🟡 taskEvents [MODIFIED v21]" id="id-v21-events"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskSSE" id="id-v21-sse"/>
+  <element xsi:type="archimate:ApplicationComponent" name="saas-backend [DEPRECATED persist v21]" id="id-v21-django"/>
+
+  <element xsi:type="archimate:DataObject" name="🟢 cloud_server_events [NEW v21]" id="id-v21-ev"/>
+  <element xsi:type="archimate:DataObject" name="🟢 access_key_iam_associations [NEW v21]" id="id-v21-iam"/>
+  <element xsi:type="archimate:DataObject" name="cloud_server_configs" id="id-v21-cfg"/>
+
+  <element xsi:type="archimate:FlowRelationship" id="id-v21-flow-vue-gw" source="id-v21-vue" target="id-v21-gw" name="start-vm / status / SSE"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v21-flow-gw-cloud" source="id-v21-gw" target="id-v21-cloud" name="compute API"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v21-flow-cloud-cred" source="id-v21-cloud" target="id-v21-cred" name="token/init"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v21-flow-cloud-bill" source="id-v21-cloud" target="id-v21-bill" name="charge-server-start"/>
+  <element xsi:type="archimate:AccessRelationship" id="id-v21-acc-cloud-ev" source="id-v21-cloud" target="id-v21-ev" name="RW events SSOT"/>
+  <element xsi:type="archimate:AccessRelationship" id="id-v21-acc-cloud-cfg" source="id-v21-cloud" target="id-v21-cfg" name="R vm_info"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v21-flow-cloud-te" source="id-v21-cloud" target="id-v21-events" name="Kafka CLOUD_SERVER_*"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v21-flow-te-cloud" source="id-v21-events" target="id-v21-cloud" name="internal update/IAM"/>
+  <element xsi:type="archimate:AccessRelationship" id="id-v21-acc-cloud-iam" source="id-v21-cloud" target="id-v21-iam" name="RW IAM"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v21-flow-te-sse" source="id-v21-events" target="id-v21-sse" name="SSE_MESSAGE"/>
+  <element xsi:type="archimate:FlowRelationship" id="id-v21-flow-django-depr" source="id-v21-django" target="id-v21-cloud" name="[DEPRECATED] persist removed"/>
+
+  <element xsi:type="archimate:Plateau" name="Plateau v20 — work-panel filter persistence" id="id-v21-plat-v20"/>
+  <element xsi:type="archimate:Plateau" name="🎯 Plateau v21 — cloud events/IAM on task_cloud" id="id-v21-plat-v21"/>
+  <element xsi:type="archimate:Gap" name="Gap: events/IAM 仍在 saas；finalize 经 Django persist" id="id-v21-gap"/>
+  <element xsi:type="archimate:WorkPackage" name="WP-v21-cloud-events-task-cloud-migration" id="id-v21-wp"/>
+  <element xsi:type="archimate:AssociationRelationship" id="id-v21-rel-plat20-gap" source="id-v21-plat-v20" target="id-v21-gap"/>
+  <element xsi:type="archimate:RealizationRelationship" id="id-v21-rel-wp-gap" source="id-v21-wp" target="id-v21-gap"/>
+  <element xsi:type="archimate:RealizationRelationship" id="id-v21-rel-wp-plat21" source="id-v21-wp" target="id-v21-plat-v21"/>
+  <element xsi:type="archimate:CompositionRelationship" id="id-v21-rel-plat21-cloud" source="id-v21-plat-v21" target="id-v21-cloud"/>
+
+  <folder name="Views" id="id-v21-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v20→v21 — cloud events/IAM 迁表" id="id-v21-view-migration">
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-plat20" archimateElement="id-v21-plat-v20">
+        <bounds x="48" y="120" width="300" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-plat20-gap"
+          source="id-v21-do-plat20" target="id-v21-do-gap"
+          archimateRelationship="id-v21-rel-plat20-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-gap" archimateElement="id-v21-gap"
+        targetConnections="id-v21-conn-plat20-gap id-v21-conn-wp-gap">
+        <bounds x="400" y="120" width="360" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-wp" archimateElement="id-v21-wp">
+        <bounds x="820" y="80" width="340" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-wp-gap"
+          source="id-v21-do-wp" target="id-v21-do-gap"
+          archimateRelationship="id-v21-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-wp-plat21"
+          source="id-v21-do-wp" target="id-v21-do-plat21"
+          archimateRelationship="id-v21-rel-wp-plat21"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-plat21" archimateElement="id-v21-plat-v21"
+        targetConnections="id-v21-conn-wp-plat21">
+        <bounds x="820" y="180" width="340" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-plat21-cloud"
+          source="id-v21-do-plat21" target="id-v21-do-cloud-m"
+          archimateRelationship="id-v21-rel-plat21-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-cloud-m" archimateElement="id-v21-cloud"
+        targetConnections="id-v21-conn-plat21-cloud">
+        <bounds x="900" y="280" width="180" height="50"/>
+      </child>
+    </element>
+
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v21 Target — start-vm 事件 SSOT" id="id-v21-view-flow">
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-vue" archimateElement="id-v21-vue">
+        <bounds x="40" y="40" width="120" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-vue-gw"
+          source="id-v21-do-vue" target="id-v21-do-gw"
+          archimateRelationship="id-v21-flow-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-gw" archimateElement="id-v21-gw"
+        targetConnections="id-v21-conn-vue-gw">
+        <bounds x="200" y="40" width="120" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-gw-cloud"
+          source="id-v21-do-gw" target="id-v21-do-cloud"
+          archimateRelationship="id-v21-flow-gw-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-cloud" archimateElement="id-v21-cloud"
+        targetConnections="id-v21-conn-gw-cloud id-v21-conn-te-cloud id-v21-conn-django-depr">
+        <bounds x="380" y="40" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-cloud-cred"
+          source="id-v21-do-cloud" target="id-v21-do-cred"
+          archimateRelationship="id-v21-flow-cloud-cred"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-cloud-bill"
+          source="id-v21-do-cloud" target="id-v21-do-bill"
+          archimateRelationship="id-v21-flow-cloud-bill"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-cloud-ev"
+          source="id-v21-do-cloud" target="id-v21-do-ev"
+          archimateRelationship="id-v21-acc-cloud-ev"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-cloud-cfg"
+          source="id-v21-do-cloud" target="id-v21-do-cfg"
+          archimateRelationship="id-v21-acc-cloud-cfg"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-cloud-te"
+          source="id-v21-do-cloud" target="id-v21-do-te"
+          archimateRelationship="id-v21-flow-cloud-te"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-cloud-iam"
+          source="id-v21-do-cloud" target="id-v21-do-iam"
+          archimateRelationship="id-v21-acc-cloud-iam"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-cred" archimateElement="id-v21-cred"
+        targetConnections="id-v21-conn-cloud-cred">
+        <bounds x="620" y="20" width="160" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-bill" archimateElement="id-v21-bill"
+        targetConnections="id-v21-conn-cloud-bill">
+        <bounds x="620" y="80" width="120" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-ev" archimateElement="id-v21-ev"
+        targetConnections="id-v21-conn-cloud-ev">
+        <bounds x="380" y="140" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-cfg" archimateElement="id-v21-cfg"
+        targetConnections="id-v21-conn-cloud-cfg">
+        <bounds x="380" y="210" width="180" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-iam" archimateElement="id-v21-iam"
+        targetConnections="id-v21-conn-cloud-iam">
+        <bounds x="380" y="280" width="220" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-te" archimateElement="id-v21-events"
+        targetConnections="id-v21-conn-cloud-te">
+        <bounds x="620" y="160" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-te-cloud"
+          source="id-v21-do-te" target="id-v21-do-cloud"
+          archimateRelationship="id-v21-flow-te-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-te-sse"
+          source="id-v21-do-te" target="id-v21-do-sse"
+          archimateRelationship="id-v21-flow-te-sse"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-sse" archimateElement="id-v21-sse"
+        targetConnections="id-v21-conn-te-sse">
+        <bounds x="800" y="160" width="100" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v21-do-django" archimateElement="id-v21-django">
+        <bounds x="40" y="160" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v21-conn-django-depr"
+          source="id-v21-do-django" target="id-v21-do-cloud"
+          archimateRelationship="id-v21-flow-django-depr"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

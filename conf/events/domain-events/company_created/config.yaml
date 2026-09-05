@@ -1,0 +1,31 @@
+intents:
+  1_set_default_deliverable_system:
+    host: 0.0.0.0
+    port: 18027
+    groupId: task-events-company-created-1-set-default-deliverable-system
+    events:
+    - COMPANY_CREATED
+  2_set_default_progress_system:
+    host: 0.0.0.0
+    port: 18028
+    groupId: task-events-company-created-2-set-default-progress-system
+    events:
+    - COMPANY_CREATED
+  3_create_default_workspace:
+    host: 0.0.0.0
+    port: 18029
+    groupId: task-events-company-created-3-create-default-workspace
+    events:
+    - COMPANY_CREATED
+  5_init_tenant_feature_params:
+    host: 0.0.0.0
+    port: 18054
+    groupId: task-events-company-created-5-init-tenant-feature-params
+    events:
+    - COMPANY_CREATED
+  6_grant_initial_resources:
+    host: 0.0.0.0
+    port: 18055
+    groupId: task-events-company-created-6-grant-initial-resources
+    events:
+    - COMPANY_CREATED

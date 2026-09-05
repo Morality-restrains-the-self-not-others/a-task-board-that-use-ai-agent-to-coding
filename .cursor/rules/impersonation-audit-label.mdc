@@ -1,0 +1,26 @@
+---
+description: 模拟登录时所有日志与审计必须标识操作者与被模拟用户
+alwaysApply: true
+---
+
+# 模拟登录必须在日志与审计中标识（元规则）
+
+细则：`.ai/01_project_constraints/60_impersonation_audit_label.md`；约束索引第 55 条；ADR-0038。
+
+## 强制要求
+
+- 模拟会话下日志/审计必须含 `impersonating`、`impersonator_user_id`、`impersonated_user_id`、`impersonation_session_id`
+- 网关注入 `X-Impersonator-Id` + `X-Impersonation-Session-Id`；`X-User-Id` 仍为目标用户
+- tracelog 中间件从这些头发到每条 `http_request` 与同 ctx slog
+- 禁止只记被模拟用户 ID；禁止日志打 token / 完整理由正文
+
+## 触发
+
+- 改访问日志、forward-auth、模拟登录、收信箱审计
+
+## 验收
+
+```bash
+rg -n 'impersonator_user_id' shareLib/tracelog
+rg -n 'X-Impersonation-Session-Id' taskGateway
+```

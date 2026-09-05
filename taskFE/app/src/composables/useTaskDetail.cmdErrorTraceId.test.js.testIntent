@@ -1,0 +1,6 @@
+# useTaskDetail.cmdErrorTraceId.test.js
+
+- **目标**：`useTaskDetail` 调用 `submitLayerGraphCommand` 时必须传入评论槽的 `layerGraphCmdErrorTraceId`，失败 UI 才能挂 `data-traceId`。
+- **关键断言**：deps 使用 `slice?.layerGraphCmdErrorTraceId || layerGraphCmdErrorTraceId`；对外 return 仍导出该 ref。
+- **破坏信号**：只传 `layerGraphCmdError`、漏 traceId，或改回页面级单一 ref 导致评论之间串 trace。
+- **回归**：改 `useTaskDetail.js` 层图命令提交接线后跑本文件。

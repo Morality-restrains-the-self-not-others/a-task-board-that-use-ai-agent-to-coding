@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="v73-rbac-grant-effect-full" id="id-b778a7af2408">
+  <folder name="Application" id="id-a2cddaedc43a" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="app-taskFE" name="taskFE PeopleAccess"/>
+    <element xsi:type="archimate:ApplicationComponent" id="app-taskAuth" name="taskAuth PDP"/>
+    <element xsi:type="archimate:ApplicationComponent" id="app-authz" name="shareLib/authz"/>
+    <element xsi:type="archimate:DataObject" id="do-rrg" name="auth_role_resource_group.effect"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-01f49b2d0127" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="pl-v72" name="Plateau v72"/>
+    <element xsi:type="archimate:Plateau" id="pl-v73" name="Plateau v73"/>
+    <element xsi:type="archimate:Gap" id="gap-v73" name="Gap: grant effect"/>
+    <element xsi:type="archimate:WorkPackage" id="wp-v73" name="WP: RBAC grant effect"/>
+  </folder>
+  <folder name="Relations" id="id-5d1e9bbc58db" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="rel-fe-auth" source="app-taskFE" target="app-taskAuth" name="PUT grants"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-auth-authz" source="app-taskAuth" target="app-authz" name="X-Tenant-Perms"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-auth-db" source="app-taskAuth" target="do-rrg" name="R/W effect"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-pl72-gap" source="pl-v72" target="gap-v73"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-wp-gap" source="wp-v73" target="gap-v73"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-wp-pl73" source="wp-v73" target="pl-v73"/>
+  </folder>
+  <folder name="Views" id="id-e3678bda682c" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-mig" name="全量拓扑 v73 — grant effect">
+      <child xsi:type="archimate:DiagramObject" id="do-pl72" archimateElement="pl-v72">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-pl72-gap" source="do-pl72" target="do-gap" archimateRelationship="rel-pl72-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap" targetConnections="conn-pl72-gap conn-wp-gap" archimateElement="gap-v73">
+        <bounds x="240" y="48" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp" archimateElement="wp-v73">
+        <bounds x="240" y="160" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wp" target="do-gap" archimateRelationship="rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-pl73" source="do-wp" target="do-pl73" archimateRelationship="rel-wp-pl73"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-pl73" targetConnections="conn-wp-pl73" archimateElement="pl-v73">
+        <bounds x="480" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-flow" name="v73 Target — grant effect flow">
+      <child xsi:type="archimate:DiagramObject" id="d-fe" archimateElement="app-taskFE">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-fe-auth" source="d-fe" target="d-auth" archimateRelationship="rel-fe-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-auth" targetConnections="c-fe-auth" archimateElement="app-taskAuth">
+        <bounds x="240" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-auth-authz" source="d-auth" target="d-authz" archimateRelationship="rel-auth-authz"/>
+        <sourceConnection xsi:type="archimate:Connection" id="c-auth-db" source="d-auth" target="d-db" archimateRelationship="rel-auth-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-authz" targetConnections="c-auth-authz" archimateElement="app-authz">
+        <bounds x="440" y="48" width="140" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="d-db" targetConnections="c-auth-db" archimateElement="do-rrg">
+        <bounds x="240" y="160" width="180" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

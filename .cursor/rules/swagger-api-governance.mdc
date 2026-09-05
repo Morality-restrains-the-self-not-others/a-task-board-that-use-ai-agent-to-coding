@@ -1,0 +1,27 @@
+---
+description: Swagger/OpenAPI 文档须与接口同步（Go/Django 新增或变更 API 时）
+globs:
+  - "**/openapi.yaml"
+  - "**/swagger/**"
+  - "task2app/Saas_project/**/urls.py"
+  - "taskAuth/**"
+  - "taskBill/**"
+alwaysApply: false
+---
+
+# API Swagger 元规则
+
+适用于整个 `gitOauth` 项目。
+
+## 强制要求
+
+- 新增接口时，必须同步在 Swagger 管理界面可见，禁止“接口已上线但 Swagger 不可见”。
+- 变更接口时，必须同步更新 Swagger 文档，包括路径、方法、参数、请求体、响应体和状态码说明。
+- 每个接口都需要明确的请求/响应 Schema，避免仅依赖默认推断导致文档不完整。
+- 合并前需本地验证 Swagger 页面可访问且文档渲染正常。
+
+## 推荐做法
+
+- 为每个视图或路由补充清晰的 summary/description。
+- 为关键错误场景补充 4xx/5xx 响应说明与示例。
+- 在代码评审中将“Swagger 是否同步更新”作为必检项。

@@ -1,0 +1,43 @@
+' @title: 管理员订单分账只读展示（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 96
+' @iteration: admin-order-profit-sharing
+' @author: cursor
+' @based_on: v95 (v95-enterprise-landscape-20260822-1330-cursor.puml)
+' @updated: 2026-08-22 14:05
+' @description: 超管在订单记录展开查看分账接收方与金额；租户订单界面不可见
+
+@startuml
+!include <archimate/Archimate>
+
+title v96 landscape — admin order profit sharing 2026-08-22 14:05
+
+Business_Actor(admin, "系统超级管理员")
+Business_Actor(tenant, "租户成员")
+Business_Service(orders, "订单记录")
+Business_Service(psview, "查阅订单分账")
+Business_Service(tenantOrders, "租户订单列表")
+
+Application_Component(fe, "taskFE")
+Application_Component(bill, "taskBill")
+
+Rel_Assignment(admin, orders)
+Rel_Assignment(admin, psview)
+Rel_Assignment(tenant, tenantOrders)
+Rel_Serving(fe, orders)
+Rel_Serving(fe, psview)
+Rel_Serving(fe, tenantOrders)
+Rel_Flow(orders, psview, "expand row")
+Rel_Flow(psview, bill, "GET admin order detail")
+Rel_Flow(tenantOrders, bill, "GET tenant order — no profit_sharing")
+
+Implementation_Plateau(p95, "v95")
+Implementation_Plateau(p96, "v96")
+Implementation_Gap(g, "订单展开无分账对象与金额")
+Implementation_WorkPackage(wp, "WP-admin-order-profit-sharing")
+Rel_Triggering(p95, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p96, "delivers")
+
+@enduml

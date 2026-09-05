@@ -1,0 +1,60 @@
+' @title: 登录历史记录（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 111
+' @iteration: login-history
+' @author: cursor
+' @based_on: v110 (v110-application-integration-20260825-2026-cursor.puml)
+' @updated: 2026-08-25 22:49
+' @description: 成功认证写入 auth_login_history；用户与超管只读查询；USER_LOGGED_IN 增补 IP/入口
+
+@startuml
+!include <archimate/Archimate>
+
+title v111 — 登录历史 2026-08-25 22:49
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  账号中心「登录历史」；
+  超管用户行真实 href
+  @author: cursor @2026-08-25 22:49
+end note
+
+Application_Component(gw, "taskGateway / APISIX")
+note right of gw
+  GET /api/auth/login-history/ token
+  @author: cursor @2026-08-25 22:49
+end note
+
+Application_Component(auth, "taskAuth")
+note right of auth
+  recordSuccessfulLogin；
+  客户/管理员入口分流 entry
+  @author: cursor @2026-08-25 22:49
+end note
+
+Application_DataObject(hist, "auth_login_history")
+note bottom of hist
+  按月 RANGE 分区 (logged_in_at)
+  @author: cursor @2026-08-25 22:49
+end note
+
+Business_Event(evLogin, "USER_LOGGED_IN")
+note right of evLogin
+  +client_ip +entry +user_agent
+end note
+
+Rel_Flow(taskFE, gw, "查看登录历史")
+Rel_Flow(gw, auth, "login-history GET")
+Rel_Access(auth, hist, "write on login / read on list")
+Rel_Flow(auth, evLogin, "发布")
+
+Implementation_Plateau(plateauV110, "Plateau v110")
+Implementation_Plateau(plateauV111, "Plateau v111 登录历史")
+Implementation_Gap(gapHist, "Gap: 仅 last_login，无 IP/入口历史")
+Implementation_WorkPackage(wpHist, "WP-login-history")
+Rel_Triggering(plateauV110, gapHist, "identifies")
+Rel_Realization(wpHist, gapHist, "closes")
+Rel_Realization(wpHist, plateauV111, "delivers")
+
+@enduml

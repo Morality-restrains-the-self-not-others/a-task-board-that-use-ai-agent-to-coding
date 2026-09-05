@@ -1,0 +1,181 @@
+' @title: AI Dev Platform — Application Component Architecture
+' @view: application-integration
+' @status: target
+' @version: 12
+' @iteration: relay clear-logs server-side (path scope)
+' @author: claude
+' @based_on: v11 (v11-application-integration-20260707-2241-claude.puml)
+' @updated: 2026-07-09 20:15
+' @description: relay clear-logs — Vue→Gateway→go-relay path-scoped POST /v1/tenant/{t}/workspace/{w}/task/{task}/clear-logs
+
+@startuml
+title AI Dev Platform — Application Component Architecture v12 Target (2026-07-09 20:15)
+
+legend right
+  |<#LightGreen>  </> | 🟢 [NEW v12] 本次新增 |
+  |<#LightYellow> </> | 🟡 [MODIFIED v12] 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED v12] 已删除/废弃 |
+  |<#White>       </> | 无标记 — v10 及更早 |
+endlegend
+
+' ── Groups (logical layers) ──
+component "Frontend Layer" as FL #LightYellow
+component "Gateway Layer" as GL #LightBlue
+component "Platform Services" as PS #LightGreen
+component "New Go Services (v6)" as NGS #LightGreen
+component "Marketplace" as MP #LightGreen
+component "Container Stack" as CS #LightCoral
+component "Domain Events" as DE #LightPink
+component "Dev Tools" as DT #LightGray
+
+' ── Frontend ──
+component "Vue Frontend\n(:4000)" as VUE #Yellow
+component "VendorPortal SPA\n(ai-provider :8010)" as VPORT #LightGreen
+
+' ── Gateway ──
+component "task-gateway\nAPISIX (:18081)" as GW #Blue
+
+' ── Platform (已有，未变) ──
+component "saas-backend\nDjango (:8001)\n[accounts + company\n+ internal + AI comment]" as BE #Green
+component "task-auth\nGo (:8003)" as AUTH #Green
+component "git-oauth\nDjango (:8002)" as GOAUTH #Green
+component "task-bill\nGo (:8009)" as BILL #Green
+component "task-sse\nNode.js (:8007)" as SSE #Green
+component "task-agent-support\nGo (:8011)" as AGT #Green
+component "task-ai-endpoint\nGo (:8013)" as AIEP #Green
+
+' ── Marketplace ──
+component "ai-provider\nDjango (:8010)\n[VendorPortal + cloud SDK\n+ credential proxy]" as AIP #LightGreen
+
+' ── New Go Services (v6) ──
+component "task-project-service\nGo (:8016)\n[SQLite 真源\n无 Django fallback]" as TPS #Green
+component "task-task-service\nGo (:8017)\n[Task/Comment\nAI Comment/FeatureParams]" as TTS #Green
+component "task-cloud-service\nGo (:8018)\n[CPA SSOT + Aliyun query\n+ vendor_cloud_platform_credentials]" as TCS #LightYellow
+component "taskAIComment\nGo (:8019)\n[AI comments + instruct_worker]" as TAI #Green
+
+' ── Container Stack ──
+component "task-container-gateway\nGo (:8014)" as CGW #Coral
+component "task-credential-service\nGo (:8015)" as CRED #Coral
+component "go-relay\nGo (:8797)" as RELAY #LightYellow
+note right of RELAY
+  [MODIFIED v12] POST /v1/tenant/{t}/workspace/{w}/task/{task}/clear-logs
+  path-scoped TaskScope; no query
+  @author: claude @2026-07-09 20:15
+end note
+component "go-run-container\nGo" as RUN #Coral
+
+' ── Domain Events ──
+component "Registration Chain\n(:18025-30)" as DE_REG #Pink
+component "Billing + SSE\n(:18020-21)" as DE_BILL #Pink
+component "Notifications\n(:18022-26)" as DE_NOTIF #Pink
+component "Company Fan-out\n(:18027-29)" as DE_COMP #Pink
+component "Cloud + AI Reply\n(:18030-37)" as DE_CLOUD #Pink
+
+' ── Dev Tools ──
+component "valueStream\nGo (:9998)" as VS #Gray
+component "claude-agent\nGo CLI (sidecar)" as CA #Gray
+
+' ── External ──
+component "onlineServiceJS\n(:8765)" as OSJS #White
+component "Upstream LLM\n(DeepSeek / OpenAI)" as LLM #White
+component "Claude Code CLI\n(Node.js)" as CCLI #White
+component "Aliyun ECS/STS API" as ALI #White
+
+component "SQLite\ntask_cloud.db" as SQLITE #White
+
+' ── Deprecated ──
+component "Django cloud/views\n(tenant_cloud_* DEPRECATED)" as BE_CLOUD #LightPink
+component "Django cloud/providers\n(aliyun/ query DEPRECATED)" as BE_ALI #LightPink
+component "Platform env AK\n(ALIYUN_ACCESS_KEY)" as ENV_AK #LightPink
+
+' ── Composition ──
+FL --> VUE
+FL --> VPORT
+MP --> AIP
+GL --> GW
+PS --> BE
+PS --> AUTH
+PS --> GOAUTH
+PS --> BILL
+PS --> SSE
+PS --> AGT
+PS --> AIEP
+NGS --> TPS
+NGS --> TTS
+NGS --> TCS
+CS --> CGW
+CS --> CRED
+CS --> RELAY
+CS --> RUN
+DE --> DE_REG
+DE --> DE_BILL
+DE --> DE_NOTIF
+DE --> DE_COMP
+DE --> DE_CLOUD
+DT --> VS
+DT --> CA
+
+' ── v11 厂商凭证数据流 ──
+VPORT -[#Green]-> AIP : "[NEW v11] Vendor JWT\n/api/vendor/cloud-platform-credentials/"
+AIP -[#Green]-> TCS : "[NEW v11] HTTP 反代\n(同源 :8010→:8018)"
+AIP -[#Green]-> TCS : "[NEW v11] internal lookup\n/api/internal/vendor-cloud-credentials/"
+AIP -[#Yellow]-> ALI : "[MODIFIED v11] CloudSDKProxy\n厂商 AK (非 env)"
+
+' ── v6-v10 数据流（保持） ──
+VUE -[#White]-> GW : "/api/tenant/*/projects/\n/api/tenant/*/cloud/"
+GW -[#White]-> TPS
+GW -[#White]-> TTS
+GW -[#White]-> TCS
+TPS -[#White]-> AUTH
+TTS -[#White]-> AUTH
+TCS -[#White]-> AUTH
+TPS -[#White]-> SQLITE
+TPS -[#White]-> BE
+TTS -[#White]-> BE
+TCS -[#White]-> BE
+TTS -[#White]-> TPS
+TCS -[#White]-> TPS
+TCS -[#White]-> TTS
+TCS -[#White]-> ALI
+TCS -[#White]-> SQLITE
+
+CGW -[#White]-> OSJS
+CGW -[#White]-> BE
+OSJS -[#White]-> AGT
+OSJS -[#White]-> CRED
+AGT -[#White]-> BE
+AGT -[#White]-> GOAUTH
+AGT -[#White]-> SSE
+RELAY -[#White]-> OSJS
+AIEP -[#White]-> BE
+AIEP -[#White]-> CRED
+AIEP -[#White]-> LLM
+CA -[#White]-> CCLI
+
+GW -[#White]-> TCS : "cloud-platform/*/cloud/*\n+ cloud-platform-authorizations"
+
+note top of TCS
+  🟡 [MODIFIED v12] taskCloudService (:8018)
+  vendor_cloud_platform_credentials 表
+  Vendor JWT CRUD + verify-credentials
+  internal lookup (ai-provider)
+  CPA + Aliyun query (v10)
+  @author: claude @2026-07-07 22:41
+end note
+
+note top of AIP
+  🟡 [MODIFIED v12] ai-provider (:8010)
+  VendorPortal「云平台测试密钥」Tab
+  反代 vendor credential API
+  resolve_vendor_cloud_credentials → Go lookup
+  @author: claude @2026-07-07 22:41
+end note
+
+note top of ENV_AK
+  🔴 [DEPRECATED v12] 厂商云镜像登记
+  不再依赖进程 env ALIYUN_ACCESS_KEY
+  (dev fallback 可选)
+  @author: claude @2026-07-07 22:41
+end note
+
+@enduml

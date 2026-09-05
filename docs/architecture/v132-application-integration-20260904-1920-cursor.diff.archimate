@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v132 变迁 (v131→v132)" id="id-v132aidiff01">
+  <folder name="Application" id="id-v132ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v132-ai-fe" name="taskFE ReferralGate"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v132-ai-gw" name="taskGateway APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v132-ai-auth" name="taskAuth [MODIFIED v132]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v132-ai-egress" name="wechat-mp-egress [NEW v132]"/>
+  </folder>
+  <folder name="Technology" id="id-v132ai-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v132-ai-sh" name="Host sh 1.117.67.121"/>
+    <element xsi:type="archimate:TechnologyService" id="id-v132-ai-wx" name="api.weixin.qq.com"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v132ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v132-ai-pl131" name="Plateau v131"/>
+    <element xsi:type="archimate:Plateau" id="id-v132-ai-pl132" name="Plateau v132"/>
+    <element xsi:type="archimate:Gap" id="id-v132-ai-gap" name="Gap: INFRA dynamic IP 40164"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v132-ai-wp" name="WP-wechat-mp-egress-host-sh"/>
+  </folder>
+  <folder name="Relations" id="id-v132ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v132-ai-rel-fe-gw" source="id-v132-ai-fe" target="id-v132-ai-gw" name="POST follow-qr"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v132-ai-rel-gw-auth" source="id-v132-ai-gw" target="id-v132-ai-auth" name="token route"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v132-ai-rel-auth-eg" source="id-v132-ai-auth" target="id-v132-ai-egress" name="internal forward"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v132-ai-rel-sh-eg" source="id-v132-ai-sh" target="id-v132-ai-egress" name="runs on"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v132-ai-rel-eg-wx" source="id-v132-ai-egress" target="id-v132-ai-wx" name="cgi-bin egress"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v132-ai-rel-pl-gap" source="id-v132-ai-pl131" target="id-v132-ai-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v132-ai-rel-wp-gap" source="id-v132-ai-wp" target="id-v132-ai-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v132-ai-rel-wp-pl" source="id-v132-ai-wp" target="id-v132-ai-pl132"/>
+  </folder>
+  <folder name="Views" id="id-v132ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v132-ai-view-mig" name="架构变迁 v131→v132 — wechat-mp-egress">
+      <child xsi:type="archimate:DiagramObject" id="id-v132-ai-do-pl131" archimateElement="id-v132-ai-pl131">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v132-ai-c-pl-gap" source="id-v132-ai-do-pl131" target="id-v132-ai-do-gap" archimateRelationship="id-v132-ai-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v132-ai-do-gap" targetConnections="id-v132-ai-c-pl-gap id-v132-ai-c-wp-gap" archimateElement="id-v132-ai-gap">
+        <bounds x="280" y="48" width="320" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v132-ai-do-wp" archimateElement="id-v132-ai-wp">
+        <bounds x="280" y="140" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v132-ai-c-wp-gap" source="id-v132-ai-do-wp" target="id-v132-ai-do-gap" archimateRelationship="id-v132-ai-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v132-ai-c-wp-pl" source="id-v132-ai-do-wp" target="id-v132-ai-do-pl132" archimateRelationship="id-v132-ai-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v132-ai-do-pl132" targetConnections="id-v132-ai-c-wp-pl" archimateElement="id-v132-ai-pl132">
+        <bounds x="640" y="140" width="200" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v132-ai-view-topo" name="v132 Target — follow-qr egress">
+      <child xsi:type="archimate:DiagramObject" id="id-v132-ai-do-fe" archimateElement="id-v132-ai-fe">
+        <bounds x="48" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v132-ai-c-fe-gw" source="id-v132-ai-do-fe" target="id-v132-ai-do-gw" archimateRelationship="id-v132-ai-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v132-ai-do-gw" targetConnections="id-v132-ai-c-fe-gw" archimateElement="id-v132-ai-gw">
+        <bounds x="240" y="80" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v132-ai-c-gw-auth" source="id-v132-ai-do-gw" target="id-v132-ai-do-auth" archimateRelationship="id-v132-ai-rel-gw-auth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v132-ai-do-auth" targetConnections="id-v132-ai-c-gw-auth" archimateElement="id-v132-ai-auth">
+        <bounds x="440" y="80" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v132-ai-c-auth-eg" source="id-v132-ai-do-auth" target="id-v132-ai-do-eg" archimateRelationship="id-v132-ai-rel-auth-eg"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v132-ai-do-eg" targetConnections="id-v132-ai-c-auth-eg id-v132-ai-c-sh-eg" archimateElement="id-v132-ai-egress">
+        <bounds x="660" y="80" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v132-ai-c-eg-wx" source="id-v132-ai-do-eg" target="id-v132-ai-do-wx" archimateRelationship="id-v132-ai-rel-eg-wx"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v132-ai-do-sh" archimateElement="id-v132-ai-sh">
+        <bounds x="660" y="180" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v132-ai-c-sh-eg" source="id-v132-ai-do-sh" target="id-v132-ai-do-eg" archimateRelationship="id-v132-ai-rel-sh-eg"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v132-ai-do-wx" targetConnections="id-v132-ai-c-eg-wx" archimateElement="id-v132-ai-wx">
+        <bounds x="900" y="80" width="180" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

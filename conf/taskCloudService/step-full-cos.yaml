@@ -1,0 +1,6 @@
+backend: cos
+bucket: ai-provider-1259712831
+keyPrefix: ""
+pathRule: taskLogs/workspace_{workspaceId}/task_{taskId}/comment_{commentId}/layer_{layerId}/step_full.json
+region: ap-shanghai
+startupLogsPathRule: taskLogs/workspace_{workspaceId}/task_{taskId}/comment_{commentId}/startup_logs.json

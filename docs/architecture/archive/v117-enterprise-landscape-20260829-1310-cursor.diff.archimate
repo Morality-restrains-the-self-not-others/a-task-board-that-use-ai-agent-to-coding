@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v117 变迁 (v116→v117)" id="id-v117eldiff01">
+  <folder name="Business" id="id-v117el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v117-el-inviter" name="邀请人（成员管理）"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v117-el-joiners" name="多名被邀请人 [NEW v117]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v117-el-create" name="创建开放邀请链接 [NEW v117]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v117-el-join" name="多人点击同一链接加入 [NEW v117]"/>
+  </folder>
+  <folder name="Application" id="id-v117el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v117-el-fe" name="taskFE [MODIFIED v117]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v117-el-ten" name="taskTenantService [MODIFIED v117]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v117el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v117-el-p116" name="Plateau v116"/>
+    <element xsi:type="archimate:Plateau" id="id-v117-el-p117" name="Plateau v117"/>
+    <element xsi:type="archimate:Gap" id="id-v117-el-gap" name="Gap: 链接仅单次"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v117-el-wp" name="WP-open-invite-link"/>
+  </folder>
+  <folder name="Relations" id="id-v117el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v117-el-rel-inviter-create" source="id-v117-el-inviter" target="id-v117-el-create"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v117-el-rel-joiners-join" source="id-v117-el-joiners" target="id-v117-el-join"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v117-el-rel-inviter-fe" source="id-v117-el-inviter" target="id-v117-el-fe" name="people invite"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v117-el-rel-joiners-fe" source="id-v117-el-joiners" target="id-v117-el-fe" name="people join"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v117-el-rel-fe-ten" source="id-v117-el-fe" target="id-v117-el-ten" name="invite / join APIs"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v117-el-rel-p116-gap" source="id-v117-el-p116" target="id-v117-el-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v117-el-rel-wp-gap" source="id-v117-el-wp" target="id-v117-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v117-el-rel-wp-p117" source="id-v117-el-wp" target="id-v117-el-p117"/>
+  </folder>
+  <folder name="Views" id="id-v117el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v117-el-view-mig" name="架构变迁 v116→v117 — 开放式邀请链接">
+      <child xsi:type="archimate:DiagramObject" id="id-v117-el-do-p116" archimateElement="id-v117-el-p116">
+        <bounds x="48" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v117-el-c-p116-gap" source="id-v117-el-do-p116" target="id-v117-el-do-gap" archimateRelationship="id-v117-el-rel-p116-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v117-el-do-gap" targetConnections="id-v117-el-c-p116-gap id-v117-el-c-wp-gap" archimateElement="id-v117-el-gap">
+        <bounds x="280" y="48" width="320" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v117-el-do-wp" archimateElement="id-v117-el-wp">
+        <bounds x="280" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v117-el-c-wp-gap" source="id-v117-el-do-wp" target="id-v117-el-do-gap" archimateRelationship="id-v117-el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v117-el-c-wp-p117" source="id-v117-el-do-wp" target="id-v117-el-do-p117" archimateRelationship="id-v117-el-rel-wp-p117"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v117-el-do-p117" targetConnections="id-v117-el-c-wp-p117" archimateElement="id-v117-el-p117">
+        <bounds x="640" y="160" width="180" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v117-el-view-topo" name="v117 Current — 开放邀请加入">
+      <child xsi:type="archimate:DiagramObject" id="id-v117-el-do-inviter" archimateElement="id-v117-el-inviter">
+        <bounds x="48" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v117-el-c-inviter-create" source="id-v117-el-do-inviter" target="id-v117-el-do-create" archimateRelationship="id-v117-el-rel-inviter-create"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v117-el-c-inviter-fe" source="id-v117-el-do-inviter" target="id-v117-el-do-fe" archimateRelationship="id-v117-el-rel-inviter-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v117-el-do-joiners" archimateElement="id-v117-el-joiners">
+        <bounds x="48" y="140" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v117-el-c-joiners-join" source="id-v117-el-do-joiners" target="id-v117-el-do-join" archimateRelationship="id-v117-el-rel-joiners-join"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v117-el-c-joiners-fe" source="id-v117-el-do-joiners" target="id-v117-el-do-fe" archimateRelationship="id-v117-el-rel-joiners-fe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v117-el-do-create" targetConnections="id-v117-el-c-inviter-create" archimateElement="id-v117-el-create">
+        <bounds x="260" y="16" width="220" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v117-el-do-join" targetConnections="id-v117-el-c-joiners-join" archimateElement="id-v117-el-join">
+        <bounds x="260" y="140" width="220" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v117-el-do-fe" targetConnections="id-v117-el-c-inviter-fe id-v117-el-c-joiners-fe" archimateElement="id-v117-el-fe">
+        <bounds x="520" y="80" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v117-el-c-fe-ten" source="id-v117-el-do-fe" target="id-v117-el-do-ten" archimateRelationship="id-v117-el-rel-fe-ten"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v117-el-do-ten" targetConnections="id-v117-el-c-fe-ten" archimateElement="id-v117-el-ten">
+        <bounds x="700" y="80" width="200" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

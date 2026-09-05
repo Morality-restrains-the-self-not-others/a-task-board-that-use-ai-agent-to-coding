@@ -1,0 +1,15 @@
+@startuml
+title Chrome插件-登录快捷键不跨tab广播
+|普通用户|
+start
+:在扩展弹窗登录或改快捷键;
+:chrome.storage.local 写入;
+:已打开页面经 storage.onChanged 自行刷新;
+note right
+  不向其它标签页 tabs.sendMessage
+  选元素仍只作用于当前 tab 的 iframe
+  测试：taskChromePlugin/test/no-cross-tab-broadcast.test.js
+  意图：frontend/task_chrome_plugin_no_cross_tab_broadcast
+end note
+stop
+@enduml

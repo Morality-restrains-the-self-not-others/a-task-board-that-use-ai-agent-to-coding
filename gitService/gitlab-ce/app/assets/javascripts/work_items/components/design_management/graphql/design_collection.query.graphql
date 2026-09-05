@@ -1,0 +1,47 @@
+#import "./fragments/version.fragment.graphql"
+#import "./fragments/diff_refs.fragment.graphql"
+
+# @feature_category: design_management
+query getWorkItemDesignList($id: WorkItemID!, $atVersion: DesignManagementVersionID) {
+  workItem(id: $id) {
+    id
+    workItemType {
+      id
+      name
+    }
+    widgets {
+      type
+      ... on WorkItemWidgetDesigns {
+        designCollection {
+          copyState
+          designs(atVersion: $atVersion) {
+            nodes {
+              id
+              event
+              filename
+              notesCount
+              image
+              imageV432x230
+              description
+              descriptionHtml
+              fullPath
+              currentUserTodos(state: pending) {
+                nodes {
+                  id
+                }
+              }
+              diffRefs {
+                ...DesignDiffRefs
+              }
+            }
+          }
+          versions {
+            nodes {
+              ...VersionListItem
+            }
+          }
+        }
+      }
+    }
+  }
+}

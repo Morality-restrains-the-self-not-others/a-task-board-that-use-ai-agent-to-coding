@@ -1,0 +1,44 @@
+' @title: Application Integration — 租户 GitLab 设置：内建资源购买 + 自建连接
+' @view: application-integration
+' @status: archived
+' @version: 36
+' @author: claude
+' @based_on: v35 current (v35-application-integration-20260718-0100-claude.puml)
+' @updated: 2026-07-18 16:20
+' @description: taskBill 新增 gitlab-resources 配额购买；Vue GitLab 设置页双区块；侧栏文案 GitLab
+' @iteration: tenant-gitlab-settings-resource-purchase
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v36 — Tenant GitLab Settings Resource Purchase (2026-07-18 16:05)
+
+rectangle "Motivation" {
+  Motivation_Constraint(fullRepurchase, "Constraint\n调整=整单新购\n按账户锁价扣费")
+}
+
+rectangle "Application" {
+  Application_Component(vueGitlab, "🟡 Vue WorkspaceSettings\nGitlabConnection 双区块")
+  Application_Component(gw, "task-gateway\nJWT + tenant")
+  Application_Component(djangoBill, "billing_bridge\nBillingProxy")
+  Application_Component(taskBill, "🟡 taskBill\ngitlab-resources API")
+  Application_Component(taskGitOauth, "taskGitOauth\ngitlab-oauth-connection")
+  Application_DataObject(resTbl, "🟢 billing_tenant_gitlab_resource")
+  Application_DataObject(connTbl, "tenant_gitlab_oauth_connections")
+}
+
+note top of vueGitlab
+  上：内建磁盘/流量购买
+  下：自建 OAuth 连接
+  侧栏「GitLab」
+end note
+
+Rel_Flow(vueGitlab, gw, "GET/POST resources\nGET/PUT/DELETE connection")
+Rel_Flow(gw, djangoBill, "billing/*")
+Rel_Flow(djangoBill, taskBill, "proxy")
+Rel_Flow(gw, taskGitOauth, "oauth-connection")
+Rel_Access_W(taskBill, resTbl, "R/W quota")
+Rel_Access_W(taskGitOauth, connTbl, "R/W conn")
+Rel_Influence(fullRepurchase, taskBill, "purchase charge")
+
+@enduml

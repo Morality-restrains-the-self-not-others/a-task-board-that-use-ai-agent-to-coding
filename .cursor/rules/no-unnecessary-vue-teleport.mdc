@@ -1,0 +1,24 @@
+---
+description: 前端无必要禁止 Teleport / createPortal，优先在视觉父就地渲染
+globs: "**/*.{vue,tsx,jsx,js,ts}"
+alwaysApply: false
+---
+
+# 前端无必要禁止 Teleport（元规则）
+
+细则：`.ai/01_project_constraints/50_no_unnecessary_vue_teleport.md`；约束索引第 45 条。
+
+## 强制要求
+
+- **默认就地渲染**：UI 出现在哪棵子树，就在那棵子树挂载；禁止用 Vue `<Teleport>` 或 React `createPortal` 把功能卡/面板送到远亲槽位。
+- **仅当无 Teleport 则浮层被裁剪或错位**才允许：祖先 `overflow` / `transform` 导致绝对定位下拉、全页遮罩、`position: fixed` 无法就地实现。
+- 允许使用时，紧邻节点必须有 `<!-- Teleport-OK: overflow-clip|stacking|fixed-overlay — 一句话理由 -->`（React 用 `// Teleport-OK:`）。
+- **禁止** `Teleport defer` 等待另一区域 `v-if` 槽；**禁止** `[data-testid=…]` 当跨树 Teleport 目标搬功能卡；**禁止** Teleport 与内联双实例。
+- 触及存量 Teleport 时重审：能就地渲染则拆掉。
+
+## 验收样例
+
+```bash
+rg -n '<Teleport' --glob '*.vue' taskFE
+rg -n 'Teleport[^>]*to="\[data-testid' --glob '*.vue'
+```

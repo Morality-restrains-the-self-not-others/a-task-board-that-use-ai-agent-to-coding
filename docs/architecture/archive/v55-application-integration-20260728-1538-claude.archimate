@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model
+    xmlns="http://www.opengroup.org/xsd/archimate/3.0/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.opengroup.org/xsd/archimate/3.0/ http://www.opengroup.org/xsd/archimate/3.1/archimate3_Diagram.xsd"
+    identifier="v55-gateway-frontend-20260728-1538">
+  <name xml:lang="en">v55 Gateway-Controlled Frontend Routing</name>
+  <purpose>taskGateway 统管所有路径；Nginx location / → APISIX；新增 taskFE upstream + SPA catch-all；移除 Django SPA shell 渲染职责</purpose>
+
+  <!-- ============================================ -->
+  <!-- ELEMENTS -->
+  <!-- ============================================ -->
+
+  <!-- APPLICATION LAYER -->
+  <element xsi:type="archimate:ApplicationComponent" name="Browser (www.daydaymoney.com)" id="browser"/>
+  <element xsi:type="archimate:ApplicationComponent" name="APISIX Gateway" id="gateway"/>
+  <element xsi:type="archimate:ApplicationInterface" name="/api/* Routes" id="apiRoutes"/>
+  <element xsi:type="archimate:ApplicationInterface" name="SPA catch-all (priority 10) [NEW]" id="spaCatchAll"/>
+  <element xsi:type="archimate:ApplicationInterface" name=".well-known/openid-configuration" id="oidcDiscovery"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskAuth (:8003)" id="taskAuth"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskProjectService (:8016)" id="taskProjectSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskCloudService (:8018)" id="taskCloudSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskBill (:8004)" id="taskBillSvc"/>
+  <element xsi:type="archimate:ApplicationComponent" name="Django (:8001) [MODIFIED]" id="django"/>
+  <element xsi:type="archimate:ApplicationComponent" name="taskFE SPA Server (:3000) [NEW]" id="taskFE"/>
+  <element xsi:type="archimate:DataObject" name="taskFE/static/" id="spaAssets"/>
+  <element xsi:type="archimate:ApplicationComponent" name="Vue Router (Client-Side)" id="vueRouter"/>
+  <element xsi:type="archimate:ApplicationComponent" name="Login.vue (/auth/login/)" id="loginPage"/>
+  <element xsi:type="archimate:ApplicationComponent" name="Projects.vue (/projects/)" id="projectsPage"/>
+  <element xsi:type="archimate:ApplicationComponent" name="auth-login-page route [DEPRECATED]" id="oldSpaRoute"/>
+  <element xsi:type="archimate:ApplicationComponent" name="django-default catch-all [DEPRECATED]" id="oldDefault"/>
+
+  <!-- TECHNOLOGY LAYER -->
+  <element xsi:type="archimate:Node" name="Nginx (:443) [MODIFIED]" id="nginxNode"/>
+
+  <!-- IMPLEMENTATION LAYER -->
+  <element xsi:type="archimate:Plateau" name="Plateau v54 (current)" id="P54"/>
+  <element xsi:type="archimate:Plateau" name="Plateau v55 (target)" id="P55"/>
+  <element xsi:type="archimate:Gap" name="Gap: TaskGateway 不掌握非 API 路由" id="GapRouting"/>
+  <element xsi:type="archimate:WorkPackage" name="WP: v55 Gateway-Controlled Frontend Routing" id="WP55"/>
+
+  <!-- ============================================ -->
+  <!-- RELATIONSHIPS -->
+  <!-- ============================================ -->
+
+  <!-- Data flow relationships -->
+  <element xsi:type="archimate:FlowRelationship" name="" id="rel-1" source="browser" target="nginxNode"/>
+  <element xsi:type="archimate:FlowRelationship" name="" id="rel-2" source="nginxNode" target="gateway"/>
+  <element xsi:type="archimate:ServingRelationship" name="" id="rel-3" source="gateway" target="apiRoutes"/>
+  <element xsi:type="archimate:FlowRelationship" name="" id="rel-4" source="apiRoutes" target="taskAuth"/>
+  <element xsi:type="archimate:FlowRelationship" name="" id="rel-5" source="apiRoutes" target="taskProjectSvc"/>
+  <element xsi:type="archimate:FlowRelationship" name="" id="rel-6" source="apiRoutes" target="taskCloudSvc"/>
+  <element xsi:type="archimate:FlowRelationship" name="" id="rel-7" source="apiRoutes" target="taskBillSvc"/>
+  <element xsi:type="archimate:FlowRelationship" name="" id="rel-8" source="apiRoutes" target="django"/>
+  <element xsi:type="archimate:ServingRelationship" name="" id="rel-9" source="gateway" target="oidcDiscovery"/>
+  <element xsi:type="archimate:ServingRelationship" name="" id="rel-10" source="gateway" target="spaCatchAll"/>
+  <element xsi:type="archimate:FlowRelationship" name="" id="rel-11" source="spaCatchAll" target="taskFE"/>
+  <element xsi:type="archimate:AccessRelationship" name="" id="rel-12" source="taskFE" target="spaAssets"/>
+  <element xsi:type="archimate:ServingRelationship" name="" id="rel-13" source="taskFE" target="browser"/>
+  <element xsi:type="archimate:FlowRelationship" name="" id="rel-14" source="taskFE" target="vueRouter"/>
+  <element xsi:type="archimate:FlowRelationship" name="" id="rel-15" source="vueRouter" target="loginPage"/>
+  <element xsi:type="archimate:FlowRelationship" name="" id="rel-16" source="vueRouter" target="projectsPage"/>
+  <element xsi:type="archimate:FlowRelationship" name="" id="rel-17" source="vueRouter" target="gateway"/>
+
+  <!-- Architecture transition relationships -->
+  <element xsi:type="archimate:TriggeringRelationship" name="" id="rel-18" source="P54" target="GapRouting"/>
+  <element xsi:type="archimate:RealizationRelationship" name="" id="rel-19" source="WP55" target="GapRouting"/>
+  <element xsi:type="archimate:RealizationRelationship" name="" id="rel-20" source="WP55" target="P55"/>
+
+  <!-- Deprecated associations -->
+  <element xsi:type="archimate:AssociationRelationship" name="[DEPRECATED] was routed to" id="rel-21" source="oldSpaRoute" target="gateway"/>
+  <element xsi:type="archimate:AssociationRelationship" name="[DEPRECATED] was catch-all to" id="rel-22" source="oldDefault" target="gateway"/>
+
+  <!-- ============================================ -->
+  <!-- FOLDER: Views -->
+  <!-- ============================================ -->
+  <folder name="Views" id="folder-views" type="diagrams">
+
+    <!-- View: Architecture Transition v54 → v55 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="Architecture Transition v54→v55" id="view-transition">
+      <node xsi:type="archimate:DiagramObject" id="do-P54" archimateConcept="P54">
+        <bounds x="50" y="50" width="400" height="100"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-GapRouting" archimateConcept="GapRouting">
+        <bounds x="250" y="200" width="300" height="60"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-WP55" archimateConcept="WP55">
+        <bounds x="250" y="300" width="300" height="60"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-P55" archimateConcept="P55">
+        <bounds x="550" y="50" width="400" height="100"/>
+      </node>
+      <!-- Transition connections -->
+      <sourceConnection xsi:type="archimate:Connection" id="conn-18" source="do-P54" target="do-GapRouting" archimateRelationship="rel-18"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-19" source="do-WP55" target="do-GapRouting" archimateRelationship="rel-19"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-20" source="do-WP55" target="do-P55" archimateRelationship="rel-20"/>
+    </element>
+
+    <!-- View: Target Topology v55 -->
+    <element xsi:type="archimate:ArchiMateDiagramModel" name="Target Topology v55" id="view-topology">
+      <!-- Row 1: Browser → Nginx → Gateway -->
+      <node xsi:type="archimate:DiagramObject" id="do-browser" archimateConcept="browser">
+        <bounds x="50" y="50" width="150" height="60"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-nginx" archimateConcept="nginxNode">
+        <bounds x="250" y="50" width="150" height="60"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-gateway" archimateConcept="gateway">
+        <bounds x="450" y="50" width="150" height="60"/>
+      </node>
+      <!-- Row 2: API Routes → Backends -->
+      <node xsi:type="archimate:DiagramObject" id="do-apiRoutes" archimateConcept="apiRoutes">
+        <bounds x="50" y="200" width="150" height="60"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-taskAuth" archimateConcept="taskAuth">
+        <bounds x="250" y="180" width="100" height="50"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-taskProjectSvc" archimateConcept="taskProjectSvc">
+        <bounds x="380" y="180" width="110" height="50"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-taskCloudSvc" archimateConcept="taskCloudSvc">
+        <bounds x="520" y="180" width="110" height="50"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-django" archimateConcept="django">
+        <bounds x="250" y="250" width="100" height="50"/>
+      </node>
+      <!-- Row 3: SPA catch-all → taskFE -->
+      <node xsi:type="archimate:DiagramObject" id="do-spaCatchAll" archimateConcept="spaCatchAll">
+        <bounds x="50" y="350" width="150" height="60"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-taskFE" archimateConcept="taskFE">
+        <bounds x="250" y="350" width="150" height="60"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-spaAssets" archimateConcept="spaAssets">
+        <bounds x="440" y="350" width="100" height="40"/>
+      </node>
+      <!-- Row 4: Vue Router → Pages -->
+      <node xsi:type="archimate:DiagramObject" id="do-vueRouter" archimateConcept="vueRouter">
+        <bounds x="50" y="480" width="150" height="60"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-loginPage" archimateConcept="loginPage">
+        <bounds x="250" y="480" width="100" height="40"/>
+      </node>
+      <node xsi:type="archimate:DiagramObject" id="do-projectsPage" archimateConcept="projectsPage">
+        <bounds x="380" y="480" width="100" height="40"/>
+      </node>
+      <!-- Topology connections -->
+      <sourceConnection xsi:type="archimate:Connection" id="conn-1" source="do-browser" target="do-nginx" archimateRelationship="rel-1"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-2" source="do-nginx" target="do-gateway" archimateRelationship="rel-2"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-3" source="do-gateway" target="do-apiRoutes" archimateRelationship="rel-3"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-4" source="do-apiRoutes" target="do-taskAuth" archimateRelationship="rel-4"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-5" source="do-apiRoutes" target="do-taskProjectSvc" archimateRelationship="rel-5"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-6" source="do-apiRoutes" target="do-taskCloudSvc" archimateRelationship="rel-6"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-8" source="do-apiRoutes" target="do-django" archimateRelationship="rel-8"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-10" source="do-gateway" target="do-spaCatchAll" archimateRelationship="rel-10"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-11" source="do-spaCatchAll" target="do-taskFE" archimateRelationship="rel-11"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-12" source="do-taskFE" target="do-spaAssets" archimateRelationship="rel-12"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-13" source="do-taskFE" target="do-browser" archimateRelationship="rel-13"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-14" source="do-taskFE" target="do-vueRouter" archimateRelationship="rel-14"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-15" source="do-vueRouter" target="do-loginPage" archimateRelationship="rel-15"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-16" source="do-vueRouter" target="do-projectsPage" archimateRelationship="rel-16"/>
+      <sourceConnection xsi:type="archimate:Connection" id="conn-17" source="do-vueRouter" target="do-gateway" archimateRelationship="rel-17"/>
+    </element>
+
+  </folder>
+
+</model>

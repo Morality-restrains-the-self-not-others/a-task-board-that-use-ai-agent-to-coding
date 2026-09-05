@@ -1,0 +1,14 @@
+# updateServerStatus relay_to_trae_status 处理单元测试意图
+
+## 测试范围
+测试 `updateServerStatus` 函数中 `relay_to_trae_status` SSE 事件的分发逻辑。
+
+## 被测试行为
+- `statusData.status === 'relay_to_trae_status'` 时调用 `serverConfigRef.applyRelayToTraeStatusFromSse`
+- 调用后提前返回，不继续执行通用状态更新（statusMessage、serverStatus 等不变）
+- serverConfigRef 无该方法时不抛异常
+- serverConfigRef.value 为 null 时不抛异常
+
+## 测试依赖
+- `updateServerStatus` 已通过 deps 解耦，可直接注入 mock
+- 使用 vitest + vue ref 进行测试

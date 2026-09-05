@@ -1,0 +1,7 @@
+---
+name: delete_pipeline_schedule
+description: Grants the ability to delete pipeline schedules
+permissions:
+  - delete_pipeline_schedule
+boundaries:
+  - project

@@ -1,0 +1,9 @@
+# 测试意图：CreateProject 自动克隆子仓库 E2E
+
+| ID | 场景 | 期望 |
+|----|------|------|
+| E1 | 填仓库 URL | `create-project-auto-clone-nested-repos` 可见且默认勾选，label 含「自动克隆子仓库」 |
+| E2 | 取消勾选后提交 | 拦截 POST body `auto_clone_nested_repos=false` |
+| E3 | 保持勾选提交 | 拦截 POST body `auto_clone_nested_repos=true` |
+
+对应测例：`CreateProject.auto-clone-nested.playwright.test.js`

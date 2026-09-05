@@ -1,0 +1,58 @@
+' @title: Git OAuth 资源使用标记（企业景观）
+' @view: enterprise-landscape
+' @status: archived
+' @version: 118
+' @iteration: git-oauth-resource-grant-marker
+' @author: cursor
+' @based_on: v117 (v117-enterprise-landscape-20260829-1310-cursor.puml)
+' @updated: 2026-08-29 19:20
+' @description: L1 凭据仍 remote_userId 一份；项目页与评论/自动运行分别打本站 L2 标记后才能换票
+
+@startuml
+!include <archimate/Archimate>
+
+title v118 Current — Git OAuth 资源使用标记 2026-08-29 19:20
+
+Business_Actor(enabler, "启用自动运行的人 / 发评人")
+note right of enabler
+  Git 票跟此人，不跟任务 Owner
+  @author: cursor @2026-08-29 18:32
+end note
+
+Business_Actor(projUser, "项目页使用者")
+note right of projUser
+  云端开发/预览；项目不会自动运行
+end note
+
+Business_Process(markProject, "项目页 OAuth 回流打标")
+note right of markProject
+  只写项目 L2
+end note
+
+Business_Process(markComment, "评论 / 自动运行 OAuth 回流打标")
+note right of markComment
+  只写该评论 L2；不从项目复制
+end note
+
+Application_Component(fe, "taskFE")
+Application_Component(goauth, "taskGitOauth")
+Application_Component(proj, "taskProjectService")
+Application_Component(task, "taskTaskService")
+
+Rel_Assignment(projUser, markProject)
+Rel_Assignment(enabler, markComment)
+Rel_Flow(projUser, fe, "project OAuth")
+Rel_Flow(enabler, fe, "comment / auto_run OAuth")
+Rel_Flow(fe, goauth, "start-from-gateway")
+Rel_Flow(goauth, proj, "MarkGrant project")
+Rel_Flow(goauth, task, "MarkGrant comment / ticket")
+
+Implementation_Plateau(p117, "Plateau v117")
+Implementation_Plateau(p118, "Plateau v118")
+Implementation_Gap(g, "Gap: 有 L1 票即可在任意项目/评论换票")
+Implementation_WorkPackage(wp, "WP-git-oauth-resource-grant")
+Rel_Triggering(p117, g, "identifies")
+Rel_Realization(wp, g, "closes")
+Rel_Realization(wp, p118, "delivers")
+
+@enduml

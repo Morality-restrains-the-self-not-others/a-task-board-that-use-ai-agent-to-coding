@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>安全富文本步骤演示（独立页，CDN DOMPurify）</title>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+  <style>
+    body { font-family: system-ui; max-width: 720px; margin: 24px auto; padding: 0 12px; }
+    iframe { width: 100%; min-height: 120px; border: 1px solid #c7d2fe; border-radius: 8px; }
+    pre#out { background: #f3f4f6; padding: 12px; border-radius: 8px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>安全富文本步骤演示</h1>
+  <p>与 TaskDetail 中 iframe 行为一致：父页面监听点击，无 allow-scripts。</p>
+  <iframe id="f" sandbox="allow-same-origin" title="demo"></iframe>
+  <h2>最近一次交互</h2>
+  <pre id="out">（点击 iframe 内选项）</pre>
+  <script>
+    const dirty = `
+      <h3>示例</h3>
+      <p>单选：</p>
+      <p>
+        <span class="opt-radio" data-group="g1" data-value="a">A</span>
+        <span class="opt-radio" data-group="g1" data-value="b">B</span>
+      </p>
+      <p>多选：</p>
+      <p>
+        <span class="opt-checkbox" data-value="x">X</span>
+        <span class="opt-checkbox" data-value="y">Y</span>
+      </p>
+      <p><span class="action-btn" data-action="confirm" data-param="ok">确认</span></p>
+      <table><tr><th>H</th></tr><tr><td>1</td></tr></table>
+    `;
+    const ALLOWED_TAGS = ['h1','h2','h3','h4','h5','h6','p','div','span','strong','b','em','i','ul','ol','li','blockquote','table','thead','tbody','tr','th','td','br','hr','code','pre'];
+    const ALLOWED_ATTR = ['class', 'colspan', 'rowspan', 'data-value', 'data-action', 'data-param', 'data-group'];
+    const clean = DOMPurify.sanitize(dirty, { ALLOWED_TAGS, ALLOWED_ATTR, ALLOW_DATA_ATTR: false, FORBID_TAGS: ['script','iframe','form','input'] });
+    const css = `body{margin:8px;font-family:sans-serif;font-size:14px}.opt-radio,.opt-checkbox,.action-btn{cursor:pointer;display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;border-radius:6px;border:1px solid #c7d2fe;background:#eef2ff}.action-btn{background:#f0fdf4;border-color:#86efac}.opt-radio.is-selected,.opt-checkbox.is-selected{background:#4f46e5;color:#fff;border-color:#4338ca}table{border-collapse:collapse}td,th{border:1px solid #e5e7eb;padding:4px}`;
+    const iframe = document.getElementById('f');
+    const out = document.getElementById('out');
+    iframe.srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' + css + '</style></head><body>' + clean + '</body></html>';
+    iframe.addEventListener('load', () => {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      doc.addEventListener('click', (ev) => {
+        const el = ev.target && ev.target.closest && ev.target.closest('.opt-radio, .opt-checkbox, .action-btn');
+        if (!el) return;
+        ev.preventDefault();
+        if (el.classList.contains('opt-radio')) {
+          const g = el.getAttribute('data-group');
+          if (g) doc.querySelectorAll('.opt-radio[data-group="' + g.replace(/"/g, '') + '"]').forEach((n) => { if (n !== el) n.classList.remove('is-selected'); });
+          else if (el.parentElement) el.parentElement.querySelectorAll(':scope > .opt-radio').forEach((n) => { if (n !== el) n.classList.remove('is-selected'); });
+          el.classList.add('is-selected');
+        } else if (el.classList.contains('opt-checkbox')) {
+          el.classList.toggle('is-selected');
+        }
+        out.textContent = JSON.stringify({
+          tag: el.className,
+          value: el.getAttribute('data-value'),
+          action: el.getAttribute('data-action'),
+          param: el.getAttribute('data-param'),
+          text: (el.textContent || '').trim(),
+        }, null, 2);
+      }, true);
+    });
+  </script>
+</body>
+</html>

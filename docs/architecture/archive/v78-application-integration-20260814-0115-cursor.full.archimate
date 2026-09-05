@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="v78-comment-scoped-container-token-full" id="id-v78full01">
+  <folder name="Application" id="id-v78full-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v78f-app-cloud" name="taskCloudService [MOD v78]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v78f-app-cred" name="taskCredentialService [MOD v78]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v78f-app-osjs" name="onlineServiceJS [MOD v78]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v78f-app-gw" name="taskGateway APISIX"/>
+    <element xsi:type="archimate:DataObject" id="id-v78f-do-tok" name="credential_container_tokens [MOD v78]"/>
+    <element xsi:type="archimate:DataObject" id="id-v78f-do-csc" name="cloud_server_configs"/>
+  </folder>
+  <folder name="Technology" id="id-v78full-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v78f-node-mysql-c" name="MySQL container"/>
+    <element xsi:type="archimate:Node" id="id-v78f-node-mysql-cloud" name="MySQL task_cloud"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v78full-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v78f-pl-v77" name="Plateau v77"/>
+    <element xsi:type="archimate:Plateau" id="id-v78f-pl-v78" name="Plateau v78"/>
+    <element xsi:type="archimate:Gap" id="id-v78f-gap" name="Gap: task-scoped token races two comments"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v78f-wp" name="WP: comment-scoped-container-token"/>
+  </folder>
+  <folder name="Relations" id="id-v78full-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v78f-rel-init" source="id-v78f-app-cloud" target="id-v78f-app-cred" name="token init + comment"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v78f-rel-tok" source="id-v78f-app-cred" target="id-v78f-do-tok" name="R/W"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v78f-rel-tok-mysql" source="id-v78f-do-tok" target="id-v78f-node-mysql-c"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v78f-rel-csc" source="id-v78f-app-cloud" target="id-v78f-do-csc" name="R/W"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v78f-rel-csc-mysql" source="id-v78f-do-csc" target="id-v78f-node-mysql-cloud"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v78f-rel-ex" source="id-v78f-app-osjs" target="id-v78f-app-cred" name="exchange-refresh + comment_id"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v78f-rel-reg" source="id-v78f-app-osjs" target="id-v78f-app-cloud" name="register-reachability + comment_id"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v78f-rel-gw-cred" source="id-v78f-app-gw" target="id-v78f-app-cred" name="forward container-token"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v78f-rel-pl77-gap" source="id-v78f-pl-v77" target="id-v78f-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v78f-rel-wp-gap" source="id-v78f-wp" target="id-v78f-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v78f-rel-wp-pl78" source="id-v78f-wp" target="id-v78f-pl-v78"/>
+  </folder>
+  <folder name="Views" id="id-v78full-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v78f-view-mig" name="架构变迁 v77→v78 — comment-scoped-container-token">
+      <child xsi:type="archimate:DiagramObject" id="id-v78f-do-pl77" archimateElement="id-v78f-pl-v77">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78f-conn-pl77-gap" source="id-v78f-do-pl77" target="id-v78f-do-gap" archimateRelationship="id-v78f-rel-pl77-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78f-do-gap" targetConnections="id-v78f-conn-pl77-gap id-v78f-conn-wp-gap" archimateElement="id-v78f-gap">
+        <bounds x="240" y="48" width="280" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78f-do-wp" archimateElement="id-v78f-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78f-conn-wp-gap" source="id-v78f-do-wp" target="id-v78f-do-gap" archimateRelationship="id-v78f-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78f-conn-wp-pl78" source="id-v78f-do-wp" target="id-v78f-do-pl78" archimateRelationship="id-v78f-rel-wp-pl78"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78f-do-pl78" targetConnections="id-v78f-conn-wp-pl78" archimateElement="id-v78f-pl-v78">
+        <bounds x="580" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v78f-view-topo" name="v78 Target — comment-scoped token topology">
+      <child xsi:type="archimate:DiagramObject" id="id-v78f-d-osjs" archimateElement="id-v78f-app-osjs">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78f-c-ex" source="id-v78f-d-osjs" target="id-v78f-d-gw" archimateRelationship="id-v78f-rel-ex"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78f-c-reg" source="id-v78f-d-osjs" target="id-v78f-d-cloud" archimateRelationship="id-v78f-rel-reg"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78f-d-gw" targetConnections="id-v78f-c-ex" archimateElement="id-v78f-app-gw">
+        <bounds x="260" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78f-c-gw-cred" source="id-v78f-d-gw" target="id-v78f-d-cred" archimateRelationship="id-v78f-rel-gw-cred"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78f-d-cred" targetConnections="id-v78f-c-gw-cred id-v78f-c-init" archimateElement="id-v78f-app-cred">
+        <bounds x="480" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78f-c-tok" source="id-v78f-d-cred" target="id-v78f-d-tok" archimateRelationship="id-v78f-rel-tok"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78f-d-tok" targetConnections="id-v78f-c-tok" archimateElement="id-v78f-do-tok">
+        <bounds x="480" y="160" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78f-c-tok-mysql" source="id-v78f-d-tok" target="id-v78f-d-mysql-c" archimateRelationship="id-v78f-rel-tok-mysql"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78f-d-mysql-c" targetConnections="id-v78f-c-tok-mysql" archimateElement="id-v78f-node-mysql-c">
+        <bounds x="480" y="260" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78f-d-cloud" targetConnections="id-v78f-c-reg" archimateElement="id-v78f-app-cloud">
+        <bounds x="48" y="160" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78f-c-init" source="id-v78f-d-cloud" target="id-v78f-d-cred" archimateRelationship="id-v78f-rel-init"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78f-c-csc" source="id-v78f-d-cloud" target="id-v78f-d-csc" archimateRelationship="id-v78f-rel-csc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78f-d-csc" targetConnections="id-v78f-c-csc" archimateElement="id-v78f-do-csc">
+        <bounds x="48" y="260" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v78f-c-csc-mysql" source="id-v78f-d-csc" target="id-v78f-d-mysql-cloud" archimateRelationship="id-v78f-rel-csc-mysql"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v78f-d-mysql-cloud" targetConnections="id-v78f-c-csc-mysql" archimateElement="id-v78f-node-mysql-cloud">
+        <bounds x="48" y="360" width="180" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

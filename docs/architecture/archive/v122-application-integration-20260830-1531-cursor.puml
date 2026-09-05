@@ -1,0 +1,76 @@
+' @title: 二进制部署与独立配置仓（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 122
+' @iteration: binary-deploy-config-repo
+' @author: cursor
+' @based_on: v121 (v121-application-integration-20260830-0922-cursor.puml)
+' @updated: 2026-08-30 15:31
+' @description: CI 发布 GitHub Packages；deploy-sync；runAll/confload 读 CONF_ROOT；无新业务 API
+
+@startuml
+!include <archimate/Archimate>
+
+title 二进制部署交付链 — v122 Target Architecture (2026-08-30 15:31)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v122 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v122 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v122 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+Application_Component(ci, "源码仓 CI")
+note right of ci
+  [NEW v122] tag/main 构建 ELF + dist + SQL tarball
+end note
+
+Application_DataObject(pin, "releases.yaml")
+note right of pin
+  [NEW v122] 服务 → gitsha / package URL
+end note
+
+Application_Component(sync, "deploy-sync")
+note right of sync
+  [NEW v122] 按钉下载到 DEPLOY_ROOT/bin
+end note
+
+Application_Component(confload, "confload FindConfigRoot")
+note right of confload
+  [MODIFIED v122] CONF_ROOT / DEPLOY_ROOT 优先
+  有 base.yaml 即成功，不要求 .gitmodules
+  @author: cursor @2026-08-30 15:31
+end note
+
+Application_Component(runAll, "runAll")
+note right of runAll
+  [MODIFIED v122] working_dir=DEPLOY_ROOT
+  部署模式禁止 go build
+end note
+
+Application_Component(svc, "Go 服务 / taskEvents / taskFE nginx")
+note right of svc
+  [MODIFIED v122] exec 钉版本产物；配方在配置仓
+end note
+
+Application_DataObject(srcConf, "monorepo conf/ 运行时")
+note bottom of srcConf
+  [DEPRECATED v122] 过渡双写后删除
+end note
+
+Rel_Flow(ci, pin, "发布后运维钉版本 🟢")
+Rel_Flow(pin, sync, "读取 🟢")
+Rel_Flow(sync, svc, "原子 rename last-good 🟢")
+Rel_Access_r(runAll, confload, "定位 CONF_ROOT 🟡")
+Rel_Flow(runAll, svc, "start 无编译 🟡")
+Rel_Association(srcConf, confload, "旧 FindMonorepoRoot 🔴")
+
+Implementation_Plateau(plateauV121, "Plateau v121 消耗门槛链接")
+Implementation_Plateau(plateauV122, "Plateau v122 二进制+配置仓")
+Implementation_Gap(gapDeploy, "Gap: 部署机必须 clone 源码仓")
+Implementation_WorkPackage(wpDeploy, "WP-binary-deploy-config-repo")
+Rel_Triggering(plateauV121, gapDeploy, "identifies")
+Rel_Realization(wpDeploy, gapDeploy, "closes")
+Rel_Realization(wpDeploy, plateauV122, "delivers")
+
+@enduml

@@ -1,0 +1,39 @@
+allowedHost: ${scheme}://${subdomains.provider}
+allowedExtendHosts:
+- '*'
+host: 0.0.0.0
+port: 8010
+logging:
+  log_file: logs/ai-provider/ai-provider.log
+adminSSODomain: ${baseDomain}
+vendorSSODomain: ${baseDomain}
+# OIDC RP → taskAuth：issuer 必须与 taskAuth oidc.issuer / Discovery 一致（公网 gateway）
+# 浏览器 authorize 跳转用此 origin，禁止硬编码 LAN IP:18081
+oidcRpIssuer: ${subdomains.gateway}
+isDev: true
+# 同节点调用 taskAuth（SMS gate）；拆分时改 ${subdomains.auth}
+taskAuthBaseUrl: http://127.0.0.1:8003
+# taskAuth 内部密钥（SMS gate 换票）：经 sync.manifest 从 conf/auth/task-auth/config.yaml
+# 同步到本目录 task-auth.yaml（规则 29），LoadConfig 读片段；与 taskBill taskAuthInternalSecret 同源。
+# 优先级：TASKAUTH_INTERNAL_SECRET env > 本文件 taskAuthInternalSecret > task-auth.yaml 片段 > X_INTERNAL_SECRET。
+# taskAuthInternalSecret: ""
+# 证照本地存储（相对 monorepo 可由 LoadConfig 默认覆盖）
+vendorDocsDir: ""
+# 厂商证照：生产/联调 backend=cos + config.local.yaml 填密钥；单测保持 local
+vendorDocs:
+  backend: local
+  localDir: ""
+  cos:
+    bucket: ai-provider-1259712831
+    region: ap-shanghai
+    keyPrefix: vendor-docs
+    pathRule: "{keyPrefix}/{userId}/{kind}_{id}{ext}"
+    sse: AES256
+    presignTTLSeconds: 300
+    secretId: ""
+    secretKey: ""
+    # 桶 CORS（PutBucketCORS）供未来 PUT 直传；当前浏览器走 POST Object，不依赖 CORS
+    corsAllowedOrigins:
+      - ${scheme}://${subdomains.provider}
+      - ${scheme}://${subdomains.www}
+      - ${scheme}://${baseDomain}

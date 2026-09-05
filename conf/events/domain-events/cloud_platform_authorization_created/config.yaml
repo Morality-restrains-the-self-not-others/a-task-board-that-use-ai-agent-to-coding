@@ -1,0 +1,7 @@
+intents:
+  1_process_cloud_platform_authorization:
+    host: 0.0.0.0
+    port: 18037
+    groupId: task-events-cloud-platform-authorization-created-1-process-cloud-platform-authorization
+    events:
+    - CLOUD_PLATFORM_AUTHORIZATION_CREATED

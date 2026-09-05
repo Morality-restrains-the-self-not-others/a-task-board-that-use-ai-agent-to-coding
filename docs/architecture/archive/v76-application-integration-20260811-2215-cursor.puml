@@ -1,0 +1,72 @@
+' @title: 订单评论（租户 ↔ 系统管理员）
+' @view: application-integration
+' @status: target
+' @version: 76
+' @iteration: billing-order-comments-v76
+' @author: cursor
+' @based_on: v75 (v75-application-integration-20260811-2135-cursor.puml)
+' @updated: 2026-08-11 22:15
+' @description: taskBill 新增 billing_order_comment；租户/超管订单展开区双向留言；Kafka BILLING_ORDER_COMMENT_CREATED
+
+@startuml
+!include <archimate/Archimate>
+
+title v76 — Billing Order Comments Target 2026-08-11 22:15
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v76 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v76 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v76 |
+endlegend
+
+Application_Component(taskFEOrders, "taskFE BillingOrders")
+note right of taskFEOrders
+  🟡 [MODIFIED v76]
+  展开区嵌入 OrderCommentThread
+end note
+
+Application_Component(taskFEAdmin, "taskFE SystemAdminOrderRecords")
+note right of taskFEAdmin
+  🟡 [MODIFIED v76]
+  展开区嵌入 OrderCommentThread
+end note
+
+Application_Component(orderThread, "OrderCommentThread")
+note right of orderThread
+  🟢 [NEW v76]
+  共享评论列表+发送
+end note
+
+Application_Component(taskBill, "taskBill")
+note right of taskBill
+  🟡 [MODIFIED v76]
+  tenant/admin comments API
+  + Kafka emit
+end note
+
+Application_DataObject(boc, "billing_order_comment")
+note right of boc
+  🟢 [NEW v76]
+  order_id + author_side + content
+end note
+
+Application_DataObject(bro, "billing_resource_order")
+note right of bro
+  既有订单主表
+end note
+
+Technology_Event(ev, "BILLING_ORDER_COMMENT_CREATED")
+note right of ev
+  🟢 [NEW v76]
+  topic billing-order-comment-created
+end note
+
+Rel_Serving(orderThread, taskFEOrders, "embed")
+Rel_Serving(orderThread, taskFEAdmin, "embed")
+Rel_Flow(taskFEOrders, taskBill, "GET/POST tenant comments")
+Rel_Flow(taskFEAdmin, taskBill, "GET/POST admin comments")
+Rel_Access(taskBill, boc, "R/W")
+Rel_Access(taskBill, bro, "validate ownership")
+Rel_Flow(taskBill, ev, "publish")
+
+@enduml

@@ -1,0 +1,9 @@
+# tenantRoutes.accountDeletionRedirect 测试意图
+
+## 测试范围
+注销阻断项曾使用的错误前端路径必须有路由别名，避免 `/:pathMatch(.*)*` 重定向到 `home`。
+
+## 测试场景
+1. `/tenant/:t/billing/gitlab-resources/` → `tenant_settings_gitlab_connection`
+2. `/tenant/:t/settings/members/` → `people_manage`
+3. `/tenant/:t/workspace/:ws/task/:task/` → `task_detail`

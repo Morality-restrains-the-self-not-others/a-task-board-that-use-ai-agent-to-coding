@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PW_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$PW_ROOT"
+
+export PLAYWRIGHT_SITE_ORIGIN="${PLAYWRIGHT_SITE_ORIGIN:-http://127.0.0.1:4000}"
+export PLAYWRIGHT_GATEWAY_ORIGIN="${PLAYWRIGHT_GATEWAY_ORIGIN:-http://127.0.0.1:18081}"
+export PLAYWRIGHT_WORKSPACE_ID="${PLAYWRIGHT_WORKSPACE_ID:-861623708318031872}"
+export PLAYWRIGHT_RELAY_TASK_ID="${PLAYWRIGHT_RELAY_TASK_ID:-task_12953905731855947865}"
+export PLAYWRIGHT_TENANT_ID="${PLAYWRIGHT_TENANT_ID:-850256677331562496}"
+export PLAYWRIGHT_INSTALLED_IMAGE_ID="${PLAYWRIGHT_INSTALLED_IMAGE_ID:-862588024964280320}"
+export CDP_URL="${PW_CDP_URL:-${CDP_URL:-http://127.0.0.1:9222}}"
+
+exec env -u http_proxy -u https_proxy -u all_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY \
+  node tests/TaskDetail.relay-host-port-eaddrinuse.playwright.test.js "$@"

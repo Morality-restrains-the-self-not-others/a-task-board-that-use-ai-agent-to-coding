@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="v32 Target — ai-provider-go-migration" id="id-v32-model">
+  <folder name="Motivation" id="id-v32-f-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="Constraint Go-first ai-provider" id="id-v32-c-go"/>
+    <element xsi:type="archimate:Constraint" name="Constraint marketplace_* → ai-provider" id="id-v32-c-own"/>
+  </folder>
+  <folder name="Application" id="id-v32-f-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Vue SPA vendor/admin" id="id-v32-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v32-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟢 taskAiProvider :8010 Go" id="id-v32-go"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskAuth OIDC" id="id-v32-auth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskCloudService" id="id-v32-cloud"/>
+    <element xsi:type="archimate:ApplicationComponent" name="saas-backend SSO bridge" id="id-v32-saas"/>
+    <element xsi:type="archimate:ApplicationComponent" name="[DEPRECATED v32] Django Saas_Ai_Provider" id="id-v32-dep"/>
+    <element xsi:type="archimate:DataObject" name="marketplace_*" id="id-v32-dbobj"/>
+  </folder>
+  <folder name="Technology" id="id-v32-f-tech" type="technology">
+    <element xsi:type="archimate:Node" name="db/ai-provider" id="id-v32-sqlite"/>
+    <element xsi:type="archimate:Node" name="OCI Registry" id="id-v32-oci"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v32-f-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v31 — OTP native SMS baseline" id="id-v32-plat31"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v32 — ai-provider Go" id="id-v32-plat32"/>
+    <element xsi:type="archimate:Gap" name="Gap: ai-provider still Django" id="id-v32-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v32-ai-provider-go-migration" id="id-v32-wp"/>
+  </folder>
+  <folder name="Relations" id="id-v32-f-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v32-flow-vue-go" source="id-v32-vue" target="id-v32-go" name="/api + SPA"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v32-flow-gw-go" source="id-v32-gw" target="id-v32-go" name="upstream :8010"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v32-flow-go-auth" source="id-v32-go" target="id-v32-auth" name="OIDC"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v32-flow-saas-go" source="id-v32-saas" target="id-v32-go" name="SSO bridge"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v32-flow-go-cloud" source="id-v32-go" target="id-v32-cloud" name="proxy"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v32-flow-cloud-go" source="id-v32-cloud" target="id-v32-go" name="public catalog"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v32-acc-go-db" source="id-v32-go" target="id-v32-dbobj" name="W"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v32-flow-go-oci" source="id-v32-go" target="id-v32-oci" name="manifest"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v32-srv-sqlite-db" source="id-v32-sqlite" target="id-v32-dbobj"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v32-inf-go" source="id-v32-c-go" target="id-v32-go"/>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-v32-inf-own" source="id-v32-c-own" target="id-v32-go"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v32-flow-dep-go" source="id-v32-dep" target="id-v32-go" name="replaced by"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v32-rel-plat31-gap" source="id-v32-plat31" target="id-v32-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v32-rel-wp-gap" source="id-v32-wp" target="id-v32-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v32-rel-wp-plat32" source="id-v32-wp" target="id-v32-plat32"/>
+    <element xsi:type="archimate:CompositionRelationship" id="id-v32-rel-plat32-go" source="id-v32-plat32" target="id-v32-go"/>
+  </folder>
+  <folder name="Views" id="id-v32-f-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 → v32 ai-provider Go" id="id-v32-view-mig">
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-plat31" archimateElement="id-v32-plat31">
+        <bounds x="40" y="100" width="280" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-conn-plat31-gap" source="id-v32-do-plat31" target="id-v32-do-gap" archimateRelationship="id-v32-rel-plat31-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-gap" archimateElement="id-v32-gap" targetConnections="id-v32-conn-plat31-gap id-v32-conn-wp-gap">
+        <bounds x="360" y="100" width="360" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-wp" archimateElement="id-v32-wp">
+        <bounds x="760" y="60" width="320" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-conn-wp-gap" source="id-v32-do-wp" target="id-v32-do-gap" archimateRelationship="id-v32-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-conn-wp-plat32" source="id-v32-do-wp" target="id-v32-do-plat32" archimateRelationship="id-v32-rel-wp-plat32"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-plat32" archimateElement="id-v32-plat32" targetConnections="id-v32-conn-wp-plat32">
+        <bounds x="760" y="160" width="320" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-conn-plat32-go" source="id-v32-do-plat32" target="id-v32-do-go-m" archimateRelationship="id-v32-rel-plat32-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-go-m" archimateElement="id-v32-go" targetConnections="id-v32-conn-plat32-go">
+        <bounds x="760" y="250" width="320" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v32 Target — ai-provider Go 数据流" id="id-v32-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-vue" archimateElement="id-v32-vue">
+        <bounds x="40" y="80" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-c-vue-go" source="id-v32-do-vue" target="id-v32-do-go" archimateRelationship="id-v32-flow-vue-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-gw" archimateElement="id-v32-gw">
+        <bounds x="40" y="160" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-c-gw-go" source="id-v32-do-gw" target="id-v32-do-go" archimateRelationship="id-v32-flow-gw-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-go" archimateElement="id-v32-go" targetConnections="id-v32-c-vue-go id-v32-c-gw-go id-v32-c-saas-go id-v32-c-cloud-go id-v32-c-inf-go id-v32-c-inf-own id-v32-c-dep-go">
+        <bounds x="240" y="100" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-c-go-auth" source="id-v32-do-go" target="id-v32-do-auth" archimateRelationship="id-v32-flow-go-auth"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-c-go-cloud" source="id-v32-do-go" target="id-v32-do-cloud" archimateRelationship="id-v32-flow-go-cloud"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-c-go-db" source="id-v32-do-go" target="id-v32-do-dbobj" archimateRelationship="id-v32-acc-go-db"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-c-go-oci" source="id-v32-do-go" target="id-v32-do-oci" archimateRelationship="id-v32-flow-go-oci"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-saas" archimateElement="id-v32-saas">
+        <bounds x="40" y="240" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-c-saas-go" source="id-v32-do-saas" target="id-v32-do-go" archimateRelationship="id-v32-flow-saas-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-auth" archimateElement="id-v32-auth" targetConnections="id-v32-c-go-auth">
+        <bounds x="500" y="40" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-cloud" archimateElement="id-v32-cloud" targetConnections="id-v32-c-go-cloud">
+        <bounds x="500" y="120" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-c-cloud-go" source="id-v32-do-cloud" target="id-v32-do-go" archimateRelationship="id-v32-flow-cloud-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-dbobj" archimateElement="id-v32-dbobj" targetConnections="id-v32-c-go-db id-v32-c-sqlite-db">
+        <bounds x="500" y="200" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-oci" archimateElement="id-v32-oci" targetConnections="id-v32-c-go-oci">
+        <bounds x="500" y="280" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-sqlite" archimateElement="id-v32-sqlite">
+        <bounds x="720" y="200" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-c-sqlite-db" source="id-v32-do-sqlite" target="id-v32-do-dbobj" archimateRelationship="id-v32-srv-sqlite-db"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-dep" archimateElement="id-v32-dep">
+        <bounds x="40" y="320" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-c-dep-go" source="id-v32-do-dep" target="id-v32-do-go" archimateRelationship="id-v32-flow-dep-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-cgo" archimateElement="id-v32-c-go">
+        <bounds x="240" y="320" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-c-inf-go" source="id-v32-do-cgo" target="id-v32-do-go" archimateRelationship="id-v32-inf-go"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v32-do-cown" archimateElement="id-v32-c-own">
+        <bounds x="240" y="390" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v32-c-inf-own" source="id-v32-do-cown" target="id-v32-do-go" archimateRelationship="id-v32-inf-own"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

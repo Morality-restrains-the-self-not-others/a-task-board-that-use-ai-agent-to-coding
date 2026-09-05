@@ -1,0 +1,7 @@
+intents:
+  1_send_invitation_email:
+    host: 0.0.0.0
+    port: 18023
+    groupId: task-events-invitation-created-1-send-invitation-email
+    events:
+    - INVITATION_CREATED

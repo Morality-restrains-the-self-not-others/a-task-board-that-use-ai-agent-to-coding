@@ -1,0 +1,75 @@
+' @title: AI Dev Platform — Application Component Architecture
+' @view: application-integration
+' @status: current
+' @version: 1
+' @author: claude
+' @based_on: —
+' @updated: 2026-07-01 16:30
+' @description: Monorepo application component architecture — AI-driven SaaS dev platform, 39 services
+
+@startuml
+title AI Dev Platform — Application Component Architecture v1 (Current, 2026-07-01 16:30)
+
+' ── Groups (logical layers) ──
+component "Frontend Layer" as FL #LightYellow
+component "Gateway Layer" as GL #LightBlue
+component "Platform Services" as PS #LightGreen
+component "Container Stack" as CS #LightCoral
+component "Domain Events (18 Consumers)" as DE #LightPink
+component "Dev Tools" as DT #LightGray
+
+' ── Frontend ──
+component "Vue Frontend\n(:4000)" as VUE #Yellow
+
+' ── Gateway ──
+component "task-gateway\nAPISIX (:18081)" as GW #Blue
+
+' ── Platform ──
+component "saas-backend\nDjango (:8001)" as BE #Green
+component "ai-provider\nDjango (:8010)" as AI #Green
+component "task-auth\nGo (:8003)" as AUTH #Green
+component "git-oauth\nDjango (:8002)" as GOAUTH #Green
+component "task-bill\nGo (:8009)" as BILL #Green
+component "task-sse\nNode.js (:8007)" as SSE #Green
+component "task-agent-support\nGo (:8011)" as AGT #Green
+component "task-ai-endpoint\nGo (:8013)" as AIEP #Green
+
+' ── Container Stack ──
+component "task-container-gateway\nGo (:8014)" as CGW #Coral
+component "task-credential-service\nGo (:8015)" as CRED #Coral
+component "go-relay\nGo (:8797)" as RELAY #Coral
+component "go-run-container\nGo" as RUN #Coral
+
+' ── Domain Events ──
+component "Registration Chain\nUSER→COMPANY→WORKSPACE\n(:18025-30)" as DE_REG #Pink
+component "Billing + SSE\n(:18020-21)" as DE_BILL #Pink
+component "Notifications\nEMAIL+INVITE+ACTIVATE\n(:18022-26)" as DE_NOTIF #Pink
+component "Company Fan-out\n(:18027-29)" as DE_COMP #Pink
+component "Cloud + AI Reply\n(:18030-37)" as DE_CLOUD #Pink
+
+' ── Dev Tools ──
+component "valueStream\nGo (:9998)" as VS #Gray
+
+' ── Composition ──
+FL --> VUE
+GL --> GW
+PS --> BE
+PS --> AI
+PS --> AUTH
+PS --> GOAUTH
+PS --> BILL
+PS --> SSE
+PS --> AGT
+PS --> AIEP
+CS --> CGW
+CS --> CRED
+CS --> RELAY
+CS --> RUN
+DE --> DE_REG
+DE --> DE_BILL
+DE --> DE_NOTIF
+DE --> DE_COMP
+DE --> DE_CLOUD
+DT --> VS
+
+@enduml

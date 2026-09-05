@@ -1,0 +1,2 @@
+event_type: TENANT_GITLAB_OAUTH_CONNECTION_UPSERTED
+topic: tenant-gitlab-oauth-connection-upserted

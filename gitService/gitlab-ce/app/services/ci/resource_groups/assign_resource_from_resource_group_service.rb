@@ -1,0 +1,84 @@
+# frozen_string_literal: true
+
+module Ci
+  module ResourceGroups
+    class AssignResourceFromResourceGroupService < ::BaseService
+      include Gitlab::InternalEventsTracking
+
+      RESPAWN_WAIT_TIME = 1.minute
+
+      def execute(resource_group)
+        release_resource_from_stale_jobs(resource_group)
+
+        free_resources = resource_group.resources.free.count
+
+        return if free_resources == 0
+
+        enqueue_upcoming_processables(free_resources, resource_group)
+      end
+
+      private
+
+      # rubocop: disable CodeReuse/ActiveRecord
+      def enqueue_upcoming_processables(free_resources, resource_group)
+        resource_group.upcoming_processables.take(free_resources).each do |upcoming|
+          enqueued = if Feature.enabled?(:precompute_pending_build_args, resource_group.project,
+            type: :gitlab_com_derisk)
+                       enqueue_upcoming(upcoming)
+                     else
+                       enqueue_upcoming_in_transaction(upcoming)
+                     end
+
+          next unless enqueued
+
+          track_internal_event(
+            "job_enqueued_by_resource_group",
+            user: upcoming.user,
+            project: resource_group.project,
+            additional_properties: {
+              label: resource_group.process_mode,
+              property: upcoming.id.to_s,
+              resource_group_id: resource_group.id
+            }
+          )
+        end
+      end
+      # rubocop: enable CodeReuse/ActiveRecord
+
+      def enqueue_upcoming(upcoming)
+        enqueued = false
+
+        Gitlab::OptimisticLocking.retry_lock(upcoming, name: 'enqueue_waiting_for_resource') do |processable|
+          if processable.has_outdated_deployment?
+            processable.drop!(:failed_outdated_deployment_job)
+          else
+            enqueued = processable.enqueue_waiting_for_resource
+          end
+        end
+
+        enqueued
+      end
+
+      def enqueue_upcoming_in_transaction(upcoming)
+        enqueued = false
+
+        Gitlab::OptimisticLocking.retry_lock_with_transaction(upcoming,
+          name: 'enqueue_waiting_for_resource') do |processable|
+          if processable.has_outdated_deployment?
+            processable.drop!(:failed_outdated_deployment_job)
+          else
+            enqueued = processable.enqueue_waiting_for_resource
+          end
+        end
+
+        enqueued
+      end
+
+      def release_resource_from_stale_jobs(resource_group)
+        resource_group.resources.stale_processables.find_each do |processable|
+          resource_group.release_resource_from(processable)
+        end
+      end
+    end
+  end
+end

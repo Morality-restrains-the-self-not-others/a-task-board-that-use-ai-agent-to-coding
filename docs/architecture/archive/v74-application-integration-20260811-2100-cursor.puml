@@ -1,0 +1,58 @@
+' @title: 邀请预授页面/区域权限（pending_grants）
+' @view: application-integration
+' @status: target
+' @version: 74
+' @iteration: invite-pending-access-grants-v74
+' @author: cursor
+' @based_on: v73 (v73-application-integration-20260811-1500-cursor.puml)
+' @updated: 2026-08-11 21:00
+' @description: 邀请写入 pending_grants；join 时 taskTenant→taskAuth internal 落自定义访问角色
+
+@startuml
+!include <archimate/Archimate>
+
+title v74 — Invite Pending Access Grants Target 2026-08-11 21:00
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v74 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v74 |
+endlegend
+
+Application_Component(taskFE, "taskFE PeopleInvite")
+note right of taskFE
+  🟡 [MODIFIED v74]
+  InviteAccessGrants 矩阵
+  + 快捷「授予访问管理」
+end note
+
+Application_Component(taskTenant, "taskTenantService")
+note right of taskTenant
+  🟡 [MODIFIED v74]
+  invite 持久化 pending_grants
+  join → apply + ensureMemberRole
+end note
+
+Application_Component(taskAuth, "taskAuth")
+note right of taskAuth
+  🟢 [NEW v74]
+  POST /api/internal/authz/apply-member-grants/
+end note
+
+Application_DataObject(inv, "tenant_invitation")
+note right of inv
+  🟡 [MODIFIED v74]
+  + pending_grants JSON
+end note
+
+Application_DataObject(rrg, "auth_role_resource_group")
+note right of rrg
+  既有：join 落权写入
+end note
+
+Rel_Flow(taskFE, taskTenant, "POST invite + grants")
+Rel_Flow(taskTenant, inv, "store pending_grants")
+Rel_Flow(taskTenant, taskAuth, "internal apply-member-grants")
+Rel_Flow(taskAuth, rrg, "bind grants")
+Rel_Serving(inv, taskTenant, "read on join")
+
+@enduml

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="v36 Target — tenant-gitlab-settings-resource-purchase" id="id-v36-model">
+  <folder name="Application" id="id-v36-folder-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 Vue Gitlab Settings" id="id-v36-vue"/>
+    <element xsi:type="archimate:ApplicationComponent" name="task-gateway" id="id-v36-gw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="billing_bridge" id="id-v36-bridge"/>
+    <element xsi:type="archimate:ApplicationComponent" name="🟡 taskBill gitlab-resources" id="id-v36-bill"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskGitOauth" id="id-v36-oauth"/>
+    <element xsi:type="archimate:DataObject" name="🟢 billing_tenant_gitlab_resource" id="id-v36-res"/>
+    <element xsi:type="archimate:DataObject" name="tenant_gitlab_oauth_connections" id="id-v36-conn"/>
+  </folder>
+  <folder name="Motivation" id="id-v36-folder-mot" type="motivation">
+    <element xsi:type="archimate:Constraint" name="调整=整单新购按锁价扣费" id="id-v36-constraint"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v36-folder-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v35" id="id-v36-plat35"/>
+    <element xsi:type="archimate:Plateau" name="🎯 Plateau v36 — gitlab-resource-purchase" id="id-v36-plat36"/>
+    <element xsi:type="archimate:Gap" name="Gap: 无内建 GitLab 配额购买入口" id="id-v36-gap"/>
+    <element xsi:type="archimate:WorkPackage" name="WP-v36-gitlab-resource-purchase" id="id-v36-wp"/>
+  </folder>
+  <folder name="Relations" id="id-v36-folder-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" name="API" id="id-v36-rel-vue-gw" source="id-v36-vue" target="id-v36-gw"/>
+    <element xsi:type="archimate:FlowRelationship" name="billing" id="id-v36-rel-gw-bridge" source="id-v36-gw" target="id-v36-bridge"/>
+    <element xsi:type="archimate:FlowRelationship" name="proxy" id="id-v36-rel-bridge-bill" source="id-v36-bridge" target="id-v36-bill"/>
+    <element xsi:type="archimate:FlowRelationship" name="oauth" id="id-v36-rel-gw-oauth" source="id-v36-gw" target="id-v36-oauth"/>
+    <element xsi:type="archimate:AccessRelationship" name="R/W" id="id-v36-rel-bill-res" source="id-v36-bill" target="id-v36-res"/>
+    <element xsi:type="archimate:AccessRelationship" name="R/W" id="id-v36-rel-oauth-conn" source="id-v36-oauth" target="id-v36-conn"/>
+    <element xsi:type="archimate:InfluenceRelationship" name="charge rule" id="id-v36-rel-constraint-bill" source="id-v36-constraint" target="id-v36-bill"/>
+    <element xsi:type="archimate:TriggeringRelationship" name="exposes" id="id-v36-rel-p35-gap" source="id-v36-plat35" target="id-v36-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" name="addresses" id="id-v36-rel-wp-gap" source="id-v36-wp" target="id-v36-gap"/>
+    <element xsi:type="archimate:TriggeringRelationship" name="realizes" id="id-v36-rel-wp-p36" source="id-v36-wp" target="id-v36-plat36"/>
+  </folder>
+  <folder name="Views" id="id-v36-folder-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="目标拓扑 v36 — gitlab-resource-purchase" id="id-v36-view-topo">
+      <child xsi:type="archimate:DiagramObject" id="id-v36-do-vue" archimateElement="id-v36-vue">
+        <bounds x="20" y="80" width="160" height="70"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v36-sc-vue-gw" source="id-v36-do-vue" target="id-v36-do-gw" archimateRelationship="id-v36-rel-vue-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v36-do-gw" archimateElement="id-v36-gw" targetConnections="id-v36-sc-vue-gw">
+        <bounds x="220" y="80" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v36-sc-gw-bridge" source="id-v36-do-gw" target="id-v36-do-bridge" archimateRelationship="id-v36-rel-gw-bridge"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v36-sc-gw-oauth" source="id-v36-do-gw" target="id-v36-do-oauth" archimateRelationship="id-v36-rel-gw-oauth"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v36-do-bridge" archimateElement="id-v36-bridge" targetConnections="id-v36-sc-gw-bridge">
+        <bounds x="400" y="40" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v36-sc-bridge-bill" source="id-v36-do-bridge" target="id-v36-do-bill" archimateRelationship="id-v36-rel-bridge-bill"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v36-do-bill" archimateElement="id-v36-bill" targetConnections="id-v36-sc-bridge-bill">
+        <bounds x="580" y="40" width="160" height="70"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v36-sc-bill-res" source="id-v36-do-bill" target="id-v36-do-res" archimateRelationship="id-v36-rel-bill-res"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v36-do-res" archimateElement="id-v36-res" targetConnections="id-v36-sc-bill-res">
+        <bounds x="780" y="40" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v36-do-oauth" archimateElement="id-v36-oauth" targetConnections="id-v36-sc-gw-oauth">
+        <bounds x="400" y="140" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v36-sc-oauth-conn" source="id-v36-do-oauth" target="id-v36-do-conn" archimateRelationship="id-v36-rel-oauth-conn"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v36-do-conn" archimateElement="id-v36-conn" targetConnections="id-v36-sc-oauth-conn">
+        <bounds x="580" y="140" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v36-do-constraint" archimateElement="id-v36-constraint">
+        <bounds x="20" y="200" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v36-sc-constraint-bill" source="id-v36-do-constraint" target="id-v36-do-bill" archimateRelationship="id-v36-rel-constraint-bill"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v35→v36 — gitlab-resource-purchase" id="id-v36-view-mig">
+      <child xsi:type="archimate:DiagramObject" id="id-v36-do-plat35" archimateElement="id-v36-plat35">
+        <bounds x="40" y="60" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v36-sc-p35-gap" source="id-v36-do-plat35" target="id-v36-do-gap" archimateRelationship="id-v36-rel-p35-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v36-do-gap" archimateElement="id-v36-gap" targetConnections="id-v36-sc-p35-gap">
+        <bounds x="240" y="60" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v36-do-wp" archimateElement="id-v36-wp">
+        <bounds x="240" y="160" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v36-sc-wp-gap" source="id-v36-do-wp" target="id-v36-do-gap" archimateRelationship="id-v36-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v36-sc-wp-p36" source="id-v36-do-wp" target="id-v36-do-plat36" archimateRelationship="id-v36-rel-wp-p36"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v36-do-plat36" archimateElement="id-v36-plat36" targetConnections="id-v36-sc-wp-p36">
+        <bounds x="520" y="160" width="240" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

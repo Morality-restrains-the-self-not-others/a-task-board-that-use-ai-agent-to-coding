@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v98 变迁 (v96→v98)" id="id-v98eldiff01">
+  <folder name="Business" id="id-v98eld-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v98-biz-member" name="租户成员"/>
+    <element xsi:type="archimate:BusinessService" id="id-v98-biz-instruct" name="向镜像下指令"/>
+    <element xsi:type="archimate:BusinessService" id="id-v98-biz-idle" name="指令闲置自动回收 [NEW v98]"/>
+  </folder>
+  <folder name="Application" id="id-v98eld-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v98-el-osjs" name="onlineServiceJS [MODIFIED v98]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v98-el-cred" name="taskCredentialService [MODIFIED v98]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v98-el-cloud" name="taskCloudService [MODIFIED v98]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v98-el-ev" name="taskEvents idle timer [MODIFIED v98]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v98eld-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v98-el-pl96" name="Plateau v96"/>
+    <element xsi:type="archimate:Plateau" id="id-v98-el-pl97" name="Plateau v98"/>
+    <element xsi:type="archimate:Gap" id="id-v98-el-gap" name="Gap: 指令跑完容器仍挂着不回收"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v98-el-wp" name="WP-instruction-idle-recycle"/>
+  </folder>
+  <folder name="Relations" id="id-v98eld-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v98-rel-m-ins" source="id-v98-biz-member" target="id-v98-biz-instruct"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v98-rel-m-idle" source="id-v98-biz-member" target="id-v98-biz-idle"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v98-rel-osjs-ins" source="id-v98-el-osjs" target="id-v98-biz-instruct"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v98-rel-osjs-idle" source="id-v98-el-osjs" target="id-v98-biz-idle"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v98-rel-ins-osjs" source="id-v98-biz-instruct" target="id-v98-el-osjs" name="new job preempts"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v98-rel-idle-cred" source="id-v98-biz-idle" target="id-v98-el-cred" name="task-detail minutes"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v98-rel-idle-cloud" source="id-v98-biz-idle" target="id-v98-el-cloud" name="request-machine-release / L2"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v98-rel-ev-cloud" source="id-v98-el-ev" target="id-v98-el-cloud" name="recycle-idle-machines"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v98-rel-el-pl96-gap" source="id-v98-el-pl96" target="id-v98-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v98-rel-el-wp-gap" source="id-v98-el-wp" target="id-v98-el-gap"/>
+    <element xsi:type="archimate:AssociationRelationship" id="id-v98-rel-el-wp-pl97" source="id-v98-el-wp" target="id-v98-el-pl97"/>
+  </folder>
+  <folder name="Views" id="id-v98eld-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v98-el-view-mig" name="架构变迁 v96→v98 — instruction-idle-recycle">
+      <child xsi:type="archimate:DiagramObject" id="id-v98-eld-pl96" archimateElement="id-v98-el-pl96">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98-elc-pl96-gap" source="id-v98-eld-pl96" target="id-v98-eld-gap" archimateRelationship="id-v98-rel-el-pl96-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98-eld-gap" targetConnections="id-v98-elc-pl96-gap id-v98-elc-wp-gap" archimateElement="id-v98-el-gap">
+        <bounds x="240" y="48" width="400" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98-eld-wp" archimateElement="id-v98-el-wp">
+        <bounds x="240" y="160" width="280" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98-elc-wp-gap" source="id-v98-eld-wp" target="id-v98-eld-gap" archimateRelationship="id-v98-rel-el-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98-elc-wp-pl97" source="id-v98-eld-wp" target="id-v98-eld-pl97" archimateRelationship="id-v98-rel-el-wp-pl97"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98-eld-pl97" targetConnections="id-v98-elc-wp-pl97" archimateElement="id-v98-el-pl97">
+        <bounds x="560" y="160" width="140" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v98-el-view-flow" name="v98 Target — 指令闲置回收业务">
+      <child xsi:type="archimate:DiagramObject" id="id-v98-eld-m" archimateElement="id-v98-biz-member">
+        <bounds x="48" y="48" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98-elc-m-ins" source="id-v98-eld-m" target="id-v98-eld-ins" archimateRelationship="id-v98-rel-m-ins"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98-elc-m-idle" source="id-v98-eld-m" target="id-v98-eld-idle" archimateRelationship="id-v98-rel-m-idle"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98-eld-ins" targetConnections="id-v98-elc-m-ins id-v98-elc-osjs-ins" archimateElement="id-v98-biz-instruct">
+        <bounds x="240" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98-elc-ins-osjs" source="id-v98-eld-ins" target="id-v98-eld-osjs" archimateRelationship="id-v98-rel-ins-osjs"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98-eld-idle" targetConnections="id-v98-elc-m-idle id-v98-elc-osjs-idle" archimateElement="id-v98-biz-idle">
+        <bounds x="240" y="140" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98-elc-idle-cred" source="id-v98-eld-idle" target="id-v98-eld-cred" archimateRelationship="id-v98-rel-idle-cred"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98-elc-idle-cloud" source="id-v98-eld-idle" target="id-v98-eld-cloud" archimateRelationship="id-v98-rel-idle-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98-eld-osjs" targetConnections="id-v98-elc-ins-osjs" archimateElement="id-v98-el-osjs">
+        <bounds x="500" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98-elc-osjs-ins" source="id-v98-eld-osjs" target="id-v98-eld-ins" archimateRelationship="id-v98-rel-osjs-ins"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98-elc-osjs-idle" source="id-v98-eld-osjs" target="id-v98-eld-idle" archimateRelationship="id-v98-rel-osjs-idle"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98-eld-cred" targetConnections="id-v98-elc-idle-cred" archimateElement="id-v98-el-cred">
+        <bounds x="500" y="140" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98-eld-ev" archimateElement="id-v98-el-ev">
+        <bounds x="48" y="232" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v98-elc-ev-cloud" source="id-v98-eld-ev" target="id-v98-eld-cloud" archimateRelationship="id-v98-rel-ev-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v98-eld-cloud" targetConnections="id-v98-elc-idle-cloud id-v98-elc-ev-cloud" archimateElement="id-v98-el-cloud">
+        <bounds x="280" y="232" width="200" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

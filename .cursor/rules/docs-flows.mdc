@@ -1,0 +1,13 @@
+---
+description: 文档与流程规则 - 引用 .ai/02_documentation
+globs: "docs/**/*,*.wsd,**/flows/**"
+alwaysApply: false
+---
+
+# 文档与流程
+
+修改业务逻辑、流程图、文档时，必须读取并遵循：
+
+- `.ai/02_documentation/00_documentation.md`
+
+包含：业务逻辑调整需同步更新 docs/flows、ProjectFeature.opml 等。

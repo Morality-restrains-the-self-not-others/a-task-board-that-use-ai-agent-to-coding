@@ -1,0 +1,101 @@
+' @title: Application Integration — 容器镜像 @ 模式 + 统一评论区
+' @view: application-integration
+' @status: target
+' @version: 26
+' @author: claude
+' @based_on: v25 (v25-application-integration-20260714-2055-claude.puml)
+' @updated: 2026-07-15 00:10
+' @description: 工作空间开关 container_image_at_mode；评论 @已安装镜像 → idle reuse 开机器；ContainerAgentComment + SSE 回写
+' @iteration: container-image-at-mention
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v26 — Container Image @ Mention (2026-07-15 00:10)
+
+' ═══════════════════════════════════════
+' Change Legend — v26 变更图例
+' ═══════════════════════════════════════
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v26 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v26 — 本次修改 |
+  | <#LightPink>   </> | 🔴 [DEPRECATED] v26 — 本次废弃 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+rectangle "Motivation" {
+  Motivation_Constraint(atModeOff, "Constraint\n@模式默认关闭；关则拒绝开机器")
+}
+
+rectangle "Application" {
+  Application_Component(vue, "Vue TaskDetail\n+ TaskPanel Settings")
+  Application_Component(gw, "task-gateway")
+  Application_Component(proj, "taskProjectService\nworkspaces")
+  Application_Component(task, "taskTaskService\ncomments+mentions")
+  Application_Component(aic, "taskAIComment\ncontainer_agent_comments")
+  Application_Component(cloud, "taskCloudService\nstart-vm + idle reuse")
+  Application_Component(events, "taskEvents")
+  Application_Component(osjs, "onlineServiceJS\nContextPack + auto job")
+  Application_DataObject(wsFlag, "workspaces\ncontainer_image_at_mode_enabled")
+  Application_DataObject(cac, "container_agent_comments")
+  Application_DataObject(evtMention, "TASK_COMMENT_\nIMAGE_MENTIONED")
+}
+
+rectangle "Technology" {
+  Technology_Node(kafka, "Kafka")
+  Technology_Node(ecs, "Aliyun ECS / idle pool")
+  Technology_Node(sse, "Task SSE")
+}
+
+note top of vue
+  [MODIFIED v26] 统一评论区；@镜像 picker；开关 UI
+  @author: claude @2026-07-15 00:10
+end note
+
+note top of proj
+  [MODIFIED v26] workspaces 增开关字段
+  @author: claude @2026-07-15 00:10
+end note
+
+note top of task
+  [MODIFIED v26] mentions 校验+发事件
+  @author: claude @2026-07-15 00:10
+end note
+
+note right of aic
+  [NEW/MODIFIED v26] ContainerAgentComment
+  容器 stream 回写 + SSE fan-out
+  @author: claude @2026-07-15 00:10
+end note
+
+note top of osjs
+  [MODIFIED v26] ContextPack + @触发自动 job
+  @author: claude @2026-07-15 00:10
+end note
+
+note right of cac
+  [NEW v26] parent_comment_id 挂人类评论
+end note
+
+note right of atModeOff
+  [NEW v26] 默认 false；后端硬闸
+end note
+
+Rel_Flow(vue, gw, "PATCH workspace / POST comment")
+Rel_Flow(gw, proj, "at_mode flag")
+Rel_Access_W(proj, wsFlag, "W")
+Rel_Flow(gw, task, "comments+mentions")
+Rel_Flow(task, kafka, "IMAGE_MENTIONED")
+Rel_Flow(kafka, aic, "orchestrate")
+Rel_Flow(aic, cloud, "start-vm(-auto)")
+Rel_Flow(cloud, ecs, "reuse or new")
+Rel_Flow(aic, osjs, "ContextPack + exec")
+Rel_Flow(osjs, aic, "stream reply")
+Rel_Flow(aic, sse, "container_agent_stream")
+Rel_Flow(sse, vue, "SSE")
+Rel_Access_W(aic, cac, "W")
+Rel_Access_W(task, evtMention, "W event")
+Rel_Influence(atModeOff, task, "拒绝未开开关的 mention")
+Rel_Influence(atModeOff, vue, "无 @ picker")
+
+@enduml

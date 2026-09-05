@@ -1,0 +1,7 @@
+intents:
+  1_send_email:
+    host: 0.0.0.0
+    port: 18022
+    groupId: task-events-email-sent-1-send-email
+    events:
+    - EMAIL_SENT

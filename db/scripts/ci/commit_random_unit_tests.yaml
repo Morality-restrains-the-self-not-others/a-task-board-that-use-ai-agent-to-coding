@@ -1,0 +1,52 @@
+# Monorepo commit-time random unit test gate
+# Rule: .ai/01_project_constraints/28_commit_random_unit_test_debt_fix.md
+
+sample_ratio: 0.05
+min_sample: 1
+max_sample: 3
+debt_fix_ratio: 0.10
+timeout_sec: 300
+
+# Prefer fast first-party unit tests. Go package tests are included but capped by max_sample.
+# OPT-20260719-031: layered sampling — tier-1 (JS unit) / tier-2 (Python) / tier-3 (Go).
+# At least 1 from each non-empty tier, then round-robin fill.
+prefer_globs:
+  - "**/*.unit.test.js"
+  - "**/*.unit.test.ts"
+  - "**/tests/**/test_*.py"
+  - "**/test/**/test_*.py"
+  - "**/*_test.go"
+
+include_globs:
+  - "**/*.unit.test.js"
+  - "**/*.unit.test.ts"
+  - "**/*_test.go"
+  - "**/tests/**/test_*.py"
+  - "**/test/**/test_*.py"
+
+exclude_globs:
+  - "**/node_modules/**"
+  - "**/.git/**"
+  - "**/vendor/**"
+  - "**/venv/**"
+  - "**/venv_*/**"
+  - "**/.venv/**"
+  - "**/site-packages/**"
+  - "**/__pycache__/**"
+  - "**/.trae-agent/**"
+  - "**/trae-agent/**"
+  - "**/gitService/gitlab_home/**"
+  - "**/gitService/gitlab-ce/**"
+  - "**/gitService/gitlab/**"
+  - "**/e2e/**"
+  - "**/end_to_end_tests/**"
+  - "**/playwright/**"
+  - "**/*.playwright.test.js"
+  - "**/*.e2e.test.js"
+  - "**/*.integration.test.js"
+  - "**/management/commands/**"
+  - "**/testdata/**"
+  - "**/mocks/**"
+  - "**/.claude/skills/**"
+  - "**/third_party/**"
+  - "**/*_helpers_test.go"

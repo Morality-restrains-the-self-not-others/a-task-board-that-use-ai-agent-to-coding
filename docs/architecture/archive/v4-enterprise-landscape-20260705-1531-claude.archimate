@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="daydaymoney Enterprise Landscape v4 Target" id="model-v4-enterprise-20260705" version="5.0.0">
+  <folder name="Business" id="el-folder-business" type="business">
+    <element xsi:type="archimate:BusinessActor" name="Developer" id="el-dev"/>
+    <element xsi:type="archimate:BusinessService" name="IDE Workspace Service" id="el-ide-svc"/>
+    <element xsi:type="archimate:BusinessService" name="Task Management Service" id="el-task-svc"/>
+    <element xsi:type="archimate:BusinessService" name="Cloud Resource Service" id="el-cloud-svc"/>
+    <element xsi:type="archimate:BusinessService" name="LLM AI Service" id="el-llm-svc"/>
+  </folder>
+
+  <folder name="Application" id="el-folder-application" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="API Gateway (APISIX)" id="el-gateway"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Django SaaS Platform [CRUD+internal]" id="el-django"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskContainerGateway (Go :8014)" id="el-cgw"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskAgentSupport (Go :8011)" id="el-agt"/>
+    <element xsi:type="archimate:ApplicationComponent" name="go-relay (Go :8797)" id="el-relay"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskCredentialService (Go :8015)" id="el-cred"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskAIEndPoint (Go :8013)" id="el-aiep"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Task SSE Service" id="el-sse"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Auth Service (taskAuth)" id="el-auth"/>
+    <element xsi:type="archimate:ApplicationService" name="Project Management API" id="el-project-api"/>
+    <element xsi:type="archimate:ApplicationService" name="Container Proxy API" id="el-container-proxy-api"/>
+    <element xsi:type="archimate:ApplicationService" name="Relay Lifecycle API" id="el-relay-api"/>
+    <element xsi:type="archimate:ApplicationService" name="LLM Proxy API" id="el-llm-api"/>
+    <element xsi:type="archimate:DataObject" name="Container Runtime Data" id="el-container-db"/>
+  </folder>
+
+  <folder name="Technology &amp; Physical" id="el-folder-tech" type="technology">
+    <element xsi:type="archimate:Node" name="Application Host" id="el-app-node"/>
+    <element xsi:type="archimate:SystemSoftware" name="Go Runtime" id="el-go-runtime"/>
+    <element xsi:type="archimate:SystemSoftware" name="Django (Python)" id="el-django-runtime"/>
+    <element xsi:type="archimate:TechnologyService" name="PostgreSQL" id="el-postgres"/>
+    <element xsi:type="archimate:TechnologyService" name="onlineServiceJS Container API" id="el-osjs-tech"/>
+  </folder>
+
+  <folder name="Implementation &amp; Migration" id="el-folder-impl" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="v1 Current — Django 全量 API 单进程" id="el-plateau-v1"/>
+    <element xsi:type="archimate:Plateau" name="v4 Target — Container Go Split" id="el-plateau-v4"/>
+    <element xsi:type="archimate:Gap" name="容器 outbound 仍经 Django requests" id="el-gap-outbound"/>
+    <element xsi:type="archimate:Gap" name="relay 公网仍经 Django proxy (self-call)" id="el-gap-relay"/>
+    <element xsi:type="archimate:Gap" name="SSE 可选走 Django threading" id="el-gap-sse"/>
+    <element xsi:type="archimate:WorkPackage" name="Phase 0 应急" id="el-wp0"/>
+    <element xsi:type="archimate:WorkPackage" name="Phase 1 Container Gateway + relay 直路由" id="el-wp1"/>
+    <element xsi:type="archimate:WorkPackage" name="Phase 2 inbound Go 下沉" id="el-wp2"/>
+  </folder>
+
+  <folder name="Motivation" id="el-folder-motivation" type="motivation">
+    <element xsi:type="archimate:Driver" name="task2app 进程假死/单线程拥塞" id="el-driver-deadlock"/>
+    <element xsi:type="archimate:Goal" name="长耗时 I/O 与 CRUD 进程隔离" id="el-goal-isolation"/>
+  </folder>
+
+  <folder name="Relations" id="el-folder-relations" type="relations">
+    <element xsi:type="archimate:RealizationRelationship" id="el-rel-django-proj" source="el-django" target="el-project-api"/>
+    <element xsi:type="archimate:RealizationRelationship" id="el-rel-cgw-proxy" source="el-cgw" target="el-container-proxy-api"/>
+    <element xsi:type="archimate:RealizationRelationship" id="el-rel-relay-api" source="el-relay" target="el-relay-api"/>
+    <element xsi:type="archimate:RealizationRelationship" id="el-rel-aiep-llm" source="el-aiep" target="el-llm-api"/>
+    <element xsi:type="archimate:ServingRelationship" id="el-rel-proj-task" source="el-project-api" target="el-task-svc"/>
+    <element xsi:type="archimate:ServingRelationship" id="el-rel-proxy-cloud" source="el-container-proxy-api" target="el-cloud-svc"/>
+    <element xsi:type="archimate:ServingRelationship" id="el-rel-relay-ide" source="el-relay-api" target="el-ide-svc"/>
+    <element xsi:type="archimate:ServingRelationship" id="el-rel-cgw-osjs" source="el-cgw" target="el-osjs-tech"/>
+    <element xsi:type="archimate:ServingRelationship" id="el-rel-cgw-django" source="el-cgw" target="el-django"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="el-rel-node-django" source="el-app-node" target="el-django"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="el-rel-node-cgw" source="el-app-node" target="el-cgw"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="el-rel-node-go" source="el-app-node" target="el-go-runtime"/>
+    <element xsi:type="archimate:ServingRelationship" id="el-rel-pg-django" source="el-postgres" target="el-django"/>
+    <!-- migration -->
+    <element xsi:type="archimate:AssociationRelationship" id="el-rel-p1-g1" source="el-plateau-v1" target="el-gap-outbound"/>
+    <element xsi:type="archimate:AssociationRelationship" id="el-rel-p1-g2" source="el-plateau-v1" target="el-gap-relay"/>
+    <element xsi:type="archimate:AssociationRelationship" id="el-rel-p1-g3" source="el-plateau-v1" target="el-gap-sse"/>
+    <element xsi:type="archimate:RealizationRelationship" id="el-rel-wp0-g2" source="el-wp0" target="el-gap-relay"/>
+    <element xsi:type="archimate:RealizationRelationship" id="el-rel-wp0-g3" source="el-wp0" target="el-gap-sse"/>
+    <element xsi:type="archimate:RealizationRelationship" id="el-rel-wp1-g1" source="el-wp1" target="el-gap-outbound"/>
+    <element xsi:type="archimate:RealizationRelationship" id="el-rel-wp1-p4" source="el-wp1" target="el-plateau-v4"/>
+    <element xsi:type="archimate:RealizationRelationship" id="el-rel-wp2-p4" source="el-wp2" target="el-plateau-v4"/>
+    <element xsi:type="archimate:CompositionRelationship" id="el-rel-p4-cgw" source="el-plateau-v4" target="el-cgw"/>
+    <element xsi:type="archimate:CompositionRelationship" id="el-rel-p4-relay" source="el-plateau-v4" target="el-relay"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="el-rel-drv-goal" source="el-driver-deadlock" target="el-goal-isolation"/>
+  </folder>
+
+  <folder name="Views" id="el-folder-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="Enterprise v4 — 架构变迁 Plateau/Gap/WP" id="el-diagram-migration">
+      <documentation>企业架构三层视图 + Implementation 层架构变迁。v1 Plateau 识别 Gap，WorkPackage 交付 v4 Plateau。连线通过 sourceConnection 绑定 Relations 层。</documentation>
+      <child xsi:type="archimate:DiagramObject" id="el-do-p1" archimateElement="el-plateau-v1">
+        <bounds x="60" y="60" width="220" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="el-conn-p1-g1" source="el-do-p1" target="el-do-g1" archimateRelationship="el-rel-p1-g1"/>
+        <sourceConnection xsi:type="archimate:Connection" id="el-conn-p1-g2" source="el-do-p1" target="el-do-g2" archimateRelationship="el-rel-p1-g2"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="el-do-p4" archimateElement="el-plateau-v4" targetConnections="el-conn-wp1-p4 el-conn-wp2-p4">
+        <bounds x="600" y="60" width="240" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="el-do-g1" archimateElement="el-gap-outbound" targetConnections="el-conn-p1-g1 el-conn-wp1-g1">
+        <bounds x="60" y="160" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="el-do-g2" archimateElement="el-gap-relay" targetConnections="el-conn-p1-g2 el-conn-wp0-g2">
+        <bounds x="60" y="240" width="220" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="el-do-wp0" archimateElement="el-wp0">
+        <bounds x="320" y="240" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="el-conn-wp0-g2" source="el-do-wp0" target="el-do-g2" archimateRelationship="el-rel-wp0-g2"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="el-do-wp1" archimateElement="el-wp1">
+        <bounds x="320" y="160" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="el-conn-wp1-g1" source="el-do-wp1" target="el-do-g1" archimateRelationship="el-rel-wp1-g1"/>
+        <sourceConnection xsi:type="archimate:Connection" id="el-conn-wp1-p4" source="el-do-wp1" target="el-do-p4" archimateRelationship="el-rel-wp1-p4"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="el-do-wp2" archimateElement="el-wp2">
+        <bounds x="320" y="80" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="el-conn-wp2-p4" source="el-do-wp2" target="el-do-p4" archimateRelationship="el-rel-wp2-p4"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="el-do-django" archimateElement="el-django" targetConnections="el-conn-cgw-django">
+        <bounds x="60" y="380" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="el-do-cgw" archimateElement="el-cgw">
+        <bounds x="300" y="380" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="el-conn-cgw-django" source="el-do-cgw" target="el-do-django" archimateRelationship="el-rel-cgw-django"/>
+        <sourceConnection xsi:type="archimate:Connection" id="el-conn-cgw-proxy" source="el-do-cgw" target="el-do-proxy-api" archimateRelationship="el-rel-cgw-proxy"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="el-do-relay" archimateElement="el-relay">
+        <bounds x="540" y="380" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="el-conn-relay-api" source="el-do-relay" target="el-do-relay-api" archimateRelationship="el-rel-relay-api"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="el-do-proxy-api" archimateElement="el-container-proxy-api" targetConnections="el-conn-cgw-proxy el-conn-proxy-cloud">
+        <bounds x="300" y="480" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="el-conn-proxy-cloud" source="el-do-proxy-api" target="el-do-cloud-svc" archimateRelationship="el-rel-proxy-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="el-do-relay-api" archimateElement="el-relay-api" targetConnections="el-conn-relay-api el-conn-relay-ide">
+        <bounds x="540" y="480" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="el-conn-relay-ide" source="el-do-relay-api" target="el-do-ide-svc" archimateRelationship="el-rel-relay-ide"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="el-do-cloud-svc" archimateElement="el-cloud-svc" targetConnections="el-conn-proxy-cloud">
+        <bounds x="300" y="580" width="180" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="el-do-ide-svc" archimateElement="el-ide-svc" targetConnections="el-conn-relay-ide">
+        <bounds x="540" y="580" width="160" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

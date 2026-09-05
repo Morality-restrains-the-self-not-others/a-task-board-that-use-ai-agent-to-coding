@@ -1,0 +1,16 @@
+# SystemAdminGitlabRegionDeployPaths.test.js 测试意图
+
+## 测试范围
+系统管理 GitLab 区域卡片部署路径区块：服务进程、配置、GITLAB_HOME、启动命令。启动命令须按实例区分；API 若仍返回现网 `run.sh start`，前端按 `service_process` 纠正。
+
+## 关键业务断言
+- 现网实例可展示 `bash gitService/run.sh start`
+- SH-1 实例展示 `bash gitService/scripts/deploy_tencent_sh_1.sh`，与现网不同
+- 数据目录行标签为 `GITLAB_HOME`（来自 conf `gitlabHome`）
+- 配置文件缺失时提示「文件不存在」
+
+## 破坏信号
+两个区域卡片的 `gitlab-region-service-start` 文本相同，或 SH-1 仍显示 gitService/run.sh start；或部署路径仍仅标「数据目录」而不出现 `GITLAB_HOME`。
+
+## 回归验证
+在 vitest 环境下运行本文件。

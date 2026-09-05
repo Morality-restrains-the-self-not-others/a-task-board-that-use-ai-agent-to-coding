@@ -1,0 +1,56 @@
+' @title: 超管微信分账单号/手工分账 + 动账通知（应用集成）
+' @view: application-integration
+' @status: archived
+' @version: 108
+' @iteration: admin-profit-sharing-wechat-ids-change-notify
+' @author: cursor
+' @based_on: v107 (v107-application-integration-20260824-1515-claude.puml)
+' @updated: 2026-08-25 18:00
+' @description: 平台员工分账列表回传微信订单号/分账单号；超管带审计缘由出站 CreateOrder；微信分账动账通知经 core/notify 验签解密后幂等入账
+
+@startuml
+!include <archimate/Archimate>
+
+title v108 — 超管微信分账与动账通知 2026-08-25 18:00
+
+Application_Component(taskFE, "taskFE SPA")
+note right of taskFE
+  微信分账 Tab / 待分账队列：
+  微信订单号、微信分账单号；分账按钮 + 缘由表单
+  @author: cursor @2026-08-25 18:00
+end note
+Application_Component(gw, "taskGateway / APISIX")
+note right of gw
+  machine 路由
+  /api/billing/profitsharing/change-notify/
+  @author: cursor @2026-08-25 18:00
+end note
+Application_Component(bill, "taskBill")
+note right of bill
+  列表回传微信单号；
+  POST share + 审计表；动账通知 ParseNotifyRequest
+  @author: cursor @2026-08-25 18:00
+end note
+Application_Component(wx, "微信支付 APIv3")
+Application_DataObject(ps, "billing_profit_sharing 🟡")
+Application_DataObject(audit, "billing_profit_sharing_admin_action 🟢")
+Application_DataObject(inbox, "billing_profit_sharing_change_notify 🟢")
+
+Rel_Flow(taskFE, gw, "staff GET list / POST share 🟡")
+Rel_Flow(gw, bill, "system-admin/profit-sharing* 🟡")
+Rel_Flow(wx, gw, "POST change-notify HTTPS 🟢")
+Rel_Flow(gw, bill, "machine change-notify 🟢")
+Rel_Flow(bill, wx, "CreateOrder / QueryOrder 🟡")
+Rel_Access(bill, ps, "read/write 🟡")
+Rel_Access(bill, audit, "write 🟢")
+Rel_Access(bill, inbox, "write 🟢")
+
+Implementation_Plateau(plateauV107, "Plateau v107")
+Implementation_Plateau(plateauV108, "Plateau v108 超管分账与动账通知")
+Implementation_Gap(gapPs, "Gap: 超管无微信单号、无带审计手工分账、动账通知未解密")
+Implementation_WorkPackage(wpPs, "WP-admin-profit-sharing-change-notify")
+Rel_Triggering(plateauV107, gapPs, "identifies")
+Rel_Realization(wpPs, gapPs, "closes")
+Rel_Realization(wpPs, plateauV108, "delivers")
+
+@enduml

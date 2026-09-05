@@ -1,0 +1,38 @@
+---
+table_name: p_ci_builds_metadata
+classes:
+- Ci::BuildMetadata
+feature_categories:
+- continuous_integration
+description: Routing table that holds information for job execution
+introduced_by_url: https://gitlab.com/gitlab-org/gitlab/-/merge_requests/100115
+milestone: '15.5'
+gitlab_schema: gitlab_ci
+sharding_key:
+  project_id: projects
+table_size: small
+partition_detach_info:
+- partition_name: ci_builds_metadata_103
+  bounds_clause: "FOR VALUES IN ('103')"
+  required_constraint: "(partition_id = ANY (ARRAY[103]))"
+  parent_schema: public
+- partition_name: ci_builds_metadata_104
+  bounds_clause: "FOR VALUES IN ('104')"
+  required_constraint: "(partition_id = ANY (ARRAY[104]))"
+  parent_schema: public
+- partition_name: ci_builds_metadata_105
+  bounds_clause: "FOR VALUES IN ('105')"
+  required_constraint: "(partition_id = ANY (ARRAY[105]))"
+  parent_schema: public
+- partition_name: ci_builds_metadata_106
+  bounds_clause: "FOR VALUES IN ('106')"
+  required_constraint: "(partition_id = ANY (ARRAY[106]))"
+  parent_schema: public
+- partition_name: ci_builds_metadata_107
+  bounds_clause: "FOR VALUES IN ('107')"
+  required_constraint: "(partition_id = ANY (ARRAY[107]))"
+  parent_schema: public
+- partition_name: ci_builds_metadata_108
+  bounds_clause: "FOR VALUES IN ('108')"
+  required_constraint: "(partition_id = ANY (ARRAY[108]))"
+  parent_schema: public

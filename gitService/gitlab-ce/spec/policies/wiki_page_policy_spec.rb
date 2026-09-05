@@ -1,0 +1,87 @@
+# frozen_string_literal: true
+
+require 'spec_helper'
+
+RSpec.describe WikiPagePolicy, feature_category: :wiki do
+  include_context 'ProjectPolicyTable context'
+  include ProjectHelpers
+  include UserHelpers
+  using RSpec::Parameterized::TableSyntax
+
+  let(:group) { build(:group, :public) }
+  let(:project) { build(:project, :wiki_repo, project_level, group: group) }
+  let(:wiki_page) { build(:wiki_page, container: project) }
+  let(:project_level) { :public }
+
+  subject(:policy) { described_class.new(user, wiki_page) }
+
+  shared_examples 'with :read_wiki_page policy' do
+    where(:project_level, :feature_access_level, :membership, :admin_mode, :expected_count) do
+      permission_table_for_notes_feature_access
+    end
+
+    with_them do
+      it 'grants the expected permissions', :aggregate_failures do
+        enable_admin_mode!(user) if admin_mode
+        update_feature_access_level(project, feature_access_level)
+
+        if expected_count == 2
+          expect(policy).to be_allowed(:mark_note_as_internal)
+          expect(policy).to be_allowed(:read_wiki_page)
+          expect(policy).to be_allowed(:read_note)
+          expect(policy).to be_allowed(:create_note)
+          expect(policy).to be_allowed(:update_subscription)
+          expect(policy).to be_allowed(:award_emoji)
+        elsif expected_count == 1
+          expect(policy).to be_disallowed(:mark_note_as_internal)
+          expect(policy).to be_allowed(:read_wiki_page)
+          expect(policy).to be_allowed(:read_note)
+          expect(policy).to be_allowed(:create_note)
+          expect(policy).to be_allowed(:update_subscription)
+          expect(policy).to be_allowed(:award_emoji)
+        else
+          expect(policy).to be_disallowed(:mark_note_as_internal)
+          expect(policy).to be_disallowed(:read_wiki_page)
+          expect(policy).to be_disallowed(:read_note)
+          expect(policy).to be_disallowed(:create_note)
+          expect(policy).to be_disallowed(:update_subscription)
+          expect(policy).to be_disallowed(:award_emoji)
+        end
+      end
+    end
+  end
+
+  context 'when user is a direct project member' do
+    let(:user) { build_user_from_membership(project, membership) }
+
+    include_context 'with :read_wiki_page policy'
+  end
+
+  context 'when user is an inherited member from the group' do
+    let(:user) { build_user_from_membership(group, membership) }
+
+    include_context 'with :read_wiki_page policy'
+  end
+
+  context 'when user is a developer' do
+    let(:user) { build_user_from_membership(project, :developer) }
+
+    it 'grants the resolve_note permission' do
+      expect(policy).to be_allowed(:resolve_note)
+    end
+  end
+
+  context 'when user is not a developer' do
+    where(:membership) do
+      %i[reporter guest non_member anonymous]
+    end
+
+    with_them do
+      let(:user) { build_user_from_membership(project, membership) }
+
+      it 'does not grant the resolve_note permission' do
+        expect(policy).to be_disallowed(:resolve_note)
+      end
+    end
+  end
+end

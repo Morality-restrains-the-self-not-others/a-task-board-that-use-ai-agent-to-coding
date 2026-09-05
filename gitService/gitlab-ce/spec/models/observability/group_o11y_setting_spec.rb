@@ -1,0 +1,392 @@
+# frozen_string_literal: true
+
+require 'spec_helper'
+
+RSpec.describe Observability::GroupO11ySetting, feature_category: :observability do
+  let_it_be(:group) { create(:group) }
+
+  describe 'relations' do
+    it { is_expected.to belong_to(:group) }
+  end
+
+  describe 'validations' do
+    subject(:group_o11y_setting) { build(:observability_group_o11y_setting, group: group) }
+
+    it { is_expected.to validate_length_of(:o11y_service_url).is_at_most(255) }
+    it { is_expected.to validate_length_of(:o11y_service_password).is_at_most(510) }
+    it { is_expected.to validate_length_of(:o11y_service_post_message_encryption_key).is_at_most(510) }
+
+    context 'when email is invalid' do
+      it 'is invalid with malformed email' do
+        group_o11y_setting.o11y_service_user_email = 'invalid-email'
+        expect(group_o11y_setting).to be_invalid
+        expect(group_o11y_setting.errors[:o11y_service_user_email]).to include(I18n.t(:invalid,
+          scope: 'valid_email.validations.email'))
+      end
+
+      it 'is invalid with empty email' do
+        group_o11y_setting.o11y_service_user_email = ''
+        expect(group_o11y_setting).to be_invalid
+        expect(group_o11y_setting.errors[:o11y_service_user_email]).to include(I18n.t(:invalid,
+          scope: 'activerecord.errors.messages'))
+      end
+    end
+
+    context 'when url is invalid' do
+      [nil, ''].each do |invalid_url|
+        it "is invalid with #{invalid_url}" do
+          group_o11y_setting.o11y_service_url = invalid_url
+          expect(group_o11y_setting).to be_invalid
+          expect(group_o11y_setting.errors[:o11y_service_url]).to include("is invalid")
+        end
+      end
+
+      it 'is invalid with malformed url' do
+        group_o11y_setting.o11y_service_url = 'not-a-valid-url'
+        expect(group_o11y_setting).to be_invalid
+        expect(group_o11y_setting.errors[:o11y_service_url]).to include(
+          "is blocked: Only allowed schemes are http, https"
+        )
+      end
+
+      it 'is invalid with url exceeding maximum length' do
+        group_o11y_setting.o11y_service_url = "https://example.com/#{'a' * 256}"
+        expect(group_o11y_setting).to be_invalid
+        expect(group_o11y_setting.errors[:o11y_service_url]).to include('is too long (maximum is 255 characters)')
+      end
+    end
+
+    context 'when url is valid' do
+      [
+        'http://example.com',
+        'https://example.com',
+        'https://example.com/api/v1',
+        'https://example.com:8080',
+        'http://localhost:3000/api'
+      ].each do |valid_url|
+        it "is valid with #{valid_url}" do
+          group_o11y_setting.o11y_service_url = valid_url
+
+          expect(group_o11y_setting).to be_valid
+        end
+      end
+    end
+
+    %i[o11y_service_password o11y_service_post_message_encryption_key].each do |field|
+      context "when #{field} is too long" do
+        it "is invalid with #{field} exceeding maximum length" do
+          group_o11y_setting.send(:"#{field}=", 'a' * 511)
+          expect(group_o11y_setting).to be_invalid
+          expect(group_o11y_setting.errors[field]).to include('is too long (maximum is 510 characters)')
+        end
+      end
+    end
+  end
+
+  describe 'encryption' do
+    let(:password_value) { 'super-secret-password' }
+    let(:secret_key_value) { 'super-secret-key' }
+    let(:setting) do
+      create(:observability_group_o11y_setting, o11y_service_password: password_value,
+        o11y_service_post_message_encryption_key: secret_key_value).tap(&:reload)
+    end
+
+    shared_examples 'encrypts field' do |field_name, field_value|
+      it "encrypts the #{field_name} value" do
+        encrypted_value = setting.read_attribute_before_type_cast(field_name)
+
+        expect(setting.send(field_name)).to eq(field_value)
+        expect(encrypted_value).not_to eq(setting.send(field_name))
+        expect(encrypted_value).not_to include(field_value)
+      end
+    end
+
+    context 'when password encryption' do
+      include_examples 'encrypts field', :o11y_service_password, 'super-secret-password'
+    end
+
+    context 'when secret_key encryption' do
+      include_examples 'encrypts field', :o11y_service_post_message_encryption_key, 'super-secret-key'
+    end
+
+    context 'when updating encrypted fields' do
+      let(:new_password) { 'new-super-secret-password' }
+      let(:new_secret_key) { 'new-super-secret-key' }
+
+      shared_examples 're-encrypts field when changed' do |field_name, new_value|
+        it "re-encrypts #{field_name} when changed" do
+          original_raw_value = setting.attributes[field_name.to_s]
+          setting.send(:"#{field_name}=", new_value)
+          setting.save!
+
+          new_raw_value = setting.attributes[field_name.to_s]
+          expect(new_raw_value).not_to eq(original_raw_value)
+          expect(setting.send(field_name)).to eq(new_value)
+        end
+      end
+
+      include_examples 're-encrypts field when changed', :o11y_service_password, 'new-super-secret-password'
+      include_examples 're-encrypts field when changed', :o11y_service_post_message_encryption_key,
+        'new-super-secret-key'
+    end
+  end
+
+  describe '.find_by_group_id' do
+    let_it_be(:group1) { create(:group) }
+    let_it_be(:group2) { create(:group) }
+    let_it_be(:setting1) { create(:observability_group_o11y_setting, group: group1) }
+    let_it_be(:setting2) { create(:observability_group_o11y_setting, group: group2) }
+
+    it 'finds the setting by group_id' do
+      result = described_class.find_by_group_id(group1.id)
+      expect(result).to eq(setting1)
+    end
+
+    it 'returns nil when no setting exists for the group_id' do
+      non_existing_group_id = non_existing_record_id
+      result = described_class.find_by_group_id(non_existing_group_id)
+      expect(result).to be_nil
+    end
+
+    it 'finds the correct setting when multiple settings exist' do
+      result = described_class.find_by_group_id(group2.id)
+      expect(result).to eq(setting2)
+    end
+  end
+
+  describe '.search_by_group_id' do
+    let_it_be(:group1) { create(:group) }
+    let_it_be(:group2) { create(:group) }
+    let_it_be(:setting1) { create(:observability_group_o11y_setting, group: group1) }
+    let_it_be(:setting2) { create(:observability_group_o11y_setting, group: group2) }
+
+    it 'returns settings for the specified group_id' do
+      result = described_class.search_by_group_id(group1.id)
+      expect(result).to contain_exactly(setting1)
+    end
+
+    it 'returns empty collection when no settings exist for the group_id' do
+      non_existing_group_id = non_existing_record_id
+      result = described_class.search_by_group_id(non_existing_group_id)
+      expect(result).to be_empty
+    end
+
+    it 'can be chained with other scopes' do
+      result = described_class.with_group.search_by_group_id(group1.id)
+      expect(result).to contain_exactly(setting1)
+      expect(result.first.association(:group)).to be_loaded
+    end
+  end
+
+  describe '#provisioning?' do
+    let(:setting) { build(:observability_group_o11y_setting, group: group) }
+
+    context 'when record is a new record' do
+      it 'returns true' do
+        expect(setting).to be_new_record
+        expect(setting.provisioning?).to be true
+      end
+    end
+
+    context 'when record is persisted' do
+      before do
+        setting.save!
+      end
+
+      shared_examples 'returns true within window' do |time_offset|
+        it "returns true at #{time_offset}" do
+          travel_to(setting.created_at + time_offset) do
+            expect(setting.provisioning?).to be true
+          end
+        end
+      end
+
+      shared_examples 'returns false outside window' do |time_offset|
+        it "returns false at #{time_offset}" do
+          travel_to(setting.created_at + time_offset) do
+            expect(setting.provisioning?).to be false
+          end
+        end
+      end
+
+      include_examples 'returns true within window', 0.seconds
+      include_examples 'returns true within window', 2.minutes + 30.seconds
+      include_examples 'returns true within window', 5.minutes
+
+      include_examples 'returns false outside window', 5.minutes + 1.second
+      include_examples 'returns false outside window', 1.hour
+
+      it 'returns true when current time is before creation' do
+        travel_to(setting.created_at - 1.second) do
+          expect(setting.provisioning?).to be true
+        end
+      end
+    end
+  end
+
+  describe 'otel endpoints' do
+    let(:setting) { build(:observability_group_o11y_setting, group: group) }
+
+    shared_examples 'otel endpoint' do |method, scheme, port|
+      context "when on GitLab.com" do
+        before do
+          allow(Gitlab).to receive(:com?).and_return(true)
+        end
+
+        context "when o11y_service_name is set" do
+          before do
+            setting.o11y_service_name = 'my-service'
+          end
+
+          it "returns the correct #{method} endpoint" do
+            expect(setting.send(method)).to eq("#{scheme}://my-service.otel.gitlab-o11y.com:#{port}")
+          end
+        end
+
+        context "when o11y_service_name is nil" do
+          before do
+            setting.o11y_service_name = nil
+            allow(setting).to receive(:name_from_url).and_return('service-from-url')
+          end
+
+          it "uses name_from_url as fallback" do
+            expect(setting.send(method)).to eq("#{scheme}://service-from-url.otel.gitlab-o11y.com:#{port}")
+          end
+        end
+
+        context "when both o11y_service_name and name_from_url are nil" do
+          before do
+            setting.o11y_service_name = nil
+            allow(setting).to receive_messages(name_from_url: nil, name_from_group: 'group-path')
+          end
+
+          it "uses name_from_group as fallback" do
+            expect(setting.send(method)).to eq("#{scheme}://group-path.otel.gitlab-o11y.com:#{port}")
+          end
+        end
+
+        context "with special characters in service name" do
+          before do
+            setting.o11y_service_name = 'my-service-with-dashes'
+          end
+
+          it "handles service names with special characters" do
+            expect(setting.send(method)).to eq("#{scheme}://my-service-with-dashes.otel.gitlab-o11y.com:#{port}")
+          end
+        end
+      end
+
+      context "when not on GitLab.com" do
+        before do
+          allow(Gitlab).to receive(:com?).and_return(false)
+        end
+
+        it "returns endpoint derived from o11y_service_url" do
+          setting.o11y_service_url = 'https://my-o11y.example.com'
+          expect(setting.send(method)).to eq("#{scheme}://my-o11y.example.com:#{port}")
+        end
+
+        it "extracts only the host from o11y_service_url with a path" do
+          setting.o11y_service_url = 'https://my-o11y.example.com/api/v1'
+          expect(setting.send(method)).to eq("#{scheme}://my-o11y.example.com:#{port}")
+        end
+
+        it "raises ArgumentError when o11y_service_url is blank" do
+          setting.o11y_service_url = nil
+          expect { setting.send(method) }.to raise_error(ArgumentError, "o11y_service_url must be present")
+        end
+      end
+    end
+
+    describe '#otel_http_endpoint' do
+      include_examples 'otel endpoint', :otel_http_endpoint, 'http', 4318
+    end
+
+    describe '#otel_grpc_endpoint' do
+      include_examples 'otel endpoint', :otel_grpc_endpoint, 'http', 4317
+    end
+
+    describe '#otel_https_endpoint' do
+      include_examples 'otel endpoint', :otel_https_endpoint, 'https', 14318
+    end
+
+    describe '#otel_grpcs_endpoint' do
+      include_examples 'otel endpoint', :otel_grpcs_endpoint, 'https', 14317
+    end
+  end
+
+  describe 'factory' do
+    it 'creates a valid record' do
+      setting = build(:observability_group_o11y_setting)
+      expect(setting).to be_valid
+    end
+
+    it 'associates with a group' do
+      setting = create(:observability_group_o11y_setting)
+      expect(setting.group).to be_present
+    end
+  end
+
+  describe '.observability_setting_for' do
+    context 'when resource is nil or invalid' do
+      it 'returns nil for nil' do
+        expect(described_class.observability_setting_for(nil)).to be_nil
+      end
+
+      it 'returns nil for non-Project/Group resource' do
+        expect(described_class.observability_setting_for(build_stubbed(:user))).to be_nil
+      end
+
+      it 'returns nil for Project without group' do
+        expect(described_class.observability_setting_for(build_stubbed(:project, group: nil))).to be_nil
+      end
+    end
+
+    shared_examples 'traverses parent groups' do |resource_type|
+      let(:root_group) { create(:group) }
+      let(:parent_group) { create(:group, parent: root_group) }
+      let(:child_group) { create(:group, parent: parent_group) }
+      let(:resource) { resource_type == :project ? create(:project, group: child_group) : child_group }
+
+      it "returns setting when #{resource_type} group has setting" do
+        setting = create(:observability_group_o11y_setting, group: child_group)
+
+        expect(described_class.observability_setting_for(resource)).to eq(setting)
+      end
+
+      it "returns setting when parent has setting" do
+        setting = create(:observability_group_o11y_setting, group: parent_group)
+
+        expect(described_class.observability_setting_for(resource)).to eq(setting)
+      end
+
+      it "returns setting when root ancestor has setting" do
+        setting = create(:observability_group_o11y_setting, group: root_group)
+
+        expect(described_class.observability_setting_for(resource)).to eq(setting)
+      end
+
+      it "returns nil when no group in hierarchy has setting" do
+        expect(described_class.observability_setting_for(resource)).to be_nil
+      end
+    end
+
+    context 'when ancestor_ids is empty' do
+      let(:group) { create(:group) }
+
+      it 'returns nil when ancestor_ids is empty' do
+        allow(group).to receive(:traversal_ids).and_return([])
+
+        expect(described_class.observability_setting_for(group)).to be_nil
+      end
+    end
+
+    context 'when resource is a Project' do
+      include_examples 'traverses parent groups', :project
+    end
+
+    context 'when resource is a Group' do
+      include_examples 'traverses parent groups', :group
+    end
+  end
+end

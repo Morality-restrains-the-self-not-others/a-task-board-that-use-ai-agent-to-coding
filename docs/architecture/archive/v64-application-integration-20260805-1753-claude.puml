@@ -1,0 +1,225 @@
+' @title: 微信身份统一设计 — 跨应用 openid/unionid + 绑定 + 支付回调可靠性
+' @view: application-integration
+' @status: target
+' @version: 64
+' @iteration: wechat-login-openid-unionid
+' @author: claude
+' @based_on: v63 (v63-application-integration-20260805-0238-claude.puml)
+' @updated: 2026-08-05 18:05
+' @description: 微信登录身份统一：wechat_identity 表 (app_key+openid/unionid→user_id)、多应用配置(web扫码/inapp公众号授权)、绑定/解绑、支付回调可靠性(pending持久化+幂等+凭据记录+PAYMENT_SUCCEEDED，登录/支付解耦无身份核对)、5 新事件
+' @revision: 2026-08-05 18:05 修订 — 移除支付回调身份核对映射 userId（登录/支付解耦），删除 internal resolve 接口与 WechatPaymentIdentityMismatch 事件
+
+@startuml
+!include <archimate/Archimate>
+
+title v64 — 微信身份统一设计 (Target, 2026-08-05 17:53)
+
+legend right
+  |<#LightGreen>  </>| 🟢 [NEW v64] |
+  |<#LightYellow> </>| 🟡 [MODIFIED v64] |
+  |<#LightPink>   </>| 🔴 [DEPRECATED v64] |
+  |<#White>       </>| 未变 |
+endlegend
+
+' ═══ Services ═══
+
+Application_Component(taskAuth, "taskAuth (:8003)\n[PDP 集中授权 + 微信身份]")
+note right of taskAuth
+  🟡 [MODIFIED v64] 微信身份统一 (基于 v63 RBAC)
+  + wechat_identity 表 🆕 (app_key+openid/unionid→user_id)
+  + 多应用配置 apps[] (web扫码 / inapp公众号授权) 🆕
+  + 匹配顺序: unionid 优先 → (app_key,openid) → 新建 🆕
+  + 绑定/解绑 (state 带 bind 标记) 🆕
+  + 事件: Linked/Conflict/Bound/Unbound 🆕
+  (登录/支付解耦 — 无支付身份核对)
+end note
+
+Application_Component(taskGitOauth, "taskGitOauth (:8002)")
+Application_Component(taskTenant, "taskTenantService (:8020)")
+note right of taskTenant
+  🟡 [MODIFIED v63]
+  + tenant_member_role / tenant_group_role
+  + tenant_group_admin (group_admin 指派) 🆕
+  + tenant_resource_group_assignment (资源→组) 🆕
+  + 组角色/组管理员/资源分配 API (10)
+  🔴 policy.go 删除
+end note
+
+Application_Component(taskProject, "taskProjectService (:8016)")
+note right of taskProject
+  🟡 [MODIFIED v63]
+  RequirePerm(project:*) + 组资源继承检查
+end note
+
+Application_Component(taskTask, "taskTaskService (:8021)")
+note right of taskTask
+  🟡 [MODIFIED v63]
+  RequirePerm(task:*) + 组资源继承检查
+end note
+
+Application_Component(taskAIComment, "taskAIComment (:8022)")
+
+Application_Component(taskCloud, "taskCloudService (:8018)")
+note right of taskCloud
+  🟡 [MODIFIED v63]
+  RequirePerm(cloud:*) + 组资源继承检查
+end note
+
+Application_Component(taskBill, "taskBill (:8004)")
+note right of taskBill
+  🟡 [MODIFIED v64] 支付回调可靠性 (登录/支付解耦)
+  + billing_payment_pending 表 🆕 (持久化替代内存 map)
+  + order +user_id (下单会话) / pay_method/pay_openid/pay_unionid (凭据记录) 🆕
+  + 幂等 markOrderPaid (已 paid → SUCCESS) 🆕
+  + PAYMENT_SUCCEEDED 事件 🆕
+  (凭据仅记录审计 — 不判定不拒付)
+  (v63: RequirePerm(billing:*))
+end note
+
+Application_Component(taskEvents, "taskEvents (:8023)")
+note right of taskEvents
+  🟡 [MODIFIED v63]
+  consumers: RoleChanged / 组角色 / 组管理员 / 资源分配
+  → 缓存失效 (rev++)
+end note
+
+Application_Component(taskFE, "taskFE (SPA)")
+note right of taskFE
+  🟡 [MODIFIED v64]
+  + 微信登录入口: UA 检测 MicroMessenger → inapp 一键登录 🆕
+  + 绑定/解绑入口 (账号安全页) 🆕
+  (v63: usePermissions() 37 处 is_admin→HasPerm)
+end note
+
+Application_Component(shareLibAuthz, "shareLib/authz\n(薄客户端)")
+note right of shareLibAuthz
+  🟡 [MODIFIED v63]
+  RequirePerm(权限码) — 读 X-Tenant-Perms O(1)
+  + RequireGroupAdmin / RequireGroupPerm
+  + HasGroupResourceAccess (组资源继承)
+  HTTP fallback → PDP (兜底)
+end note
+
+Application_Component(kafkaConsumers, "Kafka Consumers (Go)")
+
+Application_Component(gateway, "APISIX Gateway (:18081)")
+note right of gateway
+  🟡 [MODIFIED v63]
+  forward-auth → taskAuth PDP
+  注入: X-User-Roles (平台角色)
+        X-Tenant-Perms (cid→权限码集合)
+end note
+
+' ═══ Data ═══
+Application_DataObject(kafkaBroker, "Kafka")
+Application_DataObject(taskAuthDB, "taskAuth DB\n+wechat_identity 🆕\n(auth_role/company_id v63)")
+Application_DataObject(taskGitOauthDB, "taskGitOauth DB")
+Application_DataObject(taskTenantDB, "taskTenant DB\n+4表 (member_role/group_role/group_admin/resource_assignment)")
+Application_DataObject(taskProjectDB, "taskProject DB")
+Application_DataObject(taskTaskDB, "taskTask DB")
+Application_DataObject(taskCloudDB, "taskCloud DB")
+Application_DataObject(taskBillDB, "taskBill DB\n+billing_payment_pending 🆕\norder +user_id/pay_openid/pay_unionid 🆕")
+
+' ═══ Events ═══
+Application_Event(evtRoleChanged, "RoleChanged (v63)")
+Application_Event(evtTenantRole, "TenantMemberRoleChanged")
+Application_Event(evtGroupRole, "TenantGroupRoleChanged")
+Application_Event(evtGroupAdmin, "GroupAdminAssigned/Revoked")
+Application_Event(evtResAssign, "ResourceAssigned/RevokedFromGroup")
+Application_Event(evtGroupMember, "MemberAdded/RemovedFromGroup")
+Application_Event(evtCompanyCreated, "CompanyCreated (已有)")
+Application_Event(evtMemberAdded, "CompanyMemberAdded (已有)")
+Application_Event(evtWxLinked, "WechatIdentityLinked 🆕")
+Application_Event(evtWxConflict, "WechatIdentityConflict 🆕")
+Application_Event(evtWxBound, "WechatBound 🆕")
+Application_Event(evtWxUnbound, "WechatUnbound 🆕")
+Application_Event(evtPaySucceeded, "PAYMENT_SUCCEEDED 🆕")
+
+' ═══ Deprecated ═══
+Application_Component(oldIsAdmin, "is_admin/is_superuser 直接鉴权 [DEPRECATED v63]")
+note bottom of oldIsAdmin
+  🔴 硬切换 — 回填后代码删除
+end note
+Application_Component(oldPolicy, "policy.go creator 硬编码 [DEPRECATED v63]")
+note bottom of oldPolicy
+  🔴 删除 — CompanyCreated 事件驱动
+end note
+Application_Component(oldRequireRole, "RequireRole 优先级判定 [DEPRECATED v63]")
+note bottom of oldRequireRole
+  🔴 判定统一权限码 — 自定义角色无优先级
+end note
+
+' ═══ Relationships ═══
+
+' Gateway → PDP
+Rel_Flow(gateway, taskAuth, "forward-auth\n→ /api/internal/authz/check\n← X-User-Roles, X-Tenant-Perms")
+
+' Gateway → Services
+Rel_Flow(gateway, taskTenant, "/api/tenant/*")
+Rel_Flow(gateway, taskProject, "/api/tenant/*/projects/*")
+Rel_Flow(gateway, taskTask, "/api/tenant/*/todos/*")
+Rel_Flow(gateway, taskAIComment, "/api/tenant/*/ai-comments/*")
+Rel_Flow(gateway, taskCloud, "/api/system-admin/*\n/api/tenant/*/cloud/*")
+Rel_Flow(gateway, taskBill, "/api/billing/*\n/api/system-admin/*")
+Rel_Flow(gateway, taskFE, "SPA 静态资源")
+
+' authz thin client → services
+Rel_Serving(shareLibAuthz, taskAuth, "CheckPerm() HTTP fallback")
+Rel_Serving(shareLibAuthz, taskTenant, "RequirePerm(member:*)\nRequireGroupAdmin")
+Rel_Serving(shareLibAuthz, taskCloud, "RequirePerm(cloud:*)\n+组资源继承")
+Rel_Serving(shareLibAuthz, taskBill, "RequirePerm(billing:*)")
+Rel_Serving(shareLibAuthz, taskProject, "RequirePerm(project:*)\n+组资源继承")
+Rel_Serving(shareLibAuthz, taskTask, "RequirePerm(task:*)\n+组资源继承")
+
+' Kafka
+Rel_Flow(kafkaBroker, kafkaConsumers, "consume")
+Rel_Flow(kafkaConsumers, taskTenant, "company/group/resource events\n🟡 +CompanyCreated→tenant_admin\n🟡 +MemberAdded→member")
+Rel_Flow(kafkaConsumers, taskAuth, "user profile events")
+Rel_Flow(kafkaConsumers, taskProject, "workspace events")
+Rel_Flow(kafkaConsumers, taskCloud, "cloud events")
+Rel_Flow(kafkaConsumers, taskEvents, "SSE dispatch\n🟡 +RoleChanged/组事件→失效")
+
+' Data ownership
+Rel_Access_w(taskAuth, taskAuthDB, "users, roles(+company_id), permissions\n🟡 +wechat_identity (app_key+openid/unionid→user)")
+Rel_Access_w(taskGitOauth, taskGitOauthDB, "git identities")
+Rel_Access_w(taskTenant, taskTenantDB, "companies, members, groups\n🟡 +roles/group_admin/resource_assign")
+Rel_Access_w(taskProject, taskProjectDB, "projects, workspaces, ACL")
+Rel_Access_w(taskTask, taskTaskDB, "todos")
+Rel_Access_w(taskCloud, taskCloudDB, "platforms, VPCs, images")
+Rel_Access_w(taskBill, taskBillDB, "billing, subscriptions\n🟡 +payment_pending / order user_id+凭据记录")
+
+' Events
+Rel_Flow(taskAuth, evtRoleChanged, "publish 🆕")
+Rel_Flow(taskTenant, evtTenantRole, "publish")
+Rel_Flow(taskTenant, evtGroupRole, "publish")
+Rel_Flow(taskTenant, evtGroupAdmin, "publish 🆕")
+Rel_Flow(taskTenant, evtResAssign, "publish 🆕")
+Rel_Flow(taskTenant, evtGroupMember, "publish 🆕")
+Rel_Flow(evtCompanyCreated, kafkaBroker, "(已有)")
+Rel_Flow(evtMemberAdded, kafkaBroker, "(已有)")
+Rel_Flow(evtRoleChanged, kafkaBroker, "→ 🆕")
+Rel_Flow(evtTenantRole, kafkaBroker, "→")
+Rel_Flow(evtGroupRole, kafkaBroker, "→")
+Rel_Flow(evtGroupAdmin, kafkaBroker, "→ 🆕")
+Rel_Flow(evtResAssign, kafkaBroker, "→ 🆕")
+Rel_Flow(evtGroupMember, kafkaBroker, "→ 🆕")
+
+' v64 微信身份 + 支付事件
+Rel_Flow(taskAuth, evtWxLinked, "publish 🆕")
+Rel_Flow(taskAuth, evtWxConflict, "publish 🆕")
+Rel_Flow(taskAuth, evtWxBound, "publish 🆕")
+Rel_Flow(taskAuth, evtWxUnbound, "publish 🆕")
+Rel_Flow(taskBill, evtPaySucceeded, "publish 🆕")
+Rel_Flow(evtWxLinked, kafkaBroker, "→ 🆕")
+Rel_Flow(evtWxConflict, kafkaBroker, "→ 🆕")
+Rel_Flow(evtWxBound, kafkaBroker, "→ 🆕")
+Rel_Flow(evtWxUnbound, kafkaBroker, "→ 🆕")
+Rel_Flow(evtPaySucceeded, kafkaBroker, "→ 🆕")
+
+' Deprecated
+Rel_Association(oldIsAdmin, taskAuth, "直接查表判定")
+Rel_Association(oldIsAdmin, taskTenant, "is_admin 字段判定")
+Rel_Association(oldPolicy, taskTenant, "creator 特例")
+Rel_Association(oldRequireRole, shareLibAuthz, "旧判定 API")
+
+@enduml

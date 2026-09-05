@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="enterprise-landscape v119 全量 (post-change)" id="id-v119elfull01">
+  <folder name="Business" id="id-v119el-biz" type="business">
+    <element xsi:type="archimate:BusinessActor" id="id-v119-el-vendor" name="镜像厂商 [NEW v119]"/>
+    <element xsi:type="archimate:BusinessActor" id="id-v119-el-commenter" name="发评 / 自动运行"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v119-el-declare" name="按区域登记公网仓库 [NEW v119]"/>
+    <element xsi:type="archimate:BusinessProcess" id="id-v119-el-start" name="评论启动云服务器 [MODIFIED v119]"/>
+  </folder>
+  <folder name="Application" id="id-v119el-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v119-el-portal" name="厂商门户"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v119-el-aip" name="taskAiProvider [MODIFIED v119]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v119-el-cloud" name="taskCloudService [MODIFIED v119]"/>
+  </folder>
+  <folder name="Technology" id="id-v119el-tech" type="technology">
+    <element xsi:type="archimate:Node" id="id-v119-el-regpub" name="区域公网 Registry"/>
+    <element xsi:type="archimate:Node" id="id-v119-el-regvpc" name="区域内网 Registry [NEW v119]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v119el-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v119-el-pl118" name="Plateau v118"/>
+    <element xsi:type="archimate:Plateau" id="id-v119-el-pl119" name="Plateau v119"/>
+    <element xsi:type="archimate:Gap" id="id-v119-el-gap" name="Gap: 单 image_url 跨区拉取"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v119-el-wp" name="WP-multi-region-image-replicas"/>
+  </folder>
+  <folder name="Relations" id="id-v119el-rel" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v119-el-rel-as-v" source="id-v119-el-vendor" target="id-v119-el-declare"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-v119-el-rel-as-c" source="id-v119-el-commenter" target="id-v119-el-start"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v119-el-rel-v-portal" source="id-v119-el-vendor" target="id-v119-el-portal" name="registry_public_url"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v119-el-rel-portal-aip" source="id-v119-el-portal" target="id-v119-el-aip" name="association + replica upsert"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v119-el-rel-c-cloud" source="id-v119-el-commenter" target="id-v119-el-cloud" name="start-vm region_id"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v119-el-rel-cloud-aip" source="id-v119-el-cloud" target="id-v119-el-aip" name="catalog runtime + replica 安装时"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v119-el-rel-pub-aip" source="id-v119-el-regpub" target="id-v119-el-aip" name="控制面验 digest"/>
+    <element xsi:type="archimate:ServingRelationship" id="id-v119-el-rel-vpc-start" source="id-v119-el-regvpc" target="id-v119-el-start" name="VM docker pull 优先"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v119-el-rel-pl-gap" source="id-v119-el-pl118" target="id-v119-el-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v119-el-rel-wp-gap" source="id-v119-el-wp" target="id-v119-el-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v119-el-rel-wp-pl" source="id-v119-el-wp" target="id-v119-el-pl119"/>
+  </folder>
+  <folder name="Views" id="id-v119el-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v119-el-view-mig" name="架构变迁 v118→v119 — multi-region-image-registry-replicas">
+      <child xsi:type="archimate:DiagramObject" id="id-v119-el-do-pl118" archimateElement="id-v119-el-pl118">
+        <bounds x="48" y="48" width="200" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-el-c-pl-gap" source="id-v119-el-do-pl118" target="id-v119-el-do-gap" archimateRelationship="id-v119-el-rel-pl-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-el-do-gap" targetConnections="id-v119-el-c-pl-gap id-v119-el-c-wp-gap" archimateElement="id-v119-el-gap">
+        <bounds x="280" y="48" width="400" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-el-do-wp" archimateElement="id-v119-el-wp">
+        <bounds x="280" y="140" width="400" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-el-c-wp-gap" source="id-v119-el-do-wp" target="id-v119-el-do-gap" archimateRelationship="id-v119-el-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-el-c-wp-pl" source="id-v119-el-do-wp" target="id-v119-el-do-pl119" archimateRelationship="id-v119-el-rel-wp-pl"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-el-do-pl119" targetConnections="id-v119-el-c-wp-pl" archimateElement="id-v119-el-pl119">
+        <bounds x="720" y="140" width="200" height="50"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v119-el-view-full" name="v119 全量拓扑 — 多区域镜像仓库副本">
+      <child xsi:type="archimate:DiagramObject" id="id-v119-el-do-vendor" archimateElement="id-v119-el-vendor">
+        <bounds x="48" y="48" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-el-c-as-v" source="id-v119-el-do-vendor" target="id-v119-el-do-declare" archimateRelationship="id-v119-el-rel-as-v"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-el-c-v-portal" source="id-v119-el-do-vendor" target="id-v119-el-do-portal" archimateRelationship="id-v119-el-rel-v-portal"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-el-do-commenter" archimateElement="id-v119-el-commenter">
+        <bounds x="48" y="160" width="160" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-el-c-as-c" source="id-v119-el-do-commenter" target="id-v119-el-do-start" archimateRelationship="id-v119-el-rel-as-c"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-el-c-c-cloud" source="id-v119-el-do-commenter" target="id-v119-el-do-cloud" archimateRelationship="id-v119-el-rel-c-cloud"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-el-do-declare" targetConnections="id-v119-el-c-as-v" archimateElement="id-v119-el-declare">
+        <bounds x="240" y="48" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-el-do-start" targetConnections="id-v119-el-c-as-c id-v119-el-c-vpc-start" archimateElement="id-v119-el-start">
+        <bounds x="240" y="160" width="200" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-el-do-portal" targetConnections="id-v119-el-c-v-portal" archimateElement="id-v119-el-portal">
+        <bounds x="480" y="48" width="140" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-el-c-portal-aip" source="id-v119-el-do-portal" target="id-v119-el-do-aip" archimateRelationship="id-v119-el-rel-portal-aip"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-el-do-aip" targetConnections="id-v119-el-c-portal-aip id-v119-el-c-cloud-aip id-v119-el-c-pub-aip" archimateElement="id-v119-el-aip">
+        <bounds x="660" y="48" width="180" height="50"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-el-do-cloud" targetConnections="id-v119-el-c-c-cloud" archimateElement="id-v119-el-cloud">
+        <bounds x="480" y="160" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-el-c-cloud-aip" source="id-v119-el-do-cloud" target="id-v119-el-do-aip" archimateRelationship="id-v119-el-rel-cloud-aip"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-el-do-regpub" archimateElement="id-v119-el-regpub">
+        <bounds x="660" y="120" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-el-c-pub-aip" source="id-v119-el-do-regpub" target="id-v119-el-do-aip" archimateRelationship="id-v119-el-rel-pub-aip"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v119-el-do-regvpc" archimateElement="id-v119-el-regvpc">
+        <bounds x="660" y="200" width="180" height="50"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v119-el-c-vpc-start" source="id-v119-el-do-regvpc" target="id-v119-el-do-start" archimateRelationship="id-v119-el-rel-vpc-start"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

@@ -1,0 +1,5169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="trae-service" content="runAll" />
+<title>runAll Status</title>
+<style>
+  /* runAll UI Color System — see docs/superpowers/specs/2026-05-31-runall-ui-color-system-design.md */
+  :root {
+    --ra-bg-page: #1a1a2e;
+    --ra-bg-card: #16213e;
+    --ra-bg-card-hover: #1c2a4a;
+    --ra-bg-panel: #0f172a;
+    --ra-text-primary: #e0e0e0;
+    --ra-text-muted: #94a3b8;
+    --ra-btn-bg: #111827;
+    --ra-btn-bg-hover: #273449;
+    --ra-btn-bg-active: #334155;
+    --ra-btn-bg-clicked: #3d4f66;
+    --ra-btn-border: #555;
+    --ra-btn-text: #ccc;
+    --ra-accent-neutral: #94a3b8;
+    --ra-accent-restart: #60a5fa;
+    --ra-accent-restart-bg: #1e3a8a;
+    --ra-accent-logs: #a78bfa;
+    --ra-accent-logs-bg: #4c1d95;
+    --ra-accent-warn: #fb923c;
+    --ra-accent-warn-bg: #7c2d12;
+    --ra-focus-ring: #60a5fa;
+    --ra-motion-fast: 90ms;
+    --ra-motion-color: 120ms;
+    --ra-motion-glow: 140ms;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace; background: var(--ra-bg-page); color: var(--ra-text-primary); padding: 24px; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+  .page-header { display: flex; align-items: center; gap: 12px; flex-shrink: 0; margin-bottom: 4px; }
+  .page-header h1 { font-size: 18px; margin-bottom: 0; color: #e0e0e0; flex: 1 1 auto; }
+  .start-all-btn { border-color: #059669; color: #a7f3d0; flex-shrink: 0; }
+  .start-all-btn:active,
+  .start-all-btn.is-clicked {
+    background: #064e3b;
+    border-color: #34d399;
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.75), 0 0 14px rgba(52, 211, 153, 0.55);
+  }
+  .shutdown-self-btn { border-color: #dc2626; color: #fecaca; flex-shrink: 0; }
+  .shutdown-self-btn:active,
+  .shutdown-self-btn.is-clicked {
+    background: #7f1d1d;
+    border-color: #ef4444;
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.75), 0 0 14px rgba(239, 68, 68, 0.55);
+  }
+  .stop-all-btn { border-color: #ea580c; color: #fed7aa; flex-shrink: 0; }
+  .stop-all-btn:active,
+  .stop-all-btn.is-clicked {
+    background: #7c2d12;
+    border-color: #f97316;
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.75), 0 0 14px rgba(249, 115, 22, 0.55);
+  }
+  .restart-all-btn { border-color: #0891b2; color: #a5f3fc; flex-shrink: 0; }
+  .restart-all-btn:active,
+  .restart-all-btn.is-clicked {
+    background: #155e75;
+    border-color: #22d3ee;
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.75), 0 0 14px rgba(34, 211, 238, 0.55);
+  }
+  .precise-restart-btn { border-color: #9333ea; color: #e9d5ff; flex-shrink: 0; }
+  .precise-restart-btn:active,
+  .precise-restart-btn.is-clicked {
+    background: #4c1d95;
+    border-color: #a855f7;
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.75), 0 0 14px rgba(168, 85, 247, 0.55);
+  }
+  .precise-restart-reg-label { font-size: 12px; color: #a78bfa; flex-shrink: 0; white-space: nowrap; }
+  .workspace { margin-top: 12px; display: flex; width: 100%; flex: 1 1 auto; min-height: 0; overflow: hidden; --logs-width: 38%; position: relative; }
+  .services-pane {
+    flex: 1 1 auto; min-width: 320px; min-height: 0; padding-right: 8px;
+    overflow: auto; scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: #64748b #0f172a;
+  }
+  .services-pane::-webkit-scrollbar { width: 10px; }
+  .services-pane::-webkit-scrollbar-track { background: #0f172a; }
+  .services-pane::-webkit-scrollbar-thumb { background: #64748b; border-radius: 5px; }
+  .services-pane::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  .subtitle { font-size: 12px; color: #888; margin-bottom: 12px; }
+  .service {
+    display: grid;
+    grid-template-columns: 10px minmax(200px, max-content) minmax(140px, 220px) 96px 52px auto minmax(0, 1fr);
+    grid-template-areas: "dot ports name status lang actions extra";
+    align-items: center;
+    gap: 8px 10px;
+    padding: 10px 14px;
+    margin-bottom: 4px;
+    background: var(--ra-bg-card);
+    border-radius: 6px;
+  }
+  .service:hover { background: var(--ra-bg-card-hover); }
+  .service .dot { grid-area: dot; }
+  .service .ports {
+    grid-area: ports;
+    font-size: 12px;
+    color: #94a3b8;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    position: relative;
+    z-index: 2;
+    overflow: visible;
+  }
+  .service .name {
+    grid-area: name;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .service .status { grid-area: status; font-size: 13px; white-space: nowrap; }
+  .service .language { grid-area: lang; font-size: 12px; color: #a5b4fc; white-space: nowrap; }
+  .service .actions { grid-area: actions; display: inline-flex; gap: 6px; flex-wrap: nowrap; }
+  .service-extra {
+    grid-area: extra;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    align-items: center;
+    min-width: 0;
+  }
+  .deps { display: flex; gap: 8px; flex-wrap: wrap; }
+  .dep { display: flex; align-items: center; gap: 4px; font-size: 12px; background: #0f3460; padding: 2px 8px; border-radius: 10px; cursor: pointer; transition: background-color 120ms ease; }
+  .dep:hover { background: #1e4a7a; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot.green { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+  .dot.yellow { background: #facc15; box-shadow: 0 0 6px #facc15; }
+  .dot.gray { background: #6b7280; }
+  .dot.red { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+  .dot.dark { background: #374151; }
+  .actions { display: inline-flex; gap: 6px; }
+  .action-btn {
+    border: 1px solid var(--ra-btn-border);
+    color: var(--ra-btn-text);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--ra-btn-bg);
+    user-select: none;
+    transition: transform var(--ra-motion-fast) ease, background-color var(--ra-motion-color) ease, border-color var(--ra-motion-color) ease, color var(--ra-motion-color) ease, box-shadow var(--ra-motion-glow) ease;
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.75);
+  }
+  .action-btn:hover { background: var(--ra-btn-bg-hover); color: #fff; border-color: var(--ra-accent-neutral); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.55); }
+  .action-btn:active {
+    transform: translateY(1px) scale(0.98);
+    background: var(--ra-btn-bg-active);
+    color: #fff;
+    border-color: var(--ra-accent-neutral);
+    box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.55), 0 0 8px rgba(148, 163, 184, 0.35);
+  }
+  .action-btn.is-clicked {
+    background: var(--ra-btn-bg-clicked);
+    color: #fff;
+    border-color: var(--ra-accent-neutral);
+    box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.75), 0 0 14px rgba(148, 163, 184, 0.55);
+  }
+  .action-btn:focus-visible { outline: 2px solid var(--ra-focus-ring); outline-offset: 1px; }
+  .build-btn { border-color: #4b5563; color: #d1d5db; }
+  .build-btn:active,
+  .build-btn.is-clicked { background: var(--ra-btn-bg-active); border-color: var(--ra-accent-neutral); }
+  .action-btn:disabled,
+  .action-btn.is-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    color: #6b7280;
+    border-color: #374151;
+    box-shadow: none;
+  }
+  .action-btn:disabled:hover,
+  .action-btn.is-disabled:hover {
+    background: var(--ra-btn-bg);
+    color: #6b7280;
+    border-color: #374151;
+    box-shadow: none;
+  }
+  .action-btn:disabled:active,
+  .action-btn.is-disabled:active,
+  .action-btn:disabled.is-clicked,
+  .action-btn.is-disabled.is-clicked {
+    transform: none;
+    background: var(--ra-btn-bg);
+    border-color: #374151;
+    box-shadow: none;
+  }
+  .restart-btn { border-color: #1d4ed8; color: #bfdbfe; }
+  .restart-btn:active,
+  .restart-btn.is-clicked {
+    background: var(--ra-accent-restart-bg);
+    border-color: var(--ra-accent-restart);
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.7), 0 0 14px rgba(96, 165, 250, 0.55);
+  }
+  .logs-btn { border-color: #7c3aed; color: #ddd6fe; }
+  .logs-btn:active,
+  .logs-btn.is-clicked {
+    background: var(--ra-accent-logs-bg);
+    border-color: var(--ra-accent-logs);
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.7), 0 0 14px rgba(167, 139, 250, 0.55);
+  }
+  .clear-logs-btn { border-color: #b45309; color: #fed7aa; }
+  .clear-logs-btn:active,
+  .clear-logs-btn.is-clicked {
+    background: var(--ra-accent-warn-bg);
+    border-color: var(--ra-accent-warn);
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.75), 0 0 14px rgba(251, 146, 60, 0.55);
+  }
+  .rebuild-all-btn { border-color: #2563eb; color: #bfdbfe; }
+  .rebuild-all-btn:active,
+  .rebuild-all-btn.is-clicked {
+    background: #1e3a8a;
+    border-color: #3b82f6;
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.75), 0 0 14px rgba(59, 130, 246, 0.55);
+  }
+  .collapse-all-btn { border-color: #7c3aed; color: #ddd6fe; flex-shrink: 0; }
+  .collapse-all-btn:active,
+  .collapse-all-btn.is-clicked {
+    background: #4c1d95;
+    border-color: #a78bfa;
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.75), 0 0 14px rgba(167, 139, 250, 0.55);
+  }
+  .ports { font-size: 12px; color: #94a3b8; }
+  .port-link {
+    color: #93c5fd;
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+  }
+  .port-link:hover { color: #bfdbfe; text-decoration: underline; }
+  .error-msg { color: #ef4444; font-size: 12px; }
+  .last-checked { font-size: 11px; color: #555; }
+  .service-group { margin-bottom: 8px; }
+  .service-group:first-child .group-header { margin-top: 0; }
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 0 6px 0;
+    padding: 2px 4px;
+    border-radius: 6px;
+  }
+  .group-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    text-align: left;
+  }
+  .group-toggle:hover { background: rgba(148, 163, 184, 0.08); }
+  .group-toggle:focus-visible { outline: 2px solid var(--ra-focus-ring); outline-offset: 1px; }
+  .group-chevron {
+    display: inline-block;
+    width: 12px;
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1;
+    transition: transform var(--ra-motion-color) ease;
+  }
+  .service-group.collapsed .group-chevron { transform: rotate(-90deg); }
+  .group-title {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .group-count { font-size: 11px; color: #64748b; white-space: nowrap; }
+  .group-actions { display: inline-flex; gap: 6px; flex-shrink: 0; }
+  .service-group.collapsed .group-body { display: none; }
+  .uptime { font-size: 12px; color: #888; margin-top: 20px; }
+  .logs-resize-handle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: ew-resize;
+    z-index: 2;
+    background: linear-gradient(90deg, #7c3aed 0%, transparent 100%);
+    opacity: 0.6;
+    transition: opacity 120ms ease;
+  }
+  .logs-resize-handle:hover { opacity: 1; }
+  .logs-resize-handle::after {
+    content: '';
+    position: absolute;
+    left: 1px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 28px;
+    border-radius: 2px;
+    background: #a78bfa;
+  }
+  .logs-panel {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--logs-width);
+    min-width: 320px;
+    max-width: 75vw;
+    background: var(--ra-bg-panel);
+    border: 2px solid #7c3aed;
+    border-radius: 8px 0 0 8px;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.6), 0 4px 24px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+    transform: translateX(0);
+    opacity: 1;
+    transition: transform 150ms ease, opacity 150ms ease;
+  }
+  .logs-panel[aria-hidden="true"] {
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  body.pane-resizing { cursor: col-resize; user-select: none; }
+  .workspace.logs-open .logs-panel { display: flex; }
+  .logs-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #1e293b; font-size: 13px; flex-shrink: 0; }
+  .logs-panel-title { font-weight: 600; }
+  .logs-panel-meta { color: #94a3b8; font-size: 11px; }
+  .logs-panel-actions { display: inline-flex; gap: 8px; }
+  .logs-panel-btn {
+    background: transparent;
+    border: 1px solid #475569;
+    color: #cbd5e1;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform var(--ra-motion-fast) ease, background-color var(--ra-motion-color) ease, border-color var(--ra-motion-color) ease, color var(--ra-motion-color) ease, box-shadow var(--ra-motion-glow) ease;
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.75);
+  }
+  .logs-panel-btn:hover { background: #334155; border-color: #64748b; color: #fff; box-shadow: 0 2px 8px rgba(2, 6, 23, 0.5); }
+  .logs-panel-btn:active {
+    transform: translateY(1px) scale(0.98);
+    background: var(--ra-btn-bg-active);
+    border-color: var(--ra-accent-neutral);
+    color: #fff;
+    box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.55), 0 0 8px rgba(148, 163, 184, 0.35);
+  }
+  .logs-panel-btn.is-clicked {
+    background: var(--ra-btn-bg-clicked);
+    border-color: var(--ra-accent-neutral);
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.75), 0 0 14px rgba(148, 163, 184, 0.55);
+  }
+  .logs-panel-btn:focus-visible { outline: 2px solid var(--ra-focus-ring); outline-offset: 1px; }
+  .logs-content { margin: 0; padding: 12px 14px; font-size: 12px; line-height: 1.45; white-space: pre-wrap; overflow: auto; color: #dbeafe; min-height: 0; flex: 1 1 auto; background: #020617; }
+  .logs-placeholder { color: #94a3b8; }
+  .observability-bar {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 0.85rem; align-items: center;
+    margin: 0 0 0.35rem; padding: 0.4rem 0.75rem; border-radius: 8px;
+    background: #1e293b; color: #cbd5e1; font-size: 0.85rem;
+  }
+  .observability-bar a { color: #38bdf8; text-decoration: none; }
+  .observability-bar a:hover { text-decoration: underline; }
+  .observability-bar .obs-label { color: #94a3b8; margin-right: 0.25rem; }
+  .observability-bar .obs-path {
+    flex: 1 1 220px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .obs-clear-all-btn { border-color: #b45309; color: #fed7aa; flex: 0 0 auto; }
+  .obs-clear-all-btn:active,
+  .obs-clear-all-btn.is-clicked {
+    background: var(--ra-accent-warn-bg);
+    border-color: var(--ra-accent-warn);
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.75), 0 0 14px rgba(251, 146, 60, 0.55);
+  }
+  .log-collection-bar {
+    display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center;
+    margin: 0 0 0.25rem; padding: 0.45rem 0.75rem; border-radius: 8px;
+    background: #0f3460; color: #cbd5e1; font-size: 0.85rem;
+  }
+  .log-collection-bar .lc-label { color: #93c5fd; margin-right: 0.25rem; font-weight: 600; }
+  .log-collection-bar .lc-stat { color: #e2e8f0; margin-right: 0.75rem; white-space: nowrap; }
+  .log-collection-bar .lc-stat .lc-val { color: #60a5fa; font-weight: 600; }
+  .log-collection-bar .lc-stat .lc-warn { color: #fbbf24; font-weight: 600; }
+  .lc-detail-toggle { border-color: #2563eb; color: #bfdbfe; font-size: 0.78rem; cursor: pointer; background: var(--ra-btn-bg); border-radius: 4px; border: 1px solid #2563eb; padding: 2px 10px; }
+  .lc-detail-toggle:hover { background: #1e3a8a; border-color: #60a5fa; color: #fff; }
+  .lc-detail-panel {
+    display: none;
+    margin: 0 0 0.5rem; padding: 0.5rem 0.85rem; border-radius: 8px;
+    background: #0c1e3a; color: #94a3b8; font-size: 0.78rem;
+    max-height: 200px; overflow-y: auto;
+  }
+  .lc-detail-panel.open { display: block; }
+  .lc-detail-table { width: 100%; border-collapse: collapse; }
+  .lc-detail-table th { text-align: left; padding: 3px 8px; color: #93c5fd; font-weight: 600; border-bottom: 1px solid #1e3a8a; }
+  .lc-detail-table td { padding: 2px 8px; border-bottom: 1px solid #0f2240; white-space: nowrap; }
+  .lc-detail-table tr.lc-inactive { color: #64748b; }
+  .lc-detail-table tr.lc-active { color: #86efac; }
+  .trace-shipping-bar {
+    display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center;
+    margin: 0 0 0.25rem; padding: 0.45rem 0.75rem; border-radius: 8px;
+    background: #1a2e1a; color: #cbd5e1; font-size: 0.85rem;
+  }
+  .trace-shipping-bar .ts-label { color: #86efac; margin-right: 0.25rem; font-weight: 600; }
+  .trace-shipping-bar .ts-stat { color: #e2e8f0; margin-right: 0.75rem; white-space: nowrap; }
+  .trace-shipping-bar .ts-stat .ts-ok { color: #4ade80; font-weight: 600; }
+  .trace-shipping-bar .ts-stat .ts-bad { color: #f87171; font-weight: 600; }
+  .trace-shipping-bar .ts-stat .ts-warn { color: #fbbf24; font-weight: 600; }
+  .trace-shipping-bar .ts-fail-detail {
+    color: #fecaca;
+    margin-right: 0.75rem;
+    white-space: normal;
+    word-break: break-word;
+    max-width: min(720px, 70vw);
+    font-size: 0.82rem;
+  }
+  .ts-verify-btn { border-color: #16a34a; color: #bbf7d0; font-size: 0.78rem; cursor: pointer; background: var(--ra-btn-bg); border-radius: 4px; border: 1px solid #16a34a; padding: 2px 10px; }
+  .ts-verify-btn:hover { background: #14532d; border-color: #4ade80; color: #fff; }
+  .ts-verify-btn:disabled { opacity: 0.5; cursor: wait; }
+  .ts-detail-panel {
+    display: none;
+    margin: 0 0 0.5rem; padding: 0.5rem 0.85rem; border-radius: 8px;
+    background: #0f2415; color: #94a3b8; font-size: 0.78rem;
+    max-height: 280px; overflow-y: auto;
+  }
+  .ts-detail-panel.open { display: block; }
+  .ts-detail-table { width: 100%; border-collapse: collapse; }
+  .ts-detail-table th { text-align: left; padding: 3px 8px; color: #86efac; font-weight: 600; border-bottom: 1px solid #166534; }
+  .ts-detail-table td { padding: 2px 8px; border-bottom: 1px solid #0f2415; white-space: nowrap; }
+  .ts-detail-table tr.ts-fail td { color: #fca5a5; }
+  .ts-detail-table tr.ts-pass td { color: #bbf7d0; }
+  .ts-detail-table a { color: #60a5fa; }
+  .dev-tools-bar {
+    display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; align-items: center;
+    margin: 0 0 0.35rem; padding: 0.4rem 0.75rem; border-radius: 8px;
+    background: #422006; color: #fed7aa; font-size: 0.85rem;
+  }
+  .dev-tools-bar .dev-label { color: #fdba74; margin-right: 0.25rem; }
+  .dev-conf-generate-btn { border-color: #2563eb; color: #bfdbfe; }
+  .dev-conf-generate-btn:active,
+  .dev-conf-generate-btn.is-clicked {
+    background: #1e3a8a;
+    border-color: #3b82f6;
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.75), 0 0 14px rgba(59, 130, 246, 0.55);
+  }
+  .dev-clear-db-btn { border-color: #dc2626; color: #fecaca; }
+  .dev-clear-db-btn:active,
+  .dev-clear-db-btn.is-clicked {
+    background: #7f1d1d;
+    border-color: #ef4444;
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.75), 0 0 14px rgba(239, 68, 68, 0.55);
+  }
+  .dev-init-db-btn { border-color: #2563eb; color: #bfdbfe; margin-left: auto; }
+  .dev-init-db-btn:active,
+  .dev-init-db-btn.is-clicked {
+    background: #1e3a8a;
+    border-color: #3b82f6;
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.75), 0 0 14px rgba(59, 130, 246, 0.55);
+  }
+  .dev-log-select {
+    background: #1e293b;
+    color: #e0e0e0;
+    border: 1px solid #475569;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .dev-log-select:focus-visible {
+    outline: 2px solid var(--ra-focus-ring);
+    outline-offset: 1px;
+  }
+  .proxy-toggle-btn {
+    border-color: #7c3aed;
+    color: #ddd6fe;
+    flex-shrink: 0;
+    min-width: 100px;
+    text-align: center;
+  }
+  .proxy-toggle-btn.proxy-on {
+    background: #4c1d95;
+    border-color: #a78bfa;
+    color: #fff;
+    box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.75), 0 0 14px rgba(167, 139, 250, 0.55);
+  }
+  .proxy-toggle-btn.proxy-off {
+    background: #1e293b;
+    border-color: #475569;
+    color: #94a3b8;
+  }
+  /* ---- Start-All Progress Panel ---- */
+  .start-all-progress {
+    display: none;
+    margin: 8px 0 12px 0;
+    padding: 14px 18px;
+    background: var(--ra-bg-card);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    flex-shrink: 0;
+    opacity: 1;
+    max-height: 400px;
+    overflow: hidden;
+    transition: opacity 500ms ease, max-height 500ms ease 300ms, margin 500ms ease 300ms, padding 500ms ease 300ms, border-width 500ms ease 300ms;
+  }
+  .start-all-progress.is-active {
+    display: block;
+  }
+  .start-all-progress.is-done {
+    border-color: #059669;
+  }
+  .start-all-progress.has-errors {
+    border-color: #dc2626;
+  }
+  .start-all-progress.is-cancelled {
+    border-color: #d97706;
+  }
+  .start-all-progress.is-fading {
+    opacity: 0;
+    max-height: 0;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+  }
+  .progress-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .progress-cancel-btn {
+    margin-left: auto;
+    padding: 4px 12px;
+    background: #451a03;
+    border: 1px solid #ea580c;
+    border-radius: 4px;
+    color: #fed7aa;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .progress-cancel-btn:hover { background: #7c2d12; color: #fff; }
+  .progress-cancel-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .progress-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e0e0e0;
+  }
+  .progress-stats {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    color: #94a3b8;
+  }
+  .progress-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .progress-stat .val {
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .progress-stat.started .val { color: #34d399; }
+  .progress-stat.remaining .val { color: #60a5fa; }
+  .progress-stat.failed .val { color: #f87171; }
+  .progress-bar-track {
+    width: 100%;
+    height: 6px;
+    background: #1e293b;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #059669, #34d399);
+    border-radius: 3px;
+    transition: width 300ms ease;
+    width: 0%;
+  }
+  .progress-bar-fill.has-errors {
+    background: linear-gradient(90deg, #059669, #f87171);
+  }
+  .progress-bar-fill.is-indeterminate {
+    width: 60% !important;
+    background: linear-gradient(90deg, #065f46, #34d399, #6ee7b7, #34d399, #065f46);
+    background-size: 200% 100%;
+    animation: prog-indeterminate 1.6s ease-in-out infinite;
+    transition: none;
+  }
+  @keyframes prog-indeterminate {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+  }
+  .progress-current {
+    font-size: 12px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .progress-current .spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #475569;
+    border-top-color: #34d399;
+    border-radius: 50%;
+    animation: spin 600ms linear infinite;
+  }
+  .progress-error {
+    margin-top: 6px;
+    padding: 6px 10px;
+    background: #3b1111;
+    border: 1px solid #dc2626;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #fca5a5;
+    font-family: monospace;
+    display: none;
+  }
+  .progress-error.is-visible { display: block; }
+  .progress-errors-list {
+    margin-top: 4px;
+    padding: 6px 10px;
+    background: #1a0f0f;
+    border: 1px solid #7f1d1d;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #fca5a5;
+    font-family: monospace;
+    max-height: 140px;
+    overflow-y: auto;
+  }
+  .progress-errors-list ul { margin: 0; padding-left: 18px; list-style: square; }
+  .progress-errors-list li { margin-bottom: 2px; word-break: break-all; }
+  .progress-copy-btn {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 3px 10px;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #94a3b8;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 120ms, color 120ms, border-color 120ms;
+  }
+  .progress-copy-btn:hover { background: #273449; color: #e0e0e0; border-color: #60a5fa; }
+  .progress-copy-btn.is-copied { background: #064e3b; border-color: #34d399; color: #a7f3d0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .request-error-banner {
+    display: none;
+    margin: 8px 0 4px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: #7f1d1d;
+    border: 1px solid #ef4444;
+    color: #fecaca;
+    font-size: 13px;
+    white-space: pre-wrap;
+  }
+  .request-error-banner.is-visible { display: block; }
+  /* ── Toast Notification System ── */
+  .toast-container {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+    max-width: 420px;
+  }
+  .toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #1e293b;
+    border: 1px solid #475569;
+    color: #e0e0e0;
+    font-size: 13px;
+    line-height: 1.45;
+    pointer-events: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    animation: toast-slide-in 280ms ease;
+    transition: opacity 250ms ease, transform 250ms ease;
+  }
+  .toast.toast-error {
+    border-color: #ef4444;
+    background: #1f1212;
+    color: #fecaca;
+  }
+  .toast.toast-success {
+    border-color: #22c55e;
+    background: #0f1f14;
+    color: #bbf7d0;
+  }
+  .toast.toast-warning {
+    border-color: #f59e0b;
+    background: #1f1a0e;
+    color: #fde68a;
+  }
+  .toast.toast-info {
+    border-color: #3b82f6;
+    background: #0f172a;
+    color: #bfdbfe;
+  }
+  .toast.toast-removing {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  .toast-icon { flex-shrink: 0; font-size: 15px; line-height: 1.3; }
+  .toast-body { flex: 1; min-width: 0; word-break: break-word; }
+  .toast-close {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 2px;
+    opacity: 0.7;
+    transition: opacity 120ms;
+  }
+  .toast-close:hover { opacity: 1; color: #e0e0e0; }
+  @keyframes toast-slide-in {
+    from { opacity: 0; transform: translateX(60px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  /* ── Queue Status Bar ── */
+  .queue-status-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    margin: 0 0 8px 0;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: #1e1a3a;
+    border: 1px solid #6366f1;
+    color: #c7d2fe;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .queue-current {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: #e0e0e0;
+  }
+  .queue-current .spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #475569;
+    border-top-color: #818cf8;
+    border-radius: 50%;
+    animation: spin 600ms linear infinite;
+  }
+  .queue-pending {
+    color: #a5b4fc;
+  }
+  .queue-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 8px;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 12px;
+    color: #c7d2fe;
+    font-size: 12px;
+  }
+  .queue-item-cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    margin-left: 2px;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .queue-item-cancel-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #fecaca;
+  }
+  .queue-cancel-all-btn {
+    padding: 3px 10px;
+    background: #451a03;
+    border: 1px solid #ea580c;
+    border-radius: 4px;
+    color: #fed7aa;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .queue-cancel-all-btn:hover { background: #7c2d12; color: #fff; }
+  .queue-interrupt-btn {
+    padding: 3px 10px;
+    background: #451a03;
+    border: 1px solid #dc2626;
+    border-radius: 4px;
+    color: #fecaca;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .queue-interrupt-btn:hover { background: #7f1d1d; color: #fff; }
+  /* ── Custom Modal System ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: modalFadeIn 150ms ease;
+  }
+  .modal-overlay.closing {
+    animation: modalFadeOut 130ms ease forwards;
+  }
+  @keyframes modalFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes modalFadeOut {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+
+  .modal-dialog {
+    background: var(--ra-bg-card);
+    border: 1px solid #334155;
+    border-radius: 10px;
+    min-width: 380px;
+    max-width: min(620px, 90vw);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(148, 163, 184, 0.12);
+    animation: modalSlideIn 180ms ease;
+  }
+  .modal-overlay.closing .modal-dialog {
+    animation: modalSlideOut 130ms ease forwards;
+  }
+  @keyframes modalSlideIn {
+    from { transform: translateY(-12px) scale(0.97); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes modalSlideOut {
+    from { transform: translateY(0) scale(1); opacity: 1; }
+    to   { transform: translateY(-8px) scale(0.98); opacity: 0; }
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid #1e293b;
+    flex-shrink: 0;
+  }
+  .modal-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .modal-title-icon { font-size: 16px; }
+  .modal-close-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+    transition: color 120ms ease, background 120ms ease;
+  }
+  .modal-close-btn:hover { color: #e2e8f0; background: #1e293b; }
+
+  .modal-body {
+    padding: 16px 18px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #cbd5e1;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .modal-body .modal-highlight {
+    color: #fbbf24;
+    font-weight: 600;
+  }
+  .modal-body .modal-muted {
+    color: #94a3b8;
+    font-size: 12px;
+  }
+
+  .modal-input {
+    width: 100%;
+    background: #0f172a;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-size: 13px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    font-family: monospace;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+  }
+  .modal-input:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.35);
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 18px 14px;
+    border-top: 1px solid #1e293b;
+    flex-shrink: 0;
+  }
+  .modal-footer-left { display: flex; gap: 8px; align-items: center; }
+  .modal-footer-right { display: flex; gap: 8px; align-items: center; }
+
+  .modal-btn {
+    padding: 7px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-weight: 500;
+    user-select: none;
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+  }
+  .modal-btn:focus-visible {
+    outline: 2px solid var(--ra-focus-ring);
+    outline-offset: 1px;
+  }
+  .modal-btn-cancel {
+    background: var(--ra-btn-bg);
+    border-color: #475569;
+    color: #cbd5e1;
+  }
+  .modal-btn-cancel:hover {
+    background: var(--ra-btn-bg-hover);
+    border-color: #64748b;
+    color: #fff;
+  }
+  .modal-btn-primary {
+    background: #1e3a8a;
+    border-color: #3b82f6;
+    color: #bfdbfe;
+  }
+  .modal-btn-primary:hover {
+    background: #1e40af;
+    border-color: #60a5fa;
+    color: #fff;
+  }
+  .modal-btn-danger {
+    background: #7f1d1d;
+    border-color: #dc2626;
+    color: #fecaca;
+  }
+  .modal-btn-danger:hover {
+    background: #991b1b;
+    border-color: #ef4444;
+    color: #fff;
+  }
+  .modal-btn-warn {
+    background: #7c2d12;
+    border-color: #ea580c;
+    color: #fed7aa;
+  }
+  .modal-btn-warn:hover {
+    background: #9a3412;
+    border-color: #f97316;
+    color: #fff;
+  }
+  .modal-btn-success {
+    background: #064e3b;
+    border-color: #059669;
+    color: #a7f3d0;
+  }
+  .modal-btn-success:hover {
+    background: #065f46;
+    border-color: #34d399;
+    color: #fff;
+  }
+  .modal-btn-copy {
+    background: #1e293b;
+    border-color: #475569;
+    color: #94a3b8;
+    font-size: 12px;
+    padding: 5px 14px;
+  }
+  .modal-btn-copy:hover {
+    background: #334155;
+    border-color: #64748b;
+    color: #e2e8f0;
+  }
+  .modal-btn-copy.copied {
+    background: #064e3b;
+    border-color: #34d399;
+    color: #86efac;
+  }
+
+  /* Copy feedback toast */
+  .modal-copy-toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #065f46;
+    border: 1px solid #34d399;
+    color: #bbf7d0;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 10001;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    animation: copyToastIn 200ms ease, copyToastOut 200ms ease 1.8s forwards;
+    pointer-events: none;
+  }
+  @keyframes copyToastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  @keyframes copyToastOut {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+
+  /* Ensure modal body text is selectable / copyable */
+  .modal-body {
+    user-select: text;
+    cursor: auto;
+  }
+</style>
+</head>
+<body>
+<div id="requestErrorBanner" class="request-error-banner" role="alert" aria-live="assertive"></div>
+<div class="page-header">
+  <h1>runAll Status</h1>
+  <button id="start-all-btn" class="action-btn start-all-btn" type="button">全部启动</button>
+  <button id="stop-all-btn" class="action-btn stop-all-btn" type="button">全部关闭</button>
+  <button id="restart-all-btn" class="action-btn restart-all-btn" type="button">全部重启</button>
+  <button id="build-all-btn" class="action-btn rebuild-all-btn" type="button">全部重新编译</button>
+  <button id="precise-restart-btn" class="action-btn precise-restart-btn" type="button" title="精准编译重启：编译并重启登记文件中登记的服务，完成后清空登记">精准编译重启</button>
+  <span id="precise-restart-reg-label" class="precise-restart-reg-label" aria-live="polite"></span>
+  <button id="collapse-all-btn" class="action-btn collapse-all-btn" type="button">折叠全部</button>
+  <button id="proxy-toggle-btn" class="action-btn proxy-toggle-btn proxy-off" type="button" title="切换代理开关（默认关闭，服务启动时去除 HTTP_PROXY 等环境变量）">代理: 关闭</button>
+  <button id="shutdown-self-btn" class="action-btn shutdown-self-btn" type="button">关闭自身</button>
+</div>
+<div id="queue-status-bar" class="queue-status-bar" style="display:none" aria-live="polite" aria-label="执行队列"></div>
+<div id="start-all-progress-panel" class="start-all-progress" aria-live="polite">
+	<div class="progress-header">
+		<span class="progress-title">全部启动进度</span>
+		<button id="prog-cancel-btn" class="progress-cancel-btn" type="button" style="display:none" onclick="cancelProgressOperation()">中断</button>
+	</div>
+	<div class="progress-stats">
+		<span class="progress-stat started"><span id="prog-started-label">已启动</span>: <span class="val" id="prog-started">0</span></span>
+		<span class="progress-stat skipped" id="prog-skipped-stat" style="display:none">已跳过: <span class="val" id="prog-skipped">0</span></span>
+		<span class="progress-stat remaining">剩余: <span class="val" id="prog-remaining">0</span></span>
+		<span class="progress-stat failed" id="prog-failed-stat" style="display:none">失败: <span class="val" id="prog-failed">0</span></span>
+	</div>
+	<div class="progress-bar-track">
+		<div class="progress-bar-fill" id="prog-bar"></div>
+	</div>
+	<div class="progress-current" id="prog-current-line" style="display:none">
+		<span class="spinner"></span>
+		<span id="prog-current-text"></span>
+	</div>
+	<div class="progress-error" id="prog-error"></div>
+	<div class="progress-errors-list" id="prog-errors-list" style="display:none">
+		<ul id="prog-errors-ul"></ul>
+		<button id="prog-copy-errors-btn" class="progress-copy-btn" type="button" title="复制全部错误信息到剪贴板" onclick="copyErrorsToClipboard()">复制全部错误</button>
+	</div>
+</div>
+<div id="workspace" class="workspace">
+  <section class="services-pane">
+    <div id="observability-bar" class="observability-bar" aria-label="Observability links">
+      <span class="obs-label">集中日志:</span>
+      <span>加载中…</span>
+    </div>
+    <div id="log-collection-bar" class="log-collection-bar" aria-label="Log collection status">
+      <span class="lc-label">📊 日志收集:</span>
+      <span>加载中…</span>
+    </div>
+    <div id="lc-detail-panel" class="lc-detail-panel" aria-hidden="true">
+      <table class="lc-detail-table">
+        <thead><tr><th>服务</th><th>状态</th><th>日志行数</th><th>最近日志</th><th>活动</th></tr></thead>
+        <tbody id="lc-detail-tbody"></tbody>
+      </table>
+    </div>
+    <div id="trace-shipping-bar" class="trace-shipping-bar" aria-label="Trace log shipping verification">
+      <span class="ts-label">🔍 Trace 投递验证:</span>
+      <span>尚未验证</span>
+    </div>
+    <div id="internal-apis-smoke-bar" class="trace-shipping-bar" aria-label="Internal API live smoke">
+      <span class="ts-label">🧪 Internal API smoke:</span>
+      <span>尚未验证</span>
+    </div>
+    <div id="ts-detail-panel" class="ts-detail-panel" aria-hidden="true">
+      <table class="ts-detail-table">
+        <thead><tr><th>服务</th><th>运行状态</th><th>本地采集</th><th>Loki 可见</th><th>条数</th><th>Grafana</th><th>问题</th></tr></thead>
+        <tbody id="ts-detail-tbody"></tbody>
+      </table>
+    </div>
+    <div id="dev-tools-bar" class="dev-tools-bar" aria-label="Development tools">
+      <span class="dev-label">开发工具:</span>
+      <button id="dev-generate-conf" class="logs-panel-btn dev-conf-generate-btn" type="button">生成配置副本</button>
+      <button id="dev-clear-databases" class="logs-panel-btn dev-clear-db-btn" type="button">清空全部数据库（开发）</button>
+      <button id="dev-init-databases" class="logs-panel-btn dev-init-db-btn" type="button">初始化全部数据库（开发）</button>
+      <button id="dev-view-logs" class="logs-panel-btn dev-conf-generate-btn" type="button">日志查看</button>
+    </div>
+    <div class="subtitle">auto-refresh every 2s</div>
+    <div id="services"></div>
+    <div class="uptime" id="uptime"></div>
+  </section>
+  <aside id="logs-panel" class="logs-panel" aria-hidden="true" aria-labelledby="logs-panel-title">
+    <div id="logs-resize-handle" class="logs-resize-handle" aria-hidden="true"></div>
+    <div class="logs-panel-header">
+      <div>
+        <div id="logs-panel-title" class="logs-panel-title">Service Logs</div>
+        <div id="logs-panel-meta" class="logs-panel-meta">last 200 lines, auto-refresh every 2s</div>
+      </div>
+      <div class="logs-panel-actions">
+        <select id="dev-log-select" class="dev-log-select" aria-label="选择开发工具" style="display:none"></select>
+        <button id="logs-panel-loki" class="logs-panel-btn" type="button">Loki</button>
+        <button id="logs-panel-grafana" class="logs-panel-btn" type="button">Grafana</button>
+        <button id="logs-panel-clear-dev" class="logs-panel-btn clear-logs-btn" type="button" style="display:none">清空日志</button>
+        <button id="logs-panel-copy" class="logs-panel-btn" type="button">Copy</button>
+        <button id="logs-panel-refresh" class="logs-panel-btn" type="button">Refresh</button>
+        <button id="logs-panel-close" class="logs-panel-btn" type="button">Close</button>
+      </div>
+    </div>
+    <pre id="logs-content" class="logs-content logs-placeholder">Select a service to view logs.</pre>
+  </aside>
+</div>
+<script>
+// ── Custom Modal System (replaces browser alert/confirm/prompt) ──
+(function() {
+  'use strict';
+
+  var activeModal = null;
+
+  function createModalHTML(title, bodyHTML, footerHTML) {
+    return '' +
+      '<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">' +
+        '<div class="modal-dialog">' +
+          '<div class="modal-header">' +
+            '<span class="modal-title" id="modal-title">' + (title || 'runAll') + '</span>' +
+            '<button class="modal-close-btn" aria-label="关闭" data-modal-action="close">&times;</button>' +
+          '</div>' +
+          '<div class="modal-body">' + bodyHTML + '</div>' +
+          (footerHTML ? '<div class="modal-footer">' + footerHTML + '</div>' : '') +
+        '</div>' +
+      '</div>';
+  }
+
+  function escapeHTML(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function formatMessage(msg) {
+    return escapeHTML(String(msg || '')).replace(/\n/g, '<br>');
+  }
+
+  // ── Diagnostic payload builder (AI-agent-friendly) ──
+
+  function buildDiagnosticPayload(message, meta) {
+    meta = meta || {};
+    var lines = [];
+
+    lines.push('# 诊断报告');
+    lines.push('');
+    lines.push('## 基本信息');
+    lines.push('- **时间**: ' + new Date().toISOString());
+    lines.push('- **页面**: ' + (window.location.href || ''));
+    lines.push('- **操作类型**: ' + (meta.opLabel || meta.title || '未知'));
+    if (meta.opDetail) {
+      lines.push('- **操作详情**: ' + meta.opDetail);
+    }
+
+    // Try to extract trace_id / request ID from the error banner
+    try {
+      var banner = document.getElementById('requestErrorBanner');
+      if (banner) {
+        var bannerText = (banner.textContent || '').trim();
+        if (bannerText) {
+          var traceMatch = bannerText.match(/trace[_-]?id[=:]\s*([a-fA-F0-9-]{8,})/);
+          if (traceMatch) {
+            lines.push('- **Trace ID**: `' + traceMatch[1] + '`');
+          }
+          if (!traceMatch) {
+            var reqIdMatch = bannerText.match(/request[_-]?id[=:]\s*(\S+)/);
+            if (reqIdMatch) {
+              lines.push('- **Request ID**: `' + reqIdMatch[1] + '`');
+            }
+          }
+        }
+      }
+    } catch (_) { /* ignore */ }
+
+    lines.push('');
+    lines.push('## 详细信息');
+    lines.push('');
+    // message text — preserve as plain text (strip HTML tags from formatted message)
+    var rawMsg = String(message || '');
+    lines.push(rawMsg);
+
+    return lines.join('\n');
+  }
+
+  // ── Clipboard helpers ──
+
+  function copyToClipboard(text) {
+    // Modern async clipboard API
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(function() { return true; }).catch(function() {
+        return fallbackCopy(text);
+      });
+    }
+    return fallbackCopy(text);
+  }
+
+  function fallbackCopy(text) {
+    return new Promise(function(resolve) {
+      var textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '-9999px';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try {
+        var ok = document.execCommand('copy');
+        resolve(ok);
+      } catch (_) {
+        resolve(false);
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    });
+  }
+
+  function showCopyToast(success) {
+    // Remove any existing toast
+    var existing = document.querySelector('.modal-copy-toast');
+    if (existing) existing.parentNode.removeChild(existing);
+
+    var toast = document.createElement('div');
+    toast.className = 'modal-copy-toast';
+    toast.textContent = success ? '✓ 已复制诊断信息，可直接投喂给智能体' : '✗ 复制失败，请手动选择文本后 Ctrl+C';
+    toast.style.background = success ? '#065f46' : '#7f1d1d';
+    toast.style.borderColor = success ? '#34d399' : '#ef4444';
+    toast.style.color = success ? '#bbf7d0' : '#fecaca';
+    document.body.appendChild(toast);
+    setTimeout(function() {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 2200);
+  }
+
+  // Build footer HTML with copy button + action buttons
+  function buildFooter(copyMeta, actionButtonsHTML) {
+    var copyHint = escapeAttr('复制「' + ((copyMeta && copyMeta.opLabel) || (copyMeta && copyMeta.title) || '诊断信息') + '」的完整诊断报告，可直接投喂给 AI 智能体分析');
+    return '' +
+      '<div class="modal-footer-left">' +
+        '<button class="modal-btn modal-btn-copy" data-modal-action="copy" title="' + copyHint + '">📋 复制诊断信息</button>' +
+      '</div>' +
+      '<div class="modal-footer-right">' +
+        actionButtonsHTML +
+      '</div>';
+  }
+
+  // ── Core modal ──
+
+  function showModal(title, bodyHTML, footerHTML, copyMeta) {
+    return new Promise(function(resolve) {
+      // Remove any existing modal
+      if (activeModal) {
+        activeModal.remove();
+        activeModal = null;
+      }
+
+      var container = document.createElement('div');
+      container.innerHTML = createModalHTML(title, bodyHTML, footerHTML);
+      var overlay = container.firstElementChild;
+
+      // Store diagnostic metadata for copy action
+      overlay._modalCopyMeta = copyMeta || { title: title };
+
+      document.body.appendChild(overlay);
+      activeModal = overlay;
+
+      // Focus trap: find first focusable element
+      var focusable = overlay.querySelectorAll('button, input, [tabindex]:not([tabindex="-1"])');
+      if (focusable.length > 0) {
+        setTimeout(function() { focusable[0].focus(); }, 80);
+      }
+
+      // Close handler
+      function close(result) {
+        if (!activeModal || activeModal !== overlay) return;
+        overlay.classList.add('closing');
+        activeModal = null;
+        setTimeout(function() {
+          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        }, 140);
+        resolve(result);
+      }
+
+      // Click on overlay backdrop
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+          close(undefined);
+        }
+      });
+
+      // Delegate clicks on data-modal-action
+      overlay.addEventListener('click', function(e) {
+        var target = e.target;
+        var action = target.getAttribute('data-modal-action');
+        if (!action) {
+          var parent = target.closest('[data-modal-action]');
+          if (parent) action = parent.getAttribute('data-modal-action');
+        }
+        if (action === 'close') {
+          close(undefined);
+        } else if (action === 'confirm') {
+          close(true);
+        } else if (action === 'cancel') {
+          close(false);
+        } else if (action === 'submit-prompt') {
+          var input = overlay.querySelector('.modal-input');
+          close(input ? input.value : '');
+        } else if (action === 'copy') {
+          // Copy diagnostic payload
+          var meta = overlay._modalCopyMeta || {};
+          var payload = buildDiagnosticPayload(meta.message || '', meta);
+          var btn = target.closest('.modal-btn-copy');
+          copyToClipboard(payload).then(function(ok) {
+            showCopyToast(ok);
+            if (btn && ok) {
+              btn.classList.add('copied');
+              setTimeout(function() { btn.classList.remove('copied'); }, 2000);
+            }
+          });
+        }
+      });
+
+      // Keyboard shortcuts
+      function onKeyDown(e) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          close(undefined);
+          return;
+        }
+        if (e.key === 'Enter') {
+          // 文本框内回车应换行，不触发弹窗操作
+          var tag = (e.target && e.target.tagName || '').toLowerCase();
+          if (tag === 'textarea') return;
+
+          // prompt 模态框：当前聚焦在 .modal-input 时提交输入值
+          var promptInput = overlay.querySelector('.modal-input');
+          if (promptInput && document.activeElement === promptInput) {
+            e.preventDefault();
+            close(promptInput.value);
+            return;
+          }
+
+          // alert / confirm 模态框：回车触发"确定"按钮
+          var confirmBtn = overlay.querySelector('[data-modal-action="confirm"]');
+          if (confirmBtn) {
+            e.preventDefault();
+            confirmBtn.click();
+            return;
+          }
+
+          // 兜底：无确认按钮时关闭（alert 模式）
+          close(undefined);
+        }
+      }
+      overlay.addEventListener('keydown', onKeyDown);
+    });
+  }
+
+  // ── Public API ──
+
+  /**
+   * Show an alert-style modal (replaces alert()).
+   * @param {string} message — message text (supports \n for line breaks)
+   * @param {object} [opts]
+   * @param {string} [opts.title]   — modal title
+   * @param {string} [opts.type]    — 'info' | 'success' | 'warning' | 'error'
+   * @param {string} [opts.opLabel] — human-readable operation label for copy payload
+   */
+  window.showModalAlert = function(message, opts) {
+    opts = opts || {};
+    var type = opts.type || 'info';
+    var title = opts.title || '';
+    var icons = { info: 'ℹ️', success: '✅', warning: '⚠️', error: '❌' };
+    var labels = { info: '提示', success: '完成', warning: '警告', error: '错误' };
+    var btnClass = type === 'error' ? 'modal-btn-danger' : (type === 'warning' ? 'modal-btn-warn' : (type === 'success' ? 'modal-btn-success' : 'modal-btn-primary'));
+    if (!title) title = (icons[type] || icons.info) + ' ' + (labels[type] || labels.info);
+
+    var copyMeta = {
+      title: title,
+      message: message,
+      opLabel: opts.opLabel || labels[type] || '提示',
+      opDetail: opts.opDetail || ''
+    };
+
+    return showModal(
+      title,
+      '<div class="modal-message">' + formatMessage(message) + '</div>',
+      buildFooter(copyMeta, '<button class="modal-btn ' + btnClass + '" data-modal-action="confirm">确定</button>'),
+      copyMeta
+    );
+  };
+
+  /**
+   * Show a confirm-style modal (replaces window.confirm()).
+   */
+  window.showModalConfirm = function(message, opts) {
+    opts = opts || {};
+    var title = opts.title || '⚠️ 确认操作';
+
+    var copyMeta = {
+      title: title,
+      message: message,
+      opLabel: opts.opLabel || '确认操作',
+      opDetail: opts.opDetail || ''
+    };
+
+    return showModal(
+      title,
+      '<div class="modal-message">' + formatMessage(message) + '</div>',
+      buildFooter(copyMeta,
+        '<button class="modal-btn modal-btn-cancel" data-modal-action="cancel">取消</button>' +
+        '<button class="modal-btn modal-btn-primary" data-modal-action="confirm">确定</button>'
+      ),
+      copyMeta
+    ).then(function(result) { return result === true; });
+  };
+
+  /**
+   * Show a prompt-style modal (replaces window.prompt()).
+   */
+  window.showModalPrompt = function(message, defaultValue, opts) {
+    opts = opts || {};
+    var title = opts.title || '📝 请输入';
+    var val = defaultValue != null ? escapeHTML(String(defaultValue)) : '';
+
+    var copyMeta = {
+      title: title,
+      message: message + (defaultValue ? '\n\n默认值: ' + defaultValue : ''),
+      opLabel: opts.opLabel || '用户输入',
+      opDetail: opts.opDetail || ''
+    };
+
+    return showModal(
+      title,
+      '<div class="modal-message">' + formatMessage(message) + '</div>' +
+      '<input class="modal-input" type="text" value="' + val + '" placeholder="请输入 trace_id ...">',
+      buildFooter(copyMeta,
+        '<button class="modal-btn modal-btn-cancel" data-modal-action="cancel">取消</button>' +
+        '<button class="modal-btn modal-btn-primary" data-modal-action="submit-prompt">确定</button>'
+      ),
+      copyMeta
+    ).then(function(result) {
+      return (result === undefined || result === false) ? null : String(result);
+    });
+  };
+
+})();
+const startTime = Date.now();
+let statusRefreshMs = 2000;
+const statusRefreshLogsOpenMultiplier = 3;
+const logLines = 200;
+const minLogsPanelWidth = 320;
+const minServicePanelWidth = 380;
+const clickFeedbackDurationMs = 300;
+const dotClass = {
+  healthy: 'green', starting: 'yellow', retrying: 'yellow', restarting: 'yellow',
+  pending: 'gray', stopped: 'gray', failed: 'red', skipped: 'dark'
+};
+
+function serviceDotClass(svc) {
+  if (svc && svc.status === 'healthy' && svc.readiness && svc.readiness !== 'ready') {
+    return 'yellow';
+  }
+  return dotClass[svc.status] || 'gray';
+}
+
+function isServiceFullyHealthy(svc) {
+  if (!svc || svc.status === 'pending' || svc.status === '' || svc.status !== 'healthy') {
+    return false;
+  }
+  if (svc.readiness && svc.readiness !== 'ready') {
+    return false;
+  }
+  return true;
+}
+
+function groupHealthDotClass(services) {
+  if (!Array.isArray(services) || services.length === 0) {
+    return 'gray';
+  }
+  let anyFailed = false;
+  let anyTransitional = false;
+  let anyDegraded = false;
+  for (const svc of services) {
+    const status = typeof svc.status === 'string' ? svc.status.trim() : '';
+    if (status === '' || status === 'pending') {
+      continue;
+    }
+    if (svc.status === 'failed') {
+      anyFailed = true;
+      continue;
+    }
+    if (status === 'starting' || status === 'retrying' || status === 'restarting') {
+      anyTransitional = true;
+      continue;
+    }
+    if (svc.status === 'healthy' && svc.readiness && svc.readiness !== 'ready') {
+      anyDegraded = true;
+    }
+  }
+  if (anyFailed) {
+    return 'red';
+  }
+  if (anyTransitional || anyDegraded) {
+    return 'yellow';
+  }
+  if (services.every(isServiceFullyHealthy)) {
+    return 'green';
+  }
+  return 'gray';
+}
+
+function groupHealthSummary(services) {
+  const healthyCount = services.filter(isServiceFullyHealthy).length;
+  return `${healthyCount}/${services.length} 正常运行`;
+}
+
+function isGroupCollapsed(groupKey) {
+  return groupUIState[groupKey] === true;
+}
+
+function toggleGroupCollapsed(groupKey) {
+  groupUIState[groupKey] = !isGroupCollapsed(groupKey);
+  renderStatus(lastStatusData);
+}
+
+function collapseAllGroups() {
+  const data = lastStatusData;
+  if (!Array.isArray(data) || data.length === 0) return;
+  const groupKeys = new Set();
+  for (const svc of data) {
+    const groupName = typeof svc.group === 'string' ? svc.group.trim() : '';
+    groupKeys.add(groupName || 'ungrouped');
+  }
+  const allCollapsed = [...groupKeys].every(k => isGroupCollapsed(k));
+  for (const key of groupKeys) {
+    groupUIState[key] = !allCollapsed;
+  }
+  renderStatus(lastStatusData);
+  updateCollapseAllButton(!allCollapsed);
+}
+
+function updateCollapseAllButton(collapsed) {
+  const btn = document.getElementById('collapse-all-btn');
+  if (btn) {
+    btn.textContent = collapsed ? '展开全部' : '折叠全部';
+  }
+}
+
+function formatServiceStatus(svc) {
+  const raw = typeof svc.status === 'string' ? svc.status.trim() : '';
+  if (raw === '' || raw === 'pending') {
+    if (!svc.readiness) {
+      return '—';
+    }
+    if (svc.readiness === 'ready') {
+      return '— · ready';
+    }
+    if (svc.readiness === 'degraded') {
+      return '— · not ready';
+    }
+    return `— · ${svc.readiness}`;
+  }
+  const live = raw;
+  if (!svc.readiness) {
+    return live;
+  }
+  if (svc.readiness === 'ready') {
+    return `${live} · ready`;
+  }
+  if (svc.readiness === 'degraded') {
+    return `${live} · not ready`;
+  }
+  return `${live} · ${svc.readiness}`;
+}
+const logsState = {
+  open: false,
+  service: '',
+  timerId: null,
+  requestSerial: 0,
+  lastRows: [],
+};
+const layoutState = {
+  resizing: false,
+};
+const groupUIState = {};
+const clickFeedbackTimers = new WeakMap();
+const lifecyclePollMs = 1000;
+const lifecyclePollTimeoutMs = 8000;
+let lastProxyState = false;
+let lastDAGBootInProgress = false;
+let lastStatusData = [];
+let statusFetchInFlight = null;
+let statusRefreshTimerId = null;
+let lifecyclePollToken = 0;
+
+function currentStatusRefreshMs() {
+  if (logsState.open || devLogState.open) {
+    return statusRefreshMs * statusRefreshLogsOpenMultiplier;
+  }
+  return statusRefreshMs;
+}
+
+function applyServerPollInterval(data) {
+  const ms = data && Number.isFinite(data.poll_interval_ms) ? data.poll_interval_ms : null;
+  if (ms && ms >= 500 && ms <= 30000) {
+    statusRefreshMs = ms;
+  }
+}
+
+function restartStatusRefreshTimer() {
+  if (statusRefreshTimerId !== null) {
+    clearTimeout(statusRefreshTimerId);
+    statusRefreshTimerId = null;
+  }
+  statusRefreshTimerId = setTimeout(async function () {
+    await refresh();
+    restartStatusRefreshTimer();
+  }, currentStatusRefreshMs());
+}
+
+function isServiceStartable(status) {
+  const normalized = typeof status === 'string' ? status.trim() : '';
+  return normalized === ''
+    || normalized === 'stopped'
+    || normalized === 'failed'
+    || normalized === 'skipped'
+    || normalized === 'pending';
+}
+
+function getServiceStatus(name, data) {
+  const rows = Array.isArray(data) ? data : lastStatusData;
+  const match = rows.find((item) => item && item.name === name);
+  return match && typeof match.status === 'string' ? match.status : '';
+}
+
+async function fetchStatusData() {
+  if (statusFetchInFlight) {
+    return statusFetchInFlight;
+  }
+  statusFetchInFlight = (async () => {
+    const resp = await fetch('/api/status');
+    if (!resp.ok) {
+      throw new Error('HTTP ' + resp.status);
+    }
+    const data = await resp.json();
+    // Support both legacy (array) and new (wrapper object) response formats
+    if (Array.isArray(data)) {
+      lastProxyState = false;
+      return data;
+    }
+    if (data && Array.isArray(data.services)) {
+      lastProxyState = typeof data.use_proxy === 'boolean' ? data.use_proxy : false;
+      lastDAGBootInProgress = data.dag_boot_in_progress === true;
+      applyServerPollInterval(data);
+      renderProxyToggle();
+      updateStartAllButtonState();
+      return data.services;
+    }
+    throw new Error('invalid status payload');
+  })().finally(() => {
+    statusFetchInFlight = null;
+  });
+  return statusFetchInFlight;
+}
+
+function renderStatus(data) {
+  const container = document.getElementById('services');
+  let html = '';
+  const byGroup = new Map();
+  for (const svc of data) {
+    const groupName = typeof svc.group === 'string' ? svc.group.trim() : '';
+    const groupKey = groupName || 'ungrouped';
+    if (!byGroup.has(groupKey)) byGroup.set(groupKey, []);
+    byGroup.get(groupKey).push(svc);
+  }
+
+  const sortedGroups = [...byGroup.entries()].sort((a, b) => {
+    if (a[0] === 'ungrouped') return 1;
+    if (b[0] === 'ungrouped') return -1;
+    return a[0].localeCompare(b[0]);
+  });
+
+  for (const [groupKey, services] of sortedGroups) {
+    const collapsed = isGroupCollapsed(groupKey);
+    const groupDotClass = groupHealthDotClass(services);
+    const groupSummary = groupHealthSummary(services);
+    const hasBuildable = services.some(svc => svc.buildable === true);
+    const groupActions = groupKey !== 'ungrouped'
+      ? `<span class="group-actions">`
+        + `<button class="action-btn" type="button" data-action="start-group" data-group="${esc(groupKey)}">启动本组</button>`
+        + `<button class="action-btn" type="button" data-action="stop-group" data-group="${esc(groupKey)}">关闭本组</button>`
+        + (hasBuildable
+            ? `<button class="action-btn build-btn rebuild-all-btn" type="button" data-action="build-group" data-group="${esc(groupKey)}">全部重新编译</button>`
+            : `<button class="action-btn build-btn is-disabled" type="button" disabled aria-disabled="true" title="本组无可编译服务">全部重新编译</button>`)
+        + `</span>`
+      : '';
+    const title = groupKey === 'ungrouped' ? 'Ungrouped' : `Group ${groupKey}`;
+    html += `<section class="service-group${collapsed ? ' collapsed' : ''}" data-group="${esc(groupKey)}">`;
+    html += `<div class="group-header">`;
+    html += `<button class="group-toggle" type="button" data-action="toggle-group" data-group="${esc(groupKey)}" aria-expanded="${collapsed ? 'false' : 'true'}" title="${esc(groupSummary)}">`;
+    html += `<span class="group-chevron" aria-hidden="true">▾</span>`;
+    html += `<span class="dot ${groupDotClass}"></span>`;
+    html += `<span class="group-title">${esc(title)}</span>`;
+    html += `<span class="group-count">${esc(groupSummary)}</span>`;
+    html += `</button>`;
+    html += groupActions;
+    html += `</div>`;
+    html += `<div class="group-body">`;
+    const sortedServices = [...services].sort((a, b) => {
+      const depthA = a.depends_on ? a.depends_on.length : 0;
+      const depthB = b.depends_on ? b.depends_on.length : 0;
+      if (depthA !== depthB) return depthA - depthB;
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+    for (const svc of sortedServices) {
+      const cls = serviceDotClass(svc);
+      const startable = isServiceStartable(svc.status) && !svc.listen_port_active;
+      const toggleAction = startable ? 'start' : 'stop';
+      const toggleLabel = startable ? '启动' : '关闭';
+      const sessionID = typeof svc.session_id === 'string' ? svc.session_id.trim() : '';
+      const healthPortCellHtml = healthPortCell(svc);
+      const commandPortCellHtml = commandPortCell(svc);
+      const buildable = svc.buildable === true;
+      const language = typeof svc.language === 'string' && svc.language.trim()
+        ? svc.language.trim()
+        : '—';
+      html += `<div class="service" data-name="${escAttr(svc.name)}">`;
+      html += `<span class="dot ${cls}"></span>`;
+      html += `<span class="ports" title="health / command">${healthPortCellHtml} / ${commandPortCellHtml}</span>`;
+      html += `<span class="name" title="${esc(svc.name)}">${esc(svc.name)}</span>`;
+      html += `<span class="status">${formatServiceStatus(svc)}</span>`;
+      html += `<span class="language">${esc(language)}</span>`;
+      html += `<span class="actions">`;
+      html += `<button class="action-btn" type="button" data-action="${toggleAction}" data-name="${esc(svc.name)}" data-session-id="${esc(sessionID)}">${toggleLabel}</button>`;
+      if (buildable) {
+        html += `<button class="action-btn build-btn" type="button" data-action="build" data-name="${esc(svc.name)}">编译</button>`;
+      } else {
+        html += `<button class="action-btn build-btn is-disabled" type="button" disabled aria-disabled="true" title="未配置 build_command，不可编译">编译</button>`;
+      }
+      html += `<button class="action-btn restart-btn" type="button" data-action="restart" data-name="${esc(svc.name)}" data-session-id="${esc(sessionID)}">重启</button>`;
+      html += `<button class="action-btn logs-btn" type="button" data-action="logs" data-name="${esc(svc.name)}">日志</button>`;
+      html += `<button class="action-btn clear-logs-btn" type="button" data-action="clear-logs" data-name="${esc(svc.name)}">清空日志</button>`;
+      html += `</span>`;
+      html += `<div class="service-extra">`;
+      if (svc.depends_on && svc.depends_on.length > 0) {
+        html += `<span class="deps">`;
+        for (const dep of svc.depends_on) {
+          const dcls = dotClass[dep.status] || 'gray';
+          html += `<span class="dep" data-dep-name="${escAttr(dep.name)}" title="点击跳转到 ${escAttr(dep.name)}"><span class="dot ${dcls}"></span>${esc(dep.name)}</span>`;
+        }
+        html += `</span>`;
+      }
+      if (svc.listen_port_active && isServiceStartable(svc.status)) {
+        html += `<span class="error-msg" title="配置端口仍有 LISTEN 进程">端口仍占用</span>`;
+      }
+      if (svc.failure_code || svc.error) {
+        const code = svc.failure_code ? `[${esc(svc.failure_code)}] ` : '';
+        const msg = svc.error ? esc(svc.error) : '';
+        html += `<span class="error-msg" title="${esc(svc.failure_code || '')}">${code}${msg}</span>`;
+      }
+      if (svc.readiness_error) {
+        html += `<span class="error-msg" title="readiness probe">${esc(svc.readiness_error)}</span>`;
+      }
+      if (svc.last_checked) {
+        html += `<span class="last-checked">checked: ${formatTime(svc.last_checked)}</span>`;
+      }
+      html += `</div>`;
+      html += `</div>`;
+    }
+    html += `</div>`;
+    html += `</section>`;
+  }
+  container.innerHTML = html;
+
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  document.getElementById('uptime').textContent = `Uptime: ${elapsed}s`;
+}
+
+function pulseClickFeedback(buttonEl) {
+  if (!buttonEl) {
+    return;
+  }
+  const oldTimer = clickFeedbackTimers.get(buttonEl);
+  if (oldTimer) {
+    clearTimeout(oldTimer);
+  }
+  buttonEl.classList.remove('is-clicked');
+  // Force a reflow so fast repeated clicks still retrigger the animation.
+  void buttonEl.offsetWidth;
+  buttonEl.classList.add('is-clicked');
+  const timerId = setTimeout(() => {
+    buttonEl.classList.remove('is-clicked');
+    clickFeedbackTimers.delete(buttonEl);
+  }, clickFeedbackDurationMs);
+  clickFeedbackTimers.set(buttonEl, timerId);
+}
+
+async function refresh() {
+  try {
+    const data = await fetchStatusData();
+    lastStatusData = data;
+    renderStatus(data);
+    resumeActiveBulkProgress(data);
+    refreshPreciseRestartRegistrations();
+  } catch (err) {
+    // Keep showing last successful state; update uptime only
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    document.getElementById('uptime').textContent = `Uptime: ${elapsed}s (fetch error)`;
+  }
+}
+
+async function buildService(name) {
+  try {
+    const resp = await apiFetch('/api/build', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name: name, cascade: true})
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('编译失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    await showModalAlert(name + ' 编译完成', {type: 'success', opLabel: '编译服务: ' + name});
+    refresh();
+  } catch (err) {
+    showRequestError('编译失败: ' + err.message, err);
+  }
+}
+
+async function buildGroup(group) {
+  const confirmed = await showModalConfirm(
+    '将按依赖顺序编译本组可编译服务：' + group + '\n\n是否继续？'
+  );
+  if (!confirmed) {
+    return;
+  }
+  try {
+    const resp = await apiFetch('/api/build-group', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({group: group})
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      if (resp.status === 409) {
+        showRequestError('已有全部/分组重新编译进行中，请等待完成或先中断后再试', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+        return;
+      }
+      showRequestError('全部重新编译失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    if (result.status === 'accepted' || result.status === 'ok') {
+      connectBuildAllSSE();
+      var title = document.querySelector('.progress-title');
+      if (title) title.textContent = '分组重新编译进度 (' + group + ')';
+      refresh();
+      return;
+    }
+    showRequestError('全部重新编译失败: unexpected response', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+  } catch (err) {
+    showRequestError('全部重新编译失败: ' + err.message, err);
+  }
+}
+
+async function restartService(name, sessionID) {
+  await postServiceAction('/api/restart', name, 'Restart', true, sessionID);
+}
+
+async function stopService(name, sessionID) {
+  await postServiceAction('/api/stop', name, 'Stop', true, sessionID);
+}
+
+async function startService(name, sessionID) {
+  await postServiceAction('/api/start', name, 'Start', true, sessionID);
+}
+
+async function stopGroup(group) {
+  await postGroupAction('/api/stop-group', group, 'Stop group');
+}
+
+async function startGroup(group) {
+  await postGroupAction('/api/start-group', group, 'Start group');
+}
+
+async function generateConfReplica() {
+  try {
+    const resp = await apiFetch('/api/conf/sync', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: '{}'
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('生成配置副本失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    if (result.status === 'accepted' || result.status === 'ok') {
+      await showModalAlert('已开始生成配置副本（conf-sync），请查看 conf-sync 日志', {type: 'success'});
+      refresh();
+      return;
+    }
+    showRequestError('生成配置副本失败: unexpected response', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+  } catch (err) {
+    showRequestError('生成配置副本失败: ' + err.message, err);
+  }
+}
+
+let _sseStartAllSource = null;
+let _sseStopAllSource = null;
+let _sseBuildAllSource = null;
+let _progressAutoHideTimer = null;
+
+function disconnectStartAllSSE() {
+  if (_sseStartAllSource) {
+    _sseStartAllSource.close();
+    _sseStartAllSource = null;
+  }
+  if (_progressAutoHideTimer) { clearTimeout(_progressAutoHideTimer); _progressAutoHideTimer = null; }
+}
+
+function copyErrorsToClipboard() {
+  var items = document.querySelectorAll('#prog-errors-ul li');
+  if (items.length === 0) return;
+  var lines = [];
+  for (var i = 0; i < items.length; i++) {
+    lines.push(items[i].textContent);
+  }
+  var text = lines.join('\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      var btn = document.getElementById('prog-copy-errors-btn');
+      if (btn) {
+        var orig = btn.textContent;
+        btn.textContent = '已复制!';
+        btn.classList.add('is-copied');
+        setTimeout(function() {
+          btn.textContent = orig;
+          btn.classList.remove('is-copied');
+        }, 1500);
+      }
+    }).catch(function() {
+      fallbackCopyErrors(text);
+    });
+  } else {
+    fallbackCopyErrors(text);
+  }
+}
+
+function fallbackCopyErrors(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    var btn = document.getElementById('prog-copy-errors-btn');
+    if (btn) {
+      var orig = btn.textContent;
+      btn.textContent = '已复制!';
+      btn.classList.add('is-copied');
+      setTimeout(function() {
+        btn.textContent = orig;
+        btn.classList.remove('is-copied');
+      }, 1500);
+    }
+  } catch (e) {}
+  document.body.removeChild(ta);
+}
+
+function disconnectStopAllSSE() {
+  if (_sseStopAllSource) {
+    _sseStopAllSource.close();
+    _sseStopAllSource = null;
+  }
+  if (_progressAutoHideTimer) { clearTimeout(_progressAutoHideTimer); _progressAutoHideTimer = null; }
+}
+
+function showProgress(op) {
+  op = op || 'start';
+  var panel = document.getElementById('start-all-progress-panel');
+  panel.classList.add('is-active');
+  panel.classList.remove('is-done', 'has-errors', 'is-cancelled', 'is-fading');
+  document.getElementById('prog-started').textContent = '0';
+  document.getElementById('prog-remaining').textContent = '...';
+  document.getElementById('prog-failed').textContent = '0';
+  document.getElementById('prog-failed-stat').style.display = 'none';
+  document.getElementById('prog-skipped-stat').style.display = 'none';
+  document.getElementById('prog-skipped').textContent = '0';
+  document.getElementById('prog-bar').style.width = '0%';
+  document.getElementById('prog-bar').classList.remove('has-errors');
+  document.getElementById('prog-current-line').style.display = 'none';
+  document.getElementById('prog-current-text').textContent = '';
+  document.getElementById('prog-error').classList.remove('is-visible');
+  document.getElementById('prog-error').textContent = '';
+  document.getElementById('prog-errors-list').style.display = 'none';
+  document.getElementById('prog-errors-ul').innerHTML = '';
+  if (_progressAutoHideTimer) { clearTimeout(_progressAutoHideTimer); _progressAutoHideTimer = null; }
+  // Update title based on operation
+  var title = document.querySelector('.progress-title');
+  if (title) {
+    if (op === 'stop') title.textContent = '全部关闭进度';
+    else if (op === 'build') title.textContent = '全部重新编译进度';
+    else if (op === 'restart') title.textContent = '全部重启进度';
+    else if (op === 'precise-restart') title.textContent = '精准编译重启进度';
+    else if (op === 'clear-db') title.textContent = '清空数据库进度';
+    else if (op === 'init-db') title.textContent = '初始化数据库进度';
+    else title.textContent = '全部启动进度';
+  }
+  var startedLbl = document.getElementById('prog-started-label');
+  if (startedLbl) {
+    if (op === 'build') startedLbl.textContent = '已编译';
+    else if (op === 'stop') startedLbl.textContent = '已关闭';
+    else if (op === 'restart') startedLbl.textContent = '已完成';
+    else if (op === 'precise-restart') startedLbl.textContent = '已完成';
+    else if (op === 'clear-db' || op === 'init-db') startedLbl.textContent = '状态';
+    else startedLbl.textContent = '已启动';
+  }
+  // For single-step operations (clear-db / init-db), show indeterminate progress bar
+  var bar = document.getElementById('prog-bar');
+  if (bar) {
+    if (op === 'clear-db' || op === 'init-db') {
+      bar.classList.add('is-indeterminate');
+    } else {
+      bar.classList.remove('is-indeterminate');
+    }
+  }
+  panel._progressOp = op;
+  updateProgressCancelButton(true, false);
+}
+
+function updateProgressCancelButton(visible, disabled) {
+  var btn = document.getElementById('prog-cancel-btn');
+  if (!btn) return;
+  btn.style.display = visible ? '' : 'none';
+  btn.disabled = !!disabled;
+  btn.textContent = disabled ? '正在中断…' : '中断';
+}
+
+async function cancelProgressOperation() {
+  var panel = document.getElementById('start-all-progress-panel');
+  if (!panel || !panel.classList.contains('is-active') || panel.classList.contains('is-done')) {
+    return;
+  }
+  var op = panel._progressOp || 'start';
+  var url = '/api/start-all/cancel';
+  if (op === 'stop') url = '/api/stop-all/cancel';
+  else if (op === 'build') url = '/api/build-all/cancel';
+  else if (op === 'restart') url = '/api/restart-all/cancel';
+  else if (op === 'clear-db' || op === 'init-db') {
+    // These operations have no server-side cancel; just dismiss the panel.
+    // The queue interrupt will handle _onBulkProgressDone cleanup.
+    panel.classList.add('is-done', 'is-cancelled');
+    updateProgressCancelButton(false, false);
+    if (_progressAutoHideTimer) clearTimeout(_progressAutoHideTimer);
+    _progressAutoHideTimer = setTimeout(function() {
+      panel.classList.add('is-fading');
+      _progressAutoHideTimer = setTimeout(function() {
+        panel.classList.remove('is-active', 'is-fading');
+      }, 800);
+    }, 3000);
+    return;
+  }
+  updateProgressCancelButton(true, true);
+  try {
+    const resp = await apiFetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'}
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      updateProgressCancelButton(true, false);
+      showRequestError('中断失败: ' + (result.error || resp.status), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+  } catch (err) {
+    updateProgressCancelButton(true, false);
+    showRequestError('中断失败: ' + err.message, err);
+  }
+}
+
+function updateProgress(ev) {
+  var panel = document.getElementById('start-all-progress-panel');
+  var op = ev.operation || 'start';
+  // Keep bulk restart chrome while underlying stop/start events stream in.
+  if (panel && panel._progressOp === 'restart') {
+    op = 'restart';
+  }
+  if (panel && panel._progressOp === 'precise-restart') {
+    op = 'precise-restart';
+  }
+  panel.classList.add('is-active');
+  // Remove indeterminate animation once real progress events arrive
+  var bar = document.getElementById('prog-bar');
+  if (bar) bar.classList.remove('is-indeterminate');
+
+  document.getElementById('prog-started').textContent = ev.started;
+  document.getElementById('prog-remaining').textContent = ev.remaining;
+
+  var skipped = ev.skipped || 0;
+  if (skipped > 0) {
+    document.getElementById('prog-skipped-stat').style.display = '';
+    document.getElementById('prog-skipped').textContent = skipped;
+  }
+
+  if (ev.failed > 0) {
+    document.getElementById('prog-failed-stat').style.display = '';
+    document.getElementById('prog-failed').textContent = ev.failed;
+    document.getElementById('prog-bar').classList.add('has-errors');
+    panel.classList.add('has-errors');
+  }
+
+  var total = ev.total;
+  var done = ev.started + ev.failed + skipped;
+  var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById('prog-bar').style.width = pct + '%';
+
+  var actionText = '正在启动: ';
+  if (op === 'stop') actionText = '正在关闭: ';
+  else if (op === 'build') actionText = '正在编译: ';
+  else if (op === 'restart') {
+    if (ev.operation === 'stop') actionText = '正在关闭: ';
+    else actionText = '正在启动: ';
+  }
+  else if (op === 'precise-restart') actionText = '正在编译重启: ';
+  if (ev.current) {
+    document.getElementById('prog-current-line').style.display = '';
+    document.getElementById('prog-current-text').textContent = actionText + ev.current;
+  } else if (!ev.done) {
+    document.getElementById('prog-current-line').style.display = '';
+    document.getElementById('prog-current-text').textContent = '等待当前批次完成...';
+  } else {
+    document.getElementById('prog-current-line').style.display = 'none';
+  }
+
+  if (ev.error) {
+    document.getElementById('prog-error').classList.add('is-visible');
+    document.getElementById('prog-error').textContent = '最新错误: ' + ev.error;
+  }
+  if (ev.errors && ev.errors.length > 0) {
+    var ul = document.getElementById('prog-errors-ul');
+    ul.innerHTML = '';
+    for (var i = 0; i < ev.errors.length; i++) {
+      var li = document.createElement('li');
+      li.textContent = ev.errors[i];
+      ul.appendChild(li);
+    }
+    document.getElementById('prog-errors-list').style.display = '';
+  }
+
+  if (ev.done) {
+    panel.classList.add('is-done');
+    document.getElementById('prog-current-line').style.display = 'none';
+    updateProgressCancelButton(false, false);
+    if (ev.phase === 'cancelled') {
+      panel.classList.add('is-cancelled');
+      document.getElementById('prog-error').classList.add('is-visible');
+      if (op === 'stop') document.getElementById('prog-error').textContent = '全部关闭操作已中断';
+      else if (op === 'build') document.getElementById('prog-error').textContent = '全部重新编译操作已中断';
+      else if (op === 'restart') document.getElementById('prog-error').textContent = '全部重启操作已中断';
+      else if (op === 'precise-restart') document.getElementById('prog-error').textContent = '精准编译重启操作已中断';
+      else document.getElementById('prog-error').textContent = '全部启动操作已中断';
+    }
+    // Notify queue of completion (errors → toast)
+    if (ev.failed > 0 && ev.errors && ev.errors.length > 0) {
+      for (var ei = 0; ei < ev.errors.length; ei++) {
+        if (typeof showToast === 'function') showToast(ev.errors[ei], {type: 'error', duration: 8000});
+      }
+    } else if (ev.error && typeof showToast === 'function') {
+      showToast(ev.error, {type: 'error', duration: 8000});
+    }
+    // Signal queue to process next item
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb = _onBulkProgressDone;
+      _onBulkProgressDone = null;
+      var queueErr = null;
+      if (ev.failed > 0) {
+        queueErr = (ev.errors && ev.errors.length > 0) ? ev.errors[0] : (ev.error || '部分服务执行失败');
+      } else if (ev.phase === 'cancelled') {
+        queueErr = null; // cancelled is intentional, not an error for queue progression
+      }
+      cb(queueErr);
+    }
+    if (op === 'stop') {
+      disconnectStopAllSSE();
+    } else if (op === 'build') {
+      disconnectBuildAllSSE();
+    } else if (op === 'restart') {
+      disconnectRestartAllSSE();
+    } else {
+      disconnectStartAllSSE();
+    }
+    refresh();
+    // Auto-hide after 5 seconds if no errors, 10 seconds if errors/cancelled
+    var delay = (ev.failed > 0 || ev.phase === 'cancelled') ? 10000 : 5000;
+    if (_progressAutoHideTimer) clearTimeout(_progressAutoHideTimer);
+    _progressAutoHideTimer = setTimeout(function() {
+      panel.classList.add('is-fading');
+      _progressAutoHideTimer = setTimeout(function() {
+        panel.classList.remove('is-active', 'is-fading');
+      }, 800); // match CSS transition duration
+    }, delay);
+  }
+}
+
+function connectSingleProgressSSE(runID, label, name, url) {
+  // Determine operation type from URL or label
+  var op = 'start';
+  if (url && url.includes('stop')) op = 'stop';
+  else if (url && url.includes('restart')) op = 'restart';
+
+  showProgress(op);
+  // For single service, show compact info (no bulk cancel)
+  updateProgressCancelButton(false, false);
+  document.getElementById('prog-current-line').style.display = '';
+  document.getElementById('prog-current-text').textContent = '手动操作: ' + label.toLowerCase() + ' ' + name;
+  document.getElementById('prog-started').textContent = '0';
+  document.getElementById('prog-remaining').textContent = '1';
+
+  var src = new EventSource('/api/progress?run_id=' + encodeURIComponent(runID));
+  src.onmessage = function(e) {
+    try {
+      var ev = JSON.parse(e.data);
+      if (ev.phase === 'idle') {
+        src.close();
+        return;
+      }
+      updateProgress(ev);
+      if (ev.done) {
+        src.close();
+        // Auto-hide faster for single service: 3s success, 6s error
+        var panel = document.getElementById('start-all-progress-panel');
+        if (_progressAutoHideTimer) clearTimeout(_progressAutoHideTimer);
+        var delay = (ev.failed > 0) ? 6000 : 3000;
+        _progressAutoHideTimer = setTimeout(function() {
+          panel.classList.add('is-fading');
+          _progressAutoHideTimer = setTimeout(function() {
+            panel.classList.remove('is-active', 'is-fading');
+          }, 800);
+        }, delay);
+      }
+    } catch (err) {}
+  };
+  src.onerror = function() {
+    src.close();
+  };
+}
+
+let _bulkProgressResumed = false;
+
+function resumeActiveBulkProgress(data) {
+  if (_bulkProgressResumed) return;
+  var snap = data && data.active_bulk_progress;
+  if (!snap || !snap.run_id) return;
+  var kind = snap.kind || '';
+  var op = snap.operation || '';
+  if (!op) {
+    if (kind === 'build-all') op = 'build';
+    else if (kind === 'stop-all') op = 'stop';
+    else op = 'start';
+  }
+  // Avoid double-connecting if user already clicked and SSE is live.
+  if (op === 'build' && _sseBuildAllSource) return;
+  if (op === 'stop' && _sseStopAllSource) return;
+  if (op === 'start' && _sseStartAllSource) return;
+  if (kind === 'restart-all' && _sseRestartAllSource) return;
+  if (kind === 'precise-restart' && _ssePreciseRestartSource) return;
+
+  _bulkProgressResumed = true;
+  if (kind === 'restart-all') {
+    connectRestartAllSSE();
+    if (snap.event) updateProgress(snap.event);
+  } else if (kind === 'precise-restart') {
+    connectPreciseRestartSSE();
+    if (snap.event) updateProgress(snap.event);
+  } else if (op === 'build') {
+    connectBuildAllSSE();
+    if (snap.event) updateProgress(snap.event);
+  } else if (op === 'stop') {
+    connectStopAllSSE();
+    if (snap.event) updateProgress(snap.event);
+  } else {
+    connectStartAllSSE();
+    if (snap.event) updateProgress(snap.event);
+  }
+}
+
+function connectStartAllSSE() {
+  disconnectStartAllSSE();
+  showProgress('start');
+
+  var src = new EventSource('/api/start-all/progress');
+  _sseStartAllSource = src;
+
+  src.onmessage = function(e) {
+    try {
+      var ev = JSON.parse(e.data);
+      if (ev.phase === 'idle') {
+        disconnectStartAllSSE();
+        document.getElementById('start-all-progress-panel').classList.remove('is-active');
+        return;
+      }
+      updateProgress(ev);
+    } catch (err) {
+      // ignore parse errors
+    }
+  };
+
+  src.onerror = function() {
+    disconnectStartAllSSE();
+    // Notify queue on SSE connection loss
+    if (typeof _bulkSSEOnError === 'function' && _bulkSSEOnError) {
+      _bulkSSEOnError('SSE 连接中断 (start-all)');
+    }
+    // If the panel is still active, mark as interrupted
+    var panel = document.getElementById('start-all-progress-panel');
+    if (panel.classList.contains('is-active') && !panel.classList.contains('is-done')) {
+      document.getElementById('prog-current-text').textContent = '连接中断，进度可能不完整';
+      document.getElementById('prog-error').classList.add('is-visible');
+      document.getElementById('prog-error').textContent = 'SSE 连接中断';
+      refresh();
+    }
+  };
+}
+
+function connectStopAllSSE() {
+  disconnectStopAllSSE();
+  showProgress('stop');
+  var src = new EventSource('/api/stop-all/progress');
+  _sseStopAllSource = src;
+  src.onmessage = function(e) {
+    try {
+      var ev = JSON.parse(e.data);
+      if (ev.phase === 'idle') {
+        disconnectStopAllSSE();
+        document.getElementById('start-all-progress-panel').classList.remove('is-active');
+        return;
+      }
+      updateProgress(ev);
+    } catch (err) {}
+  };
+  src.onerror = function() {
+    disconnectStopAllSSE();
+    if (typeof _bulkSSEOnError === 'function' && _bulkSSEOnError) {
+      _bulkSSEOnError('SSE 连接中断 (stop-all)');
+    }
+    var panel = document.getElementById('start-all-progress-panel');
+    if (panel.classList.contains('is-active') && !panel.classList.contains('is-done')) {
+      document.getElementById('prog-current-text').textContent = '连接中断，进度可能不完整';
+      document.getElementById('prog-error').classList.add('is-visible');
+      document.getElementById('prog-error').textContent = 'SSE 连接中断';
+      refresh();
+    }
+  };
+}
+
+
+function disconnectBuildAllSSE() {
+  if (_sseBuildAllSource) {
+    _sseBuildAllSource.close();
+    _sseBuildAllSource = null;
+  }
+  if (_progressAutoHideTimer) { clearTimeout(_progressAutoHideTimer); _progressAutoHideTimer = null; }
+}
+
+function connectBuildAllSSE() {
+  disconnectBuildAllSSE();
+  showProgress('build');
+  var src = new EventSource('/api/build-all/progress');
+  _sseBuildAllSource = src;
+  src.onmessage = function(e) {
+    try {
+      var ev = JSON.parse(e.data);
+      if (ev.phase === 'idle') {
+        disconnectBuildAllSSE();
+        document.getElementById('start-all-progress-panel').classList.remove('is-active');
+        return;
+      }
+      updateProgress(ev);
+    } catch (err) {}
+  };
+  src.onerror = function() {
+    disconnectBuildAllSSE();
+    if (typeof _bulkSSEOnError === 'function' && _bulkSSEOnError) {
+      _bulkSSEOnError('SSE 连接中断 (build-all)');
+    }
+    var panel = document.getElementById('start-all-progress-panel');
+    if (panel.classList.contains('is-active') && !panel.classList.contains('is-done')) {
+      document.getElementById('prog-current-text').textContent = '连接中断，进度可能不完整';
+      document.getElementById('prog-error').classList.add('is-visible');
+      document.getElementById('prog-error').textContent = 'SSE 连接中断';
+      refresh();
+    }
+  };
+}
+
+async function startAllServices() {
+  try {
+    const resp = await apiFetch('/api/start-all', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({session_id: selectBulkActorSessionID()})
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('Start all failed: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    if (result.status === 'accepted' || result.status === 'ok') {
+      connectStartAllSSE();
+      refresh();
+      return;
+    }
+    showRequestError('Start all failed: unexpected response', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+  } catch (err) {
+    showRequestError('Start all failed: ' + err.message, err);
+  }
+}
+
+async function stopAllServices() {
+  const confirmed = await showModalConfirm(
+    '将按依赖顺序关闭全部服务。\n\n是否继续？'
+  );
+  if (!confirmed) {
+    return;
+  }
+  try {
+    const resp = await apiFetch('/api/stop-all', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({session_id: selectBulkActorSessionID()})
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('Stop all failed: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    if (result.status === 'accepted' || result.status === 'ok') {
+      connectStopAllSSE();
+      refresh();
+      return;
+    }
+    showRequestError('Stop all failed: unexpected response', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+  } catch (err) {
+    showRequestError('Stop all failed: ' + err.message, err);
+  }
+}
+
+// Core exec functions (no confirm dialogs) — used by the execution queue.
+async function _execStartAll() {
+  try {
+    const resp = await apiFetch('/api/start-all', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({session_id: selectBulkActorSessionID()})
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('全部启动失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      // Signal queue: error
+      if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+        var cb = _onBulkProgressDone; _onBulkProgressDone = null;
+        cb(result.error || 'HTTP ' + resp.status);
+      }
+      return;
+    }
+    if (result.status === 'accepted' || result.status === 'ok') {
+      connectStartAllSSE();
+      refresh();
+      return;
+    }
+    showRequestError('全部启动失败: unexpected response', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb2 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb2('unexpected response');
+    }
+  } catch (err) {
+    showRequestError('全部启动失败: ' + err.message, err);
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb3 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb3(err.message);
+    }
+  }
+}
+
+async function _execStopAll() {
+  try {
+    const resp = await apiFetch('/api/stop-all', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({session_id: selectBulkActorSessionID()})
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('全部关闭失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+        var cb = _onBulkProgressDone; _onBulkProgressDone = null;
+        cb(result.error || 'HTTP ' + resp.status);
+      }
+      return;
+    }
+    if (result.status === 'accepted' || result.status === 'ok') {
+      connectStopAllSSE();
+      refresh();
+      return;
+    }
+    showRequestError('全部关闭失败: unexpected response', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb2 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb2('unexpected response');
+    }
+  } catch (err) {
+    showRequestError('全部关闭失败: ' + err.message, err);
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb3 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb3(err.message);
+    }
+  }
+}
+
+let _sseRestartAllSource = null;
+
+function disconnectRestartAllSSE() {
+  if (_sseRestartAllSource) {
+    _sseRestartAllSource.close();
+    _sseRestartAllSource = null;
+  }
+  if (_progressAutoHideTimer) { clearTimeout(_progressAutoHideTimer); _progressAutoHideTimer = null; }
+}
+
+function connectRestartAllSSE() {
+  disconnectRestartAllSSE();
+  showProgress('restart');
+  var src = new EventSource('/api/restart-all/progress');
+  _sseRestartAllSource = src;
+  src.onmessage = function(e) {
+    try {
+      var ev = JSON.parse(e.data);
+      if (ev.phase === 'idle') {
+        disconnectRestartAllSSE();
+        document.getElementById('start-all-progress-panel').classList.remove('is-active');
+        return;
+      }
+      // Stop-phase "done" is only the midpoint of restart-all; keep panel active.
+      if (ev.done && ev.operation === 'stop' && ev.phase !== 'cancelled') {
+        ev = Object.assign({}, ev, { done: false, phase: 'progress' });
+        document.getElementById('prog-current-text').textContent = '关闭完成，正在重新启动…';
+        document.getElementById('prog-current-line').style.display = '';
+      }
+      updateProgress(ev);
+    } catch (err) {}
+  };
+  src.onerror = function() {
+    disconnectRestartAllSSE();
+    if (typeof _bulkSSEOnError === 'function' && _bulkSSEOnError) {
+      _bulkSSEOnError('SSE 连接中断 (restart-all)');
+    }
+    var panel = document.getElementById('start-all-progress-panel');
+    if (panel.classList.contains('is-active') && !panel.classList.contains('is-done')) {
+      document.getElementById('prog-current-text').textContent = '连接中断，进度可能不完整';
+      document.getElementById('prog-error').classList.add('is-visible');
+      document.getElementById('prog-error').textContent = 'SSE 连接中断';
+      refresh();
+    }
+  };
+}
+
+async function restartAllServices() {
+  const confirmed = await showModalConfirm(
+    '将按依赖顺序关闭全部服务，再按依赖顺序重新启动。\n\n是否继续？'
+  );
+  if (!confirmed) {
+    return;
+  }
+  try {
+    const resp = await apiFetch('/api/restart-all', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({session_id: selectBulkActorSessionID()})
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      if (resp.status === 409) {
+        showRequestError('全部重启已在进行中，请等待完成或先中断后再试', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+        return;
+      }
+      showRequestError('全部重启失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    if (result.status === 'accepted' || result.status === 'ok') {
+      connectRestartAllSSE();
+      refresh();
+      return;
+    }
+    showRequestError('全部重启失败: unexpected response', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+  } catch (err) {
+    showRequestError('全部重启失败: ' + err.message, err);
+  }
+}
+
+async function buildAllServices() {
+  const confirmed = await showModalConfirm(
+    '将按依赖顺序编译全部可编译服务。\n\n是否继续？'
+  );
+  if (!confirmed) {
+    return;
+  }
+  try {
+    const resp = await apiFetch('/api/build-all', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'}
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      if (resp.status === 409) {
+        showRequestError('已有全部/分组重新编译进行中，请等待完成或先中断后再试', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+        return;
+      }
+      showRequestError('全部重新编译失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    if (result.status === 'accepted' || result.status === 'ok') {
+      connectBuildAllSSE();
+      refresh();
+      return;
+    }
+    showRequestError('全部重新编译失败: unexpected response', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+  } catch (err) {
+    showRequestError('全部重新编译失败: ' + err.message, err);
+  }
+}
+
+// Core exec functions (no confirm dialogs) — used by the execution queue.
+async function _execRestartAll() {
+  try {
+    const resp = await apiFetch('/api/restart-all', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({session_id: selectBulkActorSessionID()})
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      if (resp.status === 409) {
+        showRequestError('全部重启已在进行中', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      } else {
+        showRequestError('全部重启失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      }
+      if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+        var cb = _onBulkProgressDone; _onBulkProgressDone = null;
+        cb(result.error || 'HTTP ' + resp.status);
+      }
+      return;
+    }
+    if (result.status === 'accepted' || result.status === 'ok') {
+      connectRestartAllSSE();
+      refresh();
+      return;
+    }
+    showRequestError('全部重启失败: unexpected response', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb2 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb2('unexpected response');
+    }
+  } catch (err) {
+    showRequestError('全部重启失败: ' + err.message, err);
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb3 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb3(err.message);
+    }
+  }
+}
+
+async function _execBuildAll() {
+  try {
+    const resp = await apiFetch('/api/build-all', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'}
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      if (resp.status === 409) {
+        showRequestError('已有全部/分组重新编译进行中', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      } else {
+        showRequestError('全部重新编译失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      }
+      if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+        var cb = _onBulkProgressDone; _onBulkProgressDone = null;
+        cb(result.error || 'HTTP ' + resp.status);
+      }
+      return;
+    }
+    if (result.status === 'accepted' || result.status === 'ok') {
+      connectBuildAllSSE();
+      refresh();
+      return;
+    }
+    showRequestError('全部重新编译失败: unexpected response', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb2 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb2('unexpected response');
+    }
+  } catch (err) {
+    showRequestError('全部重新编译失败: ' + err.message, err);
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb3 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb3(err.message);
+    }
+  }
+}
+
+async function shutdownSelf() {
+  const confirmed = await showModalConfirm(
+    '将关闭 runAll 服务本身，但其管理的服务将继续运行。\n\n是否继续？'
+  );
+  if (!confirmed) {
+    return;
+  }
+  try {
+    const resp = await apiFetch('/api/shutdown-self', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'}
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('关闭自身失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    await showModalAlert('runAll 正在关闭，管理的服务将继续运行。页面将无法继续刷新。', {type: 'warning', opLabel: '关闭 runAll 自身'});
+  } catch (err) {
+    showRequestError('关闭自身失败: ' + err.message, err);
+  }
+}
+
+async function clearLogs(name) {
+  try {
+    const resp = await apiFetch('/api/logs/clear', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name: name})
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('Clear logs failed: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    if (logsState.open && logsState.service === name) {
+      fetchLogsOnce();
+    }
+    refresh();
+  } catch (err) {
+    showRequestError('Clear logs failed: ' + err.message, err);
+  }
+}
+
+function getSessionID() {
+  const storageKey = 'runall_session_id';
+  const existing = (window.localStorage && localStorage.getItem(storageKey)) || '';
+  if (existing && existing.trim()) return existing;
+  const generated = (window.crypto && typeof crypto.randomUUID === 'function')
+    ? crypto.randomUUID()
+    : `session-${Date.now()}`;
+  if (window.localStorage) localStorage.setItem(storageKey, generated);
+  return generated;
+}
+
+/** Owning session from latest /api/status row (set after hot-replace / bootstrap). */
+function lookupOwningSessionID(serviceName) {
+  const name = typeof serviceName === 'string' ? serviceName.trim() : '';
+  if (!name || !Array.isArray(lastStatusData)) {
+    return '';
+  }
+  for (const svc of lastStatusData) {
+    if (!svc || String(svc.name || '') !== name) {
+      continue;
+    }
+    const sid = typeof svc.session_id === 'string' ? svc.session_id.trim() : '';
+    return sid;
+  }
+  return '';
+}
+
+/** Prefer button data-session-id, then status owning session, then local browser session. */
+function selectActorSessionID(explicitSessionID, serviceName) {
+  const candidate = typeof explicitSessionID === 'string' ? explicitSessionID.trim() : '';
+  if (candidate) {
+    return candidate;
+  }
+  const owning = lookupOwningSessionID(serviceName);
+  if (owning) {
+    return owning;
+  }
+  return getSessionID();
+}
+
+/** For start-all / stop-all / group: prefer a known owning session from status rows. */
+function selectBulkActorSessionID() {
+  const counts = new Map();
+  if (Array.isArray(lastStatusData)) {
+    for (const svc of lastStatusData) {
+      const sid = typeof svc?.session_id === 'string' ? svc.session_id.trim() : '';
+      if (!sid) {
+        continue;
+      }
+      counts.set(sid, (counts.get(sid) || 0) + 1);
+    }
+  }
+  let best = '';
+  let bestCount = 0;
+  for (const [sid, n] of counts) {
+    if (n > bestCount) {
+      best = sid;
+      bestCount = n;
+    }
+  }
+  if (best) {
+    return best;
+  }
+  return getSessionID();
+}
+
+async function pollLifecycleStatus(name, expectStartable) {
+  const token = ++lifecyclePollToken;
+  const deadline = Date.now() + lifecyclePollTimeoutMs;
+  while (Date.now() < deadline) {
+    if (token !== lifecyclePollToken) {
+      return true;
+    }
+    await refresh();
+    const status = getServiceStatus(name);
+    if (status && isServiceStartable(status) === expectStartable) {
+      return true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, lifecyclePollMs));
+  }
+  return false;
+}
+
+async function postServiceAction(url, name, label, includeSession, explicitSessionID) {
+  try {
+    const previousStatus = getServiceStatus(name);
+    const payload = {name: name, cascade: true};
+    if (includeSession) {
+      payload.session_id = selectActorSessionID(explicitSessionID, name);
+    }
+    const resp = await apiFetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError(formatActionFailure(label, result), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    if (result.status === 'accepted' || result.status === 'ok') {
+      // If response includes run_id, connect SSE for live progress
+      if (result.run_id) {
+        connectSingleProgressSSE(result.run_id, label, name, url);
+      }
+      const expectStartable = url.includes('/api/stop')
+        ? true
+        : url.includes('/api/start')
+          ? false
+          : isServiceStartable(previousStatus);
+      if (name && (url.includes('/api/stop') || url.includes('/api/start'))) {
+        const settled = await pollLifecycleStatus(name, expectStartable);
+        if (!settled) {
+          showRequestError(`${label} 已提交，但 ${name} 状态未在 ${lifecyclePollTimeoutMs / 1000}s 内更新；请查看 runAll 日志或服务行错误信息`);
+        }
+        return;
+      }
+      refresh();
+      return;
+    }
+    showRequestError(formatActionFailure(label, result), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+  } catch (err) {
+    showRequestError(`${label} failed: ` + err.message, err);
+  }
+}
+
+function formatActionFailure(label, result) {
+  let message = `${label} failed: ` + (result.error || 'unknown error');
+  const errText = String(result.error || '');
+  const ownedMatch = errText.match(/owned by session "([^"]+)"/);
+  if (ownedMatch) {
+    message += `\n该服务归属 session: ${ownedMatch[1]}。` +
+      `\nUI 重启/启停会优先使用服务行 owning session；若仍失败可 takeover:\n` +
+      `  runAll -command takeover -service <name> -session-id <your-session-id>`;
+  }
+  if (result.cascade && typeof result.cascade === 'object') {
+    const failedAt = result.cascade.failed_at || '';
+    const completed = Array.isArray(result.cascade.completed) ? result.cascade.completed.join(', ') : '';
+    if (failedAt) {
+      message += `\nfailed at: ${failedAt}`;
+    }
+    if (completed) {
+      message += `\ncompleted: ${completed}`;
+    }
+  }
+  return message;
+}
+
+async function postGroupAction(url, group, label) {
+  try {
+    const resp = await apiFetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({group: group, session_id: selectBulkActorSessionID()})
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError(`${label} failed: ` + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    if (result.status === 'accepted' || result.status === 'ok') {
+      refresh();
+      return;
+    }
+    showRequestError(`${label} failed: unexpected response`, resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+  } catch (err) {
+    showRequestError(`${label} failed: ` + err.message, err);
+  }
+}
+
+function openLogsPanel(name) {
+  logsState.open = true;
+  logsState.service = name;
+  logsState.requestSerial += 1;
+  var workspace = document.getElementById('workspace');
+  workspace.classList.add('logs-open');
+  var panel = document.getElementById('logs-panel');
+  panel.offsetHeight; /* force reflow so transition animates from hidden state */
+  panel.setAttribute('aria-hidden', 'false');
+  var savedWidth = parseFloat(panel.style.width);
+  if (!savedWidth || isNaN(savedWidth)) {
+    setLogsPanelWidth(workspace.clientWidth * 0.38);
+  }
+  updateLogsMeta('loading...');
+  document.getElementById('logs-content').textContent = 'Loading logs...';
+  stopLogsAutoRefresh();
+  fetchLogsOnce();
+  logsState.timerId = setInterval(fetchLogsOnce, statusRefreshMs);
+  restartStatusRefreshTimer();
+}
+
+function closeLogsPanel() {
+  logsState.open = false;
+  logsState.service = '';
+  logsState.lastRows = [];
+  logsState.requestSerial += 1;
+  stopLogsAutoRefresh();
+  var panel = document.getElementById('logs-panel');
+  panel.setAttribute('aria-hidden', 'true');
+  restartStatusRefreshTimer();
+  setTimeout(function () {
+    if (!logsState.open) {
+      document.getElementById('workspace').classList.remove('logs-open');
+    }
+  }, 180);
+}
+
+function stopLogsAutoRefresh() {
+  if (logsState.timerId !== null) {
+    clearInterval(logsState.timerId);
+    logsState.timerId = null;
+  }
+}
+
+async function fetchLogsOnce() {
+  if (!logsState.open || !logsState.service) {
+    return;
+  }
+  const reqId = ++logsState.requestSerial;
+  const name = logsState.service;
+  try {
+    const query = new URLSearchParams({name, lines: String(logLines)});
+    const resp = await fetch(`/api/logs?${query.toString()}`);
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      throw new Error(result.error || `HTTP ${resp.status}`);
+    }
+    if (!logsState.open || logsState.service !== name || reqId !== logsState.requestSerial) {
+      return;
+    }
+    renderLogs(result);
+  } catch (err) {
+    if (!logsState.open || logsState.service !== name || reqId !== logsState.requestSerial) {
+      return;
+    }
+    updateLogsMeta('refresh failed');
+    document.getElementById('logs-content').textContent = `Failed to load logs: ${err.message}`;
+  }
+}
+
+function renderLogs(payload) {
+  const name = payload && payload.name ? String(payload.name) : logsState.service;
+  const rows = normalizeLogRows(payload && payload.lines ? payload.lines : []);
+  logsState.lastRows = rows;
+  const content = document.getElementById('logs-content');
+  // Auto-scroll to bottom only when user was already near the bottom (within 1 screen height)
+  const wasNearBottom = content.scrollHeight - content.scrollTop - content.clientHeight < content.clientHeight;
+  content.textContent = rows.length > 0 ? rows.join('\n') : 'No logs available.';
+  if (wasNearBottom) {
+    content.scrollTop = content.scrollHeight;
+  }
+  updateLogsMeta(`${rows.length} lines - refreshed at ${formatNowTime()}`);
+  document.getElementById('logs-panel-title').textContent = `${name} logs`;
+}
+
+function extractTraceIdFromText(text) {
+  const raw = String(text || '');
+  const jsonMatch = raw.match(/"trace_id"\s*:\s*"([^"]+)"/);
+  if (jsonMatch && jsonMatch[1]) {
+    return jsonMatch[1];
+  }
+  const bracketMatch = raw.match(/\[trace_id=([^\]]+)\]/);
+  if (bracketMatch && bracketMatch[1]) {
+    return bracketMatch[1];
+  }
+  return '';
+}
+
+function extractTraceIdFromLogRows(rows) {
+  if (!Array.isArray(rows)) {
+    return '';
+  }
+  for (let i = rows.length - 1; i >= 0; i -= 1) {
+    const tid = extractTraceIdFromText(rows[i]);
+    if (tid) {
+      return tid;
+    }
+  }
+  return '';
+}
+
+const observabilityState = {
+  grafanaUrl: '',
+  lokiUrl: '',
+  lokiPushUrl: '',
+  logShipping: '',
+  grafanaLokiExplore: '',
+  grafanaTempoExplore: '',
+  logFileRoot: '',
+};
+
+function formatStepLines(label, steps) {
+  if (!steps || steps.length === 0) {
+    return `${label}: (无)`;
+  }
+  return `${label}:\n` + steps.map((s) => `  - ${s.database}: ${s.status}${s.message ? ' (' + s.message + ')' : ''}`).join('\n');
+}
+
+async function clearAllDatabases() {
+  const confirmed = await showModalConfirm(
+    '将：① 先关闭 runAll 中所有正在运行的应用（含 ai-monitor、前端、task-events 等；保留 docker-redis / docker-kafka）② DROP + CREATE 全部 MySQL 数据库 ③ 删除残留 SQLite 文件（含 wal/shm）④ FLUSHALL Redis ⑤ 重建 Kafka topics。\n\n不会执行 migrate/种子。完成后请再点「初始化全部数据库」。不会自动启动服务。是否继续？',
+    {opLabel: '清空全部数据库'}
+  );
+  if (!confirmed) {
+    return;
+  }
+  try {
+    const resp = await apiFetch('/api/dev/clear-databases?confirm=CLEAR_ALL', {method: 'POST'});
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('清空数据库失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    const stillRunning = result.services_still_running || [];
+    const summary = [
+      `status: ${result.status || 'unknown'}`,
+      `stopped: ${(result.services_stopped || []).join(', ') || '-'}`,
+      stillRunning.length ? `still running: ${stillRunning.join(', ')}` : '',
+      `sqlite: ${(result.sqlite_removed || []).join(', ') || '-'}`,
+      `mysql: ${result.mysql_reset || '-'}`,
+      `redis: ${result.redis_reset || '-'}`,
+      `kafka: ${result.kafka_reset || '-'}`,
+    ].filter(Boolean).join('\n');
+    const hint = stillRunning.length
+      ? '\n\n仍有服务未关闭，已中止删库。请先在 runAll 手动关闭上述服务，或检查是否由 runAll 外部启动。'
+      : '\n\n下一步：点击「初始化全部数据库（开发）」执行 migrate 与 init.sh。';
+    await showModalAlert(`数据库清空结果:\n${summary}${hint}`, {type: (stillRunning.length ? 'warning' : 'success'), opLabel: '清空全部数据库'});
+    refresh();
+  } catch (err) {
+    showRequestError('清空数据库失败: ' + err.message, err);
+  }
+}
+
+// Core exec function (no confirm dialog) — used by the execution queue.
+async function _execClearAllDatabases() {
+  showProgress('clear-db');
+  document.getElementById('prog-current-line').style.display = '';
+  document.getElementById('prog-current-text').textContent = '正在停止服务并清空数据库...';
+  document.getElementById('prog-remaining').textContent = '等待中';
+  document.getElementById('prog-started').textContent = '执行中';
+  // Poll dev tool logs for real-time step updates
+  var pollTimer = setInterval(async function() {
+    try {
+      var pollResp = await fetch('/api/dev/logs?tool=db-clear&lines=1');
+      var pollData = await parseJsonSafe(pollResp);
+      if (pollData.lines && pollData.lines.length > 0) {
+        var line = pollData.lines[0];
+        var prefix = '[db-clear] ';
+        if (line.indexOf(prefix) === 0) line = line.substring(prefix.length);
+        var txt = document.getElementById('prog-current-text');
+        if (txt) txt.textContent = line;
+      }
+    } catch(_) { /* ignore poll errors */ }
+  }, 800);
+  try {
+    const resp = await apiFetch('/api/dev/clear-databases?confirm=CLEAR_ALL', {method: 'POST'});
+    clearInterval(pollTimer);
+    const result = await parseJsonSafe(resp);
+    // Guard: if the panel was taken over by another operation or cancelled, skip UI updates
+    var panel = document.getElementById('start-all-progress-panel');
+    var opMismatch = panel && panel._progressOp && panel._progressOp !== 'clear-db';
+    var wasCancelled = panel && panel.classList.contains('is-cancelled');
+    var skipPanelUpdate = opMismatch || wasCancelled;
+    if (!resp.ok) {
+      clearInterval(pollTimer);
+      showRequestError('清空数据库失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      if (!skipPanelUpdate) {
+        updateProgress({done: true, phase: 'error', error: result.error || 'HTTP ' + resp.status, operation: 'clear-db', total: 1, failed: 1, started: 0, remaining: 0});
+      }
+      if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+        var cb = _onBulkProgressDone; _onBulkProgressDone = null;
+        cb(result.error || 'HTTP ' + resp.status);
+      }
+      return;
+    }
+    const stillRunning = result.services_still_running || [];
+    var succeeded = (result.status === 'ok' || result.status === 'completed') && stillRunning.length === 0;
+    var msgParts = [];
+    if (result.services_stopped && result.services_stopped.length) {
+      msgParts.push('已停止: ' + result.services_stopped.join(', '));
+    }
+    if (result.sqlite_removed && result.sqlite_removed.length) {
+      msgParts.push('SQLite: ' + result.sqlite_removed.length + ' 个文件已清除');
+    }
+    if (result.mysql_reset) msgParts.push('MySQL: ' + result.mysql_reset);
+    if (result.redis_reset) msgParts.push('Redis: ' + result.redis_reset);
+    if (result.kafka_reset) msgParts.push('Kafka: ' + result.kafka_reset);
+    var summary = msgParts.join(' | ') || '完成';
+    if (stillRunning.length) {
+      summary += ' (仍有 ' + stillRunning.length + ' 个服务未关闭)';
+    }
+    if (!skipPanelUpdate) {
+      updateProgress({done: true, phase: succeeded ? 'done' : 'error', operation: 'clear-db', total: 1, started: 1, failed: succeeded ? 0 : 1, remaining: 0, error: stillRunning.length ? ('仍有 ' + stillRunning.length + ' 个服务未关闭') : ''});
+    }
+    showToast('清空数据库: ' + summary, { type: succeeded ? 'success' : 'warning', duration: 8000 });
+    refresh();
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb2 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb2(null);
+    }
+  } catch (err) {
+    clearInterval(pollTimer);
+    showRequestError('清空数据库失败: ' + err.message, err);
+    if (!skipPanelUpdate) {
+      updateProgress({done: true, phase: 'error', error: err.message, operation: 'clear-db', total: 1, failed: 1, started: 0, remaining: 0});
+    }
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb3 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb3(err.message);
+    }
+  }
+}
+
+
+// ===================== 精准编译重启 (precise restart) =====================
+// 智能体编程会话修改服务代码后，将服务登记到 .runall/precise_restart_services.txt；
+// 点击「精准编译重启」按钮：读取登记 → 逐个编译+重启（依赖序）→ 清空登记文件。
+let _ssePreciseRestartSource = null;
+
+function disconnectPreciseRestartSSE() {
+  if (_ssePreciseRestartSource) {
+    _ssePreciseRestartSource.close();
+    _ssePreciseRestartSource = null;
+  }
+}
+
+function connectPreciseRestartSSE() {
+  disconnectPreciseRestartSSE();
+  showProgress('precise-restart');
+  var src = new EventSource('/api/precise-restart/progress');
+  _ssePreciseRestartSource = src;
+  src.onmessage = function(e) {
+    try {
+      var ev = JSON.parse(e.data);
+      if (ev.phase === 'idle') {
+        disconnectPreciseRestartSSE();
+        document.getElementById('start-all-progress-panel').classList.remove('is-active');
+        return;
+      }
+      updateProgress(ev);
+    } catch (err) {}
+  };
+  src.onerror = function() {
+    disconnectPreciseRestartSSE();
+    if (typeof _bulkSSEOnError === 'function' && _bulkSSEOnError) {
+      _bulkSSEOnError('SSE 连接中断 (precise-restart)');
+    }
+    var panel = document.getElementById('start-all-progress-panel');
+    if (panel.classList.contains('is-active') && !panel.classList.contains('is-done')) {
+      document.getElementById('prog-current-text').textContent = '连接中断，进度可能不完整';
+      document.getElementById('prog-error').classList.add('is-visible');
+      document.getElementById('prog-error').textContent = 'SSE 连接中断';
+      refresh();
+    }
+  };
+}
+
+// Core exec function (no confirm dialogs) — used by the execution queue.
+async function _execPreciseRestart() {
+  try {
+    const resp = await apiFetch('/api/precise-restart', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({session_id: selectBulkActorSessionID()})
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      if (resp.status === 409) {
+        showRequestError('精准编译重启已在进行中', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      } else {
+        showRequestError('精准编译重启失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      }
+      if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+        var cb = _onBulkProgressDone; _onBulkProgressDone = null;
+        cb(result.error || 'HTTP ' + resp.status);
+      }
+      return;
+    }
+    if (result.status === 'accepted' || result.status === 'ok') {
+      connectPreciseRestartSSE();
+      refreshPreciseRestartRegistrations();
+      refresh();
+      return;
+    }
+    showRequestError('精准编译重启失败: unexpected response', resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb2 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb2('unexpected response');
+    }
+  } catch (err) {
+    showRequestError('精准编译重启失败: ' + err.message, err);
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb3 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb3(err.message);
+    }
+  }
+}
+
+// 登记列表刷新：按钮旁标签（已登记 N 个服务）+ 按钮 title 展示清单。
+// OPT-20260807-024/026：区分失败保留项（N 个失败待重试）、展示登记时间，
+// 超过 TTL（默认 24h）的过期登记将按钮置灰提示重新登记。
+let _preciseRestartRegsShown = '';
+function _preciseRestartTime(unixSec) {
+  if (!unixSec) return '';
+  var d = new Date(unixSec * 1000);
+  if (Number.isNaN(d.getTime())) return '';
+  var pad = function (n) { return String(n).padStart(2, '0'); };
+  return (pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()));
+}
+async function refreshPreciseRestartRegistrations() {
+  var label = document.getElementById('precise-restart-reg-label');
+  var btn = document.getElementById('precise-restart-btn');
+  try {
+    var resp = await apiFetch('/api/precise-restart/registrations');
+    var result = await parseJsonSafe(resp);
+    var entries = (result && Array.isArray(result.entries)) ? result.entries : [];
+    var svcs = entries.map(function (e) { return e.name; });
+    var shown = svcs.join('、');
+    if (shown !== _preciseRestartRegsShown) {
+      _preciseRestartRegsShown = shown;
+      var ttlHours = (result && result.ttl_hours) ? result.ttl_hours : 24;
+      var failedCount = entries.filter(function (e) { return e.state === 'failed'; }).length;
+      var expiredCount = entries.filter(function (e) { return e.expired; }).length;
+      var titleParts = entries.map(function (e) {
+        var parts = [e.name];
+        if (e.state === 'failed') parts.push('失败待重试');
+        else if (e.expired) parts.push('已过期');
+        if (e.resolvable === false) parts.push('未知服务');
+        else if (e.buildable === false) parts.push('不可编译');
+        var tm = _preciseRestartTime(e.registered_at);
+        if (tm) parts.push(tm);
+        return parts.join(' ');
+      });
+      if (label) {
+        if (svcs.length) {
+          var txt = '已登记 ' + svcs.length + ' 个服务';
+          if (failedCount) txt += '，' + failedCount + ' 个失败待重试';
+          if (expiredCount) txt += '，' + expiredCount + ' 个已过期';
+          label.textContent = txt;
+          label.title = '已登记: ' + titleParts.join('；');
+        } else {
+          label.textContent = '';
+          label.title = '';
+        }
+      }
+      if (btn) {
+        if (!svcs.length) {
+          btn.disabled = false;
+          btn.classList.remove('is-disabled');
+          btn.title = '精准编译重启：编译并重启登记文件中登记的服务，完成后清空登记';
+        } else if (expiredCount > 0) {
+          btn.disabled = true;
+          btn.classList.add('is-disabled');
+          btn.title = '含 ' + expiredCount + ' 个超过 ' + ttlHours + 'h 的过期登记，请先重新登记（scripts/register-precise-restart.sh）\n' + titleParts.join('；');
+        } else {
+          btn.disabled = false;
+          btn.classList.remove('is-disabled');
+          btn.title = '精准编译重启（已登记: ' + titleParts.join('；') + '）';
+        }
+      }
+    }
+  } catch (e) {
+    // 登记接口暂不可用时不打扰页面
+  }
+}
+async function initAllDatabases() {
+  const confirmed = await showModalConfirm(
+    '将按 registry 顺序执行全部 migrate_script 与 db/<app>/init.sh（不删库）。\n\n请确保相关服务已停止，否则会拒绝执行。不会自动启动服务。是否继续？',
+    {opLabel: '初始化全部数据库'}
+  );
+  if (!confirmed) {
+    return;
+  }
+  try {
+    const resp = await apiFetch('/api/dev/init-databases?confirm=INIT_ALL', {method: 'POST'});
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('初始化数据库失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    const summary = [
+      `status: ${result.status || 'unknown'}`,
+      formatStepLines('migrate', result.migrations),
+      formatStepLines('init', result.inits),
+    ].join('\n');
+    await showModalAlert(`数据库初始化完成:\n${summary}\n\n请在 runAll 手动启动 infrastructure / platform 组。`, {type: 'success', opLabel: '初始化全部数据库'});
+    refresh();
+  } catch (err) {
+    showRequestError('初始化数据库失败: ' + err.message, err);
+  }
+}
+
+// Core exec function (no confirm dialog) — used by the execution queue.
+async function _execInitAllDatabases() {
+  showProgress('init-db');
+  document.getElementById('prog-current-line').style.display = '';
+  document.getElementById('prog-current-text').textContent = '正在执行 migrate 与 init 脚本...';
+  document.getElementById('prog-remaining').textContent = '等待中';
+  document.getElementById('prog-started').textContent = '执行中';
+  // Poll dev tool logs for real-time step updates
+  var pollTimer = setInterval(async function() {
+    try {
+      var pollResp = await fetch('/api/dev/logs?tool=db-init&lines=1');
+      var pollData = await parseJsonSafe(pollResp);
+      if (pollData.lines && pollData.lines.length > 0) {
+        var line = pollData.lines[0];
+        var prefix = '[db-init] ';
+        if (line.indexOf(prefix) === 0) line = line.substring(prefix.length);
+        var txt = document.getElementById('prog-current-text');
+        if (txt) txt.textContent = line;
+      }
+    } catch(_) { /* ignore poll errors */ }
+  }, 800);
+  try {
+    const resp = await apiFetch('/api/dev/init-databases?confirm=INIT_ALL', {method: 'POST'});
+    clearInterval(pollTimer);
+    const result = await parseJsonSafe(resp);
+    // Guard: if the panel was taken over by another operation or cancelled, skip UI updates
+    var panel = document.getElementById('start-all-progress-panel');
+    var opMismatch = panel && panel._progressOp && panel._progressOp !== 'init-db';
+    var wasCancelled = panel && panel.classList.contains('is-cancelled');
+    var skipPanelUpdate = opMismatch || wasCancelled;
+    if (!resp.ok) {
+      showRequestError('初始化数据库失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      if (!skipPanelUpdate) {
+        updateProgress({done: true, phase: 'error', error: result.error || 'HTTP ' + resp.status, operation: 'init-db', total: 1, failed: 1, started: 0, remaining: 0});
+      }
+      if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+        var cb = _onBulkProgressDone; _onBulkProgressDone = null;
+        cb(result.error || 'HTTP ' + resp.status);
+      }
+      return;
+    }
+    // Build detailed summary — uses formatStepLines (defined in 03.js) which includes
+    // per-step error messages, so the user can see exactly which script failed and why.
+    var summary = formatStepLines('migrate', result.migrations);
+    summary += '\n' + formatStepLines('init', result.inits);
+    // Count actual step failures for progress and toast severity
+    var failedCount = 0;
+    var totalCount = 0;
+    if (result.migrations) {
+      result.migrations.forEach(function(s) { if (s.status === 'failed') failedCount++; });
+      totalCount += result.migrations.length;
+    }
+    if (result.inits) {
+      result.inits.forEach(function(s) { if (s.status === 'failed') failedCount++; });
+      totalCount += result.inits.length;
+    }
+    var succeeded = failedCount === 0 && (result.status === 'ok' || result.status === 'completed');
+    if (!skipPanelUpdate) {
+      updateProgress({done: true, phase: succeeded ? 'done' : 'error', operation: 'init-db', total: totalCount, started: totalCount, failed: failedCount, remaining: 0});
+    }
+    var toastMsg = '初始化数据库: status=' + (result.status || 'unknown') + ' | ' + totalCount + ' 步';
+    if (failedCount > 0) {
+      toastMsg += ' | ' + failedCount + ' 失败';
+    }
+    showToast(toastMsg, { type: succeeded ? 'success' : 'warning', duration: failedCount > 0 ? 20000 : 8000 });
+    // When there are step failures, show the detailed summary in an alert so the
+    // user can see the exact error messages without opening dev tool logs.
+    if (failedCount > 0) {
+      await showModalAlert('初始化数据库 — 部分步骤失败:\n\n' + summary + '\n\n请在 runAll 查看「初始化全部数据库」开发工具日志获得更多细节。', {type: 'error', title: '⚠️ 初始化数据库失败', opLabel: '初始化全部数据库（部分失败）'});
+    }
+    refresh();
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb2 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb2(null);
+    }
+  } catch (err) {
+    clearInterval(pollTimer);
+    showRequestError('初始化数据库失败: ' + err.message, err);
+    // For catch (network errors etc.), panel may not have been assigned yet — safe fallback
+    var panel2 = document.getElementById('start-all-progress-panel');
+    var skipUpdate2 = panel2 && (panel2._progressOp !== 'init-db' || panel2.classList.contains('is-cancelled'));
+    if (!skipUpdate2) {
+      updateProgress({done: true, phase: 'error', error: err.message, operation: 'init-db', total: 1, failed: 1, started: 0, remaining: 0});
+    }
+    if (typeof _onBulkProgressDone === 'function' && _onBulkProgressDone) {
+      var cb3 = _onBulkProgressDone; _onBulkProgressDone = null;
+      cb3(err.message);
+    }
+  }
+}
+
+async function clearAllObservability() {
+  const confirmed = await showModalConfirm(
+    '将清空：① 所有服务内存/tee 日志 ② Loki 日志 ③ Tempo Trace ④ Prometheus 指标（含 span-metrics）。Grafana 仪表盘配置保留。数秒内查询将不再显示历史。是否继续？',
+    {opLabel: '清空可观测数据'}
+  );
+  if (!confirmed) {
+    return;
+  }
+  try {
+    const resp = await apiFetch('/api/observability/clear-all', {method: 'POST'});
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('清空可观测数据失败: ' + (result.error || `${resp.status}`), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    const summary = [
+      `status: ${result.status || 'unknown'}`,
+      `memory cleared: ${result.memory_services_cleared ?? 0}`,
+      `files truncated: ${result.files_truncated ?? 0}`,
+      `loki: ${result.loki_reset || '-'}`,
+      `promtail: ${result.promtail_reset || '-'}`,
+      `tempo: ${result.tempo_reset || '-'}`,
+      `prometheus: ${result.prometheus_reset || '-'}`,
+    ].join('\n');
+    await showModalAlert(`可观测数据已清空:\n${summary}`, {type: 'success', opLabel: '清空可观测数据'});
+    if (logsState.open) {
+      fetchLogsOnce();
+    }
+    refresh();
+  } catch (err) {
+    showRequestError('清空可观测数据失败: ' + err.message, err);
+  }
+}
+
+async function loadObservabilityBar() {
+  const bar = document.getElementById('observability-bar');
+  if (!bar) {
+    return;
+  }
+  try {
+    const resp = await fetch('/api/observability');
+    const data = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      bar.innerHTML = '<span class="obs-label">集中日志:</span><span>未配置（启动 ai-monitor 服务）</span>';
+      return;
+    }
+    observabilityState.grafanaUrl = data.grafana_url || '';
+    observabilityState.lokiUrl = data.loki_url || '';
+    observabilityState.lokiPushUrl = data.loki_push_url || '';
+    observabilityState.logShipping = data.log_shipping || '';
+    observabilityState.grafanaLokiExplore = data.grafana_loki_explore || '';
+    observabilityState.grafanaTempoExplore = data.grafana_tempo_explore || '';
+    observabilityState.logFileRoot = data.log_file_root || '';
+    const logShippingText = observabilityState.logFileRoot
+      ? (observabilityState.logShipping === 'local_promtail_remote_loki'
+        ? `tee → ${observabilityState.logFileRoot} → scripts/runall-local-promtail.sh → Loki ${observabilityState.lokiPushUrl || observabilityState.lokiUrl}`
+        : `tee → ${observabilityState.logFileRoot} → Promtail`)
+      : 'tee 未启用（配置 logging.file_root）';
+    const parts = [
+      '<span class="obs-label">可观测:</span>',
+      observabilityState.grafanaTempoExplore
+        ? `<a href="${observabilityState.grafanaTempoExplore}" target="_blank" rel="noopener noreferrer">Tempo Explore</a>`
+        : '',
+      observabilityState.grafanaLokiExplore
+        ? `<a href="${observabilityState.grafanaLokiExplore}" target="_blank" rel="noopener noreferrer">Loki Explore</a>`
+        : '',
+      observabilityState.grafanaUrl
+        ? `<a href="${observabilityState.grafanaUrl}" target="_blank" rel="noopener noreferrer">Grafana</a>`
+        : '',
+      observabilityState.lokiUrl
+        ? `<span>Loki API <a href="${observabilityState.lokiUrl}/ready" target="_blank" rel="noopener noreferrer">${observabilityState.lokiUrl}</a></span>`
+        : '',
+      `<span class="obs-path" title="${logShippingText.replace(/"/g, '&quot;')}">${logShippingText}</span>`,
+      '<button id="obs-clear-all" class="logs-panel-btn obs-clear-all-btn" type="button">清空 Grafana 可观测数据</button>',
+    ].filter(Boolean);
+    bar.innerHTML = parts.join(' · ');
+    const clearBtn = document.getElementById('obs-clear-all');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', (event) => {
+        pulseClickFeedback(event.currentTarget);
+        clearAllObservability();
+      });
+    }
+  } catch (err) {
+    bar.innerHTML = `<span class="obs-label">集中日志:</span><span>加载失败: ${err.message}</span>`;
+  }
+}
+
+
+async function openLokiExplore() {
+  const url = observabilityState.grafanaLokiExplore || observabilityState.lokiUrl;
+  if (!url) {
+    await showModalAlert('Loki 未配置。请确认 ai-monitor 服务已启动。', {type: 'warning', opLabel: '打开 Loki 日志'});
+    return;
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+async function openGrafanaTraceLogs() {
+  if (!logsState.service) {
+    await showModalAlert('Select a service first.', {type: 'warning', opLabel: '打开 Grafana Trace 日志'});
+    return;
+  }
+  const params = new URLSearchParams({ service: logsState.service });
+  const fromRows = extractTraceIdFromLogRows(logsState.lastRows);
+  if (fromRows) {
+    params.set('trace_id', fromRows);
+  }
+  try {
+    const resp = await fetch(`/api/observability/grafana-trace?${params.toString()}`);
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      const manual = await showModalPrompt('未从日志中识别 trace_id，请手动输入：', fromRows || '');
+      if (!manual) {
+        return;
+      }
+      const retry = await fetch(`/api/observability/grafana-trace?${new URLSearchParams({ trace_id: manual.trim() }).toString()}`);
+      const retryResult = await parseJsonSafe(retry);
+      if (!retry.ok || !retryResult.url) {
+        showRequestError(`打开 Grafana 失败: ${retryResult.error || retry.status}`, resolveTraceIdFromResponse(retry, retry.requestTraceId, retryResult));
+        return;
+      }
+      window.open(retryResult.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (!result.url) {
+      await showModalAlert('Grafana 链接为空', {type: 'warning', opLabel: '打开 Grafana Trace 日志'});
+      return;
+    }
+    window.open(result.url, '_blank', 'noopener,noreferrer');
+  } catch (err) {
+    showRequestError(`打开 Grafana 失败: ${err.message}`, err);
+  }
+}
+
+function normalizeLogRows(lines) {
+  if (!Array.isArray(lines)) {
+    return [];
+  }
+  return lines.map((line) => {
+    if (typeof line === 'string') {
+      return line;
+    }
+    if (line && typeof line === 'object') {
+      const ts = line.timestamp ? `[${formatLogTime(line.timestamp)}] ` : '';
+      const stream = line.stream ? `(${line.stream}) ` : '';
+      const message = line.message !== undefined ? String(line.message) : JSON.stringify(line);
+      return `${ts}${stream}${message}`;
+    }
+    return String(line);
+  });
+}
+
+async function parseJsonSafe(resp) {
+  try {
+    return await resp.json();
+  } catch (_) {
+    return {};
+  }
+}
+
+function newRequestTraceId() {
+  try {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+  } catch (_) { /* ignore */ }
+  return 'runall-' + Date.now() + '-' + Math.random().toString(36).slice(2, 12);
+}
+
+function extractTraceId(source) {
+  if (source == null || source === '') return '';
+  if (typeof source === 'string') return source.trim();
+  if (typeof source !== 'object') return '';
+  if (typeof source.traceId === 'string' && source.traceId.trim()) return source.traceId.trim();
+  if (typeof source.trace_id === 'string' && source.trace_id.trim()) return source.trace_id.trim();
+  return '';
+}
+
+function resolveTraceIdFromResponse(resp, requestTraceId, body) {
+  try {
+    const h = resp && resp.headers && (resp.headers.get('X-Trace-Id') || resp.headers.get('x-trace-id'));
+    if (h && String(h).trim()) return String(h).trim();
+  } catch (_) { /* ignore */ }
+  const fromBody = extractTraceId(body);
+  if (fromBody) return fromBody;
+  return requestTraceId || '';
+}
+
+/** 带 X-Trace-Id 的 fetch；失败时 Error.traceId 可供 showRequestError 使用 */
+async function apiFetch(url, opts = {}) {
+  const requestTraceId = newRequestTraceId();
+  const headers = Object.assign({ 'X-Trace-Id': requestTraceId }, opts.headers || {});
+  let resp;
+  try {
+    resp = await fetch(url, Object.assign({}, opts, { headers }));
+  } catch (err) {
+    if (err && typeof err === 'object') err.traceId = requestTraceId;
+    throw err;
+  }
+  resp.requestTraceId = requestTraceId;
+  return resp;
+}
+
+function showRequestError(message, sourceOrTraceId) {
+  const banner = document.getElementById('requestErrorBanner');
+  if (!banner) {
+    console.error('[runAll]', message);
+    return;
+  }
+  const tid = extractTraceId(sourceOrTraceId);
+  banner.textContent = String(message ?? '请求失败');
+  if (tid) banner.setAttribute('data-traceId', tid);
+  else banner.removeAttribute('data-traceId');
+  banner.classList.add('is-visible');
+}
+
+// ── Toast Notification System ──
+var toastCounter = 0;
+var toastDefaultDuration = 7000;
+
+function getToastContainer() {
+  var el = document.getElementById('toast-container');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast-container';
+    el.className = 'toast-container';
+    el.setAttribute('aria-live', 'polite');
+    el.setAttribute('aria-label', 'Notifications');
+    document.body.appendChild(el);
+  }
+  return el;
+}
+
+function showToast(message, opts) {
+  opts = opts || {};
+  var type = opts.type || 'error';
+  var duration = typeof opts.duration === 'number' ? opts.duration : toastDefaultDuration;
+
+  var container = getToastContainer();
+  var id = 'toast-' + (++toastCounter);
+
+  var iconMap = { error: '✕', success: '✓', warning: '⚠', info: 'ℹ' };
+  var icon = iconMap[type] || 'ℹ';
+
+  var toast = document.createElement('div');
+  toast.id = id;
+  toast.className = 'toast toast-' + type;
+  toast.setAttribute('role', 'alert');
+  toast.innerHTML =
+    '<span class="toast-icon">' + icon + '</span>' +
+    '<span class="toast-body">' + esc(String(message || '')) + '</span>' +
+    '<button class="toast-close" type="button" aria-label="关闭" onclick="dismissToast(\'' + id + '\')">×</button>';
+
+  container.appendChild(toast);
+
+  // Limit visible toasts to 5
+  var toasts = container.querySelectorAll('.toast');
+  if (toasts.length > 5) {
+    dismissToast(toasts[0].id);
+  }
+
+  // Auto-dismiss
+  if (duration > 0) {
+    setTimeout(function () { dismissToast(id); }, duration);
+  }
+
+  return id;
+}
+
+function dismissToast(id) {
+  var toast = document.getElementById(id);
+  if (!toast) return;
+  toast.classList.add('toast-removing');
+  setTimeout(function () {
+    if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+  }, 280);
+}
+
+// ── Execution Queue for Bulk Operations ──
+// Hooks into SSE progress via _onBulkProgressDone callback (set in 02.js updateProgress)
+var _onBulkProgressDone = null;
+
+var bulkQueue = {
+  items: [],
+  processing: false,
+  currentOp: null,
+  // Track which type has confirm dialogs to avoid double-confirm on queue replay
+  confirmFlags: {},
+
+  enqueue: function (type, label, fn, needsConfirm) {
+    // If the exact same type is running, block
+    if (this.currentOp && this.currentOp.type === type && this.currentOp.status === 'running') {
+      showToast('「' + label + '」正在执行中，请稍候', { type: 'warning', duration: 3000 });
+      return false;
+    }
+    // If same type is pending, block
+    for (var i = 0; i < this.items.length; i++) {
+      if (this.items[i].type === type) {
+        showToast('「' + label + '」已在队列中，请等待执行', { type: 'warning', duration: 3000 });
+        return false;
+      }
+    }
+
+    var item = {
+      id: 'q-' + Date.now(),
+      type: type,
+      label: label,
+      status: 'pending',
+      fn: fn,
+      needsConfirm: needsConfirm
+    };
+    this.items.push(item);
+    this.render();
+    if (!this.processing) {
+      this.processNext();
+    }
+    return true;
+  },
+
+  processNext: function () {
+    if (this.items.length === 0) {
+      this.processing = false;
+      this.currentOp = null;
+      this.render();
+      return;
+    }
+    this.processing = true;
+    var item = this.items.shift();
+    item.status = 'running';
+    this.currentOp = item;
+    this.render();
+
+    var self = this;
+    // Set completion callback before starting
+    _onBulkProgressDone = function (err) {
+      if (err) {
+        item.status = 'failed';
+        item.error = err;
+        showToast('「' + item.label + '」执行出错: ' + err, { type: 'error' });
+      } else {
+        item.status = 'completed';
+      }
+      self.currentOp = null;
+      _onBulkProgressDone = null;
+      self.render();
+      // Process next after brief delay so UI can show completion
+      setTimeout(function () { self.processNext(); }, 600);
+    };
+
+    // Also hook SSE error cases
+    var origOnError = window._bulkSSEOnError;
+    window._bulkSSEOnError = function (errMsg) {
+      if (_onBulkProgressDone) {
+        var cb = _onBulkProgressDone;
+        _onBulkProgressDone = null;
+        cb(errMsg || 'SSE 连接中断');
+      }
+      if (typeof origOnError === 'function') origOnError(errMsg);
+    };
+
+    try {
+      item.fn();
+    } catch (e) {
+      item.status = 'failed';
+      item.error = e.message;
+      showToast('「' + item.label + '」执行出错: ' + e.message, { type: 'error' });
+      self.currentOp = null;
+      _onBulkProgressDone = null;
+      self.render();
+      setTimeout(function () { self.processNext(); }, 600);
+    }
+  },
+
+  interruptCurrent: function () {
+    if (this.currentOp && this.currentOp.status === 'running') {
+      // Disconnect ALL SSE sources first to prevent stale events from
+      // triggering the next operation's _onBulkProgressDone callback.
+      disconnectStartAllSSE();
+      disconnectStopAllSSE();
+      disconnectBuildAllSSE();
+      disconnectRestartAllSSE();
+      disconnectPreciseRestartSSE();
+      cancelProgressOperation();
+      this.currentOp.status = 'cancelled';
+      showToast('「' + this.currentOp.label + '」已中断', { type: 'warning', duration: 4000 });
+      var self = this;
+      _onBulkProgressDone = null;
+      setTimeout(function () {
+        self.currentOp = null;
+        self.render();
+        self.processNext();
+      }, 800);
+      return true;
+    }
+    return false;
+  },
+
+  cancelItem: function (id) {
+    for (var i = 0; i < this.items.length; i++) {
+      if (this.items[i].id === id) {
+        var label = this.items[i].label;
+        this.items.splice(i, 1);
+        this.render();
+        showToast('已取消排队: ' + label, { type: 'info', duration: 3000 });
+        return true;
+      }
+    }
+    return false;
+  },
+
+  cancelAllPending: function () {
+    if (this.items.length === 0) return;
+    var count = this.items.length;
+    this.items = [];
+    this.render();
+    showToast('已取消 ' + count + ' 个排队中的操作', { type: 'info', duration: 3000 });
+  },
+
+  render: function () {
+    this.renderQueueBar();
+    this.updateButtonStates();
+  },
+
+  renderQueueBar: function () {
+    var bar = document.getElementById('queue-status-bar');
+    if (!bar) return;
+
+    var html = '';
+    if (this.currentOp) {
+      html += '<span class="queue-current">' +
+        '<span class="spinner"></span> 正在执行: ' + esc(this.currentOp.label) + '</span>';
+    }
+    if (this.items.length > 0) {
+      html += '<span class="queue-pending">排队中 (' + this.items.length + '):</span>';
+      for (var i = 0; i < this.items.length; i++) {
+        html += '<span class="queue-item">' + esc(this.items[i].label) +
+          ' <button class="queue-item-cancel-btn" type="button" data-queue-id="' + this.items[i].id +
+          '" title="取消此操作">×</button></span>';
+      }
+      html += ' <button class="queue-cancel-all-btn" type="button" id="queue-cancel-all-btn">取消全部</button>';
+    }
+    if (this.currentOp && this.currentOp.status === 'running') {
+      html += ' <button class="queue-interrupt-btn" type="button" id="queue-interrupt-btn">中断当前</button>';
+    }
+
+    if (html) {
+      bar.innerHTML = html;
+      bar.style.display = '';
+      // Bind dynamic buttons
+      var cancelAllBtn = document.getElementById('queue-cancel-all-btn');
+      if (cancelAllBtn) {
+        cancelAllBtn.addEventListener('click', function () { bulkQueue.cancelAllPending(); });
+      }
+      var interruptBtn = document.getElementById('queue-interrupt-btn');
+      if (interruptBtn) {
+        interruptBtn.addEventListener('click', function () { bulkQueue.interruptCurrent(); });
+      }
+      // Bind individual item cancel buttons
+      var itemCancelBtns = bar.querySelectorAll('.queue-item-cancel-btn');
+      for (var j = 0; j < itemCancelBtns.length; j++) {
+        itemCancelBtns[j].addEventListener('click', function () {
+          var id = this.getAttribute('data-queue-id');
+          if (id) bulkQueue.cancelItem(id);
+        });
+      }
+    } else {
+      bar.style.display = 'none';
+    }
+  },
+
+  updateButtonStates: function () {
+    var types = ['start-all', 'stop-all', 'build-all', 'restart-all', 'precise-restart', 'clear-db', 'init-db'];
+    var btnMap = {
+      'start-all': 'start-all-btn',
+      'stop-all': 'stop-all-btn',
+      'build-all': 'build-all-btn',
+      'restart-all': 'restart-all-btn',
+      'precise-restart': 'precise-restart-btn',
+      'clear-db': 'dev-clear-databases',
+      'init-db': 'dev-init-databases'
+    };
+
+    for (var i = 0; i < types.length; i++) {
+      var type = types[i];
+      var btn = document.getElementById(btnMap[type]);
+      if (!btn) continue;
+
+      var blocked = false;
+      if (this.currentOp && this.currentOp.type === type && this.currentOp.status === 'running') {
+        blocked = true;
+      }
+      for (var j = 0; j < this.items.length; j++) {
+        if (this.items[j].type === type) {
+          blocked = true;
+          break;
+        }
+      }
+
+      if (blocked) {
+        btn.disabled = true;
+        btn.classList.add('is-disabled');
+        btn.title = '此操作已在队列中';
+      } else if (!lastDAGBootInProgress) {
+        btn.disabled = false;
+        btn.classList.remove('is-disabled');
+        btn.title = '';
+      }
+    }
+  }
+};
+
+function updateLogsMeta(text) {
+  document.getElementById('logs-panel-meta').textContent = `${logsState.service || '-'} - ${text} - last ${logLines} lines`;
+}
+
+async function copyLogsToClipboard() {
+  const contentEl = document.getElementById('logs-content');
+  const text = contentEl ? contentEl.textContent : '';
+  if (!text || text.trim() === '' || text.includes('Select a service to view logs')) {
+    updateLogsMeta('copy failed: no logs');
+    return;
+  }
+  try {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      await navigator.clipboard.writeText(text);
+    } else {
+      // Fallback for non-secure contexts (http://IP:port)
+      fallbackCopyTextToClipboard(text);
+    }
+    updateLogsMeta(`copied at ${formatNowTime()}`);
+  } catch (err) {
+    updateLogsMeta(`copy failed: ${err.message || 'unknown error'}`);
+  }
+}
+
+function fallbackCopyTextToClipboard(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  textarea.style.top = '0';
+  textarea.setAttribute('readonly', '');
+  document.body.appendChild(textarea);
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+  const success = document.execCommand('copy');
+  document.body.removeChild(textarea);
+  if (!success) {
+    throw new Error('execCommand copy failed');
+  }
+}
+
+function formatNowTime() {
+  return formatDateTime(new Date());
+}
+
+function formatLogTime(ts) {
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) {
+    return String(ts);
+  }
+  return formatDateTime(d);
+}
+
+function formatDateTime(d) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function formatTime(ts) {
+  const d = new Date(ts);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function esc(s) {
+  const el = document.createElement('span');
+  el.textContent = s;
+  return el.innerHTML;
+}
+
+function escAttr(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;');
+}
+
+function normalizePortValue(port) {
+  if (port === undefined || port === null) {
+    return '';
+  }
+  const value = String(port).trim();
+  if (value === '') {
+    return '';
+  }
+  for (const ch of value) {
+    if (ch < '0' || ch > '9') {
+      return '';
+    }
+  }
+  return value;
+}
+
+function resolveHealthHref(url, fallbackPort) {
+  const candidateURL = typeof url === 'string' ? url.trim() : '';
+  if (candidateURL && !candidateURL.startsWith('tcp://')) {
+    return candidateURL;
+  }
+  if (!fallbackPort) {
+    return '';
+  }
+  return `http://localhost:${fallbackPort}`;
+}
+
+function normalizePortHref(href) {
+  const trimmedHref = typeof href === 'string' ? href.trim() : '';
+  if (!trimmedHref) {
+    return '';
+  }
+  try {
+    const parsed = new URL(trimmedHref);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return '';
+    }
+    return parsed.href;
+  } catch (_) {
+    return '';
+  }
+}
+
+function parseTcpProbeLabel(url) {
+  const trimmed = typeof url === 'string' ? url.trim() : '';
+  if (!trimmed.startsWith('tcp://')) {
+    return '';
+  }
+  const label = trimmed.slice('tcp://'.length).trim();
+  return label;
+}
+
+function httpEndpointLabel(href) {
+  const normalizedHref = normalizePortHref(href);
+  if (!normalizedHref) {
+    return '';
+  }
+  try {
+    const parsed = new URL(normalizedHref);
+    const port = parsed.port || (parsed.protocol === 'https:' ? '443' : '80');
+    return `${parsed.hostname}:${port}`;
+  } catch (_) {
+    return '';
+  }
+}
+
+function healthHostFromService(svc) {
+  const healthPort = normalizePortValue(svc.health_port);
+  const healthHref = normalizePortHref(resolveHealthHref(svc.url, healthPort));
+  if (!healthHref) {
+    return 'localhost';
+  }
+  try {
+    return new URL(healthHref).hostname || 'localhost';
+  } catch (_) {
+    return 'localhost';
+  }
+}
+
+function healthPortCell(svc) {
+  const tcpLabel = parseTcpProbeLabel(svc.url);
+  if (tcpLabel) {
+    return esc(tcpLabel);
+  }
+  const healthPort = normalizePortValue(svc.health_port);
+  const healthHref = resolveHealthHref(svc.url, healthPort);
+  return portLink(healthHref, healthPort);
+}
+
+function commandPortCell(svc) {
+  const commandPort = normalizePortValue(svc.command_port);
+  if (!commandPort) {
+    return '-';
+  }
+  const host = healthHostFromService(svc);
+  return portLink(`http://${host}:${commandPort}`, commandPort);
+}
+
+function portLink(href, fallbackPort = '') {
+  let normalizedHref = normalizePortHref(href);
+  if (!normalizedHref && fallbackPort) {
+    normalizedHref = normalizePortHref(resolveHealthHref('', fallbackPort));
+  }
+  const label = httpEndpointLabel(normalizedHref) || normalizePortValue(fallbackPort);
+  if (!label) {
+    return '-';
+  }
+  if (!normalizedHref) {
+    return esc(label);
+  }
+  return `<a class="port-link" href="${escAttr(normalizedHref)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`;
+}
+
+function setLogsPanelWidth(px) {
+  var workspace = document.getElementById('workspace');
+  var maxWidth = Math.min(workspace.clientWidth * 0.75, workspace.clientWidth - 16);
+  var clamped = Math.min(Math.max(px, minLogsPanelWidth), maxWidth);
+  var panel = document.getElementById('logs-panel');
+  panel.style.width = clamped + 'px';
+}
+
+function handleLogsResizePointerDown(event) {
+  if (!logsState.open) { return; }
+  layoutState.resizing = true;
+  event.preventDefault();
+  if (event.currentTarget.setPointerCapture) {
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+  document.body.classList.add('pane-resizing');
+}
+
+function handleLogsResizePointerMove(event) {
+  if (!layoutState.resizing || !logsState.open) { return; }
+  var workspace = document.getElementById('workspace');
+  var rect = workspace.getBoundingClientRect();
+  var newWidth = rect.right - event.clientX;
+  setLogsPanelWidth(newWidth);
+}
+
+function stopLogsResize(event) {
+  if (!layoutState.resizing) { return; }
+  layoutState.resizing = false;
+  document.body.classList.remove('pane-resizing');
+  if (event && event.currentTarget && event.currentTarget.releasePointerCapture && event.currentTarget.hasPointerCapture) {
+    try {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    } catch (_) {}
+  }
+}
+
+document.getElementById('services').addEventListener('click', (event) => {
+  if (event.target.closest('a.port-link')) {
+    return;
+  }
+  // Click on dependency name → scroll to that service
+  const dep = event.target.closest('.dep[data-dep-name]');
+  if (dep) {
+    const depName = dep.getAttribute('data-dep-name');
+    if (depName) {
+      const targetSvc = document.querySelector(`.service[data-name="${CSS.escape(depName)}"]`);
+      if (targetSvc) {
+        targetSvc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Briefly highlight the target service
+        targetSvc.style.transition = 'background-color 150ms ease';
+        targetSvc.style.backgroundColor = '#1e3a5f';
+        setTimeout(() => {
+          targetSvc.style.backgroundColor = '';
+        }, 800);
+      }
+    }
+    return;
+  }
+  const btn = event.target.closest('button[data-action]');
+  if (!btn) {
+    return;
+  }
+  pulseClickFeedback(btn);
+  const action = btn.getAttribute('data-action');
+  const name = btn.getAttribute('data-name');
+  const group = btn.getAttribute('data-group');
+  const sessionID = btn.getAttribute('data-session-id') || '';
+  if (action === 'start' && name) {
+    startService(name, sessionID);
+    return;
+  }
+  if (action === 'stop' && name) {
+    stopService(name, sessionID);
+    return;
+  }
+  if (action === 'build') {
+    if (!name) return;
+    buildService(name);
+    return;
+  }
+  if (action === 'build-group') {
+    const group = btn.dataset.group;
+    if (!group) return;
+    pulseClickFeedback(btn);
+    buildGroup(group);
+    return;
+  }
+  if (action === 'restart') {
+    if (!name) return;
+    restartService(name, sessionID);
+    return;
+  }
+  if (action === 'logs') {
+    if (!name) return;
+    openLogsPanel(name);
+    return;
+  }
+  if (action === 'clear-logs') {
+    if (!name) return;
+    clearLogs(name);
+    return;
+  }
+  if (action === 'stop-group' && group) {
+    stopGroup(group);
+    return;
+  }
+  if (action === 'start-group' && group) {
+    startGroup(group);
+    return;
+  }
+  if (action === 'toggle-group' && group) {
+    toggleGroupCollapsed(group);
+  }
+});
+
+document.getElementById('logs-panel-loki').addEventListener('click', (event) => {
+  pulseClickFeedback(event.currentTarget);
+  openLokiExplore();
+});
+document.getElementById('logs-panel-grafana').addEventListener('click', (event) => {
+  pulseClickFeedback(event.currentTarget);
+  openGrafanaTraceLogs();
+});
+document.getElementById('logs-panel-close').addEventListener('click', (event) => {
+  pulseClickFeedback(event.currentTarget);
+  closeLogsPanel();
+});
+document.getElementById('logs-panel-copy').addEventListener('click', (event) => {
+  pulseClickFeedback(event.currentTarget);
+  copyLogsToClipboard();
+});
+document.getElementById('logs-panel-refresh').addEventListener('click', (event) => {
+  pulseClickFeedback(event.currentTarget);
+  fetchLogsOnce();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && logsState.open) {
+    closeLogsPanel();
+  }
+});
+var logsResizeHandle = document.getElementById('logs-resize-handle');
+logsResizeHandle.addEventListener('pointerdown', handleLogsResizePointerDown);
+logsResizeHandle.addEventListener('pointermove', handleLogsResizePointerMove);
+logsResizeHandle.addEventListener('pointerup', stopLogsResize);
+logsResizeHandle.addEventListener('pointercancel', stopLogsResize);
+window.addEventListener('blur', function () { stopLogsResize(); });
+window.addEventListener('resize', function () {
+  if (!logsState.open) { return; }
+  var panel = document.getElementById('logs-panel');
+  var currentWidth = parseFloat(panel.style.width);
+  if (!isNaN(currentWidth)) {
+    setLogsPanelWidth(currentWidth);
+  }
+});
+
+const devGenerateConfBtn = document.getElementById('dev-generate-conf');
+if (devGenerateConfBtn) {
+  devGenerateConfBtn.addEventListener('click', (event) => {
+    pulseClickFeedback(event.currentTarget);
+    generateConfReplica();
+  });
+}
+const devClearBtn = document.getElementById('dev-clear-databases');
+if (devClearBtn) {
+  devClearBtn.addEventListener('click', async (event) => {
+    pulseClickFeedback(event.currentTarget);
+    if (!await showModalConfirm(
+      '将：① 先关闭 runAll 中所有正在运行的应用（含 ai-monitor、前端、task-events 等；保留 docker-redis / docker-kafka）② DROP + CREATE 全部 MySQL 数据库 ③ 删除残留 SQLite 文件（含 wal/shm）④ FLUSHALL Redis ⑤ 重建 Kafka topics。\n\n不会执行 migrate/种子。完成后请再点「初始化全部数据库」。不会自动启动服务。是否继续？',
+      {opLabel: '清空全部数据库'}
+    )) return;
+    bulkQueue.enqueue('clear-db', '清空全部数据库', function () {
+      _execClearAllDatabases();
+    }, true);
+  });
+}
+function updateStartAllButtonState() {
+  const btns = [
+    document.getElementById('start-all-btn'),
+    document.getElementById('restart-all-btn')
+  ];
+  for (var i = 0; i < btns.length; i++) {
+    var btn = btns[i];
+    if (!btn) continue;
+    if (lastDAGBootInProgress) {
+      btn.disabled = true;
+      btn.title = '自动引导进行中，请稍候…';
+      btn.classList.add('is-disabled');
+    } else {
+      btn.disabled = false;
+      btn.title = '';
+      btn.classList.remove('is-disabled');
+    }
+  }
+}
+
+const startAllBtn = document.getElementById('start-all-btn');
+if (startAllBtn) {
+  startAllBtn.addEventListener('click', (event) => {
+    pulseClickFeedback(event.currentTarget);
+    // Enqueue: no confirm needed for start-all
+    bulkQueue.enqueue('start-all', '全部启动', function () {
+      _execStartAll();
+    }, false);
+  });
+}
+const stopAllBtn = document.getElementById('stop-all-btn');
+if (stopAllBtn) {
+  stopAllBtn.addEventListener('click', async (event) => {
+    pulseClickFeedback(event.currentTarget);
+    if (!await showModalConfirm('将按依赖顺序关闭全部服务。\n\n是否继续？', {opLabel: '全部关闭服务'})) return;
+    bulkQueue.enqueue('stop-all', '全部关闭', function () {
+      _execStopAll();
+    }, true);
+  });
+}
+const restartAllBtn = document.getElementById('restart-all-btn');
+if (restartAllBtn) {
+  restartAllBtn.addEventListener('click', async (event) => {
+    pulseClickFeedback(event.currentTarget);
+    if (!await showModalConfirm('将按依赖顺序关闭全部服务，再按依赖顺序重新启动。\n\n是否继续？', {opLabel: '全部重启服务'})) return;
+    bulkQueue.enqueue('restart-all', '全部重启', function () {
+      _execRestartAll();
+    }, true);
+  });
+}
+const buildAllBtn = document.getElementById('build-all-btn');
+if (buildAllBtn) {
+  buildAllBtn.addEventListener('click', async (event) => {
+    pulseClickFeedback(event.currentTarget);
+    if (!await showModalConfirm('将按依赖顺序编译全部可编译服务。\n\n是否继续？', {opLabel: '全部重新编译'})) return;
+    bulkQueue.enqueue('build-all', '全部重新编译', function () {
+      _execBuildAll();
+    }, true);
+  });
+}
+const preciseRestartBtn = document.getElementById('precise-restart-btn');
+if (preciseRestartBtn) {
+  preciseRestartBtn.addEventListener('click', async (event) => {
+    pulseClickFeedback(event.currentTarget);
+    // 点击时读取最新登记列表用于确认弹窗
+    // OPT-20260807-025：不可编译服务（无 build_command）标注「不可编译，直接重启」，
+    // 避免使用者误以为编译已执行；OPT-20260807-024：失败保留项标注「失败待重试」。
+    var regs = [];
+    var entries = [];
+    var ttlHours = 24;
+    try {
+      var resp = await apiFetch('/api/precise-restart/registrations');
+      var r = await parseJsonSafe(resp);
+      if (r && r.ttl_hours) ttlHours = r.ttl_hours;
+      entries = (r && Array.isArray(r.entries)) ? r.entries : [];
+      regs = entries.map(function (e) { return e.name; });
+      if (!regs.length && r && Array.isArray(r.services)) regs = r.services; // 旧接口兜底
+      if (!entries.length && regs.length) {
+        entries = regs.map(function (n) { return {name: n}; });
+      }
+    } catch (e) {}
+    if (!regs.length) {
+      showRequestError('没有已登记的服务。智能体编程会话修改服务代码后会将服务登记到 .runall/precise_restart_services.txt（可用 scripts/register-precise-restart.sh 登记）');
+      return;
+    }
+    var expiredCount = entries.filter(function (e) { return e.expired; }).length;
+    if (expiredCount > 0) {
+      showRequestError('登记文件含 ' + expiredCount + ' 个超过有效期（' + ttlHours + 'h）的过期登记，按钮已置灰。请先重新登记（scripts/register-precise-restart.sh）');
+      return;
+    }
+    var desc = entries.map(function (e) {
+      var marks = [];
+      if (e.state === 'failed') marks.push('失败待重试');
+      if (e.resolvable === false) marks.push('未知服务，将标记失败');
+      else if (e.buildable === false) marks.push('不可编译，直接重启');
+      return marks.length ? (e.name + '（' + marks.join('，') + '）') : e.name;
+    }).join('、');
+    if (!await showModalConfirm(
+      '将按依赖顺序对以下 ' + regs.length + ' 个已登记服务执行编译 + 重启：\n\n' + desc + '\n\n完成后清空登记文件。是否继续？',
+      {opLabel: '精准编译重启'}
+    )) return;
+    bulkQueue.enqueue('precise-restart', '精准编译重启', function () {
+      _execPreciseRestart();
+    }, true);
+  });
+}
+const collapseAllBtn = document.getElementById('collapse-all-btn');
+if (collapseAllBtn) {
+  collapseAllBtn.addEventListener('click', (event) => {
+    pulseClickFeedback(event.currentTarget);
+    collapseAllGroups();
+  });
+}
+const shutdownSelfBtn = document.getElementById('shutdown-self-btn');
+if (shutdownSelfBtn) {
+  shutdownSelfBtn.addEventListener('click', (event) => {
+    pulseClickFeedback(event.currentTarget);
+    shutdownSelf();
+  });
+}
+const proxyToggleBtn = document.getElementById('proxy-toggle-btn');
+if (proxyToggleBtn) {
+  proxyToggleBtn.addEventListener('click', (event) => {
+    pulseClickFeedback(event.currentTarget);
+    toggleProxy();
+  });
+}
+const devInitBtn = document.getElementById('dev-init-databases');
+if (devInitBtn) {
+  devInitBtn.addEventListener('click', async (event) => {
+    pulseClickFeedback(event.currentTarget);
+    if (!await showModalConfirm(
+      '将按 registry 顺序执行全部 migrate_script 与 db/<app>/init.sh（不删库）。\n\n请确保相关服务已停止，否则会拒绝执行。不会自动启动服务。是否继续？',
+      {opLabel: '初始化全部数据库'}
+    )) return;
+    bulkQueue.enqueue('init-db', '初始化全部数据库', function () {
+      _execInitAllDatabases();
+    }, true);
+  });
+}
+
+// ---- 开发工具日志查看 ----
+const devLogState = {
+  open: false,
+  tool: 'conf-sync',
+  timerId: null,
+  closeTimerId: null,
+  requestSerial: 0,
+};
+
+const devToolOptions = [
+  { value: 'conf-sync', label: '生成配置副本' },
+  { value: 'db-clear', label: '清空全部数据库' },
+  { value: 'db-init', label: '初始化全部数据库' },
+  { value: 'observability-clear', label: '清空 Grafana 可观测数据' },
+];
+
+function getDevToolLabel(value) {
+  var opt = devToolOptions.find(function (o) { return o.value === value; });
+  return opt ? opt.label : value;
+}
+
+function renderDevLogSelect() {
+  var select = document.getElementById('dev-log-select');
+  if (!select) return;
+  select.innerHTML = '';
+  devToolOptions.forEach(function (opt) {
+    var option = document.createElement('option');
+    option.value = opt.value;
+    option.textContent = opt.label;
+    select.appendChild(option);
+  });
+  select.value = devLogState.tool;
+}
+
+function showDevLogUI() {
+  document.getElementById('logs-panel-loki').style.display = 'none';
+  document.getElementById('logs-panel-grafana').style.display = 'none';
+  document.getElementById('logs-panel-clear-dev').style.display = '';
+  var select = document.getElementById('dev-log-select');
+  if (select) {
+    renderDevLogSelect();
+    select.style.display = '';
+  }
+}
+
+function hideDevLogUI() {
+  document.getElementById('logs-panel-loki').style.display = '';
+  document.getElementById('logs-panel-grafana').style.display = '';
+  document.getElementById('logs-panel-clear-dev').style.display = 'none';
+  var select = document.getElementById('dev-log-select');
+  if (select) select.style.display = 'none';
+}
+
+function openDevLogsPanel(tool) {
+  if (logsState.open) closeLogsPanel();
+  // 取消 dev 面板的延迟关闭 timer（如果有），避免新面板被意外关闭
+  if (devLogState.closeTimerId !== null) {
+    clearTimeout(devLogState.closeTimerId);
+    devLogState.closeTimerId = null;
+  }
+  devLogState.open = true;
+  devLogState.tool = tool || 'conf-sync';
+  devLogState.requestSerial += 1;
+  var workspace = document.getElementById('workspace');
+  workspace.classList.add('logs-open');
+  var panel = document.getElementById('logs-panel');
+  panel.offsetHeight;
+  panel.setAttribute('aria-hidden', 'false');
+  var savedWidth = parseFloat(panel.style.width);
+  if (!savedWidth || isNaN(savedWidth)) {
+    setLogsPanelWidth(workspace.clientWidth * 0.38);
+  }
+  document.getElementById('logs-panel-title').textContent = '开发工具日志';
+  updateDevLogsMeta('loading...');
+  showDevLogUI();
+  document.getElementById('logs-content').textContent = 'Loading logs...';
+  stopDevLogsAutoRefresh();
+  fetchDevLogsOnce();
+  devLogState.timerId = setInterval(fetchDevLogsOnce, statusRefreshMs);
+  restartStatusRefreshTimer();
+}
+
+function closeDevLogsPanel() {
+  devLogState.open = false;
+  devLogState.tool = '';
+  devLogState.requestSerial += 1;
+  stopDevLogsAutoRefresh();
+  hideDevLogUI();
+  if (devLogState.closeTimerId !== null) {
+    clearTimeout(devLogState.closeTimerId);
+    devLogState.closeTimerId = null;
+  }
+  var panel = document.getElementById('logs-panel');
+  panel.setAttribute('aria-hidden', 'true');
+  restartStatusRefreshTimer();
+  devLogState.closeTimerId = setTimeout(function () {
+    devLogState.closeTimerId = null;
+    if (!devLogState.open) {
+      document.getElementById('workspace').classList.remove('logs-open');
+    }
+  }, 180);
+}
+
+function stopDevLogsAutoRefresh() {
+  if (devLogState.timerId !== null) {
+    clearInterval(devLogState.timerId);
+    devLogState.timerId = null;
+  }
+}
+
+async function fetchDevLogsOnce() {
+  if (!devLogState.open || !devLogState.tool) return;
+  var reqId = ++devLogState.requestSerial;
+  var tool = devLogState.tool;
+  try {
+    var query = new URLSearchParams({ tool: tool, lines: String(logLines) });
+    var resp = await fetch('/api/dev/logs?' + query.toString());
+    var result = await parseJsonSafe(resp);
+    if (!resp.ok) throw new Error(result.error || 'HTTP ' + resp.status);
+    if (!devLogState.open || devLogState.tool !== tool || reqId !== devLogState.requestSerial) return;
+    renderDevLogs(result);
+  } catch (err) {
+    if (!devLogState.open || devLogState.tool !== tool || reqId !== devLogState.requestSerial) return;
+    updateDevLogsMeta('refresh failed');
+    document.getElementById('logs-content').textContent = 'Failed to load logs: ' + err.message;
+  }
+}
+
+function renderDevLogs(payload) {
+  var rows = Array.isArray(payload && payload.lines) ? payload.lines : [];
+  document.getElementById('logs-content').textContent = rows.length > 0 ? rows.join('\n') : '暂无日志';
+  updateDevLogsMeta(rows.length + ' lines - refreshed at ' + formatNowTime());
+}
+
+function updateDevLogsMeta(text) {
+  var tool = devLogState.tool || '-';
+  document.getElementById('logs-panel-title').textContent = '开发工具: ' + getDevToolLabel(tool);
+  document.getElementById('logs-panel-meta').textContent = tool + ' - ' + (text || 'loading...') + ' - last ' + logLines + ' lines';
+}
+
+async function clearDevLogs() {
+  if (!devLogState.tool) return;
+  var label = getDevToolLabel(devLogState.tool) || devLogState.tool;
+  if (!await showModalConfirm('确认清空「' + label + '」的日志吗？', {opLabel: '清空开发工具日志: ' + label})) return;
+  try {
+    var resp = await apiFetch('/api/dev/logs/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tool: devLogState.tool })
+    });
+    var result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('清空日志失败: ' + (result.error || resp.status), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    fetchDevLogsOnce();
+  } catch (err) {
+    showRequestError('清空日志失败: ' + err.message, err);
+  }
+}
+
+// 修改 closeLogsPanel 以处理开发工具日志面板
+var origCloseLogsPanel = closeLogsPanel;
+closeLogsPanel = function () {
+  if (devLogState.open) {
+    closeDevLogsPanel();
+  } else {
+    origCloseLogsPanel();
+  }
+};
+
+// 修改 openLogsPanel 以关闭开发工具日志面板
+var origOpenLogsPanel = openLogsPanel;
+openLogsPanel = function (name) {
+  if (devLogState.open) closeDevLogsPanel();
+  // 确保 dev 面板的延迟关闭 timer 不会影响服务日志面板
+  if (devLogState.closeTimerId !== null) {
+    clearTimeout(devLogState.closeTimerId);
+    devLogState.closeTimerId = null;
+  }
+  hideDevLogUI();
+  origOpenLogsPanel(name);
+};
+
+// 开发工具日志事件绑定
+var devViewLogsBtn = document.getElementById('dev-view-logs');
+if (devViewLogsBtn) {
+  devViewLogsBtn.addEventListener('click', function (event) {
+    pulseClickFeedback(event.currentTarget);
+    openDevLogsPanel('conf-sync');
+  });
+}
+
+var devLogSelect = document.getElementById('dev-log-select');
+if (devLogSelect) {
+  devLogSelect.addEventListener('change', function () {
+    devLogState.tool = devLogSelect.value;
+    devLogState.requestSerial += 1;
+    updateDevLogsMeta('loading...');
+    document.getElementById('logs-content').textContent = 'Loading logs...';
+    fetchDevLogsOnce();
+  });
+}
+
+var clearDevLogsBtn = document.getElementById('logs-panel-clear-dev');
+if (clearDevLogsBtn) {
+  clearDevLogsBtn.addEventListener('click', function (event) {
+    pulseClickFeedback(event.currentTarget);
+    clearDevLogs();
+  });
+}
+
+// ── Log Collection Status ───────────────────────────────────────
+let lastCollectionData = null;
+
+async function fetchCollectionStatus() {
+  try {
+    const resp = await fetch('/api/log-collection-status');
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    lastCollectionData = data;
+    return data;
+  } catch (err) {
+    return null;
+  }
+}
+
+function renderCollectionStatus(data) {
+  const bar = document.getElementById('log-collection-bar');
+  if (!bar || !data) return;
+
+  const active = data.active_services || 0;
+  const total = data.total_services || 0;
+  const hasFileSink = data.has_file_sink;
+
+  let html = '<span class="lc-label">📊 日志收集:</span>';
+  html += '<span class="lc-stat">活动日志服务: <span class="lc-val">' + active + '</span> / <span class="lc-val">' + total + '</span></span>';
+  if (!hasFileSink) {
+    html += '<span class="lc-stat">⚠️ <span class="lc-warn">文件输出未启用</span></span>';
+  }
+  html += '<button class="lc-detail-toggle" type="button" id="lc-detail-toggle" onclick="toggleCollectionDetail()">详情</button>';
+  bar.innerHTML = html;
+
+  // Render detail table
+  const tbody = document.getElementById('lc-detail-tbody');
+  if (!tbody || !data.services) return;
+  let rows = '';
+  for (const svc of data.services) {
+    const cls = svc.is_active ? 'lc-active' : 'lc-inactive';
+    const lastLog = svc.last_log_at ? timeAgo(svc.last_log_at) : '—';
+    const activeMark = svc.is_active ? '✅' : '❌';
+    rows += '<tr class="' + cls + '">';
+    rows += '<td>' + esc(svc.service_name) + '</td>';
+    rows += '<td>' + esc(svc.service_status || '?') + '</td>';
+    rows += '<td>' + svc.total_lines + '</td>';
+    rows += '<td>' + esc(lastLog) + '</td>';
+    rows += '<td>' + activeMark + '</td>';
+    rows += '</tr>';
+  }
+  tbody.innerHTML = rows;
+}
+
+function toggleCollectionDetail() {
+  const panel = document.getElementById('lc-detail-panel');
+  if (!panel) return;
+  const open = panel.classList.toggle('open');
+  panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+  const btn = document.getElementById('lc-detail-toggle');
+  if (btn) btn.textContent = open ? '收起' : '详情';
+}
+
+function timeAgo(isoStr) {
+  if (!isoStr) return '—';
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return isoStr;
+  const sec = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (sec < 60) return sec + 's ago';
+  if (sec < 3600) return Math.floor(sec / 60) + 'm ago';
+  if (sec < 86400) return Math.floor(sec / 3600) + 'h ago';
+  return Math.floor(sec / 86400) + 'd ago';
+}
+
+async function refreshCollectionStatus() {
+  const data = await fetchCollectionStatus();
+  if (data) renderCollectionStatus(data);
+}
+
+// ── Trace Shipping Verification ───────────────────────────────
+let traceShippingVerifying = false;
+let lastTraceShippingData = null;
+
+async function fetchTraceShippingStatus() {
+  try {
+    const resp = await fetch('/api/trace-shipping/status');
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    if (data && data.status === 'pending' && !data.summary) return null;
+    lastTraceShippingData = data;
+    return data;
+  } catch (err) {
+    return null;
+  }
+}
+
+async function runTraceShippingVerify() {
+  if (traceShippingVerifying) return;
+  traceShippingVerifying = true;
+  const bar = document.getElementById('trace-shipping-bar');
+  if (bar) {
+    bar.innerHTML = '<span class="ts-label">🔍 Trace 投递验证:</span><span class="ts-stat">验证中…（写入 probe → 轮询 Loki → 汇总）</span>';
+  }
+  try {
+    const resp = await apiFetch('/api/trace-shipping/verify?wait_seconds=15', { method: 'POST' });
+    const data = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('Trace 投递验证失败: ' + (data.error || resp.status), resolveTraceIdFromResponse(resp, resp.requestTraceId, data));
+      renderTraceShippingStatus(lastTraceShippingData);
+      return;
+    }
+    lastTraceShippingData = data;
+    renderTraceShippingStatus(data);
+  } catch (err) {
+    showRequestError('Trace 投递验证失败: ' + err.message, err);
+    renderTraceShippingStatus(lastTraceShippingData);
+  } finally {
+    traceShippingVerifying = false;
+  }
+}
+
+function renderTraceShippingStatus(data) {
+  const bar = document.getElementById('trace-shipping-bar');
+  if (!bar) return;
+  if (!data || !data.summary) {
+    bar.innerHTML = '<span class="ts-label">🔍 Trace 投递验证:</span>'
+      + '<span class="ts-stat">尚未验证</span>'
+      + '<button class="ts-verify-btn" type="button" id="ts-verify-btn" onclick="runTraceShippingVerify()">立即验证</button>'
+      + '<button class="lc-detail-toggle" type="button" id="ts-detail-toggle" onclick="toggleTraceShippingDetail()">详情</button>';
+    return;
+  }
+
+  const s = data.summary;
+  const configuredTotal = s.configured_total || s.total || 0;
+  const lokiClass = data.loki_ready ? 'ts-ok' : 'ts-bad';
+  const failedClass = (s.failed || 0) > 0 ? 'ts-bad' : 'ts-ok';
+  let html = '<span class="ts-label">🔍 Trace 投递验证:</span>';
+  if (data.verification_status === 'pending') {
+    html += '<span class="ts-stat ts-warn">尚未验证</span>';
+  } else if (data.verification_status === 'stale') {
+    html += '<span class="ts-stat ts-warn">配置已变更，请重新验证</span>';
+  }
+  html += '<span class="ts-stat">配置服务: <span class="ts-ok">' + configuredTotal + '</span></span>';
+  if (data.verification_status !== 'pending') {
+    html += '<span class="ts-stat">Loki: <span class="' + lokiClass + '">' + (data.loki_ready ? '可达' : '不可达') + '</span></span>';
+    html += '<span class="ts-stat">本地采集: <span class="ts-ok">' + (s.local_ok || 0) + '</span> / ' + configuredTotal + '</span>';
+    html += '<span class="ts-stat">Loki 可见: <span class="ts-ok">' + (s.loki_ok || 0) + '</span> / ' + configuredTotal + '</span>';
+    html += '<span class="ts-stat">异常: <span class="' + failedClass + '">' + (s.failed || 0) + '</span></span>';
+    if (data.promtail_reload) {
+      const prClass = data.promtail_reload === 'ok' ? 'ts-ok' : (data.promtail_reload === 'not_running' ? 'ts-warn' : 'ts-bad');
+      html += '<span class="ts-stat">Promtail: <span class="' + prClass + '">' + esc(data.promtail_reload) + '</span></span>';
+    }
+  }
+  if (data.probe_trace_id) {
+    html += '<span class="ts-stat">probe: <code>' + esc(data.probe_trace_id) + '</code></span>';
+  }
+  if (data.grafana_trace_url) {
+    html += '<a href="' + esc(data.grafana_trace_url) + '" target="_blank" rel="noopener noreferrer">Grafana Journey</a>';
+  }
+  html += '<button class="ts-verify-btn" type="button" id="ts-verify-btn" onclick="runTraceShippingVerify()">立即验证</button>';
+  html += '<button class="lc-detail-toggle" type="button" id="ts-detail-toggle" onclick="toggleTraceShippingDetail()">详情</button>';
+  bar.innerHTML = html;
+
+  const tbody = document.getElementById('ts-detail-tbody');
+  if (!tbody || !data.services) return;
+  let rows = '';
+  for (const svc of data.services) {
+    const cls = (svc.issue) ? 'ts-fail' : 'ts-pass';
+    const localMark = svc.local_probe_ok ? '✅' : '❌';
+    const lokiMark = svc.loki_visible ? '✅' : '❌';
+    const grafanaLink = svc.grafana_url
+      ? '<a href="' + esc(svc.grafana_url) + '" target="_blank" rel="noopener noreferrer">查看</a>'
+      : '—';
+    rows += '<tr class="' + cls + '">';
+    rows += '<td>' + esc(svc.service_name) + '</td>';
+    rows += '<td>' + esc(svc.service_status || '?') + '</td>';
+    rows += '<td>' + localMark + '</td>';
+    rows += '<td>' + lokiMark + '</td>';
+    rows += '<td>' + (svc.loki_log_count || 0) + '</td>';
+    rows += '<td>' + grafanaLink + '</td>';
+    rows += '<td>' + esc(svc.issue || '') + '</td>';
+    rows += '</tr>';
+  }
+  tbody.innerHTML = rows;
+}
+
+function toggleTraceShippingDetail() {
+  const panel = document.getElementById('ts-detail-panel');
+  if (!panel) return;
+  const open = panel.classList.toggle('open');
+  panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+  const btn = document.getElementById('ts-detail-toggle');
+  if (btn) btn.textContent = open ? '收起' : '详情';
+}
+
+async function refreshTraceShippingStatus() {
+  const data = await fetchTraceShippingStatus();
+  renderTraceShippingStatus(data);
+}
+
+// ── Internal API live smoke ───────────────────────────────────
+let internalAPIsSmokeVerifying = false;
+let lastInternalAPIsSmokeData = null;
+
+async function fetchInternalAPIsSmokeStatus() {
+  try {
+    const resp = await fetch('/api/smoke/internal-apis/status');
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    lastInternalAPIsSmokeData = data;
+    return data;
+  } catch (err) {
+    return null;
+  }
+}
+
+async function runInternalAPIsSmokeVerify() {
+  if (internalAPIsSmokeVerifying) return;
+  internalAPIsSmokeVerifying = true;
+  const bar = document.getElementById('internal-apis-smoke-bar');
+  if (bar) {
+    bar.innerHTML = '<span class="ts-label">🧪 Internal API smoke:</span><span class="ts-stat">验证中…</span>';
+  }
+  try {
+    const resp = await apiFetch('/api/smoke/internal-apis/verify', { method: 'POST' });
+    const data = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('Internal API smoke 失败: ' + (data.error || resp.status), resolveTraceIdFromResponse(resp, resp.requestTraceId, data));
+      renderInternalAPIsSmokeStatus(lastInternalAPIsSmokeData);
+      return;
+    }
+    lastInternalAPIsSmokeData = data;
+    renderInternalAPIsSmokeStatus(data);
+  } catch (err) {
+    showRequestError('Internal API smoke 失败: ' + err.message, err);
+    renderInternalAPIsSmokeStatus(lastInternalAPIsSmokeData);
+  } finally {
+    internalAPIsSmokeVerifying = false;
+  }
+}
+
+function extractInternalAPIsSmokeFailReasons(data) {
+  const reasons = [];
+  const pushUnique = (line) => {
+    const t = String(line || '').trim();
+    if (!t || reasons.indexOf(t) >= 0) return;
+    reasons.push(t);
+  };
+  const scan = (text) => {
+    String(text || '').split('\n').forEach((raw) => {
+      const line = raw.trim();
+      if (line.indexOf('FAIL  ') === 0 || line.indexOf('FAIL\t') === 0) pushUnique(line);
+    });
+  };
+  if (data) {
+    scan(data.output);
+    // message may already be "FAIL … · === summary: …"
+    String(data.message || '').split(' · ').forEach((part) => {
+      const p = part.trim();
+      if (p.indexOf('FAIL  ') === 0 || p.indexOf('FAIL\t') === 0) {
+        p.split(' | ').forEach(pushUnique);
+      }
+    });
+  }
+  return reasons;
+}
+
+function renderInternalAPIsSmokeStatus(data) {
+  const bar = document.getElementById('internal-apis-smoke-bar');
+  if (!bar) return;
+  const status = (data && data.status) || 'pending';
+  let statusClass = 'ts-warn';
+  let statusText = '尚未验证';
+  if (status === 'ok') { statusClass = 'ts-ok'; statusText = '通过'; }
+  else if (status === 'failed') { statusClass = 'ts-bad'; statusText = '失败'; }
+  else if (status === 'skipped') { statusClass = 'ts-warn'; statusText = '跳过'; }
+  const failReasons = (status === 'failed') ? extractInternalAPIsSmokeFailReasons(data) : [];
+  let html = '<span class="ts-label">🧪 Internal API smoke:</span>';
+  html += '<span class="ts-stat"><span class="' + statusClass + '">' + statusText + '</span></span>';
+  if (failReasons.length) {
+    const detail = failReasons.join(' | ');
+    html += '<span class="ts-fail-detail" title="' + esc(detail) + '">原因: ' + esc(detail.slice(0, 220)) + (detail.length > 220 ? '…' : '') + '</span>';
+  } else if (data && data.message) {
+    html += '<span class="ts-stat" title="' + esc(String(data.message)) + '">' + esc(String(data.message).slice(0, 120)) + '</span>';
+  }
+  if (data && data.trigger) {
+    html += '<span class="ts-stat">来源: ' + esc(data.trigger) + '</span>';
+  }
+  html += '<button class="ts-verify-btn" type="button" id="ias-verify-btn" onclick="runInternalAPIsSmokeVerify()">立即验证</button>';
+  bar.innerHTML = html;
+}
+
+async function refreshInternalAPIsSmokeStatus() {
+  const data = await fetchInternalAPIsSmokeStatus();
+  renderInternalAPIsSmokeStatus(data);
+}
+
+// ── Proxy Toggle ─────────────────────────────────────────────────
+function renderProxyToggle() {
+  const btn = document.getElementById('proxy-toggle-btn');
+  if (!btn) return;
+  if (lastProxyState) {
+    btn.textContent = '代理: 开启';
+    btn.classList.remove('proxy-off');
+    btn.classList.add('proxy-on');
+    btn.title = '代理已开启 — 点击关闭（服务启动时将移除 HTTP_PROXY 等环境变量）';
+  } else {
+    btn.textContent = '代理: 关闭';
+    btn.classList.remove('proxy-on');
+    btn.classList.add('proxy-off');
+    btn.title = '代理已关闭（默认）— 点击开启（服务启动时保留 HTTP_PROXY 等环境变量）';
+  }
+}
+
+async function toggleProxy() {
+  const newState = !lastProxyState;
+  try {
+    const resp = await apiFetch('/api/proxy-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ use_proxy: newState })
+    });
+    const result = await parseJsonSafe(resp);
+    if (!resp.ok) {
+      showRequestError('代理切换失败: ' + (result.error || resp.status), resolveTraceIdFromResponse(resp, resp.requestTraceId, result));
+      return;
+    }
+    lastProxyState = result.use_proxy;
+    renderProxyToggle();
+  } catch (err) {
+    showRequestError('代理切换失败: ' + err.message, err);
+  }
+}
+
+// Modified refresh to also update collection status.
+var _origRefresh = refresh;
+refresh = async function () {
+  await _origRefresh();
+  refreshCollectionStatus();
+  refreshTraceShippingStatus();
+  refreshInternalAPIsSmokeStatus();
+};
+
+loadObservabilityBar();
+refreshCollectionStatus();
+refreshTraceShippingStatus();
+refreshInternalAPIsSmokeStatus();
+refresh();
+restartStatusRefreshTimer();
+
+// body { overflow: hidden } — wheel over page chrome (title/actions) does nothing.
+// Chrome bars live inside .services-pane so they scroll away; still forward
+// wheels from page-header / progress panel onto the pane.
+function isVerticallyScrollable(el) {
+  if (!el || el === document.body || el === document.documentElement) {
+    return false;
+  }
+  const style = getComputedStyle(el);
+  const oy = style.overflowY;
+  if (oy !== 'auto' && oy !== 'scroll' && oy !== 'overlay') {
+    return false;
+  }
+  return el.scrollHeight > el.clientHeight + 1;
+}
+
+function findVerticalScrollableAncestor(start) {
+  let el = start instanceof Element ? start : null;
+  while (el && el !== document.body && el !== document.documentElement) {
+    if (isVerticallyScrollable(el)) {
+      return el;
+    }
+    el = el.parentElement;
+  }
+  return null;
+}
+
+document.addEventListener('wheel', (event) => {
+  if (event.defaultPrevented || event.ctrlKey) {
+    return;
+  }
+  const pane = document.querySelector('.services-pane');
+  if (!pane) {
+    return;
+  }
+  const scrollable = findVerticalScrollableAncestor(event.target);
+  if (scrollable && scrollable !== pane) {
+    return;
+  }
+  if (scrollable === pane) {
+    return;
+  }
+  const maxScroll = pane.scrollHeight - pane.clientHeight;
+  if (maxScroll <= 0) {
+    return;
+  }
+  const next = Math.min(maxScroll, Math.max(0, pane.scrollTop + event.deltaY));
+  if (next === pane.scrollTop) {
+    return;
+  }
+  pane.scrollTop = next;
+  event.preventDefault();
+}, { passive: false });
+
+</script>
+</body>
+</html>

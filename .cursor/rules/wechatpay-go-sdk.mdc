@@ -1,0 +1,29 @@
+---
+description: 微信支付必须调用仓内 sdk/wechatpay-go；禁止社区 SDK、APIv2 与裸 HTTP 自签
+alwaysApply: true
+---
+
+# 微信支付必须调用仓内 wechatpay-go（元规则）
+
+适用于整个 monorepo。细则见 `.ai/01_project_constraints/59_wechatpay_go_sdk.md`；约束索引第 54 条；ADR-0032。
+
+## 强制要求
+
+- 微信支付 APIv3 **只**通过仓内 `sdk/wechatpay-go`（module `github.com/wechatpay-apiv3/wechatpay-go`）
+- 依赖该 module 的 `go.mod` **必须** `replace` 到 `sdk/wechatpay-go`
+- 有生成接口时调用 `services/<产品>`（Native / 退款 / 分账等）；回调用 `core/notify`
+- 无生成接口时才允许 `core.Client`，并注释 `WechatPay-SDK-OK: no services/<pkg> for <path>`
+- **禁止** `go-pay` / `silenceper/wechat` / APIv2 XML / 手写 WECHATPAY2 签名 / 裸 HTTP 打微信网关
+- **禁止** Python 进程直调微信支付；走 taskBill
+
+## 触发
+
+- 改 `taskBill/src/wechat_*.go`、`conf/billing/wechatPay/`、任何 `go.mod` 的 wechatpay 依赖
+- 用户/Agent 提及微信支付、退款、分账、Native/JSAPI、回调验签
+
+## 验收
+
+```bash
+python3 db/scripts/ci/test_check_wechatpay_go_sdk.py
+python3 db/scripts/ci/check_wechatpay_go_sdk.py
+```

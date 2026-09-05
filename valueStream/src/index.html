@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="trae-service" content="valueStream" />
+<title>valueStream</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace; background: #1a1a2e; color: #e0e0e0; padding: 24px; }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  .subtitle { font-size: 12px; color: #888; margin-bottom: 20px; line-height: 1.5; }
+  .domain-group { background: #111827; border-radius: 10px; margin-bottom: 14px; border: 1px solid #1f2937; }
+  .domain-group.dragging { opacity: 0.55; border-color: #60a5fa; }
+  .domain-group.drop-target { border-color: #f59e0b; }
+  .status-group { background: #16213e; border-radius: 8px; margin: 10px; border: 1px solid #22304d; }
+  .group-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; gap: 10px; }
+  .group-left { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+  .group-title { font-weight: 600; font-size: 14px; }
+  .group-meta { font-size: 12px; color: #9ca3af; }
+  .drag-handle { font-size: 12px; color: #9ca3af; padding: 2px 6px; border: 1px dashed #4b5563; border-radius: 4px; cursor: grab; user-select: none; }
+  .drag-handle:active { cursor: grabbing; }
+  .stream { background: #16213e; border-radius: 8px; margin: 10px; padding: 12px 14px; border: 1px solid #22304d; }
+  .stream-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .stream-title { font-weight: 600; font-size: 15px; }
+  .stream-desc { font-size: 12px; color: #888; width: 100%; margin-top: 4px; }
+  .failed-list { color: #ef4444; font-size: 12px; margin-top: 6px; }
+  .impact-summary { font-size: 12px; margin-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .impact-list { font-size: 12px; color: #fca5a5; margin-top: 6px; }
+  .step { margin: 8px 0 0 16px; padding: 10px; background: #0f3460; border-radius: 6px; border: 1px solid #1b4676; }
+  .step-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .step-name { font-weight: 600; min-width: 120px; }
+  .test-file { font-size: 11px; color: #888; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot.unknown, .dot.pending { background: #6b7280; }
+  .dot.planned { background: #6366f1; box-shadow: 0 0 4px #6366f1; }
+  .dot.running { background: #facc15; box-shadow: 0 0 6px #facc15; }
+  .dot.passed { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+  .dot.failed { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+  button { background: #1c2a4a; border: 1px solid #555; color: #ccc; cursor: pointer; font-size: 12px; padding: 4px 10px; border-radius: 4px; }
+  button:hover:not(:disabled) { background: #333; color: #fff; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  table.fields { width: 100%; margin-top: 8px; font-size: 11px; border-collapse: collapse; }
+  table.fields th, table.fields td { text-align: left; padding: 4px 8px; border-bottom: 1px solid #1c2a4a; }
+  table.fields th { color: #888; font-weight: 500; }
+  .field-desc { color: #aaa; font-size: 10px; }
+  details { margin-top: 6px; font-size: 11px; }
+  pre { white-space: pre-wrap; color: #fca5a5; max-height: 120px; overflow: auto; }
+  .uptime { font-size: 12px; color: #888; margin-top: 20px; }
+  .toast { display: none; margin-bottom: 12px; padding: 10px 14px; border-radius: 6px; font-size: 13px; background: #7f1d1d; color: #fecaca; border: 1px solid #ef4444; }
+  .toast.show { display: block; }
+  .toggle-btn { background: transparent; border: 1px solid #4b5563; color: #d1d5db; min-width: 72px; }
+  .toggle-btn:hover:not(:disabled) { background: #374151; }
+  .impact-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 8px; font-size: 11px; border: 1px solid transparent; }
+  .impact-badge.impact-yes { color: #fecaca; background: #7f1d1d; border-color: #ef4444; }
+  .impact-badge.impact-no { color: #bbf7d0; background: #14532d; border-color: #22c55e; }
+  .impact-badge.impact-unknown { color: #d1d5db; background: #1f2937; border-color: #6b7280; }
+  .group-content { padding-bottom: 6px; }
+  .muted { color: #94a3b8; font-size: 12px; }
+  .layout { display: flex; align-items: flex-start; gap: 0; }
+  .left-pane { min-width: 420px; width: 58%; padding-right: 8px; }
+  .pane-splitter { flex: 0 0 10px; width: 10px; cursor: col-resize; position: relative; align-self: stretch; background: transparent; border: none; }
+  .pane-splitter::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px; background: #334155; border-radius: 1px; }
+  .pane-splitter:hover::before, .pane-splitter:focus-visible::before { background: #60a5fa; }
+  .right-pane { min-width: 360px; flex: 1; padding-left: 8px; position: relative; min-height: 100vh; }
+  body.pane-resizing { cursor: col-resize; user-select: none; }
+  .log-panel { position: fixed; top: 0; height: 100vh; background: #0f172a; border: 1px solid #334155; border-radius: 10px; display: flex; flex-direction: column; min-width: 0; z-index: 20; }
+  .log-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; border-bottom: 1px solid #334155; }
+  .log-panel-title { font-size: 14px; font-weight: 600; color: #e2e8f0; }
+  .log-panel-meta { font-size: 12px; color: #94a3b8; padding: 10px 12px 0; line-height: 1.5; }
+  .log-panel-body { margin: 10px 12px 12px; flex: 1; min-height: 0; max-height: none; overflow: auto; overscroll-behavior: contain; white-space: pre-wrap; color: #fecaca; background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 12px; font-size: 12px; }
+  .log-empty { color: #94a3b8; }
+</style>
+</head>
+<body>
+<h1>valueStream</h1>
+<div class="subtitle">不依赖 runAll 在线；需本机 pytest 与 Saas_project 测试依赖。字段格式：&lt;应用服务&gt;.&lt;表&gt;.&lt;列&gt;（应用服务名来自 runAll config.yaml）。自动刷新 2s。</div>
+<div id="toast" class="toast" role="alert"></div>
+<div id="layout" class="layout">
+  <div id="leftPane" class="left-pane">
+    <div id="root"></div>
+  </div>
+  <button id="paneSplitter" class="pane-splitter" type="button" aria-label="拖动调整左右面板宽度"></button>
+  <div class="right-pane">
+    <aside id="logPanel" class="log-panel">
+      <div class="log-panel-header">
+        <span class="log-panel-title">日志详情（右侧）</span>
+        <button class="toggle-btn" onclick="clearSelectedLog()">清空选择</button>
+      </div>
+      <div id="logPanelMeta" class="log-panel-meta">点击环节中的“在右侧查看日志”后，会在这里显示完整日志。</div>
+      <pre id="logPanelBody" class="log-panel-body log-empty">暂无已选日志</pre>
+    </aside>
+  </div>
+</div>
+<div class="uptime" id="uptime"></div>
+<script>
+const startTime = Date.now();
+const streamDot = { unknown: 'unknown', running: 'running', passed: 'passed', failed: 'failed' };
+const stepDot = { planned: 'planned', pending: 'pending', running: 'running', passed: 'passed', failed: 'failed' };
+const statusOrder = ['running', 'failed', 'unknown', 'passed'];
+const collapsedKeys = new Set();
+const panelScrollTopByKey = new Map();
+let selectedLogKey = '';
+let latestData = null;
+
+function esc(s) {
+  const el = document.createElement('span');
+  el.textContent = s ?? '';
+  return el.innerHTML;
+}
+
+function attrEsc(s) {
+  return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function isRunning(data) {
+  for (const st of data.streams) {
+    if (st.stream_status === 'running') return true;
+    for (const step of st.steps) {
+      if (step.status === 'running') return true;
+    }
+  }
+  return false;
+}
+
+let toastTimer = null;
+let draggingDomain = '';
+let domainDragLocked = false;
+let domainDragInProgress = false;
+
+function showToast(message) {
+  const el = document.getElementById('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+async function postTest(path, body) {
+  try {
+    const resp = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    let data = {};
+    try { data = await resp.json(); } catch (_) {}
+    if (!resp.ok) {
+      showToast(data.error || ('请求失败 HTTP ' + resp.status));
+      return false;
+    }
+    refresh();
+    return true;
+  } catch (e) {
+    showToast(e.message || '网络错误');
+    return false;
+  }
+}
+
+async function postDomainOrder(domainOrder) {
+  try {
+    const resp = await fetch('/api/domain-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain_order: domainOrder })
+    });
+    let data = {};
+    try { data = await resp.json(); } catch (_) {}
+    if (!resp.ok) {
+      showToast(data.error || ('请求失败 HTTP ' + resp.status));
+      refresh();
+      return false;
+    }
+    latestData = data;
+    render(data);
+    return true;
+  } catch (e) {
+    showToast(e.message || '网络错误');
+    refresh();
+    return false;
+  }
+}
+
+async function testStream(stream) {
+  await postTest('/api/test/stream', { stream });
+}
+
+async function testStep(stream, step) {
+  await postTest('/api/test/step', { stream, step });
+}
+
+function keyOf(...parts) {
+  return parts.map((part) => String(part ?? '')).join('::');
+}
+
+function toggleCollapse(key) {
+  if (collapsedKeys.has(key)) collapsedKeys.delete(key);
+  else collapsedKeys.add(key);
+  if (latestData) render(latestData);
+}
+
+function rememberPanelScroll() {
+  if (!selectedLogKey) return;
+  const bodyEl = document.getElementById('logPanelBody');
+  if (!bodyEl) return;
+  panelScrollTopByKey.set(selectedLogKey, bodyEl.scrollTop || 0);
+}
+
+function restorePanelScroll() {
+  if (!selectedLogKey) return;
+  const bodyEl = document.getElementById('logPanelBody');
+  if (!bodyEl) return;
+  if (!panelScrollTopByKey.has(selectedLogKey)) {
+    bodyEl.scrollTop = 0;
+    return;
+  }
+  const top = panelScrollTopByKey.get(selectedLogKey);
+  if (typeof top === 'number' && top >= 0) bodyEl.scrollTop = top;
+}
+
+function findSelectedLog(data) {
+  if (!selectedLogKey || !data || !data.streams) return null;
+  for (const stream of data.streams) {
+    const domain = normalizeDomain(stream);
+    for (const step of stream.steps || []) {
+      const key = keyOf('log', domain, stream.name, step.name);
+      if (key === selectedLogKey) {
+        return { domain, stream, step };
+      }
+    }
+  }
+  return null;
+}
+
+function renderLogPanel(data) {
+  const metaEl = document.getElementById('logPanelMeta');
+  const bodyEl = document.getElementById('logPanelBody');
+  if (!metaEl || !bodyEl) return;
+  const selected = findSelectedLog(data);
+  if (!selected || !selected.step.last_run || !selected.step.last_run.log_tail) {
+    selectedLogKey = '';
+    metaEl.textContent = '点击环节中的“在右侧查看日志”后，会在这里显示完整日志。';
+    bodyEl.textContent = '暂无已选日志';
+    bodyEl.classList.add('log-empty');
+    return;
+  }
+  const nextText = selected.step.last_run.log_tail;
+  const nextMeta = '业务域：' + selected.domain + ' | 价值流：' + selected.stream.name + ' | 环节：' + selected.step.name;
+  metaEl.textContent = nextMeta;
+  bodyEl.classList.remove('log-empty');
+  if (bodyEl.dataset.logKey !== selectedLogKey || bodyEl.textContent !== nextText) {
+    bodyEl.textContent = nextText;
+    bodyEl.dataset.logKey = selectedLogKey;
+    restorePanelScroll();
+  }
+}
+
+function clearSelectedLog() {
+  rememberPanelScroll();
+  selectedLogKey = '';
+  if (latestData) render(latestData);
+}
+
+function selectStepLog(domain, streamName, stepName) {
+  rememberPanelScroll();
+  selectedLogKey = keyOf('log', domain, streamName, stepName);
+  if (latestData) render(latestData);
+}
+
+function normalizeDomain(stream) {
+  if (stream && typeof stream.domain === 'string' && stream.domain.trim() !== '') {
+    return stream.domain.trim();
+  }
+  return '未分组';
+}
+
+function normalizeStatus(status) {
+  if (typeof status === 'string' && status.trim() !== '') return status.trim();
+  return 'unknown';
+}
+
+function groupByDomainAndStatus(streams) {
+  const domains = [];
+  const domainBuckets = new Map();
+  for (const stream of streams) {
+    const domain = normalizeDomain(stream);
+    const status = normalizeStatus(stream.stream_status);
+    if (!domainBuckets.has(domain)) {
+      domainBuckets.set(domain, new Map());
+      domains.push(domain);
+    }
+    const statusBuckets = domainBuckets.get(domain);
+    if (!statusBuckets.has(status)) statusBuckets.set(status, []);
+    statusBuckets.get(status).push(stream);
+  }
+  return { domains, domainBuckets };
+}
+
+function getDomainSection(target) {
+  if (!target || !(target instanceof Element)) return null;
+  const section = target.closest('.domain-group');
+  if (!section || !section.dataset) return null;
+  if (!section.dataset.domain) return null;
+  return section;
+}
+
+function getCurrentDomainOrder() {
+  return Array.from(document.querySelectorAll('#root .domain-group[data-domain]'))
+    .map((el) => el.dataset.domain || '')
+    .filter((domain) => domain !== '');
+}
+
+function clearDomainDragStyles() {
+  for (const el of document.querySelectorAll('#root .domain-group')) {
+    el.classList.remove('dragging');
+    el.classList.remove('drop-target');
+  }
+}
+
+function sortedStatuses(statusBuckets) {
+  const existing = Array.from(statusBuckets.keys());
+  const prioritized = statusOrder.filter((status) => statusBuckets.has(status));
+  const tail = existing.filter((status) => !statusOrder.includes(status));
+  return prioritized.concat(tail);
+}
+
+function renderStep(stream, domain, step, busy) {
+  const cls = stepDot[step.status] || 'pending';
+  const base = step.test_file.split('/').pop();
+  const stepKey = keyOf('step', domain, stream.name, step.name);
+  const stepCollapsed = collapsedKeys.has(stepKey);
+  const logKey = keyOf('log', domain, stream.name, step.name);
+  const logSelected = selectedLogKey === logKey;
+  const stepDisabled = busy || step.lifecycle === 'planned';
+  let html = '<div class="step">';
+  html += '<div class="step-header">';
+  html += '<button class="toggle-btn" onclick="toggleCollapse(\'' + attrEsc(stepKey) + '\')">' + (stepCollapsed ? '展开环节' : '折叠环节') + '</button>';
+  html += '<span class="dot ' + cls + '"></span>';
+  html += '<span class="step-name">' + esc(step.name) + '</span>';
+  if (step.lifecycle === 'planned') html += '<span style="font-size:11px;color:#a5b4fc">planned</span>';
+  if (stream.impact_status === 'known' && step.impacted) {
+    html += '<span class="impact-badge impact-yes" title="' + esc(step.impact_reason || '') + '">受影响</span>';
+  }
+  html += '<span class="test-file">' + esc(base) + '</span>';
+  html += '<button ' + (stepDisabled ? 'disabled' : '') + " onclick=\"testStep('" + attrEsc(stream.name) + "','" + attrEsc(step.name) + "')\">测试本环节</button>";
+  html += '</div>';
+  if (!stepCollapsed) {
+    if (step.fields && step.fields.length) {
+      html += '<table class="fields"><thead><tr><th>数据字段</th><th>数据库表</th><th>列</th><th>应用服务</th></tr></thead><tbody>';
+      for (const f of step.fields) {
+        html += '<tr><td><code>' + esc(f.name) + '</code>';
+        if (f.description) html += '<div class="field-desc">' + esc(f.description) + '</div>';
+        html += '</td><td>' + esc(f.table) + '</td><td>' + esc(f.column) + '</td><td>' + esc(f.provider_service) + '</td></tr>';
+      }
+      html += '</tbody></table>';
+    }
+    if (step.last_run && step.last_run.log_tail) {
+      html += '<div style="margin-top:6px"><button class="toggle-btn" onclick="selectStepLog(\'' + attrEsc(domain) + '\',\'' + attrEsc(stream.name) + '\',\'' + attrEsc(step.name) + '\')">' + (logSelected ? '右侧日志（当前）' : '在右侧查看日志') + '</button></div>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderStream(stream, domain, busy) {
+  const scls = streamDot[stream.stream_status] || 'unknown';
+  const impactStatus = stream.impact_status || 'unknown';
+  const impactKnown = impactStatus === 'known';
+  const impactLabel = impactKnown ? (stream.impacted ? '受影响' : '未受影响') : '未知';
+  const impactClass = impactKnown ? (stream.impacted ? 'impact-yes' : 'impact-no') : 'impact-unknown';
+  const streamKey = keyOf('stream', domain, stream.name);
+  const streamCollapsed = collapsedKeys.has(streamKey);
+  let html = '<div class="stream">';
+  html += '<div class="stream-header">';
+  html += '<button class="toggle-btn" onclick="toggleCollapse(\'' + attrEsc(streamKey) + '\')">' + (streamCollapsed ? '展开流' : '折叠流') + '</button>';
+  html += '<span class="dot ' + scls + '"></span>';
+  html += '<span class="stream-title">' + esc(stream.name) + '</span>';
+  html += '<span style="font-size:12px;color:#888">' + esc(stream.stream_status) + '</span>';
+  html += '<span class="impact-badge ' + impactClass + '">影响：' + impactLabel + '</span>';
+  html += '<button ' + (busy ? 'disabled' : '') + " onclick=\"testStream('" + attrEsc(stream.name) + "')\">测试整条流</button>";
+  html += '</div>';
+  if (!streamCollapsed) {
+    if (stream.description) html += '<div class="stream-desc">' + esc(stream.description) + '</div>';
+    html += '<div class="impact-summary"><span class="muted">影响状态：</span><span>' + esc(impactStatus) + '</span></div>';
+    if (impactKnown && stream.impacted_steps && stream.impacted_steps.length) {
+      html += '<div class="impact-list">受影响环节：' + stream.impacted_steps.map(esc).join(', ') + '</div>';
+    }
+    if (stream.failed_steps && stream.failed_steps.length) {
+      html += '<div class="failed-list">失败环节: ' + stream.failed_steps.map(esc).join(', ') + '</div>';
+    }
+    for (const step of stream.steps) {
+      html += renderStep(stream, domain, step, busy);
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+function render(data) {
+  const busy = isRunning(data);
+  domainDragLocked = busy;
+  const grouped = groupByDomainAndStatus(data.streams || []);
+  let html = '';
+
+  for (const domain of grouped.domains) {
+    const domainKey = keyOf('domain', domain);
+    const domainCollapsed = collapsedKeys.has(domainKey);
+    const statusBuckets = grouped.domainBuckets.get(domain) || new Map();
+    const totalInDomain = Array.from(statusBuckets.values()).reduce((sum, streams) => sum + streams.length, 0);
+    html += '<section class="domain-group" draggable="true" data-domain="' + esc(domain) + '">';
+    html += '<div class="group-header">';
+    html += '<div class="group-left">';
+    html += '<span class="drag-handle" title="拖拽调整业务域顺序">拖拽</span>';
+    html += '<span class="group-title">业务域：' + esc(domain) + '</span>';
+    html += '<span class="group-meta">' + totalInDomain + ' 条价值流</span>';
+    html += '</div>';
+    html += '<button class="toggle-btn" onclick="toggleCollapse(\'' + attrEsc(domainKey) + '\')">' + (domainCollapsed ? '展开业务域' : '折叠业务域') + '</button>';
+    html += '</div>';
+    if (!domainCollapsed) {
+      html += '<div class="group-content">';
+      for (const status of sortedStatuses(statusBuckets)) {
+        const statusStreams = statusBuckets.get(status) || [];
+        const statusKey = keyOf('status', domain, status);
+        const statusCollapsed = collapsedKeys.has(statusKey);
+        html += '<section class="status-group">';
+        html += '<div class="group-header">';
+        html += '<div class="group-left">';
+        html += '<span class="group-title">状态：' + esc(status) + '</span>';
+        html += '<span class="group-meta">' + statusStreams.length + ' 条</span>';
+        html += '</div>';
+        html += '<button class="toggle-btn" onclick="toggleCollapse(\'' + attrEsc(statusKey) + '\')">' + (statusCollapsed ? '展开状态' : '折叠状态') + '</button>';
+        html += '</div>';
+        if (!statusCollapsed) {
+          for (const stream of statusStreams) {
+            html += renderStream(stream, domain, busy);
+          }
+        }
+        html += '</section>';
+      }
+      html += '</div>';
+    }
+    html += '</section>';
+  }
+
+  if (!html) {
+    html = '<div class="muted">暂无价值流数据</div>';
+  }
+  document.getElementById('root').innerHTML = html;
+  renderLogPanel(data);
+  updateLogPanelFixedLayout();
+  document.getElementById('uptime').textContent = 'Uptime: ' + Math.floor((Date.now() - startTime) / 1000) + 's';
+}
+
+async function refresh() {
+  if (domainDragInProgress) return;
+  try {
+    const resp = await fetch('/api/streams');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    latestData = data;
+    render(data);
+  } catch (e) {
+    document.getElementById('uptime').textContent = 'fetch error';
+  }
+}
+
+const rootEl = document.getElementById('root');
+const logPanelBodyEl = document.getElementById('logPanelBody');
+const layoutEl = document.getElementById('layout');
+const leftPaneEl = document.getElementById('leftPane');
+const paneSplitterEl = document.getElementById('paneSplitter');
+const rightPaneEl = document.querySelector('.right-pane');
+const logPanelEl = document.getElementById('logPanel');
+let paneResizeState = null;
+
+logPanelBodyEl.addEventListener('scroll', () => {
+  if (!selectedLogKey) return;
+  panelScrollTopByKey.set(selectedLogKey, logPanelBodyEl.scrollTop || 0);
+});
+
+function updateLogPanelFixedLayout() {
+  if (!rightPaneEl || !logPanelEl) return;
+  const rect = rightPaneEl.getBoundingClientRect();
+  logPanelEl.style.left = Math.round(rect.left) + 'px';
+  logPanelEl.style.width = Math.max(360, Math.round(rect.width)) + 'px';
+}
+
+function stopPaneResize() {
+  paneResizeState = null;
+  document.body.classList.remove('pane-resizing');
+  window.removeEventListener('pointermove', onPaneResizeMove);
+  window.removeEventListener('pointerup', stopPaneResize);
+  updateLogPanelFixedLayout();
+}
+
+function onPaneResizeMove(event) {
+  if (!paneResizeState || !layoutEl || !leftPaneEl) return;
+  const layoutRect = layoutEl.getBoundingClientRect();
+  const splitterWidth = paneSplitterEl ? paneSplitterEl.getBoundingClientRect().width : 10;
+  const minLeft = 420;
+  const minRight = 360;
+  const maxLeft = Math.max(minLeft, layoutRect.width - minRight - splitterWidth);
+  const delta = event.clientX - paneResizeState.startX;
+  const nextWidth = Math.min(maxLeft, Math.max(minLeft, paneResizeState.startWidth + delta));
+  leftPaneEl.style.width = Math.round(nextWidth) + 'px';
+  updateLogPanelFixedLayout();
+}
+
+function startPaneResize(event) {
+  if (!leftPaneEl) return;
+  paneResizeState = {
+    startX: event.clientX,
+    startWidth: leftPaneEl.getBoundingClientRect().width,
+  };
+  document.body.classList.add('pane-resizing');
+  window.addEventListener('pointermove', onPaneResizeMove);
+  window.addEventListener('pointerup', stopPaneResize);
+}
+
+paneSplitterEl.addEventListener('pointerdown', startPaneResize);
+window.addEventListener('resize', updateLogPanelFixedLayout);
+window.addEventListener('scroll', updateLogPanelFixedLayout, { passive: true });
+
+rootEl.addEventListener('dragstart', (event) => {
+  const section = getDomainSection(event.target);
+  if (!section) return;
+  if (domainDragLocked) {
+    event.preventDefault();
+    showToast('测试运行中，暂时不能调整业务域顺序');
+    return;
+  }
+  domainDragInProgress = true;
+  draggingDomain = section.dataset.domain || '';
+  section.classList.add('dragging');
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', draggingDomain);
+  }
+});
+
+rootEl.addEventListener('dragover', (event) => {
+  const targetSection = getDomainSection(event.target);
+  if (!targetSection || !draggingDomain) return;
+  event.preventDefault();
+  for (const el of document.querySelectorAll('#root .domain-group.drop-target')) {
+    if (el !== targetSection) el.classList.remove('drop-target');
+  }
+  targetSection.classList.add('drop-target');
+  const draggingSection = document.querySelector('#root .domain-group[data-domain="' + CSS.escape(draggingDomain) + '"]');
+  if (!draggingSection || draggingSection === targetSection) return;
+  const rect = targetSection.getBoundingClientRect();
+  const shouldInsertBefore = event.clientY < rect.top + rect.height / 2;
+  const parent = targetSection.parentElement;
+  if (!parent) return;
+  if (shouldInsertBefore) {
+    if (draggingSection !== targetSection.previousElementSibling) parent.insertBefore(draggingSection, targetSection);
+  } else if (targetSection.nextSibling) {
+    parent.insertBefore(draggingSection, targetSection.nextSibling);
+  } else {
+    parent.appendChild(draggingSection);
+  }
+});
+
+rootEl.addEventListener('drop', async (event) => {
+  const targetSection = getDomainSection(event.target);
+  if (!targetSection || !draggingDomain) return;
+  event.preventDefault();
+  const order = getCurrentDomainOrder();
+  clearDomainDragStyles();
+  draggingDomain = '';
+  domainDragInProgress = false;
+  if (order.length === 0) return;
+  await postDomainOrder(order);
+});
+
+rootEl.addEventListener('dragend', () => {
+  draggingDomain = '';
+  domainDragInProgress = false;
+  clearDomainDragStyles();
+});
+
+updateLogPanelFixedLayout();
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>

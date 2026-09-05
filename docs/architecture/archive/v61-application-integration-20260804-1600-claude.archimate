@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:archimate="http://www.archimatetool.com/archimate"
+    identifier="model-v61-rbac">
+
+  <name xml:lang="en">v61 RBAC Role Permission System</name>
+  <purpose>v61 target: RBAC with roles + PDP + group inheritance based on v57 current. 12 new APIs all following /api/serviceName/funcName/key/value convention.</purpose>
+
+  <folder name="Application" id="fa" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="taskAuth (:8003) [MODIFIED v61]" id="taskAuth"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskTenantService (:8020) [MODIFIED v61]" id="taskTenant"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskCloudService (:8018)" id="taskCloud"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskBill (:8004)" id="taskBill"/>
+    <element xsi:type="archimate:ApplicationComponent" name="taskEvents (:8023)" id="taskEvents"/>
+    <element xsi:type="archimate:ApplicationComponent" name="shareLib/authz Thin Client [NEW v61]" id="shareLibAuthz"/>
+    <element xsi:type="archimate:ApplicationComponent" name="APISIX Gateway" id="gateway"/>
+    <element xsi:type="archimate:DataObject" name="Kafka" id="kafkaBroker"/>
+    <element xsi:type="archimate:DataObject" name="taskAuth DB (+4 RBAC tables)" id="taskAuthDB"/>
+    <element xsi:type="archimate:DataObject" name="taskTenant DB (+2 RBAC tables)" id="taskTenantDB"/>
+    <element xsi:type="archimate:ApplicationEvent" name="PlatformRoleAssigned [NEW]" id="evtRoleAssigned"/>
+    <element xsi:type="archimate:ApplicationEvent" name="TenantMemberRoleChanged [NEW]" id="evtTenantRole"/>
+    <element xsi:type="archimate:ApplicationEvent" name="TenantGroupRoleChanged [NEW]" id="evtGroupRole"/>
+  </folder>
+
+  <folder name="Implementation" id="fi" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" name="Plateau v57 — binary auth" id="plateauV57"/>
+    <element xsi:type="archimate:Plateau" name="Plateau v61 — RBAC" id="plateauV61"/>
+    <element xsi:type="archimate:Gap" name="Gap: no roles, no PDP, no group-roles" id="gapRBAC"/>
+    <element xsi:type="archimate:WorkPackage" name="WP Phase1: roles+API+migration (7d)" id="wpPhase1"/>
+  </folder>
+
+  <folder name="Relations" id="fr" type="relations">
+    <element xsi:type="archimate:FlowRelationship" name="" id="r1" source="gateway" target="taskAuth"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="r2" source="gateway" target="taskTenant"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="r3" source="gateway" target="taskCloud"/>
+    <element xsi:type="archimate:FlowRelationship" name="" id="r4" source="gateway" target="taskBill"/>
+    <element xsi:type="archimate:ServingRelationship" name="platform role check" id="r5" source="shareLibAuthz" target="taskAuth"/>
+    <element xsi:type="archimate:ServingRelationship" name="tenant role check" id="r6" source="shareLibAuthz" target="taskTenant"/>
+    <element xsi:type="archimate:ServingRelationship" name="platform role check" id="r7" source="shareLibAuthz" target="taskCloud"/>
+    <element xsi:type="archimate:ServingRelationship" name="platform role check" id="r8" source="shareLibAuthz" target="taskBill"/>
+    <element xsi:type="archimate:AccessRelationship" name="write" id="r9" source="taskAuth" target="taskAuthDB"/>
+    <element xsi:type="archimate:AccessRelationship" name="write" id="r10" source="taskTenant" target="taskTenantDB"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="r11" source="taskAuth" target="evtRoleAssigned"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="r12" source="taskTenant" target="evtTenantRole"/>
+    <element xsi:type="archimate:FlowRelationship" name="publish" id="r13" source="taskTenant" target="evtGroupRole"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="r14" source="evtRoleAssigned" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="r15" source="evtTenantRole" target="kafkaBroker"/>
+    <element xsi:type="archimate:FlowRelationship" name="to bus" id="r16" source="evtGroupRole" target="kafkaBroker"/>
+    <element xsi:type="archimate:AssociationRelationship" name="triggers" id="r17" source="plateauV57" target="gapRBAC"/>
+    <element xsi:type="archimate:RealizationRelationship" name="closes" id="r18" source="wpPhase1" target="gapRBAC"/>
+    <element xsi:type="archimate:RealizationRelationship" name="delivers" id="r19" source="wpPhase1" target="plateauV61"/>
+  </folder>
+
+  <folder name="Views" id="fv" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="架构变迁 v57→v61 — RBAC" id="view-migration">
+      <child xsi:type="archimate:DiagramObject" id="do-v57" archimateElement="plateauV57">
+        <bounds x="50" y="100" width="200" height="70"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-v57-gap" source="do-v57" target="do-gap" archimateRelationship="r17"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-gap" archimateElement="gapRBAC" targetConnections="conn-v57-gap conn-wp-gap">
+        <bounds x="330" y="100" width="260" height="70"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-wp" archimateElement="wpPhase1" targetConnections="conn-wp-plateau">
+        <bounds x="50" y="240" width="260" height="60"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-gap" source="do-wp" target="do-gap" archimateRelationship="r18"/>
+        <sourceConnection xsi:type="archimate:Connection" id="conn-wp-plateau" source="do-wp" target="do-v61" archimateRelationship="r19"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-v61" archimateElement="plateauV61" targetConnections="conn-wp-plateau">
+        <bounds x="330" y="240" width="260" height="70"/>
+      </child>
+    </element>
+
+    <element xsi:type="archimate:ArchimateDiagramModel" name="v61 Target — 核心拓扑" id="view-topo">
+      <child xsi:type="archimate:DiagramObject" id="do-gw" archimateElement="gateway">
+        <bounds x="24" y="24" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="ct1" source="do-gw" target="do-auth" archimateRelationship="r1"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-auth" archimateElement="taskAuth" targetConnections="ct1">
+        <bounds x="210" y="24" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="ct9" source="do-auth" target="do-authdb" archimateRelationship="r9"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-authdb" archimateElement="taskAuthDB" targetConnections="ct9">
+        <bounds x="400" y="24" width="160" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-authz" archimateElement="shareLibAuthz">
+        <bounds x="24" y="120" width="140" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="ct5" source="do-authz" target="do-auth" archimateRelationship="r5"/>
+        <sourceConnection xsi:type="archimate:Connection" id="ct6" source="do-authz" target="do-ten" archimateRelationship="r6"/>
+        <sourceConnection xsi:type="archimate:Connection" id="ct7" source="do-authz" target="do-cloud" archimateRelationship="r7"/>
+        <sourceConnection xsi:type="archimate:Connection" id="ct8" source="do-authz" target="do-bill" archimateRelationship="r8"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-ten" archimateElement="taskTenant" targetConnections="ct6">
+        <bounds x="210" y="120" width="140" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-cloud" archimateElement="taskCloud" targetConnections="ct7">
+        <bounds x="210" y="210" width="140" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="do-bill" archimateElement="taskBill" targetConnections="ct8">
+        <bounds x="210" y="300" width="140" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

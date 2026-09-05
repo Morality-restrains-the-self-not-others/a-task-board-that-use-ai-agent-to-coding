@@ -1,0 +1,49 @@
+' @title: Application Integration — translate-branch-title 纯 Go
+' @view: application-integration
+' @status: target
+' @version: 42
+' @author: claude
+' @based_on: v41 current (v41-application-integration-20260719-1816-claude.puml)
+' @updated: 2026-07-20 15:55
+' @description: taskProjectService 直连 fanyi_agent；废弃 Django internal translate-branch-title
+' @iteration: translate-branch-title-go-native
+
+@startuml
+!include <archimate/Archimate>
+
+title Application Integration v42 — translate-branch-title Go native (2026-07-20 15:55)
+
+legend right
+  | <#LightGreen>  </> | 🟢 [NEW] v42 — 本次新增 |
+  | <#LightYellow> </> | 🟡 [MODIFIED] v42 — 本次修改 |
+  | <#Pink>        </> | 🔴 [DEPRECATED] v42 |
+  | <#White>       </> | 无标记 — 已有组件，本次未变 |
+endlegend
+
+rectangle "Motivation" {
+  Motivation_Constraint(goFirst, "Constraint\n新增接口默认 Go")
+  Motivation_Principle(noProxy, "Principle\n应用禁止环境 Proxy")
+}
+
+rectangle "Application" {
+  Application_Component(vue, "Vue CreateTaskModal")
+  Application_Component(gw, "task-gateway")
+  Application_Component(tps, "🟡 taskProjectService\nfanyi_agent native")
+  Application_Component(djangoDeprecated, "🔴 saas-backend\ntranslate internal [DEPRECATED]")
+  Application_Component(fanyi, "🟢 fanyi_agent\nDeepSeek chat/completions")
+}
+
+note right of tps
+  [MODIFIED v42] 含中文标题直连 fanyi_agent
+  不再 djangoPost translate-branch-title
+  @author: claude @2026-07-20 15:55
+end note
+
+Rel_Flow(vue, gw, "POST translate-branch-title")
+Rel_Flow(gw, tps, "JWT")
+Rel_Flow(tps, fanyi, "chat/completions")
+Rel_Flow(tps, djangoDeprecated, "REMOVED hop")
+Rel_Influence(goFirst, tps, "落点")
+Rel_Influence(noProxy, tps, "DirectClient")
+
+@enduml

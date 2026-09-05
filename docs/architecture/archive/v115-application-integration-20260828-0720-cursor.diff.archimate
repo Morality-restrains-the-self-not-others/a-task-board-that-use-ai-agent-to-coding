@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="application-integration v115 变迁 (v114→v115)" id="id-v115aidiff01">
+  <folder name="Application" id="id-v115ai-app" type="application">
+    <element xsi:type="archimate:ApplicationComponent" id="id-v115-app-fe" name="taskFE SPA [MODIFIED v115]"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v115-app-gw" name="taskGateway / APISIX"/>
+    <element xsi:type="archimate:ApplicationComponent" id="id-v115-app-tts" name="taskTaskService [MODIFIED v115]"/>
+    <element xsi:type="archimate:DataObject" id="id-v115-data-hist" name="task_queued_schedule_history [NEW v115]"/>
+    <element xsi:type="archimate:DataObject" id="id-v115-data-rhythm" name="workspace_schedule_rhythms [MODIFIED v115]"/>
+  </folder>
+  <folder name="Business" id="id-v115ai-biz" type="business">
+    <element xsi:type="archimate:BusinessEvent" id="id-v115-ev-in" name="WorkspaceScheduleWindowEntered [NEW v115]"/>
+    <element xsi:type="archimate:BusinessEvent" id="id-v115-ev-out" name="WorkspaceScheduleWindowExited [NEW v115]"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-v115ai-im" type="implementation_migration">
+    <element xsi:type="archimate:Plateau" id="id-v115-pl-v114" name="Plateau v114 仅当前态快照"/>
+    <element xsi:type="archimate:Plateau" id="id-v115-pl-v115" name="Plateau v115 可读调度历史"/>
+    <element xsi:type="archimate:Gap" id="id-v115-gap" name="Gap: 状态栏无调度轨迹"/>
+    <element xsi:type="archimate:WorkPackage" id="id-v115-wp" name="WP-queue-schedule-history"/>
+  </folder>
+  <folder name="Relations" id="id-v115ai-rel" type="relations">
+    <element xsi:type="archimate:FlowRelationship" id="id-v115-rel-fe-gw" source="id-v115-app-fe" target="id-v115-app-gw" name="queue-schedule / history"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v115-rel-gw-tts" source="id-v115-app-gw" target="id-v115-app-tts" name="GET/PUT queue-schedule*"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v115-rel-tts-hist" source="id-v115-app-tts" target="id-v115-data-hist" name="INSERT/SELECT"/>
+    <element xsi:type="archimate:AccessRelationship" id="id-v115-rel-tts-rhythm" source="id-v115-app-tts" target="id-v115-data-rhythm" name="UPDATE last_in_window"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v115-rel-tts-evin" source="id-v115-app-tts" target="id-v115-ev-in" name="window flip in"/>
+    <element xsi:type="archimate:FlowRelationship" id="id-v115-rel-tts-evout" source="id-v115-app-tts" target="id-v115-ev-out" name="window flip out"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="id-v115-rel-pl114-gap" source="id-v115-pl-v114" target="id-v115-gap" name="identifies"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v115-rel-wp-gap" source="id-v115-wp" target="id-v115-gap"/>
+    <element xsi:type="archimate:RealizationRelationship" id="id-v115-rel-wp-pl115" source="id-v115-wp" target="id-v115-pl-v115"/>
+  </folder>
+  <folder name="Views" id="id-v115ai-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v115-view-mig" name="架构变迁 v114→v115 — queue-schedule-history">
+      <child xsi:type="archimate:DiagramObject" id="id-v115-do-pl114" archimateElement="id-v115-pl-v114">
+        <bounds x="48" y="48" width="240" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-c-pl114-gap" source="id-v115-do-pl114" target="id-v115-do-gap" archimateRelationship="id-v115-rel-pl114-gap"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-do-gap" targetConnections="id-v115-c-pl114-gap id-v115-c-wp-gap" archimateElement="id-v115-gap">
+        <bounds x="320" y="48" width="420" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-do-wp" archimateElement="id-v115-wp">
+        <bounds x="320" y="160" width="420" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-c-wp-gap" source="id-v115-do-wp" target="id-v115-do-gap" archimateRelationship="id-v115-rel-wp-gap"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-c-wp-pl115" source="id-v115-do-wp" target="id-v115-do-pl115" archimateRelationship="id-v115-rel-wp-pl115"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-do-pl115" targetConnections="id-v115-c-wp-pl115" archimateElement="id-v115-pl-v115">
+        <bounds x="780" y="160" width="240" height="55"/>
+      </child>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" id="id-v115-view-topo" name="v115 Target — 排队调度历史">
+      <child xsi:type="archimate:DiagramObject" id="id-v115-do-fe" archimateElement="id-v115-app-fe">
+        <bounds x="48" y="48" width="160" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-c-fe-gw" source="id-v115-do-fe" target="id-v115-do-gw" archimateRelationship="id-v115-rel-fe-gw"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-do-gw" targetConnections="id-v115-c-fe-gw" archimateElement="id-v115-app-gw">
+        <bounds x="260" y="48" width="200" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-c-gw-tts" source="id-v115-do-gw" target="id-v115-do-tts" archimateRelationship="id-v115-rel-gw-tts"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-do-tts" targetConnections="id-v115-c-gw-tts" archimateElement="id-v115-app-tts">
+        <bounds x="500" y="48" width="180" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-c-tts-hist" source="id-v115-do-tts" target="id-v115-do-hist" archimateRelationship="id-v115-rel-tts-hist"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-c-tts-rhythm" source="id-v115-do-tts" target="id-v115-do-rhythm" archimateRelationship="id-v115-rel-tts-rhythm"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-c-tts-evin" source="id-v115-do-tts" target="id-v115-do-evin" archimateRelationship="id-v115-rel-tts-evin"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-v115-c-tts-evout" source="id-v115-do-tts" target="id-v115-do-evout" archimateRelationship="id-v115-rel-tts-evout"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-do-hist" targetConnections="id-v115-c-tts-hist" archimateElement="id-v115-data-hist">
+        <bounds x="720" y="16" width="320" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-do-rhythm" targetConnections="id-v115-c-tts-rhythm" archimateElement="id-v115-data-rhythm">
+        <bounds x="720" y="72" width="320" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-do-evin" targetConnections="id-v115-c-tts-evin" archimateElement="id-v115-ev-in">
+        <bounds x="720" y="128" width="320" height="45"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-v115-do-evout" targetConnections="id-v115-c-tts-evout" archimateElement="id-v115-ev-out">
+        <bounds x="720" y="184" width="320" height="45"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>
