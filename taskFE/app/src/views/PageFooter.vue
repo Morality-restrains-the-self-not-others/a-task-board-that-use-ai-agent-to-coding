@@ -45,14 +45,15 @@
           >{{ icpBeian }}</a>
         </p>
         <p class="mt-2">
+          <!-- Anti-Replay-OK: real <a href> navigation to open-source repo -->
           <a
-            :href="agplSourceUrl"
+            :href="openSourceUrl"
             target="_blank"
             rel="noopener noreferrer"
             class="text-gray-400 hover:text-white underline underline-offset-2"
-            data-testid="agpl-source-link"
-            title="本服务源码（AGPL-3.0 第 13 条）"
-          >{{ agplSourceLabel }}</a>
+            data-testid="open-source-link"
+            title="本服务源码（MIT License）"
+          >{{ openSourceLabel }}</a>
         </p>
       </div>
     </div>
@@ -60,10 +61,10 @@
 </template>
 
 <script setup>
-import { AGPL_SOURCE_URL, AGPL_SOURCE_LABEL } from '../utils/agplSourceInfo.js'
+import { OPEN_SOURCE_URL, OPEN_SOURCE_LABEL } from '../utils/openSourceInfo.js'
 
-const agplSourceUrl = AGPL_SOURCE_URL
-const agplSourceLabel = AGPL_SOURCE_LABEL
+const openSourceUrl = OPEN_SOURCE_URL
+const openSourceLabel = OPEN_SOURCE_LABEL
 // SSOT: conf/frontend/vue/config.yaml icpBeian → Vite VITE_ICP_BEIAN
 const icpBeian = String(import.meta.env.VITE_ICP_BEIAN || '').trim()
 </script>
