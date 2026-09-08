@@ -138,7 +138,6 @@ def run_test(repo: Path, kind: str, target: str) -> tuple[bool, str]:
 # 仅未跟踪、且文件名为下列之一时视为「许可/说明噪音」，不阻断抽测。
 # 任意已跟踪改动、或其他未跟踪路径 → 仍记 dirty。
 IGNORABLE_UNTRACKED_NAMES = frozenset({
-    "COMMERCIAL.md",
     "LICENSE",
     "README.md",
     "README copy.md",

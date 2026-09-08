@@ -100,7 +100,7 @@ crontab: 20 0 * * *  bash scripts/nightly-test-sweep.sh        (00:20 启动, �
 **每仓流程**：
 
 ```
-1. 前置: git -C <repo> status --porcelain；仅含未跟踪的 LICENSE/COMMERCIAL.md/README(.md| copy.md) 视为干净；其余改动 → skip(dirty，note 含样例路径)
+1. 前置: git -C <repo> status --porcelain；仅含未跟踪的 LICENSE/README(.md| copy.md) 视为干净；其余改动 → skip(dirty，note 含样例路径)
 
 2. 抽测: source lib → rt_repo_type → rt_pick_random(ratio=30%, 至少 1 个测例单元)
    - Go: 随机 30% 测试目录 + `go test -count=1 ./dir/...`（≤25min 超时）

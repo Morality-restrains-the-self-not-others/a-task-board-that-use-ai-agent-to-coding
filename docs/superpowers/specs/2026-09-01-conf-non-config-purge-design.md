@@ -69,7 +69,7 @@
 | 同步声明 | `**/sync.manifest.yaml` | 已含在 YAML；列此强调 |
 | 同步入口 | `**/sync.sh` | 规则 29：各 app 目录内薄封装，只 `exec conf-sync.py` |
 | Companion | `ai.md`、`**/*.ai.md` | Companion 元规则 |
-| 仓身份 | `README.md`、`LICENSE`、`COMMERCIAL.md`、`.gitignore` | 独立 Git 仓必需 |
+| 仓身份 | `README.md`、`LICENSE`、`.gitignore` | 独立 Git 仓必需 |
 | 机密骨架示例 | `**/*.example` | 非机密、指引 overlay |
 | **唯一允许的可执行钩子** | `.githooks/pre-commit`（手写，见下） | 配置质量门禁；禁止模板全家桶 |
 

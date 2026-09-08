@@ -51,7 +51,7 @@
 - `*.yaml` / `*.yml`（**禁止** `docker-compose*`）
 - companion `ai.md` / `*.ai.md`
 - 各 app `sync.sh`
-- 仓身份：`README.md` `LICENSE` `COMMERCIAL.md` `.gitignore`
+- 仓身份：`README.md` `LICENSE` `.gitignore`
 - `*.example`
 - 手写 `.githooks/pre-commit`（仅 git-oauth client_id 实时校验）
 

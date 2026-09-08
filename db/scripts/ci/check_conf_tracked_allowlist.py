@@ -16,7 +16,6 @@ ALLOWED_EXACT = frozenset(
         ".gitignore",
         "LICENSE",
         "README.md",
-        "COMMERCIAL.md",
         "ai.md",
         ".githooks/pre-commit",
     }

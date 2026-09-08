@@ -32,7 +32,6 @@ def test_allows_yaml_companion_sync_and_identity() -> None:
         "runAll.yaml.ai.md",
         "README.md",
         "LICENSE",
-        "COMMERCIAL.md",
         ".gitignore",
         "core/sms/config.local.yaml.example",
         ".githooks/pre-commit",

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Unit tests for nightly_test_sweep.repo_clean ignorable untracked noise.
 
-LICENSE / COMMERCIAL.md / README* 未跟踪不应阻塞夜间抽测；真实 WIP 仍须 SKIP。
+LICENSE / README* 未跟踪不应阻塞夜间抽测；真实 WIP 仍须 SKIP。
 """
 from __future__ import annotations
 
@@ -43,7 +43,6 @@ class RepoCleanTests(unittest.TestCase):
     def test_license_only_untracked_is_clean(self) -> None:
         repo = _init_repo()
         (repo / "LICENSE").write_text("MIT\n", encoding="utf-8")
-        (repo / "COMMERCIAL.md").write_text("x\n", encoding="utf-8")
         (repo / "README.md").write_text("x\n", encoding="utf-8")
         (repo / "README copy.md").write_text("x\n", encoding="utf-8")
         ok, reason = sweep.repo_clean(repo)
