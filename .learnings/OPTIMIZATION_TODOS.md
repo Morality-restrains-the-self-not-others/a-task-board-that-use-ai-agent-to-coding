@@ -3,7 +3,17 @@
 > 仅存放本地可执行、无阻塞的 pending 项。分流规则见 [OPTIMIZATION_TODOS.ai.md](./OPTIMIZATION_TODOS.ai.md)。
 > 阻塞：[BLOCK_TODO_BROWSER.md](./BLOCK_TODO_BROWSER.md) · [BLOCK_TODO_OPS.md](./BLOCK_TODO_OPS.md) · [BLOCK_TODO_INFRA.md](./BLOCK_TODO_INFRA.md)；产品：[PRODUCT_DECISIONS.md](./PRODUCT_DECISIONS.md)；完成：[OPTIMIZATION_TODOS_COMPLETED.md](./OPTIMIZATION_TODOS_COMPLETED.md)。
 
-- **Count**: 9
+- **Count**: 10
+
+
+### OPT-20260908-002 — 若恢复独立 submodule 远端，同步各子仓 LICENSE 为 MIT
+
+- **Status**: pending
+- **Created**: 2026-09-08
+- **Context**: 本会话在 meta 扁平工作区将自有仓 AGPL-3.0 改为 MIT，并归档 CNIPA 受理通知书。当前环境无独立 gitlink；若后续按 `.gitmodules` 恢复 `task2money/*` 子仓远端，远端树可能仍为 AGPL LICENSE/README。
+- **Action**: (1) 对 `.gitmodules` 各 path 检查远端 `LICENSE` 首行是否仍为 AGPL；(2) 若是，在对应子仓推送与本 meta 相同的 MIT LICENSE + README 许可段；(3) 确认 `trae-agent`（ByteDance MIT）与 `DaydaymoneyGrafana`（Apache-2.0）未被误改。
+- **Why**: 避免 submodule 重新同步后许可声明回退为 AGPL。
+- **How to apply**: `.gitmodules`；各子仓 `LICENSE`/`README.md`；对照根 `LICENSE` 与 `docs/patents/`。
 
 
 ### OPT-20260908-001 — 确认各子仓远端是否仍含 COMMERCIAL.md 并在子仓独立清理
