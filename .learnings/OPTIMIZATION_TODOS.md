@@ -3,7 +3,17 @@
 > 仅存放本地可执行、无阻塞的 pending 项。分流规则见 [OPTIMIZATION_TODOS.ai.md](./OPTIMIZATION_TODOS.ai.md)。
 > 阻塞：[BLOCK_TODO_BROWSER.md](./BLOCK_TODO_BROWSER.md) · [BLOCK_TODO_OPS.md](./BLOCK_TODO_OPS.md) · [BLOCK_TODO_INFRA.md](./BLOCK_TODO_INFRA.md)；产品：[PRODUCT_DECISIONS.md](./PRODUCT_DECISIONS.md)；完成：[OPTIMIZATION_TODOS_COMPLETED.md](./OPTIMIZATION_TODOS_COMPLETED.md)。
 
-- **Count**: 9
+- **Count**: 10
+
+
+### OPT-20260909-001 — 专利文书同步到独立 docs.git 远端
+
+- **Status**: pending
+- **Created**: 2026-09-09
+- **Context**: 本会话在 meta 扁平树新增 `docs/专利/`（受理通知书 PDF + README）。`.gitmodules` 登记了 `task2money/docs.git`，但当前环境无 `docs/.git` 嵌套仓。
+- **Action**: (1) 在具备 `docs` 独立 clone 的环境中，将 `docs/专利/` 与 `docs/README.md` 链接变更提交并推送到 `docs.git`；(2) 若后续恢复 gitlink，确认 meta 指针与 docs 远端一致。
+- **Why**: 避免独立 docs 远端与 meta 扁平树长期漂移。
+- **How to apply**: `.gitmodules` `[submodule "docs"]`；`docs/专利/`；`docs/README.md`。
 
 
 ### OPT-20260908-001 — 确认各子仓远端是否仍含 COMMERCIAL.md 并在子仓独立清理
