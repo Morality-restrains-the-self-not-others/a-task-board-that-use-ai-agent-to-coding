@@ -3,7 +3,17 @@
 > 仅存放本地可执行、无阻塞的 pending 项。分流规则见 [OPTIMIZATION_TODOS.ai.md](./OPTIMIZATION_TODOS.ai.md)。
 > 阻塞：[BLOCK_TODO_BROWSER.md](./BLOCK_TODO_BROWSER.md) · [BLOCK_TODO_OPS.md](./BLOCK_TODO_OPS.md) · [BLOCK_TODO_INFRA.md](./BLOCK_TODO_INFRA.md)；产品：[PRODUCT_DECISIONS.md](./PRODUCT_DECISIONS.md)；完成：[OPTIMIZATION_TODOS_COMPLETED.md](./OPTIMIZATION_TODOS_COMPLETED.md)。
 
-- **Count**: 10
+- **Count**: 11
+
+
+### OPT-20260911-001 — 有 Docker/MySQL 时补跑 bootstrap-admin 随机密码集成测
+
+- **Status**: pending
+- **Created**: 2026-09-11
+- **Context**: 本会话将 022 密码改为哨兵并由 `bootstrap-admin` 每环境随机生成；`TestBootstrapAdminGeneratesRandomPassword` / `TestMigrateSeedsConfBootstrapAdminEmail` 等依赖 `OpenTestMySQL`，当前 Cloud Agent 环境无 Docker/MySQL 被 Skip。
+- **Action**: (1) 在具备 `docker` + MySQL 的环境执行 `cd taskAuth && go test ./src/ -count=1 -run 'TestBootstrapAdmin|TestMigrateSeedsConf'`；(2) 确认哨兵被替换为 bcrypt、二次 bootstrap 哈希不变；(3) 可选：对 fresh DB 跑 `db/task-auth/init.sh` 冒烟。
+- **Why**: 无库单测已覆盖旋转判定与随机生成，但端到端写库路径仍需一次实库确认，避免 INSERT IGNORE + UPDATE 交互回归。
+- **How to apply**: `taskAuth/src/bootstrap_admin_test.go`；`taskAuth/src/bootstrap_admin_password.go`；`dataMigrate/taskAuth/022_seed_bootstrap_admin.sql`；`db/task-auth/init.sh`。
 
 
 ### OPT-20260909-001 — 专利文书同步到独立 docs.git 远端
