@@ -4,7 +4,9 @@ port: 8003
 enabled: true
 # 系统初始化时写入 auth_login_method.identifier 的超级管理员登录邮箱。
 # 022 种子 SQL 用占位符；apply_datamigrate / taskAuth migrate 按本键（含 conf-local）渲染。
-# 本机覆盖：conf-local/auth/task-auth/config.yaml
+# 9999「初始化全部数据库」会先弹窗要求设置本邮箱，并写入 conf-local。
+# 本机覆盖：conf-local/auth/task-auth/config.yaml（推荐运维在此填写真实邮箱）。
+# 开发默认仅作占位；生产必须改为真实可达邮箱，否则无法走「忘记密码」设密。
 bootstrapAdmin:
   email: author@example.com
 logging:

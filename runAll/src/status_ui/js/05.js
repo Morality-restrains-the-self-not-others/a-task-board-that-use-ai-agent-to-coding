@@ -330,8 +330,47 @@ const devInitBtn = document.getElementById('dev-init-databases');
 if (devInitBtn) {
   devInitBtn.addEventListener('click', async (event) => {
     pulseClickFeedback(event.currentTarget);
+    // 初始化强制：先设置管理员邮箱，再执行 migrate/init（密码由 bootstrap-admin 随机生成）。
+    let currentEmail = '';
+    try {
+      const emailResp = await apiFetch('/api/dev/bootstrap-admin-email');
+      if (emailResp.ok) {
+        const emailBody = await parseJsonSafe(emailResp);
+        currentEmail = (emailBody && emailBody.email) || '';
+      }
+    } catch (_) { /* continue to prompt */ }
+    const adminEmail = await showModalPrompt(
+      '请先设置超级管理员邮箱（必填）。\n初始化后密码为随机生成，请用该邮箱走「忘记密码」设置登录密码。',
+      currentEmail,
+      {opLabel: '设置管理员邮箱'}
+    );
+    if (adminEmail == null) return;
+    const trimmed = String(adminEmail).trim();
+    if (!trimmed || trimmed.indexOf('@') < 0) {
+      await showModalAlert('管理员邮箱无效，已取消初始化。', {type: 'error', opLabel: '设置管理员邮箱'});
+      return;
+    }
+    try {
+      const saveResp = await apiFetch('/api/dev/bootstrap-admin-email', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: trimmed}),
+      });
+      const saveBody = await parseJsonSafe(saveResp);
+      if (!saveResp.ok) {
+        showRequestError(
+          '保存管理员邮箱失败: ' + (saveBody.error || saveResp.status),
+          resolveTraceIdFromResponse(saveResp, saveResp.requestTraceId, saveBody)
+        );
+        return;
+      }
+    } catch (err) {
+      showRequestError('保存管理员邮箱失败: ' + err.message, err);
+      return;
+    }
     if (!await showModalConfirm(
-      '将按 registry 顺序执行全部 migrate_script 与 db/<app>/init.sh（不删库）。\n\n请确保相关服务已停止，否则会拒绝执行。不会自动启动服务。是否继续？' +
+      '将按 registry 顺序执行全部 migrate_script 与 db/<app>/init.sh（不删库）。\n\n管理员邮箱: ' + trimmed +
+      '\n密码将随机生成（明文不保存，须邮箱重置）。\n\n请确保相关服务已停止，否则会拒绝执行。不会自动启动服务。是否继续？' +
       (typeof migratePendingConfirmSuffix === 'function' ? migratePendingConfirmSuffix() : ''),
       {opLabel: '初始化全部数据库'}
     )) return;

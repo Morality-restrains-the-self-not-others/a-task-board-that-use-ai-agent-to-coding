@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# 验证超级管理员已由 dataMigrate 播种，并把 conf bootstrapAdmin.email 写入登录标识。
-# 用户行在 dataMigrate/taskAuth/022_seed_bootstrap_admin.sql（邮箱占位符由 migrate 按 conf 渲染），
+# 验证超级管理员已由 dataMigrate 播种：先同步 conf bootstrapAdmin.email，再生成随机密码。
+# 用户行在 dataMigrate/taskAuth/022_seed_bootstrap_admin.sql（邮箱/密码哨兵由 migrate/CLI 处理），
 # 由 migrate_script → apply_datamigrate.sh 应用。
-# bootstrap-admin 幂等：存在则同步邮箱，不创建新用户。
+# bootstrap-admin 幂等：存在则同步邮箱；密码仅在哨兵/弱/历史共享哈希时轮换。
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 # ADR-0052: 部署根无 taskAuth/run.sh 源码树；ELF 的 bootstrap-admin 幂等验证即可。
