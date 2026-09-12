@@ -22,6 +22,9 @@ func registerDevHandlers(mux *http.ServeMux, runner *Runner) {
 	registerDevDatabaseHandler(mux, runner, "/api/dev/init-databases", "init-db", domain.ToolDbInit, "INIT_ALL", func(ctx context.Context) any {
 		return runner.InitAllDatabases(ctx, "")
 	})
+	mux.HandleFunc("/api/dev/bootstrap-admin-email", func(w http.ResponseWriter, r *http.Request) {
+		handleBootstrapAdminEmail(w, r, runner)
+	})
 	mux.HandleFunc("/api/dev/logs", func(w http.ResponseWriter, r *http.Request) {
 		handleDevToolLogs(w, r, runner)
 	})
