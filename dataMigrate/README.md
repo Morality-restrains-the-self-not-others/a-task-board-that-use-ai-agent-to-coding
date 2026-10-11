@@ -118,4 +118,4 @@ curl -X POST 'http://127.0.0.1:9999/api/dev/init-databases?confirm=INIT_ALL'
 
 ## License
 
-本仓库以 GNU Affero General Public License v3.0 授权，见 [LICENSE](./LICENSE)。
+本仓库以 MIT License 授权，见 [LICENSE](./LICENSE)。

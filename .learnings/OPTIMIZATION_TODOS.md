@@ -3,27 +3,17 @@
 > 仅存放本地可执行、无阻塞的 pending 项。分流规则见 [OPTIMIZATION_TODOS.ai.md](./OPTIMIZATION_TODOS.ai.md)。
 > 阻塞：[BLOCK_TODO_BROWSER.md](./BLOCK_TODO_BROWSER.md) · [BLOCK_TODO_OPS.md](./BLOCK_TODO_OPS.md) · [BLOCK_TODO_INFRA.md](./BLOCK_TODO_INFRA.md)；产品：[PRODUCT_DECISIONS.md](./PRODUCT_DECISIONS.md)；完成：[OPTIMIZATION_TODOS_COMPLETED.md](./OPTIMIZATION_TODOS_COMPLETED.md)。
 
-- **Count**: 11
+- **Count**: 10
 
 
-### OPT-20260911-001 — 有 Docker/MySQL 时补跑 bootstrap-admin 随机密码集成测
-
-- **Status**: pending
-- **Created**: 2026-09-11
-- **Context**: 本会话将 022 密码改为哨兵并由 `bootstrap-admin` 每环境随机生成；`TestBootstrapAdminGeneratesRandomPassword` / `TestMigrateSeedsConfBootstrapAdminEmail` 等依赖 `OpenTestMySQL`，当前 Cloud Agent 环境无 Docker/MySQL 被 Skip。
-- **Action**: (1) 在具备 `docker` + MySQL 的环境执行 `cd taskAuth && go test ./src/ -count=1 -run 'TestBootstrapAdmin|TestMigrateSeedsConf'`；(2) 确认哨兵被替换为 bcrypt、二次 bootstrap 哈希不变；(3) 可选：对 fresh DB 跑 `db/task-auth/init.sh` 冒烟。
-- **Why**: 无库单测已覆盖旋转判定与随机生成，但端到端写库路径仍需一次实库确认，避免 INSERT IGNORE + UPDATE 交互回归。
-- **How to apply**: `taskAuth/src/bootstrap_admin_test.go`；`taskAuth/src/bootstrap_admin_password.go`；`dataMigrate/taskAuth/022_seed_bootstrap_admin.sql`；`db/task-auth/init.sh`。
-
-
-### OPT-20260909-001 — 专利文书同步到独立 docs.git 远端
+### OPT-20260908-002 — 若恢复独立 submodule 远端，同步各子仓 LICENSE 为 MIT
 
 - **Status**: pending
-- **Created**: 2026-09-09
-- **Context**: 本会话在 meta 扁平树新增 `docs/专利/`（受理通知书 PDF + README）。`.gitmodules` 登记了 `task2money/docs.git`，但当前环境无 `docs/.git` 嵌套仓。
-- **Action**: (1) 在具备 `docs` 独立 clone 的环境中，将 `docs/专利/` 与 `docs/README.md` 链接变更提交并推送到 `docs.git`；(2) 若后续恢复 gitlink，确认 meta 指针与 docs 远端一致。
-- **Why**: 避免独立 docs 远端与 meta 扁平树长期漂移。
-- **How to apply**: `.gitmodules` `[submodule "docs"]`；`docs/专利/`；`docs/README.md`。
+- **Created**: 2026-09-08
+- **Context**: 本会话在 meta 扁平工作区将自有仓 AGPL-3.0 改为 MIT，并归档 CNIPA 受理通知书。当前环境无独立 gitlink；若后续按 `.gitmodules` 恢复 `task2money/*` 子仓远端，远端树可能仍为 AGPL LICENSE/README。
+- **Action**: (1) 对 `.gitmodules` 各 path 检查远端 `LICENSE` 首行是否仍为 AGPL；(2) 若是，在对应子仓推送与本 meta 相同的 MIT LICENSE + README 许可段；(3) 确认 `trae-agent`（ByteDance MIT）与 `DaydaymoneyGrafana`（Apache-2.0）未被误改。
+- **Why**: 避免 submodule 重新同步后许可声明回退为 AGPL。
+- **How to apply**: `.gitmodules`；各子仓 `LICENSE`/`README.md`；对照根 `LICENSE` 与 `docs/patents/`。
 
 
 ### OPT-20260908-001 — 确认各子仓远端是否仍含 COMMERCIAL.md 并在子仓独立清理

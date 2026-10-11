@@ -23,7 +23,7 @@ Copyright (c) 2025～2026 ljy124818167@qq.com
 
 ```bash
 git clone <本仓库 URL>
-cd ram-mount-AGPL   # 或你的本地目录名
+cd <本地目录名>
 # 子仓按 .gitmodules 独立 clone；可用项目既有脚本批量拉取，勿假设单次 --recurse-submodules 即可齐套
 ```
 
@@ -78,8 +78,9 @@ cd runAll && ./run.sh
 
 ## 许可
 
-本仓库以 **GNU Affero General Public License v3.0 (AGPL-3.0)** 授权。完整条款见 [LICENSE](./LICENSE)。
+本仓库以 **MIT License** 授权。完整条款见 [LICENSE](./LICENSE)。
 
-- 您可以在遵守 AGPL-3.0 的前提下使用、修改、分发本软件（含商业使用）。
-- 若通过网络提供本软件的修改版本，必须向用户提供对应完整源代码（AGPL 第 13 条）。
+- 您可以在遵守 MIT 的前提下使用、修改、分发本软件（含商业使用）。
+- 分发时须保留版权声明与许可声明。
+- 相关发明专利申请受理信息见 [docs/patents/](./docs/patents/)。
 

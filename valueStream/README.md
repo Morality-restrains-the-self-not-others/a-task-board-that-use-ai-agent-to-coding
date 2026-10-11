@@ -103,4 +103,4 @@ go test ./... -race -cover   # src 包 + build_test.go（会执行 build.sh 冒�
 
 ## License
 
-本仓库以 GNU Affero General Public License v3.0 授权，见 [LICENSE](./LICENSE)。
+本仓库以 MIT License 授权，见 [LICENSE](./LICENSE)。

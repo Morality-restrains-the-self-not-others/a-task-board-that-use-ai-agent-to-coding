@@ -18,7 +18,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@noble/hashes": "^2.2.0",
     "autoprefixer": "^10.4.23",
