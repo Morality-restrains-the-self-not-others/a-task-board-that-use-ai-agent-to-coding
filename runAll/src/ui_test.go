@@ -480,6 +480,8 @@ func TestUIHomePage(t *testing.T) {
 		`function initAllDatabases()`,
 		`/api/dev/clear-databases`,
 		`/api/dev/init-databases`,
+		`/api/dev/bootstrap-admin-email`,
+		`请先设置超级管理员邮箱`,
 		`清空全部数据库（开发）`,
 		`初始化全部数据库（开发）`,
 		`function openLokiExplore()`,

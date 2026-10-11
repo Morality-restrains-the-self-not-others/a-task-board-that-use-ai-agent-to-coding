@@ -103,11 +103,15 @@ func ensureBootstrapAdminSeeded(dsn string, repoRoot string) error {
 		return fmt.Errorf("content_type: %w", err)
 	}
 
+	// 初始化顺序（强制）：先写入管理员邮箱，再生成随机密码。
 	email, err := resolveBootstrapAdminEmail(repoRoot)
 	if err != nil {
-		return err
+		return fmt.Errorf("管理员邮箱未设置，请先在 conf-local/auth/task-auth/config.yaml 配置 bootstrapAdmin.email，或经 9999 初始化弹窗设置: %w", err)
 	}
 	if err := applyBootstrapAdminEmail(email); err != nil {
+		return err
+	}
+	if err := ensureBootstrapAdminRandomPassword(); err != nil {
 		return err
 	}
 

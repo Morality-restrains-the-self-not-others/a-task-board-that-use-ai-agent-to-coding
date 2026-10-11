@@ -246,3 +246,93 @@ func TestBootstrapAdminCreatesFreshDB(t *testing.T) {
 		t.Fatalf("expected 1 super_admin row, got %d", count)
 	}
 }
+
+func TestNeedsBootstrapAdminPasswordRotation(t *testing.T) {
+	if !needsBootstrapAdminPasswordRotation("") {
+		t.Fatal("empty hash should rotate")
+	}
+	if !needsBootstrapAdminPasswordRotation(bootstrapAdminPasswordPending) {
+		t.Fatal("pending sentinel should rotate")
+	}
+	if !needsBootstrapAdminPasswordRotation(legacySharedBootstrapPasswordHash) {
+		t.Fatal("legacy shared hash should rotate")
+	}
+	hash, err := hashPassword("unique-ops-password-NotShared1!")
+	if err != nil {
+		t.Fatalf("hashPassword: %v", err)
+	}
+	if needsBootstrapAdminPasswordRotation(hash) {
+		t.Fatal("already-rotated unique hash must not rotate again")
+	}
+}
+
+func TestGenerateRandomAdminPasswordUnique(t *testing.T) {
+	a, err := generateRandomAdminPassword()
+	if err != nil {
+		t.Fatalf("a: %v", err)
+	}
+	b, err := generateRandomAdminPassword()
+	if err != nil {
+		t.Fatalf("b: %v", err)
+	}
+	if a == "" || b == "" || a == b {
+		t.Fatalf("expected distinct non-empty passwords, got %q / %q", a, b)
+	}
+	if len(a) < 32 {
+		t.Fatalf("password too short: %d", len(a))
+	}
+}
+
+func TestBootstrapAdminGeneratesRandomPassword(t *testing.T) {
+	testDSN, cleanup, err := dbload.OpenTestMySQL("task-auth", repoRoot())
+	if err != nil {
+		t.Skipf("MySQL not available: %v", err)
+	}
+	t.Cleanup(cleanup)
+	if err := ensureBootstrapAdminSeeded(testDSN, repoRoot()); err != nil {
+		t.Fatalf("bootstrap: %v", err)
+	}
+	if err := openDB(testDSN); err != nil {
+		t.Fatalf("openDB: %v", err)
+	}
+	defer db.Close()
+
+	lm, err := findEmailLoginMethodByUserID(bootstrapAdminUserID)
+	if err != nil || lm == nil {
+		t.Fatalf("find login method: %v lm=%v", err, lm)
+	}
+	if lm.PasswordHash == "" || lm.PasswordHash == bootstrapAdminPasswordPending {
+		t.Fatalf("password still pending/empty: %q", lm.PasswordHash)
+	}
+	if lm.PasswordHash == legacySharedBootstrapPasswordHash {
+		t.Fatal("password still legacy shared hash")
+	}
+	for _, weak := range knownWeakBootstrapPasswords {
+		if checkPasswordHash(weak, lm.PasswordHash) {
+			t.Fatalf("password still weak %q", weak)
+		}
+	}
+	must, err := getUserMustChangePassword(bootstrapAdminUserID)
+	if err != nil {
+		t.Fatalf("must_change_password: %v", err)
+	}
+	if !must {
+		t.Fatal("must_change_password should stay 1 after random password seed")
+	}
+
+	// 幂等：再次 bootstrap 不得改写已生成的随机哈希
+	firstHash := lm.PasswordHash
+	if err := ensureBootstrapAdminSeeded(testDSN, repoRoot()); err != nil {
+		t.Fatalf("second bootstrap: %v", err)
+	}
+	if err := openDB(testDSN); err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	lm2, err := findEmailLoginMethodByUserID(bootstrapAdminUserID)
+	if err != nil || lm2 == nil {
+		t.Fatalf("re-find: %v", err)
+	}
+	if lm2.PasswordHash != firstHash {
+		t.Fatalf("idempotent bootstrap changed hash:\n  first=%s\n  second=%s", firstHash, lm2.PasswordHash)
+	}
+}

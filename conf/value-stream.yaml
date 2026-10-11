@@ -2513,7 +2513,7 @@ value_streams:
     test_file: ../../taskAuth/src/bootstrap_admin_test.go
     fields:
     - name: task-auth.auth_login_method.identifier
-      description: migrate 渲染 022 占位符为 conf bootstrapAdmin.email；init bootstrap-admin 幂等同步（随机密码，明文销毁，须邮箱重置）
+      description: migrate 渲染 022 邮箱占位符为 conf bootstrapAdmin.email；9999 初始化前须设置邮箱；init bootstrap-admin 先写邮箱再生成每环境随机密码（明文销毁，须邮箱重置）
     - name: task-auth.auth_user.is_superuser
       description: auth 侧超管标记
     - name: saas-backend.auth_super_admin.id
